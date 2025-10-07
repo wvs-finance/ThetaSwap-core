@@ -27,11 +27,14 @@ import {SwapIntent,SwapIntentLibrary} from "../types/SwapIntent.sol";
 import {PoolId,PoolIdLibrary} from "@uniswap/v4-core/src/types/PoolId.sol";
 import {Constants} from "@uniswap/v4-core/test/utils/Constants.sol";
 
+import {IERC20} from "forge-std/interfaces/IERC20.sol";
+import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
 /**
  * @notice Abstract base contract for JIT resolvers
  * @dev Provides standardized JIT liquidity provision and management functionality
  */
-abstract contract JITResolverBase is IJITResolver, ResolverBase{
+import {Ownable} from "@openzeppelin/contracts/Ownable.sol"
+abstract contract JITResolverBase is IJITResolver, Ownable{
     using SqrtPriceMath for uint160;
     using LiquidityAmounts for uint160;
     using TickMath for uint160;
@@ -46,6 +49,14 @@ abstract contract JITResolverBase is IJITResolver, ResolverBase{
     /// @dev keccak256(abi.encode(uint256(keccak256("openzeppelin.transient-storage.JIT_TRANSIENT")) - 1)) & ~bytes32(uint256(0xff))
     bytes32 constant JIT_Transient_MetricsLocation = 0xea3262c41a64b3c1fbce2786641b7f7461a1dc7c180ec16bb38fbe7e610def00;
 
+    address liquidityManager;
+    
+    modifier onlyWithLiquidityManager(){
+        if (liquidityManager == address(0x00)){
+            revert("Liquidity Manager not set");
+        }
+        _;
+    }
     // ================================ CONSTRUCTOR ================================
     
     /**
@@ -56,11 +67,99 @@ abstract contract JITResolverBase is IJITResolver, ResolverBase{
      * @param _lpm The Uniswap V4 position manager contract
      * @param _parityTaxHook The ParityTax hook contract for integration
      */
+
+    
     constructor(
         IPoolManager _poolManager,
         IPositionManager _lpm,
         IParityTaxHook _parityTaxHook
-    ) ResolverBase(_poolManager, _lpm, _parityTaxHook){}
+    ) Ownable(msg.sender){
+        
+    }
+
+    function initializeLiquidityOnPool(PoolKey calldata poolKey) external{
+        address permit2 = abi.decode(
+            address(lpm).functionStaticCall(
+                abi.encodeWithSignature("permit2()");
+            ),
+            (address)
+        );
+        // Because POSM uses permit2, we must execute 2 permits/approvals.
+        // 1. First, the caller must approve permit2 on the token.
+        IERC20(Currency.unwrap(poolKey.currency0)).approve(address(permit2), type(uint256).max);
+        // 2. Then, the caller must approve POSM as a spender of permit2. TODO: This could also be a signature.
+        IAllowanceTransfer(permit2).approve(Currency.unwrap(poolKey.currency0), address(lpm), type(uint160).max, type(uint48).max);
+        IERC20(Currency.unwrap(poolKey.currency1)).approve(address(permit2), type(uint256).max);
+        // 2. Then, the caller must approve POSM as a spender of permit2. TODO: This could also be a signature.
+        IAllowanceTransfer(permit2).approve(Currency.unwrap(poolKey.currency1), address(lpm), type(uint160).max, type(uint48).max);
+
+        IERC20(Currency.unwrap(poolKey.currency0)).approve(parityTaxHook, type(uint256).max);
+        IERC20(Currency.unwrap(poolKey.currency1)).approve(parityTaxHook, type(uint256).max);
+    
+    }
+
+
+    function setLiquidityManager(address _liquidityManager) external onlyOwner{
+        // NOTE: THis contract needs to be compliant with something that the EOA user 
+        // can withdraw funds from 
+        liquidityManager = _liquidityManager;
+    }
+
+    function getLiquidityManager() external returns(address){
+        return liquidityManager;
+    }
+        
+
+
+    function beforeAddLiquidity(
+        PoolId poolId,
+        SwapParams calldata swapParams,
+        PositionInfo externalMarketPositionInfo,
+        PositionInfo internalMarketPositionInfo,
+        uint128 liquidityForSwap
+    ) external onlyWithLiquidityManager returns (
+        PositionConfig memory jitPositionConfig,
+        uint128 jitLiquidity,
+        address liquidityManager,
+        bytes memory data
+    )
+    {   
+        (jitPositionConfig, jitLiquidity) = _calculateLiquidityConfigOnSwap(
+            poolId,
+            swapParams,
+            externalMarketPositionInfo,
+            internalMarketPositionInfo
+        );
+
+
+
+
+
+    }
+
+    function _calculateLiquidityConfigOnSwap(
+        PoolId,
+        SwapParams,
+        PositionInfo,
+        PositionInfo
+    ) internal virtual returns(PositionConfig memory, uint128 jitLiquidity);
+
+    function beforeAddLiquidity(
+        PoolId poolId,
+        SwapParams calldata swapParams,
+        PositionInfo externalMarketPositionInfo,
+        PositionInfo internalMarketPositionInfo,
+        uint128 liquidityForSwap
+    ) external returns (
+        PositionConfig memory jitPositionConfig,
+        uint128 jitLiquidity,
+        address liquidityManager,
+        bytes memory data
+    )
+    {
+        
+    }
+
 
     // ================================ EXTERNAL FUNCTIONS ================================
 

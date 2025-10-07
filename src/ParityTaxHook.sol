@@ -8,6 +8,8 @@ pragma solidity ^0.8.0;
  * @dev This contract manages liquidity commitments, fee collection, and tax distribution between JIT and PLP providers
  * @dev The _afterRemoveLiquidity function is heavily inspired by LiquidityPenaltyHook.sol from OpenZeppelin Uniswap Hooks
  */
+import {Plan, Planner} from "@uniswap/v4-periphery/test/shared/Planner.sol"
+import {PositionConfig} from "@uniswap/v4-periphery/test/shared/PositionConfig.sol";
 
 //=================================================================
 import {SqrtPriceMath} from "@uniswap/v4-core/src/libraries/SqrtPriceMath.sol";
@@ -68,7 +70,20 @@ import {ILiquidityMetrics} from "./interfaces/ILiquidityMetrics.sol";
 
 import {console2} from "forge-std/Test.sol";
 
-contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase{
+
+import {IJITResolver} from "./interfaces/IJITResolvers.sol";
+import {IPLPResolver} from "./interfaces/IPLPResolver.sol";
+import {IFiscalPolicy} from "./interfaces/IFiscalPolicy.sol";
+
+import {LiquidityMath} from "@uniswap/v4-core/src/libraries/LiquidityMath.sol";
+
+import {Exttload} from "@uniswap/v4-core/src/Exttload.sol";
+
+import "@uniswap/v4-core/types/BalanceDelta.sol";
+
+import {EnumerableMap} from "@openzeppelin/contracts/utils/struct/EnumerableMap.sol";
+
+contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
     using SafeCast for *;
     using FeeRevenueInfoLibrary for *;
     using SwapIntentLibrary for *;
@@ -88,7 +103,44 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase{
     using BalanceDeltaLibrary for BalanceDelta;
     using CurrencySettler for Currency;
     using CurrencyDelta for Currency;
+    using LiquidityMath for uint128;
+    using Planner for Plan;
+
+
+    error swapSimulation(int24 tick, uint128 jitLiquidity);
+
     
+
+
+    mapping(PoolId => IGovernance) marketsRegulator;
+    mapping(PoolId => IFiscalPolicy) fiscalPolicies;
+    mapping(PoolId => ILPOracle) externalMarketOracles;
+    
+    // NOTE: This stores the tokens as the keys
+    // but the tokens are accessible since this is a 
+    // enumerable mapping
+    mapping(PoolId => EnumerableMap.UintToUintMap) plpPositions;
+
+
+
+
+    
+    
+    modifier onlyWithGovernance(PoolKey memory poolKey){
+        if (address(marketsRegulator[poolKey.toId()]) == address(0x00)){
+            revert("Pool Governance Not Set"); 
+        }
+        _;
+    }
+
+    modifier onlyAfterCommitmentExpired(PoolKey memory poolKey, uint256 tokenId){
+        
+        (,uint48 liquidityCommitment) = plpPositions[poolKey.toId()].tryGet(bytes32(tokenId));
+
+        if (uint48(block.number) < liquidityCommitment) revert("Liquidity commitment has not ended");
+        _;
+    }
+
 
     /**
      * @notice Initializes the ParityTaxHook with required dependencies
@@ -102,18 +154,20 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase{
      */
     constructor(
         IPoolManager _poolManager,
-        IPositionManager _lpm,
-        ILPOracle _lpOracle,
-        IParityTaxExtt _parityTaxExtt
+        IPositionManager _lpm
     ) ParityTaxHookBase(
         _poolManager,
-        _lpm,
-        _lpOracle,
-        _parityTaxExtt
-        ) 
+        _lpm
+    ) 
     {
 
     }
+
+    function setMarketGovernance(PoolKey calldata poolKey, IGovernance marketRegulator) external{
+        marketsRegulator[poolKey.toId()] = marketRegulator
+    }
+
+
 
     /**
      * @notice Handles pre-initialization logic for new pools
@@ -121,11 +175,38 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase{
      * and also manager oracle dependencies initialization
      */
     function _beforeInitialize(
-        address,
-        PoolKey calldata,
-        uint160) internal virtual override returns (bytes4) {
-            return IHooks.beforeInitialize.selector;
+        address sender, //NOTE: PoolInitialization router
+        PoolKey calldata poolKey,
+        uint160
+    ) internal virtual override returns (bytes4) {
+        PoolId poolId = poolKey.toId();
+        
+        ILPOracle externalMarketOracle = IGovernace(sender).assignExternalMarketOracle(poolKey);
+        externalMarketOracles[poolId] = externalMarketOracle;
+        uint256 externalMarketPrice = externalMarketOracles[poolId].getExternalMarketPrice(poolKey);
+        // TODO: Logic of internal swap to align prices ...
+        return IHooks.beforeInitialize.selector;
     }
+    
+    // NOTE: This signals the governance to create a fiscal policy
+    function _afterInitialize(
+        address sender,
+        PoolKey calldata poolKey,
+        uint160 sqrtPriceX96,
+        int24 tick
+    )
+        internal
+        override
+        onlyWithGovernance(poolKey)
+        returns (bytes4)
+    {
+        IFiscalPolicy marketFiscalPolicy = IGovernance(sender).assignFiscalPolicy(poolKey);
+        fiscalPolicies[poolKey.toId()] = marketFiscalPolicy;
+
+
+        return _afterInitialize(sender, key, sqrtPriceX96, tick);
+    }
+
 
 
     /**
@@ -140,48 +221,86 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase{
         PoolKey calldata poolKey, 
         SwapParams calldata swapParams,
         bytes calldata hookData
-    ) internal virtual override returns (bytes4, BeforeSwapDelta, uint24)
+    ) internal virtual onlyWithGovernance(poolKey) override returns (bytes4, BeforeSwapDelta, uint24)
     {   
-        PoolId poolId = poolKey.toId();        
-        SwapContext memory swapContext = abi.decode(hookData, (SwapContext));
 
-        // Store pre-swap prices in transient storage for afterSwap processing
-        {
-            _tstore_swap_beforeSwapSqrtPriceX96(swapContext.beforeSwapSqrtPriceX96);
-            _tstore_swap_beforeSwapExternalSqrtPriceX96(swapContext.beforeSwapSqrtPriceX96);
-        }
+        uint256 jitTokenId = _tload_jit_tokenId();
 
-        if (
-            Currency.unwrap(swapContext.poolKey.currency0) != Currency.unwrap(poolKey.currency0) ||
-            Currency.unwrap(swapContext.poolKey.currency1) != Currency.unwrap(poolKey.currency1)
-        ) revert CurrencyMissmatch();
+        // NOTE: This is becase the simulateSwap does not have stored the token id, otherwise this 
+        // call will be infinite recursion
+        if (jitTokenId == uint256(0x00)){
+
+            PoolId poolId = poolKey.toId();        
+            
+            (int24 tickAfter,uint128 liquidityForSwap) = _getSwapSimulationData(poolKey, swapParams);
+            // NOTE: This tracks the internal price of the pool before swap
+            (,int24 tickBefore,,) = poolManager.getSlot0(poolId);
+            
+            // NOTE: This requests the external price of the pair before swap, the narrower the
+            // range the deepest the market => Does not have to coincide with the internal range
+
+            (int24 tickBeforeExternal,int24 tickAfterExternal) = externalMarketOracles[poolId].getExternalTickInfo(poolKey);
+
+            uint128 tickRangeAvailableLiquidity = _getTickRangeLiquidity(poolKey, tickLower, tickUpper);
+            PositionConfig memory default_jit_positionConfig = PositionConfig(poolKey,tickLower, tickUpper);
+
+            PositionInfo externalMarketPosition = poolKey.initialize(tickBeforeExternal, tickAfterExternal);
+
+
+            (
+                PositionConfig memory jitPositionConfig,
+                uint128 jitLiquidity,
+                address liquidityManager,
+                bytes memory data
+            
+            ) = jitResolver.beforeAddLiquidity(
+                poolId,
+                swapParams,
+                externalMarketPosition,
+                default_jit_positionConfig,
+                liquidityForSwap,
+                tickRangeAvailableLiquidity
+            );
+            // NOTE: The data passed can not match the Commitment length
+            // other wise it will trigger the PLP logic
+            // on beforeAddLiquidity
+            _mintUnlocked(
+                jitPositionConfig,
+                jitLiquidity,
+                liquidityManager,
+                data
+            );
+
+                
+            PositionInfo jitPosition = poolKey.initialize(tickBefore, tickAfter);
+            // NOTE: Now with liquidity minted, we can simulate the swap 
+            // again to get the actual plp liquidity that will be enttered
+            // for this swap
+
+
+            // NOTE: This should consider the JIT liqudity fullfiulling the portion requested to fulfill
+            // thus, making the calculation over the unfulfilled portion of the swap
+
+            // NOTE: IF THIS IS NOT THE CASE WE MIGHT CONSIDER UWSING BEFORE SWAP DELTA
+            // TO GUARANTE THE JIT FULLFILLS THE REQUESTED
+
+            (,uint128 plpLiquidity) = _getSwapSimulationData(poolKey, swapParams);
+
+
+
+            _tstore_jit_tokenId(jitPositionTokenId);
+            
+            _tstore_swap_externalMarketPosition(externalMarketPosition);
         
-        bool isExactInput = swapContext.swapParams.amountSpecified <0;
+            emit LiquidityOnSwap(
+                PositionInfo.unwrap(jitPosition),
+                PoolId.unwrap(poolId),
+                jitLiquidity
+                plpLiquidity
+            );
 
-        // Add JIT liquidity through resolver
-        (uint256 jitPositionTokenId,uint256 jitLiquidity) = jitResolver.addLiquidity(
-            swapContext
-        );
-
-        uint128 totalLiquidity = poolManager.getLiquidity(poolId);
-        {
-            _tstore_jit_tokenId(jitPositionTokenId);    
         }
-
-    
-        
-
-        PositionInfo jitPositionInfo = _tload_jit_positionInfo();
-
-        uint128 plpLiquidity = totalLiquidity - uint128(jitLiquidity);
-
-        emit LiquidityOnSwap(
-            PoolId.unwrap(poolId),
-            uint48(block.number),
-            totalLiquidity,
-            uint128(jitLiquidity),
-            plpLiquidity
-        );
+ 
          
 
 
@@ -203,70 +322,35 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase{
         SwapParams calldata swapParams,
         BalanceDelta swapDelta,
         bytes calldata hookData
-    ) internal virtual override returns (bytes4, int128)
+    ) internal virtual onlyWithGovernance(poolKey) override returns (bytes4, int128)
     {
-
-        //=====================COMMON-BASE=====================//
-        PoolId poolId = poolKey.toId();
-        (uint160 afterSwapSqrtPriceX96, int24 tick, uint24 protocolFee, uint24 lpFee) = poolManager.getSlot0(poolId);
-      
-        (uint160 beforeSwapSqrtPriceX96, uint160 beforeSwapExternalSqrtPriceX96) = (
-            _tload_swap_beforeSwapSqrtPriceX96(),
-            _tload_swap_beforeSwapExternalSqrtPriceX96()
-        );
-        uint160 afterSwapExternalSqrtPriceX96 = afterSwapSqrtPriceX96;
-
-        //======================================================
         // =====================JIT============================//
         uint256 jitTokenId = _tload_jit_tokenId();
-        console2.log("JIT Token ID:", jitTokenId);
-        
+
         if (jitTokenId > uint256(0x00)){
 
-            emit PriceImpact(
-                PoolId.unwrap(poolId),
-                uint48(block.number),
-                swapParams.zeroForOne.swapIntent(swapParams.amountSpecified < 0),
-                swapDelta,
-                beforeSwapSqrtPriceX96,
-                beforeSwapExternalSqrtPriceX96,
-                afterSwapSqrtPriceX96,
-                afterSwapExternalSqrtPriceX96 
-            );
-            LiquidityPosition memory _jitLiquidityPosition = getLiquidityPosition(
+            PoolId poolId = poolKey.toId();
+            // NOTE: beforeSwapTick == jitPosition.tickLower && afterSwapTick == jitPosition.tickUpper
+            // Or backwards depending on the direction of the swap, the point is that the information is there
+            (, int24 afterSwapTick,, ) = poolManager.getSlot0(poolId);
+            PositionInfo externalMarketPositionInfo = _tload_swap_externalMarketPosition();
+            PositionInfo jitPositionInfo = lpm.positionInfo(jitTokenId);
+
+            PositionConfig jitPositionConfig = PositionConfig(
                 poolKey,
-                LP_TYPE.JIT,
-                address(jitResolver),
-                jitTokenId
+                jitPositionInfo.tickLower(),
+                jitPositionInfo.tickUpper()
             );
 
-            
-            _tstore_jit_liquidityPosition(_jitLiquidityPosition);
-            
-            if(_jitLiquidityPosition.liquidity > uint256(0x00)){
-                jitResolver.removeLiquidity(_jitLiquidityPosition);
-                
-                FeeRevenueInfo jitFeeRevenueInfo = uint48(block.number).init(
-                    JIT_COMMITMENT,
-                    uint80(_jitLiquidityPosition.feeRevenueOnCurrency0),
-                    uint80(_jitLiquidityPosition.feeRevenueOnCurrency1)
-                );
+                        
+            // NOTE: hookData can be passed to the JIT Resolver for any actions that do not involve
+            // breaking the taxing protocol (like withdrwing fee revenue)
 
-                fiscalPolicy.remit(
-                    poolId,
-                    jitFeeRevenueInfo
-                    
-                );
-
-                emit Remittance(
-                    PoolId.unwrap(poolId),
-                    uint48(block.number),
-                    JIT_COMMITMENT,
-                    jitFeeRevenueInfo.toBalanceDelta()
-                );
-
-
-            }
+            _burnUnlocked(
+                jitTokenId,
+                jitPositionConfig,
+                hookData
+            );
         }
         //====================================================//
 
@@ -284,88 +368,31 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase{
         PoolKey calldata poolKey,
         ModifyLiquidityParams calldata liquidityParams,
         bytes calldata hookData
-    ) internal virtual override onlyPositionManagerForJIT(liquidityRouter) returns (bytes4)
+    ) internal virtual override onlyWithGovernance(poolKey) returns (bytes4)
     {
         
-        //===========================COMMON-BASE===========================//
-        (PoolId poolId, bytes32 lpPositionKey) = _getPoolIdAndPositionKey(
-            liquidityRouter,
-            poolKey,
-            liquidityParams
-        );
-        //=================================================================
-        
+        // TODO: There needs to be a checkesr to route the call from JIT, PLP resolvers
+
+        // NOTE: This is the flow for other routers not the resolvers
         
         //NOTE: This applies for hooks where the user puts valid hookData. This needs to be considered 
+        PoolId poolId = poolKey.toId();
         uint256 jitTokenId = _tload_jit_tokenId();
-
-        
-
         Commitment memory plpCommitment;
-        
         if (hookData.length == COMMITMENT_LENGTH){
             
             Commitment memory lpCommitment = abi.decode(
                 hookData,
                 (Commitment)
             );
-
-
-
+            // NOTE: This is a PLP commiting liquidity
             if (lpCommitment.blockNumberCommitment >= MIN_PLP_BLOCK_NUMBER_COMMITMENT && jitTokenId == uint256(0x00)){
                 plpCommitment = lpCommitment;  
-                
-                uint48 plpBlockNumberCommitment = plpCommitment.blockNumberCommitment + uint48(block.number);
-                plpCommitment.blockNumberCommitment = plpBlockNumberCommitment;
             
-                uint256 plpPositionTokenId = plpResolver.commitLiquidity(
-                    poolKey,
-                    liquidityParams,
-                    plpCommitment.committer,
-                    plpBlockNumberCommitment
-                );
-                _tstore_plp_tokenId(plpPositionTokenId);
+                plpCommitment.blockNumberCommitment += uint48(block.number);
         
-                _lockLiquidity(
-                    poolId,
-                    plpPositionTokenId,
-                    plpCommitment.committer,
-                    plpCommitment.blockNumberCommitment
-                );
-            
-                
-                emit LiquidityCommitted(
-                    PoolId.unwrap(poolId),
-                    uint48(block.number),
-                    plpCommitment.blockNumberCommitment,
-                    plpCommitment.committer,
-                    plpPositionTokenId,
-                    abi.encode(liquidityParams)
-                );
-
-
-
-            } else if (jitTokenId > uint256(0x00)) {
-
-                if (address(liquidityRouter) != address(lpm)){
-                    revert InvalidLiquidityRouterCaller();
-                }
-
-
-
-                emit LiquidityCommitted(
-                    PoolId.unwrap(poolId),
-                    uint48(block.number),
-                    JIT_COMMITMENT,
-                    address(jitResolver),
-                    jitTokenId,
-                    abi.encode(liquidityParams)
-                );
-
-            } else if (jitTokenId == uint256(0x00) && lpCommitment.blockNumberCommitment < MIN_PLP_BLOCK_NUMBER_COMMITMENT){
-                revert InvalidPLPBlockCommitment();
             }
-     }
+        }
         //==================================================================//
         
         return IHooks.beforeAddLiquidity.selector;
@@ -385,61 +412,22 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase{
         BalanceDelta,
         BalanceDelta feeDelta,
         bytes calldata hookData
-    ) internal virtual override onlyPositionManagerForJIT(liquidityRouter) returns (bytes4, BalanceDelta) {
-        //===========================COMMON-BASE===========================//
-        (PoolId poolId, bytes32 lpPositionKey) = _getPoolIdAndPositionKey(
-            liquidityRouter,
-            poolKey,
-            liquidityParams
-        );
-        //=================================================================
- 
-        //==========================PLP==============================//
-        if (hookData.length == COMMITMENT_LENGTH){
-            
-            Commitment memory plpCommitment = abi.decode(
-                hookData,
-                (Commitment)
-            );
-            uint256 plpPositionTokenId = _tload_plp_tokenId();
-
-            FeeRevenueInfo plpFeeRevenueInfo = uint48(block.number).init(
-                plpCommitment.blockNumberCommitment + uint48(block.number),
-                uint80(int80(feeDelta.amount0())),
-                uint80(int80(feeDelta.amount1()))
-            );
-
-
-            fiscalPolicy.remit(
-                poolId,
-                plpFeeRevenueInfo
-                
-            );
-
-            emit Remittance(
-                PoolId.unwrap(poolId),
-                uint48(block.number),
-                plpCommitment.blockNumberCommitment + uint48(block.number),
-                plpFeeRevenueInfo.toBalanceDelta()
-            );
-
-
-
-
-        }
-        //==========================================================//
-
-
-        //=========================JIT=================================
+    ) internal virtual override onlyWithGovernance(poolKey) returns (bytes4, BalanceDelta) {
+        
         uint256 jitTokenId = _tload_jit_tokenId();
+        uint256 tokenId = uint256(liquidityParams.salt);
+        //==========================PLP==============================//
+        if (hookData.length == COMMITMENT_LENGTH && jitTokenId == uint256(0x00) ){
         
-        if (jitTokenId > uint256(0x00)){
-            _tstore_jit_feeRevenue(
-                uint256(feeDelta.amount0().toUint128()), 
-                uint256(feeDelta.amount1().toUint128())
-            );
+            uint256 plpPositionTokenId = lpm.nextTokenId() > uint256(0x01) ? lpm.nextTokenId() - uint256(0x01):lpm.nextTokenId();
+            
+            assert(tokenId == plpPositionTokenId);
+
+            plpPositions[poolId].set(plpPositionTokenId, plpCommitment.blockNumberCommitment);
+            
+
+
         }
-        
         //==========================================================//
 
         return (IHooks.afterAddLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
@@ -458,62 +446,12 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase{
         bytes calldata hookData
     )
     internal
-    virtual 
+    virtual
     override
-    onlyPositionManager(liquidityRouter)
+    onlyWithGovernance(poolKey)
+    onlyAfterCommitmentExpired(poolKey, uint256(liquidityParams.salt))
     returns (bytes4)
     {
-         //===========================COMMON-BASE===========================//
-        (PoolId poolId, bytes32 lpPositionKey) = _getPoolIdAndPositionKey(
-            liquidityRouter,
-            poolKey,
-            liquidityParams
-        );
-        //=============================================PLP========================================================//
-        //============================REMOVING FROM POSITION MANAGER=====================================
-        if (uint256(liquidityParams.salt) > uint256(0x00) && _tload_jit_tokenId() == uint256(0x00)){
-            uint256 tokenId = uint256(liquidityParams.salt);
-            address positionOwner = abi.decode(
-                address(lpm).functionStaticCall(
-                    abi.encodeWithSignature(
-                        "ownerOf(uint256)",
-                        tokenId
-                    )   
-                ),
-                (address)
-            );
-            assert(tokenId == _tload_plp_tokenId());
-            uint48 lpLiquidityCommitment = getPositionBlockNumberCommitment(
-                poolId,
-                positionOwner,
-                tokenId
-            );
-
-            if (uint48(block.number) < lpLiquidityCommitment) {
-                revert NotWithdrawableLiquidity__LiquidityIsCommitted();
-            }
-            
-            plpResolver.removeLiquidity(
-                poolId,
-                tokenId,
-                liquidityParams.liquidityDelta
-            );
-
-            _clearPositionBlockNumberCommitment(
-                poolId,
-                positionOwner, 
-                tokenId
-            );
-                
-        }
- 
-             
-        //=================================================================================
-        //===============================JIT===============================================
-
-
-        //=================================================================================
-        
         
         return IHooks.beforeRemoveLiquidity.selector;
     }
@@ -533,59 +471,40 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase{
         address liquidityRouter,
         PoolKey calldata poolKey,
         ModifyLiquidityParams calldata liquidityParams,
-        BalanceDelta,
+        BalanceDelta delta,
         BalanceDelta feeRevenueDelta,
-        bytes calldata
-    ) internal virtual override onlyPositionManager(liquidityRouter) returns (bytes4, BalanceDelta) {
+        bytes calldata hookData
+    ) internal virtual override onlyWithGovernance(poolKey) onlyPositionManager(liquidityRouter) returns (bytes4, BalanceDelta) {
         
-    
-        //=============================PLP===================================//
 
-
-        // BalanceDelta withheldFees = _remitFeeRevenue(poolKey, ,plpPositionTokenId);
-
-        // BalanceDelta taxableFeeRevenueIncomeDelta = feeRevenueDelta + withheldFees;
-
-        // if (withheldFees != BalanceDeltaLibrary.ZERO_DELTA) {
-        //     BalanceDelta returnDelta = toBalanceDelta(-withheldFees.amount0(), -withheldFees.amount1());
-        //     return (this.afterRemoveLiquidity.selector, returnDelta);
-        // }
-        // //=================================================================//
-        
-        // //============================JIT=================================//
-        // //NOTE: This tokenId is just for internal reference becasue the positionManager
-        // // burns the position before modifyingLiquidity
+        PoolId poolId = poolKey.toId();
         uint256 jitTokenId = _tload_jit_tokenId();
-        
-        if (jitTokenId > uint256(0x00)){        
-            _tstore_jit_feeRevenue(
-                uint256(feeRevenueDelta.amount0().toUint128()), 
-                uint256(feeRevenueDelta.amount1().toUint128())
+        // NOTE: This token does not trak enything now
+        // but works as a signal to indicate this is a JIT liquidity removal
+        if (jitTokenId > uint256(0x00)){
+            (uint24 taxRateOnX0, uint24 taxRateOnX1) = fiscalPolicies[poolId].calculateOptimalTax(delta, feeRevenueDelta);
+
+            // NOTE: Based on this taxRate we do deduction
+            BalanceDelta taxedjitRevenueDelta = toBalanceDelta(
+                feeRevenueDelta.amount0()*int128(1-taxRateOnX0),
+                feeRevenueDelta.amount1()*int128(1-taxRateOnX1)
+            );
+
+            if (poolManager.getLiquidity(poolId) == uint128(0x00)) revert("Not PLP Liquidty to reward");
+
+            BalanceDelta delta = poolManager.donate(
+                poolKey,uint256(uint128(taxedjitRevenueDelta.amount0())),uint256(uint128(taxedjitRevenueDelta.amount1())), hookData
             );
         }
 
-        // if (jitLiquidityPosition.liquidity > uint256(0x00)){
-        // //NOTE: This informs the tax controller what kind of LP this is
-        //     fiscalPolicy.fillJITTaxReturn(taxableFeeRevenueIncomeDelta, JIT_COMMITMNET);
-        //     BalanceDelta jitTaxLiabilityDelta = fiscalPolicy.getJitTaxLiability(taxableFeeRevenueIncomeDelta);
-            
-        //     //NOTE If there is a tax liability to be applied but there are no active liquidity positions in range to
-        //     // receive the donation, then the liquidity removal is not possible and the offset must be awaited.
-        //     if (poolManager.getLiquidity(poolId) == 0) revert NoLiquidityToReceiveTaxCredit();
-        //     poolManager.donate(
-        //         poolKey,
-        //         uint256(int256(jitTaxLiabilityDelta.amount0())),
-        //         uint256(int256(jitTaxLiabilityDelta.amount1())),
-        //         Constants.ZERO_BYTES
-        //     );
+        //=========================================PLP==============================================
+        bool ok = plpPositions[poolId].remove(uint256(liquidityParams.salt));
 
-        //     return (IHooks.afterRemoveLiquidity.selector, jitTaxLiabilityDelta - withheldFees); 
-        // }
+        return (this.afterRemoveLiquidity.selector, taxedjitRevenueDelta);
 
-        return (IHooks.afterRemoveLiquidity.selector, BalanceDeltaLibrary.ZERO_DELTA);
- 
     }
-
+    
+ 
 
     /**
      * @notice Handles post-donation operations for credit accrual and PLP rewards
@@ -593,12 +512,27 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase{
      * @dev WARNING: This is where accrueCredit gets called and assigns the right rewards to PLPs based on their commitment
      */
     function _afterDonate(
-        address, 
-        PoolKey calldata,
-        uint256,
-        uint256, 
-        bytes calldata
-    ) internal virtual override returns (bytes4){
+        address sender, 
+        PoolKey calldata poolKey,
+        uint256 totalDonatedAmount0,
+        uint256 totalDonateAmount1, 
+        bytes calldata hookData
+    ) internal virtual onlyWithGovernance(poolKey) override returns (bytes4){
+        PoolId poolId = poolKey.toId();
+        
+        // NOTE: THis assigns a portion of revenue to the PLP
+        // this portion is then queried beforeRemoveing liquidity
+
+        // NOTE: The sum of endowments need to equal the total donated
+        // 
+        fiscalPolicies[poolId].accrueCredit(
+            poolKey,
+            plpPositions,
+            totalDonatedAmount0,
+            totalDonatedAmount1,
+            hookData
+        );
+
         return IHooks.afterDonate.selector;
     }
 
@@ -613,8 +547,165 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase{
 
 
 
+    // TODO: THis can be modified so it retrieves the bytes with all the needed
+    // data
+    function _getSimulatedSwapData(
+        PoolKey calldata poolKey,
+        SwapParams calldata swapParams
+    ) internal returns(int24 tickAfter, uint128 liquidityNeededForSwap){
 
+        try this.simulateSwap(poolKey,swapParams){
+            revert("simulate swap should revert");
+        } catch (bytes memory){
+            // Decode the selector (first 4 bytes)
+            bytes4 selector = bytes4(reason);
+
+            if (selector != OnJITLiquiditySwap.selector) {
+                revert("returned selector should be OnJITLiquiditySwap");
+            }
+
+            // Decode the uint24 value (assuming it's at the end)
+            assembly {
+                // If we're looking at the last 32 bytes, we need to position our pointer
+                // reason + 32 (to skip length) + reason.length - 32 (to get to the last 32 bytes)
+                let lastWordPtr := add(add(reason, 32), sub(mload(reason), 32))
+
+                // For uint152, we only need the last 19 bytes of the last word
+                // This assumes the uint24 is right-aligned in the last word
+                let lastWord := mload(lastWordPtr)
+
+                // Mask to get only the last 19 bytes (152 bits)
+                tickAfter := and(lastWord, 0xFFFFFF)
+            }
+        }
+    }
+
+
+
+
+
+    // NOTE: This a util function to get price impact data beforeSwap
+    // for JIT
+    function simulateSwap(
+        PoolKey calldata poolKey,
+        SwapParams calldata swapParams
+    ) external returns (int24 afterSwapTick, uint128 liquidityNeededForSwap){
+        if (msg.sender != address(this)){
+            revert("simulateSwap can only be called by the hook");
+        }
+        bool isExactInput = swapParams.amountSpecified < 0;
+        (uint160 sqrtPriceBefore,int24 tickBefore,,) = poolManager.getSlot0(poolKey.toId());
+        
+
+        BalanceDelta swapDelta = poolManager.swap(poolKey, swapParams, Constants.ZERO_BYTES);
+        // NOTE: THe positive is the outputt amoutnt
+       
+         
+        (uint160 sqrtPriceAfter,int24 tickAfter,,) = poolManager.getSlot0(poolKey.toId());
+        
+        if (swapDelta.amount0() > int128(0x00)){
+             liquidityNeededForSwap = sqrtPriceBefore.getLiquidityForAmount0(
+                sqrtPriceAfter,
+                uint256(uint128(swapDelta.amount0()))
+            );
+        } else if (swapDelta.amount1() > int128(0x00)){
+            liquidityNeededForSwap = sqrtPriceBefore.getLiquidityForAmount1(
+                sqrtPriceAfter,
+                uint256(uint128(swapDelta.amount1()))
+            );
+        }
+        revert swapSimulation(tickAfter,liquidityNeededForSwap);
+    }
+
+    function _getTickRangeLiquidity(
+        PoolKey calldata poolKey,
+        int24 tickLower,
+        int24 tickUpper
+    ) internal returns (uint128 tickRangeLiquidity){
+        
+        PoolId poolId = poolKey.toId();
+        (uint128 initialLiquidity,,,) = poolManager.getTickInfo(poolId,tickLower);
+        uint24 tickDelta = uint256(uint24(tickUpper-tickLower));
+        
+        int24 tick = tickLower + int24(poolKey.tickSpacing);
+        uint128 _tickRangeLiquidity = initialLiquidity;
+        
+        while(tick <=tickUpper){
+            (,int128 tickLiquidityAdded,,) = poolManager.getTickInfo(poolId,tick);
+            _tickRangeLiquidity = _tickRangeLiquidity.addDelta(tickLiquidityAdded);
+        }
+
+        tickRangeLiquidity = _tickRangeLiquidity;
+    }  
+
+    function _mintUnlocked(
+        PositionConfig memory config,
+        uint256 liquidity,
+        address recipient,
+        bytes memory hookData
+    ) internal virtual {
+        Plan memory planner = Planner.init();
+        {
+            planner.add(
+                Actions.MINT_POSITION,
+                abi.encode(
+                    config.poolKey,
+                    config.tickLower < config.tickUpper ?config.tickLower:config.tickUpper,
+                    config.tickLower < config.tickUpper ?config.tickUpper:config.tickLower,
+                    liquidity,
+                    MAX_SLIPPAGE_INCREASE,
+                    MAX_SLIPPAGE_INCREASE,
+                    recipient,
+                    hookData
+                )
+            );
+            planner.add(
+                Actions.CLOSE_CURRENCY,
+                abi.encode(config.poolKey.currency0)
+            );
+            planner.add(
+                Actions.CLOSE_CURRENCY, abi.encode(config.poolKey.currency1)
+            );
+        }
+        
+        lpm.modifyLiquiditiesWithoutUnlock(planner.actions, planner.params);
+    }
+
+    // NOTE: The JIT needs to make the approval for the
+
+    // msg.sender of this function wichh is the hook, this needs to be
+    // done on beforeSwap
+
+    function _burnUnlocked(
+        uint256 tokenId,
+        PositionConfig memory config
+        bytes memory data
+    ) internal virtual {
+        Plan memory planner = Planner.init();
+        planner.add(
+            Actions.BURN_POSITION,
+            abi.encode(
+                tokenId,
+                MIN_SLIPPAGE_DECREASE,
+                MIN_SLIPPAGE_DECREASE,
+                data
+            )
+        );
+
+        planner.add(
+            Actions.CLOSE_CURRENCY,
+            abi.encode(config.poolKey.currency0)
+        );
+        planner.add(
+            Actions.CLOSE_CURRENCY, 
+            abi.encode(config.poolKey.currency1)
+        );
+
+        lpm.modifyLiquiditiesWithoutUnlock(planner.actions, planner.params);
+    }
+      
 
 }
+
 
 

@@ -33,6 +33,10 @@ contract ParityTaxExtt is Exttload, IParityTaxExtt{
         }
     }
 
+    function tstore_swap_beforeSwapTick(int24 tickBeforeSwap) external{
+        
+    }
+
     function tstore_swap_beforeSwapSqrtPriceX96(uint160 beforeSwapSqrtPriceX96) external {
         _tstore_swap_beforeSwapSqrtPriceX96(beforeSwapSqrtPriceX96);
     }

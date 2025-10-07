@@ -58,11 +58,10 @@ interface IParityTaxHook is IExttload{
      * @param plpLiquidity PLP (Permanent Liquidity Provider) liquidity amount
      */
     event LiquidityOnSwap(
-        bytes32 indexed poolId,
-        uint48 indexed blockNumber,
-        uint128 totalLiquidity,
-        uint128 jitLiquidity,
-        uint128 plpLiquidity
+        uint256 indexed positionInfo // The position info contains ticks and bytes25 poolId
+        bytes32 indexed poolId, // This is the bytes32 pool id   
+        uint128 jitLiquidity, //  JIT Liquidity entered on the swap
+        uint128 plpLiquidity // PLP Liquiity entered on the swap
     );
     
     /**

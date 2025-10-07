@@ -103,6 +103,8 @@ abstract contract ParityTaxHookBase is IParityTaxHook,Exttload,BaseHook, Liquidi
         if ( _router != address(lpm) && _tload_jit_tokenId() > uint256(0x00) ) revert InvalidLiquidityRouterCaller();
         _;
     }
+
+
     
 
     /**

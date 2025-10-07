@@ -9,8 +9,6 @@ pragma solidity ^0.8.0;
  * for equitable fee distribution between JIT and PLP providers
  */
 
-
-
 import {TransientStateLibrary} from "@uniswap/v4-core/src/libraries/TransientStateLibrary.sol";
 
 
