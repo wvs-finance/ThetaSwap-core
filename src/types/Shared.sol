@@ -199,6 +199,23 @@ struct Commitment{
     uint48 blockNumberCommitment;
 }
 
+enum DEX{
+    UNISWAP_V4,
+    ALGEBRA_INTEGRAL,
+    BALANCER_V3
+}
+
+struct OnboardingData{
+    address token0;
+    address token1;
+    Commitment lpCommitment;
+    DEX dex;
+    bool isCLAMM;
+    uint256 currentPrice; 
+    uint256 currentFee;
+    uint256 tickSpacing;
+}
+
 
 // ================================ REACTIVE NETWORK CALLBACK STRUCTS ================================
 

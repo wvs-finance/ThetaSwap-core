@@ -83,6 +83,9 @@ import "@uniswap/v4-core/types/BalanceDelta.sol";
 
 import {EnumerableMap} from "@openzeppelin/contracts/utils/struct/EnumerableMap.sol";
 
+import {IPoolAdminEntryPoint} from "./interfaces/IPoolAdminEntryPoint.sol";
+import {ILiquidityEntryPoint} from "./interfaces/ILiquidityEntryPoint.sol";
+
 contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
     using SafeCast for *;
     using FeeRevenueInfoLibrary for *;
@@ -112,7 +115,7 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
     
 
 
-    mapping(PoolId => IGovernance) marketsRegulator;
+    mapping(PoolId => IPoolAdminEntryPoint) poolAdmins;
     mapping(PoolId => IFiscalPolicy) fiscalPolicies;
     mapping(PoolId => ILPOracle) externalMarketOracles;
     
@@ -126,8 +129,8 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
 
     
     
-    modifier onlyWithGovernance(PoolKey memory poolKey){
-        if (address(marketsRegulator[poolKey.toId()]) == address(0x00)){
+    modifier onlyWithPoolAdmin(PoolKey memory poolKey){
+        if (address(poolAdmins[poolKey.toId()]) == address(0x00)){
             revert("Pool Governance Not Set"); 
         }
         _;
@@ -163,8 +166,20 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
 
     }
 
-    function setMarketGovernance(PoolKey calldata poolKey, IGovernance marketRegulator) external{
-        marketsRegulator[poolKey.toId()] = marketRegulator
+    function setPoolAdmin(PoolKey calldata poolKey, IPoolAdminEntryPoint poolAdmin) external{
+        poolAdmins[poolKey.toId()] = poolAdmin;
+    }
+
+    /**
+     * @inheritdoc IParityTaxHook
+     * @dev TODO: Access control to be implemented
+     */
+    function setLiquidityAggreagtors(
+        IPLPResolver _plpResolver,
+        IJITResolver _jitResolver
+    ) external {
+        plpResolver = _plpResolver;
+        jitResolver = _jitResolver;
     }
 
 

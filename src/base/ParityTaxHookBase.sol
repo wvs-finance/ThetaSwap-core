@@ -117,13 +117,8 @@ abstract contract ParityTaxHookBase is IParityTaxHook,Exttload,BaseHook, Liquidi
      */
     constructor(
         IPoolManager _poolManager,
-        IPositionManager _lpm,
-        ILPOracle _lpOracle,
-        IParityTaxExtt _parityTaxExtt
+        IPositionManager _lpm
     ) BaseHook(_poolManager) LiquidityMetrics(_poolManager){
-        lpm = _lpm;
-        lpOracle = _lpOracle;
-        parityTaxExtt = _parityTaxExtt;
     }
 
     /**
