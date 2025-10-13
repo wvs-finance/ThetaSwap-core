@@ -1,0 +1,136 @@
+{
+    "services": [
+        {
+            "name": "Governmental Tax Rate Calculation Service",
+            "Trigering Event": "A swap operation is initiated or a fiscal policy parameter update is requested",
+            "Delivered Service": "The system provides pool deployers with governmental tax calculation capabilities using familiar terminology (progressive taxation, Pigouvian taxes, etc.) to calculate appropriate tax rates for participants based on governmental fiscal policy principles, ensuring familiar and effective taxation mechanisms that adapt to changing market dynamics.",
+            "Assumptions": [
+                "The fiscal policy parameters are valid and have been properly configured by governance using familiar governmental terminology",
+                "The market data used for tax calculation is accurate and up-to-date",
+                "The participant classification system correctly identifies different taxpayer types using governmental classification methods",
+                "The underlying Uniswap V4 infrastructure provides reliable price and liquidity data"
+            ]
+        },
+        {
+            "name": "Governmental Tax Collection Service",
+            "Trigering Event": "A swap operation completes and participants have earned taxable revenue",
+            "Delivered Service": "The system provides pool deployers with governmental tax collection capabilities to collect calculated tax amounts from participants and temporarily hold these funds for redistribution, ensuring that governmental fiscal policies are enforced and tax revenue is captured for redistribution to beneficiaries using familiar governmental tax collection mechanisms.",
+            "Assumptions": [
+                "The taxpayers have sufficient funds to pay the calculated tax",
+                "The swap operation completed successfully and generated taxable revenue",
+                "The tax collection mechanism does not significantly impact transaction gas costs",
+                "The collected tax revenue is secure and cannot be lost or stolen during the collection process"
+            ]
+        },
+        {
+            "name": "Governmental Redistribution Service",
+            "Trigering Event": "Collected tax revenue is available for distribution and beneficiaries are eligible for redistribution",
+            "Delivered Service": "The system provides pool deployers with governmental redistribution capabilities to distribute collected tax revenue to beneficiaries based on familiar governmental social policy criteria (commitment levels, contribution to public goods, time-weighted participation), ensuring that beneficiaries receive fair compensation using familiar governmental welfare distribution mechanisms.",
+            "Assumptions": [
+                "Beneficiaries have maintained their eligibility requirements according to governmental social policy criteria",
+                "The redistribution calculation algorithm correctly determines each beneficiary's share using familiar governmental methods",
+                "The distribution mechanism can handle the number of eligible beneficiaries efficiently",
+                "Beneficiaries have valid addresses and can receive the distributed benefits"
+            ]
+        },
+        {
+            "name": "Governmental Taxpayer Classification Service",
+            "Trigering Event": "A participant attempts to engage in taxable activities in the system",
+            "Delivered Service": "The system provides pool deployers with governmental taxpayer classification capabilities to classify participants using familiar governmental taxpayer categories (individual, corporate, institutional, etc.) based on their behavior patterns, commitment duration, and other characteristics, ensuring that appropriate governmental fiscal policy rules are applied to each taxpayer type.",
+            "Assumptions": [
+                "The classification criteria are clear and can be objectively measured using familiar governmental methods",
+                "The system has sufficient data to make accurate classification decisions",
+                "Participants cannot easily game the classification system",
+                "The classification remains stable during the commitment period"
+            ]
+        },
+        {
+            "name": "Dynamic Tax Rate Adjustment Service",
+            "Trigering Event": "Market conditions change significantly or governance requests a tax rate update",
+            "Delivered Service": "The system adjusts tax rates in real-time based on market conditions, concentration levels, and policy parameters, ensuring that the fiscal policy remains effective and responsive to changing market dynamics while maintaining system stability.",
+            "Assumptions": [
+                "The market condition monitoring system provides accurate and timely data",
+                "The tax rate adjustment algorithm is stable and does not cause excessive volatility",
+                "Governance has the authority to override automatic adjustments when necessary",
+                "The adjustment mechanism does not create opportunities for manipulation"
+            ]
+        },
+        {
+            "name": "Commitment Tracking Service",
+            "Trigering Event": "A PLP participant adds liquidity or attempts to modify their position",
+            "Delivered Service": "The system tracks and validates PLP commitment levels, ensuring that participants maintain their minimum commitment requirements and receive appropriate rewards based on their commitment duration and contribution to system stability.",
+            "Assumptions": [
+                "PLP participants understand and agree to the commitment requirements",
+                "The commitment tracking mechanism is tamper-proof and accurate",
+                "The system can handle the computational load of tracking all PLP commitments",
+                "Commitment violations can be detected and handled appropriately"
+            ]
+        },
+        {
+            "name": "Market Efficiency Monitoring Service",
+            "Trigering Event": "Trading activity occurs or market conditions change",
+            "Delivered Service": "The system continuously monitors market efficiency metrics including price impact, liquidity distribution, and predatory behavior patterns, providing real-time insights that enable the fiscal policy to maintain optimal market conditions and prevent exploitation.",
+            "Assumptions": [
+                "The monitoring system can process market data in real-time without significant delays",
+                "The efficiency metrics accurately reflect market health and participant behavior",
+                "The system has sufficient computational resources to perform continuous monitoring",
+                "The monitoring data is reliable and not subject to manipulation"
+            ]
+        },
+        {
+            "name": "Predatory Behavior Detection Service",
+            "Trigering Event": "Unusual trading patterns or excessive JIT concentration is detected",
+            "Delivered Service": "The system identifies and responds to predatory behavior patterns such as excessive JIT concentration, MEV extraction, or other exploitative practices, implementing countermeasures through increased taxation or other policy adjustments to maintain fair market conditions.",
+            "Assumptions": [
+                "The detection algorithms can accurately identify predatory behavior patterns",
+                "The response mechanisms are effective in deterring predatory behavior",
+                "False positives in detection do not significantly impact legitimate participants",
+                "The system can respond quickly enough to prevent significant damage"
+            ]
+        },
+        {
+            "name": "Governance Integration Service",
+            "Trigering Event": "A governance proposal is submitted or a governance decision is made",
+            "Delivered Service": "The system processes governance decisions and implements parameter updates, ensuring that the community can control fiscal policy parameters and system upgrades while maintaining security and preventing unauthorized changes.",
+            "Assumptions": [
+                "The governance mechanism is secure and resistant to manipulation",
+                "Governance participants have sufficient knowledge to make informed decisions",
+                "The implementation of governance decisions does not compromise system security",
+                "The governance process is transparent and auditable"
+            ]
+        },
+        {
+            "name": "Policy Customization Service",
+            "Trigering Event": "A pool deployer requests to implement a custom fiscal policy or modify existing policy parameters",
+            "Delivered Service": "The system enables pool deployers to implement custom fiscal policies using classical economic terminology, providing a flexible framework that allows for innovation and customization while maintaining core system principles and security.",
+            "Assumptions": [
+                "Pool deployers have sufficient technical knowledge to implement custom policies",
+                "The customization framework prevents implementation of harmful or exploitative policies",
+                "Custom policies are properly tested before deployment",
+                "The system can efficiently execute different policy implementations"
+            ]
+        },
+        {
+            "name": "Audit Trail Service",
+            "Trigering Event": "Any system operation that affects fee collection, distribution, or policy parameters occurs",
+            "Delivered Service": "The system maintains comprehensive audit trails of all operations, ensuring transparency, regulatory compliance, and the ability to trace all system activities for security, governance, and compliance purposes.",
+            "Assumptions": [
+                "The audit trail system can handle the volume of operations without significant performance impact",
+                "Audit data is stored securely and cannot be tampered with",
+                "The audit trail provides sufficient detail for compliance and security purposes",
+                "Audit data can be efficiently queried and analyzed when needed"
+            ]
+        },
+        {
+            "name": "System Health Monitoring Service",
+            "Trigering Event": "System operations occur or periodic health checks are scheduled",
+            "Delivered Service": "The system continuously monitors its own health and performance, detecting issues, ensuring optimal operation, and providing alerts when intervention is needed to maintain system stability and security.",
+            "Assumptions": [
+                "The monitoring system can detect all critical issues before they cause significant problems",
+                "The system has sufficient redundancy to handle component failures",
+                "Health monitoring does not significantly impact system performance",
+                "The monitoring system itself is reliable and does not generate false alarms"
+            ]
+        }
+    ]
+}

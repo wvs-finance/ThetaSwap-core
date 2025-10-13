@@ -197,6 +197,7 @@ struct Commitment{
     address committer;
     /// @notice The block number until which the commitment is valid
     uint48 blockNumberCommitment;
+    bytes jitCalldata;
 }
 
 enum DEX{

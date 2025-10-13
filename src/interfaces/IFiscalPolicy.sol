@@ -22,14 +22,13 @@ import {ISubscriber} from "@uniswap/v4-periphery/src/interfaces/ISubscriber.sol"
 
 interface IFiscalPolicy is ISubscriber{ 
     
-    event TaxRate(
-        bytes32 indexed poolId,
-        uint24 indexed taxRate
-    );
+
 
     
     
     error InvalidDataLength();
+
+    function createTaxStrategy(bytes32 poolId) external returns(ITaxHook);
     /**
      * @notice Processes fee revenue remittance and applies taxation
      * @dev Handles fee revenue from both JIT and PLP liquidity providers,

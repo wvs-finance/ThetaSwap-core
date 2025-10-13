@@ -1,0 +1,56 @@
+{
+    "Name": "ParityTax-AMM",
+    "Purpose": "The purpose of the ParityTax-AMM is to provide pool deployers with the same fiscal policy terminology and capabilities that governments use to control market inefficiencies, enabling them to implement taxation and redistribution mechanisms that address various AMM market problems through familiar governmental policy frameworks.",
+    "Responsibilities": [
+        {
+            "responsibility": "It is the responsibility of the ParityTax-AMM to provide pool deployers with governmental fiscal policy terminology and capabilities that enable them to implement taxation and redistribution mechanisms for addressing various AMM market inefficiencies through familiar governmental policy frameworks.",
+            "description": "This responsibility addresses the need for pool deployers to have access to the same fiscal policy terminology and capabilities that governments use to control market inefficiencies. The system provides the infrastructure, interfaces, and tools that enable pool deployers to implement various governmental-style fiscal policies using familiar terminology including progressive taxation, Pigouvian taxes, redistribution mechanisms, and other market control instruments."
+        },
+        {
+            "responsibility": "It is the responsibility of the ParityTax-AMM to achieve market efficiency and price discovery by providing pool deployers with governmental fiscal policy terminology and capabilities that enable them to implement market control mechanisms for addressing various market inefficiencies through familiar taxation and regulatory instruments.",
+            "description": "This responsibility focuses on providing pool deployers with the same fiscal policy terminology and capabilities that governments use to control market inefficiencies. The system enables pool deployers to implement governmental-style market control mechanisms using familiar terminology including Pigouvian taxes for externalities, progressive taxation for concentration control, regulatory instruments for predatory behavior, and other market control tools that improve overall market efficiency."
+        },
+        {
+            "responsibility": "It is the responsibility of the ParityTax-AMM to achieve democratization of DeFi participation by providing pool deployers with governmental fiscal policy terminology and capabilities that enable them to implement social policy mechanisms for reducing barriers to entry, creating equal opportunities, and promoting inclusive participation across different participant types through familiar taxation and redistribution instruments.",
+            "description": "This responsibility addresses the need for pool deployers to have access to the same social policy terminology and capabilities that governments use to promote inclusive participation. The system enables pool deployers to implement governmental-style social policy mechanisms using familiar terminology including progressive taxation for redistribution, social credits for public good provision, commitment rewards for long-term participation, and other social policy instruments that promote fair participation."
+        },
+        {
+            "responsibility": "It is the responsibility of the ParityTax-AMM to achieve sustainable economic incentives by providing pool deployers with governmental fiscal policy terminology and capabilities that enable them to implement long-term economic policy mechanisms, dynamic parameter optimization, and governance-controlled policy evolution that promote system health and growth through familiar taxation and incentive instruments.",
+            "description": "This responsibility ensures that pool deployers have access to the same economic policy terminology and capabilities that governments use to promote sustainable growth. The system enables pool deployers to implement governmental-style economic policy mechanisms using familiar terminology including time-weighted incentives, credit accrual systems, dynamic tax optimization, and other economic policy instruments that promote long-term system health and stability."
+        },
+        {
+            "responsibility": "It is the responsibility of the ParityTax-AMM to achieve innovation and customization by providing pool deployers with governmental fiscal policy terminology and capabilities that enable them to implement custom policy frameworks for various AMM market problems using familiar classical economic terminology and governmental policy principles.",
+            "description": "This responsibility enables pool deployers to have access to the same policy innovation terminology and capabilities that governments use to address various market problems. The system enables pool deployers to implement governmental-style policy frameworks using familiar classical economic terminology and principles, with clean separation between core functionality and policy implementation while maintaining gas efficiency and upgradeability, enabling innovation across different AMM use cases."
+        },
+        {
+            "responsibility": "It is the responsibility of the ParityTax-AMM to achieve regulatory compliance and transparency by providing pool deployers with governmental fiscal policy terminology and capabilities that enable them to implement transparent taxation and redistribution mechanisms with comprehensive audit trails and governance controls that meet regulatory requirements while maintaining decentralization.",
+            "description": "This responsibility ensures that pool deployers have access to the same regulatory compliance terminology and capabilities that governments use to maintain transparent and auditable fiscal policies. The system enables pool deployers to implement governmental-style regulatory mechanisms using familiar terminology including comprehensive transparency, clear governance controls, and auditability features that satisfy regulatory requirements while maintaining the decentralized nature of the protocol across various fiscal policy implementations."
+        }
+    ],
+    "Exclusions": [
+        {
+            "exclusion": "It is not the responsibility of the ParityTax-AMM to provide direct trading functionality or order book management, as these functions are handled by the underlying Uniswap V4 infrastructure.",
+            "description": "The system focuses on providing the abstraction layer for fiscal policy frameworks rather than core AMM functionality. Trading operations, price discovery mechanisms, and liquidity provision mechanics are delegated to the proven Uniswap V4 infrastructure to maintain security and efficiency."
+        },
+        {
+            "exclusion": "It is not the responsibility of the ParityTax-AMM to provide cross-chain asset transfers or bridge functionality, as this would require additional infrastructure and security considerations beyond the scope of the fiscal policy abstraction layer.",
+            "description": "While the system aims for cross-chain deployment, it does not implement cross-chain asset transfer mechanisms. Each deployment operates independently on its respective chain, with cross-chain coordination handled by external infrastructure and governance mechanisms."
+        },
+        {
+            "exclusion": "It is not the responsibility of the ParityTax-AMM to provide direct user interfaces or frontend applications, as these are typically developed by third-party developers and community members using the abstraction layer.",
+            "description": "The system provides the abstraction layer and smart contract interfaces for integration but does not develop user-facing applications. Frontend development, user experience design, and application-specific interfaces are left to the broader ecosystem and community developers who use the fiscal policy abstraction layer."
+        },
+        {
+            "exclusion": "It is not the responsibility of the ParityTax-AMM to provide direct MEV protection or transaction ordering services, as these require specialized infrastructure and may conflict with the core fiscal policy abstraction layer objectives.",
+            "description": "While the abstraction layer enables developers to create policies that reduce MEV extraction, it does not implement direct MEV protection or transaction ordering. These specialized services are better handled by dedicated infrastructure providers and may be integrated through external mechanisms using the abstraction layer."
+        },
+        {
+            "exclusion": "It is not the responsibility of the ParityTax-AMM to provide direct lending, borrowing, or other DeFi primitives beyond the fiscal policy abstraction layer, as this would expand the scope beyond the core abstraction layer focus.",
+            "description": "The system maintains focus on its core mission of providing the fiscal policy abstraction layer for AMM contexts. Other DeFi primitives such as lending, borrowing, derivatives, or synthetic assets are outside the scope and would require separate infrastructure and governance considerations."
+        },
+        {
+            "exclusion": "It is not the responsibility of the ParityTax-AMM to provide direct oracle services or price feed management, as these are handled by specialized oracle providers and the underlying Uniswap V4 infrastructure.",
+            "description": "Price data, market information, and oracle services are provided by external infrastructure and the underlying AMM system. The fiscal policy abstraction layer consumes this data but does not implement its own oracle mechanisms to maintain focus on its core responsibilities."
+        }
+    ]
+}

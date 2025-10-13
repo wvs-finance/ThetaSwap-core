@@ -50,17 +50,54 @@ import {
     PoolKey
 } from "@uniswap/v4-core/src/types/PoolId.sol";
 
-/**
- * @notice Abstract base contract for fiscal policy implementation
- * @dev Implements reactive network architecture for real-time event processing and optimal taxation
- */
-abstract contract FiscalPolicyBase is IFiscalPolicy, UUPSUpgradeable, AbstractCallback{
+import {AccessControlEnumerable} from "@openzeppelin/contracts/access/extensions/AccessControlEnumerable.sol";
+
+// NOTE: This is the entry point for poolAdmins to define Tax Strategies on pools
+abstract contract FiscalPolicyBase is IFiscalPolicy, AccessControlEnumerble{
     using PoolIdLibrary for PoolKey;
     using FeeRevenueInfoLibrary for FeeRevenueInfo;
     using PositionInfoLibrary for PositionInfo;
     using Address for address;
     using SafeCast for *;
     using BalanceDeltaLibrary for BalanceDelta;
+
+    // NOTE: They tax strategies can be ieither uniform (ad-valorem) or have custom functionality
+
+    address immutable poolFactory;
+    mapping(bytes32 poolId => ITaxHook taxStrategy) taxStrategies;
+
+
+
+
+    constructor(address _poolFactory){
+        poolFactory = _poolFactory;
+    }
+
+    function createTaxStrategy(bytes32 poolId) external returns(ITaxHook){
+        // NOTE: It needs to do deployment (deterministic)
+    }
+
+    function _createTaxStrategy(bytes32 poolId) internal virtual returns(ITaxHook);
+
+
+    function createPool(bytes calldata data) external returns(bytes memory){
+
+    }
+
+    function _onCreatePool
+
+    
+
+
+
+
+
+    // The pool deployer MUST define the custom taxSTrategy on beforeInitialize 
+    // The FiscalPolicy base MUST give all information to taxStrategy to manage th Tax data structure
+
+
+
+    // A poolId only has 
 
     // ================================ STORAGE CONSTANTS ================================
 

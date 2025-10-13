@@ -84,7 +84,8 @@ import "@uniswap/v4-core/types/BalanceDelta.sol";
 import {EnumerableMap} from "@openzeppelin/contracts/utils/struct/EnumerableMap.sol";
 
 import {IPoolAdminEntryPoint} from "./interfaces/IPoolAdminEntryPoint.sol";
-import {ILiquidityEntryPoint} from "./interfaces/ILiquidityEntryPoint.sol";
+import {IJITLiquidityEntryPoint} from "./interfaces/IJITLiquidityEntryPoint";
+
 
 contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
     using SafeCast for *;
@@ -122,17 +123,22 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
     // NOTE: This stores the tokens as the keys
     // but the tokens are accessible since this is a 
     // enumerable mapping
-    mapping(PoolId => EnumerableMap.UintToUintMap) plpPositions;
+    mapping(PoolId => EnumerableMap.UintToUintMap) lpPositions;
 
 
 
 
     
     
-    modifier onlyWithPoolAdmin(PoolKey memory poolKey){
+    modifier onlyWithPoolAdmin(PoolKey calldata poolKey){
         if (address(poolAdmins[poolKey.toId()]) == address(0x00)){
             revert("Pool Governance Not Set"); 
         }
+        _;
+    }
+
+    modifier onlyWithJITLiquidityEntryPointOnPool(PoolKey calldata poolKey){
+        if (address(jitLiquidityEntryPointOnPool[poolKey.toI()])== address(0x00)) revert("JIT Liquidity Entry Point Not Set");
         _;
     }
 
@@ -166,21 +172,12 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
 
     }
 
+    // TODO: This funciton needs to be protected
+
     function setPoolAdmin(PoolKey calldata poolKey, IPoolAdminEntryPoint poolAdmin) external{
         poolAdmins[poolKey.toId()] = poolAdmin;
     }
 
-    /**
-     * @inheritdoc IParityTaxHook
-     * @dev TODO: Access control to be implemented
-     */
-    function setLiquidityAggreagtors(
-        IPLPResolver _plpResolver,
-        IJITResolver _jitResolver
-    ) external {
-        plpResolver = _plpResolver;
-        jitResolver = _jitResolver;
-    }
 
 
 
@@ -212,7 +209,7 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
     )
         internal
         override
-        onlyWithGovernance(poolKey)
+        onlyWithPoolAdmin(poolKey)
         returns (bytes4)
     {
         IFiscalPolicy marketFiscalPolicy = IGovernance(sender).assignFiscalPolicy(poolKey);
@@ -236,7 +233,13 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
         PoolKey calldata poolKey, 
         SwapParams calldata swapParams,
         bytes calldata hookData
-    ) internal virtual onlyWithGovernance(poolKey) override returns (bytes4, BeforeSwapDelta, uint24)
+    )
+    internal
+    virtual
+    onlyWithPoolAdmin(poolKey)
+    onlyWithJITLiquidityEntryPointOnPool(poolKey)
+    override
+    returns (bytes4, BeforeSwapDelta, uint24)
     {   
 
         uint256 jitTokenId = _tload_jit_tokenId();
@@ -260,22 +263,39 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
             PositionConfig memory default_jit_positionConfig = PositionConfig(poolKey,tickLower, tickUpper);
 
             PositionInfo externalMarketPosition = poolKey.initialize(tickBeforeExternal, tickAfterExternal);
-
-
-            (
-                PositionConfig memory jitPositionConfig,
-                uint128 jitLiquidity,
-                address liquidityManager,
-                bytes memory data
             
-            ) = jitResolver.beforeAddLiquidity(
+            bytes memory jitOnSwapData = abi.encode(
                 poolId,
                 swapParams,
                 externalMarketPosition,
                 default_jit_positionConfig,
                 liquidityForSwap,
                 tickRangeAvailableLiquidity
+                
             );
+
+            bytes memory encodedOutputOnSwap = jitLiquidityEntryPointOnPool[poolId].onSwap(
+                jitOnSwapData
+            );
+
+            (
+                PositionConfig memory jitPositionConfig,
+                uint128 jitLiquidity,
+                address liquidityManager,
+                bytes memory data
+            ) = abi.decode(
+                encodedOutputOnSwap,
+                (
+                    PositionConfig,
+                    uint128,
+                    address,
+                    bytes
+                )
+            );
+
+
+
+
             // NOTE: The data passed can not match the Commitment length
             // other wise it will trigger the PLP logic
             // on beforeAddLiquidity
@@ -285,6 +305,8 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
                 liquidityManager,
                 data
             );
+
+
 
                 
             PositionInfo jitPosition = poolKey.initialize(tickBefore, tickAfter);
@@ -357,6 +379,7 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
                 jitPositionInfo.tickUpper()
             );
 
+
                         
             // NOTE: hookData can be passed to the JIT Resolver for any actions that do not involve
             // breaking the taxing protocol (like withdrwing fee revenue)
@@ -400,11 +423,18 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
                 hookData,
                 (Commitment)
             );
-            // NOTE: This is a PLP commiting liquidity
-            if (lpCommitment.blockNumberCommitment >= MIN_PLP_BLOCK_NUMBER_COMMITMENT && jitTokenId == uint256(0x00)){
-                plpCommitment = lpCommitment;  
+
+        
+            if (jitTokenId == uint256(0x00)){
+
+                if (lpCommitment.blockNumberCommitment >= MIN_PLP_BLOCK_NUMBER_COMMITMENT && jitTokenId == uint256(0x00)){
+                    plpCommitment = lpCommitment;  
             
-                plpCommitment.blockNumberCommitment += uint48(block.number);
+                    plpCommitment.blockNumberCommitment += uint48(block.number);
+        
+                } else if (lpCommitment.blockNumberCommitment == JIT_COMMITMENT){
+
+                }
         
             }
         }
@@ -433,7 +463,7 @@ contract ParityTaxHook is IParityTaxHook, ParityTaxHookBase, Exttload{
         uint256 tokenId = uint256(liquidityParams.salt);
         //==========================PLP==============================//
         if (hookData.length == COMMITMENT_LENGTH && jitTokenId == uint256(0x00) ){
-        
+         
             uint256 plpPositionTokenId = lpm.nextTokenId() > uint256(0x01) ? lpm.nextTokenId() - uint256(0x01):lpm.nextTokenId();
             
             assert(tokenId == plpPositionTokenId);
