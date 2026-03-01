@@ -1,59 +1,20 @@
 [profile.default]
 src = "src"
-out = "foundry-out"
-script = "script"
+out = "out"
 libs = ["lib"]
-solc_version = "0.8.26"
-optimizer_runs = 200
 evm_version = "cancun"
+solc_version = "0.8.26"
 via_ir = true
-ffi = true
-auto_detect_remappings = true
-bytecode_hash = "none"
-gas_limit = "3000000000"
-verbosity = 1
-
-
-
-
-fs_permissions = [
-    { access = "read-write", path = ".forge-snapshots/" }, 
-    { access = "read", path = "foundry-out/" },
-    { access = "read", path = "./broadcast" },
-    { access = "read", path = "./reports" }
-]
-
-
-
-remappings = [
-    "@uniswap/v4-periphery/=lib/v4-periphery/",
-    "@uniswap/v4-core/=lib/v4-periphery/lib/v4-core/",
-    "@openzeppelin/=lib/openzeppelin-contracts/",
-    "@openzeppelin-upgradeable/contracts/=lib/openzeppelin-contracts-upgradeable/contracts/",
-    "@solmate/=lib/solmate/src/",
-    "@balancer-labs/v3-interfaces/=lib/balancer-v3-monorepo/pkg/interfaces/",
-    "@uniswap-hooks/=lib/uniswap-hooks/",
-    "@reactive-network/=lib/reactive-smart-contract-demos/lib/reactive-lib/src/",
-    "hardhat/=node_modules/hardhat/",
-    "forge-std/=lib/forge-std/src",
-    "permit2/=lib/v4-periphery/lib/permit2/",
-    "v4-core/=lib/v4-periphery/lib/v4-core/",
-    "solmate/=lib/solmate/",
-    "solady/=lib/solady/src/",
-    "foundry-devops/=lib/foundry-devops/src/"
-]
-
-
+ffi = false
 
 [rpc_endpoints]
-unichain_sepolia = "https://unichain-sepolia.g.alchemy.com/v2/${UNICHAIN_SEPOLIA_RPC_API_KEY}"
-sepolia = "https://g.w.lavanet.xyz:443/gateway/sep1/rpc-http/0e1cfb566bd2ce33c7cb707c85397e07"
-reactive-testnet = "https://lasna-rpc.rnk.dev/"
+mainnet = "${ETH_RPC_URL}"
 
-[etherscan]
+[fuzz]
+runs = 256
+max_test_rejects = 65536
 
-unichain-sepolia-api = { key = "${UNICHAIN_SEPOLIA_API_KEY}" }
-sepolia = { key = "${ETHERSCAN_API_KEY}" }
-reactive-testnet = { key = "${ETHERSCAN_API_KEY}", url = "https://sourcify.rnk.dev/" }
-
-# See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+[invariant]
+runs = 64
+depth = 32
+fail_on_revert = false

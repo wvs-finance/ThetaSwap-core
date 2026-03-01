@@ -1,96 +1,17 @@
-/.github
-/.vscode
-/.cursor
-aiUtils/
-
 # Compiler files
 cache/
-foundry-out/
+out/
 
 # Ignores development broadcast logs
 !/broadcast
 /broadcast/*/31337/
 /broadcast/**/dry-run/
 
-
-
-# AI utilities and generated content
-aiUtils/
-!aiUtils/foundryAssistant/out/
-
-# Python files
-*.py
-*.pyc
-*.pyo
-*.pyd
-__pycache__/
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
-.venv/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# pytest
-.pytest_cache/
-.coverage
-htmlcov/
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Reference files (PDFs)
-refs/
-*.pdf
-pdf_analysis/
-pdf_env/
-documents/
-
-# Issue files
-ISSUE.md
-
-# Specification files (if they contain sensitive info)
-spec/
+# Docs
+docs/
 
 # Dotenv file
 .env
-node_modules
 
-# Package lock files (optional - uncomment if you want to exclude)
-# package-lock.json
-
-# Hardhat config (if not needed in repo)
-# hardhat.config.ts
-
-# Setup scripts (if not needed in repo)
-# set_up_hardhat.sh
-
-# Makefile (if not needed in repo)
-# Makefile
-pdf_analysis/
-pdf_env/
+# Spec notes (drafts)
+spec/notes/**
