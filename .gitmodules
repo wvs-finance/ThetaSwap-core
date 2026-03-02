@@ -7,3 +7,27 @@
 [submodule "lib/v4-periphery"]
 	path = lib/v4-periphery
 	url = https://github.com/uniswap/v4-periphery
+[submodule "lib/2025-12-panoptic"]
+	path = lib/2025-12-panoptic
+	url = https://github.com/code-423n4/2025-12-panoptic
+[submodule "lib/uniswap-hooks"]
+	path = lib/uniswap-hooks
+	url = https://github.com/OpenZeppelin/uniswap-hooks
+[submodule "lib/v3-core"]
+	path = lib/v3-core
+	url = https://github.com/Uniswap/v3-core
+[submodule "lib/v3-periphery"]
+	path = lib/v3-periphery
+	url = https://github.com/Uniswap/v3-periphery
+[submodule "lib/angstrom"]
+	path = lib/angstrom
+	url = https://github.com/SorellaLabs/angstrom
+[submodule "lib/bunni-v2"]
+	path = lib/bunni-v2
+	url = https://github.com/Bunniapp/bunni-v2
+[submodule "lib/kontrol-cheatcodes"]
+	path = lib/kontrol-cheatcodes
+	url = https://github.com/runtimeverification/kontrol-cheatcodes
+[submodule "lib/solady"]
+	path = lib/solady
+	url = https://github.com/Vectorized/solady
