@@ -28,17 +28,13 @@ jobs:
     defaults:
       run:
         working-directory: .kontrol-proofs
+    container:
+      image: runtimeverificationinc/kontrol:ubuntu-jammy-1.0.231
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
           submodules: recursive
-
-      - name: Install Kontrol
-        uses: runtimeverification/install-kontrol@v1.0.2
-        with:
-          version: v1.0.231
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Sync source files into kontrol-proofs
         run: |
