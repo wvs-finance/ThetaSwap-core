@@ -37,8 +37,33 @@ jobs:
       - name: Pull Kontrol image
         run: docker pull $KONTROL_IMAGE
 
-      - name: Sync source files into kontrol-proofs
-        run: cp -r src/fee-concentration-index/types/* .kontrol-proofs/src/fee-concentration-index/types/
+      - name: Set up kontrol-proofs project
+        run: |
+          mkdir -p .kontrol-proofs/src/fee-concentration-index/types
+          mkdir -p .kontrol-proofs/lib
+
+          cp -r src/fee-concentration-index/types/* .kontrol-proofs/src/fee-concentration-index/types/
+
+          cp -r lib/forge-std .kontrol-proofs/lib/
+          cp -r lib/solady .kontrol-proofs/lib/
+
+          git clone --depth 1 https://github.com/runtimeverification/kontrol-cheatcodes.git .kontrol-proofs/lib/kontrol-cheatcodes
+
+          cat > .kontrol-proofs/foundry.toml << 'TOML'
+          [profile.default]
+          src = "src"
+          test = "test"
+          out = "out"
+          cache_path = "cache"
+          libs = ["lib"]
+          solc_version = "0.8.26"
+
+          remappings = [
+              "forge-std/=lib/forge-std/src/",
+              "kontrol-cheatcodes/=lib/kontrol-cheatcodes/src/",
+              "solady/=lib/solady/src/",
+          ]
+          TOML
 
       - name: Kontrol build
         run: |
