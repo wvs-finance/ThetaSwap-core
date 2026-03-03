@@ -19,39 +19,43 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  KONTROL_IMAGE: runtimeverificationinc/kontrol:ubuntu-jammy-1.0.231
+
 jobs:
   kontrol-proofs:
     name: Kontrol formal verification
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    defaults:
-      run:
-        working-directory: .kontrol-proofs
-    container:
-      image: runtimeverificationinc/kontrol:ubuntu-jammy-1.0.231
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: false
           submodules: recursive
 
+      - name: Pull Kontrol image
+        run: docker pull $KONTROL_IMAGE
+
       - name: Sync source files into kontrol-proofs
-        run: |
-          cp -r ../src/fee-concentration-index/types/* src/fee-concentration-index/types/
+        run: cp -r src/fee-concentration-index/types/* .kontrol-proofs/src/fee-concentration-index/types/
 
       - name: Kontrol build
-        run: kontrol build
+        run: |
+          docker run --rm -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
+            $KONTROL_IMAGE kontrol build
 
       - name: Prove SwapCount invariants
-        run: kontrol prove --match-test 'SwapCountProof.'
+        run: |
+          docker run --rm -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
+            $KONTROL_IMAGE kontrol prove --match-test 'SwapCountProof.'
 
       - name: Prove FeeShareRatio invariants
-        run: kontrol prove --match-test 'FeeShareRatioProof.'
+        run: |
+          docker run --rm -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
+            $KONTROL_IMAGE kontrol prove --match-test 'FeeShareRatioProof.'
 
       - name: Prove AccumulatedHHI invariants
-        run: kontrol prove --match-test 'AccumulatedHHIProof.'
-
-      - name: Kontrol clean
-        if: always()
-        run: kontrol clean
+        run: |
+          docker run --rm -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
+            $KONTROL_IMAGE kontrol prove --match-test 'AccumulatedHHIProof.'
