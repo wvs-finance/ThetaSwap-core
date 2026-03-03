@@ -1,0 +1,61 @@
+name: Kontrol Proofs
+
+permissions: {}
+
+on:
+  push:
+    paths:
+      - ".kontrol-proofs/**"
+      - "src/fee-concentration-index/types/**"
+      - ".github/workflows/kontrol.yml"
+  pull_request:
+    paths:
+      - ".kontrol-proofs/**"
+      - "src/fee-concentration-index/types/**"
+      - ".github/workflows/kontrol.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  kontrol-proofs:
+    name: Kontrol formal verification
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: .kontrol-proofs
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Install Kontrol
+        uses: runtimeverification/install-kontrol@v1.0.2
+        with:
+          version: v1.0.231
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sync source files into kontrol-proofs
+        run: |
+          cp -r ../src/fee-concentration-index/types/* src/fee-concentration-index/types/
+
+      - name: Kontrol build
+        run: kontrol build
+
+      - name: Prove SwapCount invariants
+        run: kontrol prove --match-test 'SwapCountProof.'
+
+      - name: Prove FeeShareRatio invariants
+        run: kontrol prove --match-test 'FeeShareRatioProof.'
+
+      - name: Prove AccumulatedHHI invariants
+        run: kontrol prove --match-test 'AccumulatedHHIProof.'
+
+      - name: Kontrol clean
+        if: always()
+        run: kontrol clean
