@@ -24,22 +24,39 @@ function fromFeeGrowth(
     return FeeShareRatio.wrap(uint128(ratio));
 }
 
-// Compute x_k from feeGrowthInside deltas (token0 only)
+// Compute x_k from feeGrowthInside deltas weighted by liquidity (token0 only)
 // rangeFeeGrowthNow0 = V4StateReader.getFeeGrowthInside(...) token0 at removal
 // positionFeeLast0   = V4StateReader.getFeeGrowthInsideLast(...) token0 (V4 tracks per position)
 // baseline0          = feeGrowthInsideBaseline stored at add time
+// posLiquidity       = position's liquidity amount
+// totalRangeLiquidity = sum of all position liquidities in the range
+//
+// feeGrowthInside is per-unit-of-liquidity in V4. To get absolute fee share:
+//   x_k = (posFeeDelta * posLiquidity) / (rangeFeeDelta * totalRangeLiquidity)
+// When positions share the same baseline: x_k = posLiquidity / totalRangeLiquidity
 function fromFeeGrowthDelta(
     uint256 rangeFeeGrowthNow0X128,
     uint256 positionFeeLast0X128,
-    uint256 baseline0X128
+    uint256 baseline0X128,
+    uint128 posLiquidity,
+    uint128 totalRangeLiquidity
 ) pure returns (FeeShareRatio) {
+    if (totalRangeLiquidity == 0) return FeeShareRatio.wrap(0);
     uint256 posFeeDelta0;
     uint256 rangeFeeDelta0;
     unchecked {
         posFeeDelta0 = rangeFeeGrowthNow0X128 - positionFeeLast0X128;
         rangeFeeDelta0 = rangeFeeGrowthNow0X128 - baseline0X128;
     }
-    return fromFeeGrowth(posFeeDelta0, rangeFeeDelta0);
+    // x_k = (posFeeDelta * posLiquidity) / (rangeFeeDelta * totalRangeLiquidity)
+    // Split into two safe steps to avoid intermediate overflow:
+    //   1. feeRatioQ128 = posFeeDelta / rangeFeeDelta (in Q128)
+    //   2. x_k = feeRatioQ128 * posLiquidity / totalRangeLiquidity
+    uint256 feeRatioQ128 = fromFeeGrowth(posFeeDelta0, rangeFeeDelta0).unwrap();
+    // Combine fee ratio with liquidity share (safe: feeRatioQ128 <= 2^128-1, posLiquidity <= 2^128-1)
+    uint256 ratio = FixedPointMathLib.mulDiv(feeRatioQ128, uint256(posLiquidity), uint256(totalRangeLiquidity));
+    if (ratio > FEE_SHARE_ONE) ratio = FEE_SHARE_ONE;
+    return FeeShareRatio.wrap(uint128(ratio));
 }
 
 function square(FeeShareRatio x) pure returns (uint256) {

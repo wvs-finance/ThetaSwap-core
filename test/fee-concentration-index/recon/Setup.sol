@@ -14,7 +14,7 @@ import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionMa
 
 import {FeeConcentrationIndexHarness} from "../harness/FeeConcentrationIndexHarness.sol";
 import {MockPositionManager} from "../harness/MockPositionManager.sol";
-import {FeeConcentrationIndexStorage, fciStorage} from "../../../src/fee-concentration-index/types/FeeConcentrationIndexStorageMod.sol";
+import {FeeConcentrationIndexStorage, fciStorage} from "../../../src/fee-concentration-index/modules/FeeConcentrationIndexStorageMod.sol";
 import {TickRange, fromTicks} from "../../../src/fee-concentration-index/types/TickRangeMod.sol";
 
 // Chimera Setup: deploys V4 PoolManager, routers, tokens, and hook harness.
@@ -39,10 +39,12 @@ abstract contract Setup is BaseSetup, Test, Deployers {
 
         MockPositionManager mockPosm = new MockPositionManager(manager);
 
-        // Hook permissions: afterAddLiquidity, afterRemoveLiquidity, afterSwap
+        // Hook permissions: afterAddLiquidity, afterRemoveLiquidity, beforeSwap, afterSwap
         uint160 flags = uint160(
             Hooks.AFTER_ADD_LIQUIDITY_FLAG
+                | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
                 | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG
+                | Hooks.BEFORE_SWAP_FLAG
                 | Hooks.AFTER_SWAP_FLAG
         );
 

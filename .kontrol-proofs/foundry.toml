@@ -1,0 +1,13 @@
+[profile.default]
+src = "src"
+test = "test"
+out = "out"
+cache_path = "cache"
+libs = ["lib"]
+solc_version = "0.8.26"
+
+remappings = [
+    "forge-std/=lib/forge-std/src/",
+    "kontrol-cheatcodes/=lib/kontrol-cheatcodes/src/",
+    "solady/=lib/solady/src/",
+]

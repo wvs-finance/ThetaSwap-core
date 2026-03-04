@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 
 import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
-import {BlockCount} from "./BlockCountMod.sol";
+import {SwapCount} from "./SwapCountMod.sol";
 
 // accumulatedSum = sum of (x_k^2 / lifetime) across all removed positions
 // x_k = positionFeeDelta / rangeFeeDelta (Option B: delta-based, lifetime-scoped)
@@ -16,11 +16,11 @@ uint128 constant INDEX_ONE = type(uint128).max;
 
 function addTerm(
     AccumulatedHHI sum,
-    BlockCount blockLifetime,
+    SwapCount lifetime,
     uint256 xSquaredQ128
 ) pure returns (AccumulatedHHI) {
-    // term = x_k^2 / max(1, blockLifetime) (Q128 / uint256 = Q128)
-    uint256 term = xSquaredQ128 / blockLifetime.floorOne();
+    // term = x_k^2 / lifetime (Q128 / uint32 = Q128)
+    uint256 term = xSquaredQ128 / uint256(lifetime.unwrap());
     return AccumulatedHHI.wrap(AccumulatedHHI.unwrap(sum) + term);
 }
 

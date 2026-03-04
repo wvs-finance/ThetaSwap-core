@@ -17,6 +17,14 @@ function getCurrentTick(
     (, tick,,) = StateLibrary.getSlot0(manager, poolId);
 }
 
+function getPositionFeeGrowthInsideLast0(
+    IPoolManager manager,
+    PoolId poolId,
+    bytes32 positionKey
+) view returns (uint128 liquidity, uint256 feeGrowthInside0LastX128) {
+    (liquidity, feeGrowthInside0LastX128,) = StateLibrary.getPositionInfo(manager, poolId, positionKey);
+}
+
 function getFeeGrowthInside0(
     IPoolManager manager,
     PoolId poolId,

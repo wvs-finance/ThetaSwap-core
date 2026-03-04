@@ -23,4 +23,13 @@ function isZero(TickRange rk) pure returns (bool) {
     return TickRange.unwrap(rk) == bytes32(0);
 }
 
+// O(1) overlap test on two half-open tick ranges [lA, uA) and [lB, uB).
+// Returns true iff the ranges share at least one tick.
+function intersects(
+    int24 lowerA, int24 upperA,
+    int24 lowerB, int24 upperB
+) pure returns (bool) {
+    return lowerA < upperB && lowerB < upperA;
+}
+
 using {unwrap, eq, isZero} for TickRange global;

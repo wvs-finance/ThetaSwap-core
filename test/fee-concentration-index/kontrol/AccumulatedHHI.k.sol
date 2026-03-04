@@ -4,18 +4,18 @@ pragma solidity ^0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {KontrolCheats} from "kontrol-cheatcodes/KontrolCheats.sol";
 import {AccumulatedHHI, addTerm, toIndexA, toIndexB, Q128, INDEX_ONE} from "../../../src/fee-concentration-index/types/AccumulatedHHIMod.sol";
-import {SwapCount} from "../../../src/fee-concentration-index/types/SwapCountMod.sol";
+import {BlockCount} from "../../../src/fee-concentration-index/types/BlockCountMod.sol";
 
 contract AccumulatedHHIProof is Test, KontrolCheats {
     // INV-008: Accumulated sum only increases — addTerm produces value >= input
     function prove_accumulatedHHI_monotonic() public view {
         uint128 sumRaw = freshUInt128();
-        uint32 lifetime = freshUInt32();
+        uint256 lifetime = freshUInt256();
         uint128 xSquared = freshUInt128();
         vm.assume(lifetime > 0);
 
         AccumulatedHHI before_ = AccumulatedHHI.wrap(uint256(sumRaw));
-        AccumulatedHHI after_ = addTerm(before_, SwapCount.wrap(lifetime), uint256(xSquared));
+        AccumulatedHHI after_ = addTerm(before_, BlockCount.wrap(lifetime), uint256(xSquared));
 
         assert(after_.unwrap() >= before_.unwrap());
     }

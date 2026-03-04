@@ -30,7 +30,9 @@ contract AfterAddLiquidityTest is Test, Deployers {
 
         uint160 flags = uint160(
             Hooks.AFTER_ADD_LIQUIDITY_FLAG
+                | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
                 | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG
+                | Hooks.BEFORE_SWAP_FLAG
                 | Hooks.AFTER_SWAP_FLAG
         );
 
