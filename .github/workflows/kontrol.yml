@@ -42,7 +42,10 @@ jobs:
           mkdir -p .kontrol-proofs/src/fee-concentration-index/types
           mkdir -p .kontrol-proofs/lib
 
-          cp -r src/fee-concentration-index/types/* .kontrol-proofs/src/fee-concentration-index/types/
+          cp src/fee-concentration-index/types/SwapCountMod.sol \
+             src/fee-concentration-index/types/FeeShareRatioMod.sol \
+             src/fee-concentration-index/types/AccumulatedHHIMod.sol \
+             .kontrol-proofs/src/fee-concentration-index/types/
 
           cp -r lib/forge-std .kontrol-proofs/lib/
           cp -r lib/solady .kontrol-proofs/lib/
