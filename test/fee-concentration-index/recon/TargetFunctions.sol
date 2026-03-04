@@ -40,24 +40,26 @@ abstract contract TargetFunctions is BaseTargetFunctions, Properties {
             salt: salt
         });
 
-        harness.exposed_afterAddLiquidity(
+        try harness.exposed_afterAddLiquidity(
             sender,
             fciPoolKey,
             params,
             BalanceDelta.wrap(0),
             BalanceDelta.wrap(0),
             ""
-        );
+        ) {
+            // Update ghost state only on success
+            bytes32 positionKey = Position.calculatePositionKey(sender, tickLower, tickUpper, salt);
 
-        // Update ghost state
-        bytes32 positionKey = Position.calculatePositionKey(sender, tickLower, tickUpper, salt);
-
-        if (!ghostRegistered[positionKey]) {
-            ghostRegistered[positionKey] = true;
-            ghostTickLower[positionKey] = tickLower;
-            ghostTickUpper[positionKey] = tickUpper;
-            allPositionKeys.push(positionKey);
-            positionsAdded++;
+            if (!ghostRegistered[positionKey]) {
+                ghostRegistered[positionKey] = true;
+                ghostTickLower[positionKey] = tickLower;
+                ghostTickUpper[positionKey] = tickUpper;
+                allPositionKeys.push(positionKey);
+                positionsAdded++;
+            }
+        } catch {
+            // Skip invalid inputs (e.g. uninitialized ticks causing overflow)
         }
     }
 }

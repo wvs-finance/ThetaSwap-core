@@ -47,7 +47,10 @@ contract CryticToFoundry is TargetFunctions {
     function between(int256 value, int256 low, int256 high) internal pure override returns (int256) {
         if (value < low || value > high) {
             int256 range = high - low + 1;
-            int256 clamped = (value - low) % (range);
+            int256 clamped;
+            unchecked {
+                clamped = (value - low) % range;
+            }
             if (clamped < 0) clamped += range;
             return low + clamped;
         }
