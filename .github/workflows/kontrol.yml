@@ -67,20 +67,24 @@ jobs:
 
       - name: Kontrol build
         run: |
-          docker run --rm -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
             $KONTROL_IMAGE kontrol build
 
       - name: Prove SwapCount invariants
         run: |
-          docker run --rm -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
             $KONTROL_IMAGE kontrol prove --match-test 'SwapCountProof.'
 
       - name: Prove FeeShareRatio invariants
         run: |
-          docker run --rm -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
             $KONTROL_IMAGE kontrol prove --match-test 'FeeShareRatioProof.'
 
       - name: Prove AccumulatedHHI invariants
         run: |
-          docker run --rm -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
             $KONTROL_IMAGE kontrol prove --match-test 'AccumulatedHHIProof.'
