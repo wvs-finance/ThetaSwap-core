@@ -5,7 +5,13 @@ libs = ["lib"]
 evm_version = "cancun"
 solc_version = "0.8.26"
 via_ir = true
-ffi = false
+ffi = true
+
+remappings = [
+    "v4-core/=lib/uniswap-hooks/lib/v4-core/",
+    "lib/2025-12-panoptic/:v4-core/=lib/2025-12-panoptic/lib/v4-core/src/",
+    "chimera/=lib/chimera/src/",
+]
 
 [rpc_endpoints]
 mainnet = "${ETH_RPC_URL}"
@@ -18,3 +24,9 @@ max_test_rejects = 65536
 runs = 64
 depth = 32
 fail_on_revert = false
+
+[profile.fuzz-heavy]
+ffi = true
+[profile.fuzz-heavy.fuzz]
+runs = 64
+max_test_rejects = 131072

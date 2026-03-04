@@ -1,0 +1,92 @@
+name: Kontrol Proofs
+
+permissions: {}
+
+on:
+  push:
+    paths:
+      - ".kontrol-proofs/**"
+      - "src/fee-concentration-index/types/**"
+      - ".github/workflows/kontrol.yml"
+  pull_request:
+    paths:
+      - ".kontrol-proofs/**"
+      - "src/fee-concentration-index/types/**"
+      - ".github/workflows/kontrol.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  KONTROL_IMAGE: runtimeverificationinc/kontrol:ubuntu-jammy-1.0.231
+
+jobs:
+  kontrol-proofs:
+    name: Kontrol formal verification
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Pull Kontrol image
+        run: docker pull $KONTROL_IMAGE
+
+      - name: Set up kontrol-proofs project
+        run: |
+          mkdir -p .kontrol-proofs/src/fee-concentration-index/types
+          mkdir -p .kontrol-proofs/lib
+
+          cp src/fee-concentration-index/types/SwapCountMod.sol \
+             src/fee-concentration-index/types/FeeShareRatioMod.sol \
+             src/fee-concentration-index/types/AccumulatedHHIMod.sol \
+             .kontrol-proofs/src/fee-concentration-index/types/
+
+          cp -r lib/forge-std .kontrol-proofs/lib/
+          cp -r lib/solady .kontrol-proofs/lib/
+
+          git clone --depth 1 https://github.com/runtimeverification/kontrol-cheatcodes.git .kontrol-proofs/lib/kontrol-cheatcodes
+
+          cat > .kontrol-proofs/foundry.toml << 'TOML'
+          [profile.default]
+          src = "src"
+          test = "test"
+          out = "out"
+          cache_path = "cache"
+          libs = ["lib"]
+          solc_version = "0.8.26"
+
+          remappings = [
+              "forge-std/=lib/forge-std/src/",
+              "kontrol-cheatcodes/=lib/kontrol-cheatcodes/src/",
+              "solady/=lib/solady/src/",
+          ]
+          TOML
+
+      - name: Make workdir writable for container
+        run: chmod -R a+rwX .kontrol-proofs
+
+      - name: Kontrol build
+        run: |
+          docker run --rm -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
+            $KONTROL_IMAGE kontrol build
+
+      - name: Prove SwapCount invariants
+        run: |
+          docker run --rm -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
+            $KONTROL_IMAGE kontrol prove --match-test 'SwapCountProof.'
+
+      - name: Prove FeeShareRatio invariants
+        run: |
+          docker run --rm -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
+            $KONTROL_IMAGE kontrol prove --match-test 'FeeShareRatioProof.'
+
+      - name: Prove AccumulatedHHI invariants
+        run: |
+          docker run --rm -v "${{ github.workspace }}/.kontrol-proofs":/workdir -w /workdir \
+            $KONTROL_IMAGE kontrol prove --match-test 'AccumulatedHHIProof.'
