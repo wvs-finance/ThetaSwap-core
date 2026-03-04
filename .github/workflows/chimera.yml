@@ -1,0 +1,78 @@
+name: Chimera Fuzz Tests
+
+permissions: {}
+
+on:
+  push:
+    paths:
+      - "src/fee-concentration-index/**"
+      - "test/fee-concentration-index/**"
+      - ".github/workflows/chimera.yml"
+  pull_request:
+    paths:
+      - "src/fee-concentration-index/**"
+      - "test/fee-concentration-index/**"
+      - ".github/workflows/chimera.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  ECHIDNA_IMAGE: trailofbits/echidna:latest
+
+jobs:
+  foundry-fuzz:
+    name: Foundry fuzz tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Build
+        run: forge build
+
+      - name: Run Chimera fuzz tests (Foundry)
+        run: |
+          forge test --match-contract CryticToFoundry -vvv
+
+  echidna-fuzz:
+    name: Echidna property tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          submodules: recursive
+
+      - name: Pull Echidna image
+        run: docker pull $ECHIDNA_IMAGE
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Build with Foundry
+        run: forge build
+
+      - name: Run Echidna
+        run: |
+          docker run --rm -v "${{ github.workspace }}":/workdir -w /workdir \
+            $ECHIDNA_IMAGE echidna /workdir \
+            --contract CryticToFoundry \
+            --test-mode assertion \
+            --test-limit 50000 \
+            --corpus-dir echidna-corpus
