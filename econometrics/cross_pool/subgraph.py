@@ -5,6 +5,7 @@ import os
 from typing import Final, Sequence
 
 import httpx
+from dotenv import load_dotenv
 
 from econometrics.cross_pool.types import STABLECOINS, PairCategory, PoolInfo
 
@@ -13,9 +14,12 @@ SUBGRAPH_URL: Final[str] = (
     "5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV"
 )
 
+MIN_VOLUME_USD: Final[float] = 1_000_000.0
+
 POOL_QUERY: Final[str] = """
 {
-  pools(first: 50, orderBy: totalValueLockedUSD, orderDirection: desc) {
+  pools(first: 100, orderBy: totalValueLockedUSD, orderDirection: desc,
+        where: { volumeUSD_gt: "1000000" }) {
     id
     token0 { symbol }
     token1 { symbol }
@@ -40,6 +44,7 @@ def classify_pair(sym0: str, sym1: str) -> PairCategory:
 
 def fetch_top_pools() -> list[PoolInfo]:
     """Fetch top 50 V3 pools by TVL from the subgraph."""
+    load_dotenv()
     key = os.environ["GRAPH_API_KEY"]
     url = SUBGRAPH_URL.format(key=key)
     resp = httpx.post(url, json={"query": POOL_QUERY}, timeout=30.0)
