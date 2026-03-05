@@ -10,7 +10,7 @@ the framework of \cite{angeris2022perpetuals}.
 \subsection{Mark and Index Prices}
 
 \begin{definition}[Mark Price]\label{def:mark-price}
-The mark price is the CFMM's implied price of the fee dispersion index:
+The mark price is the CFMM's implied price of the fee concentration index:
 \begin{equation}\label{eq:mark-price}
   p_{\text{mark}} = \frac{1 - x}{x}
 \end{equation}
@@ -20,9 +20,10 @@ where $x$ is the current risky reserve (from \cref{prop:spot-price}).
 \begin{definition}[Index Price]\label{def:index-price}
 The index price is derived from the hook's oracle state:
 \begin{equation}\label{eq:index-price}
-  p_{\text{index}} = \frac{\BT}{1 - \BT}
+  p_{\text{index}} = \frac{\AT}{1 - \AT}
 \end{equation}
-where $\BT$ is the realized fee dispersion index from the underlying pool.
+where $\AT$ is the realized fee concentration index from the underlying pool.
+This matches the \texttt{fromIndex(aT, bT)} mapping in Solidity.
 \end{definition}
 
 \subsection{Discrete Funding at Liquidity Events}
@@ -36,8 +37,8 @@ At liquidity event $n$, the funding payment per unit of liquidity is:
   F_n = \fundrate_n \cdot (p_{\text{mark},n} - p_{\text{index},n})
 \end{equation}
 where $\fundrate_n > 0$ is the funding rate coefficient at event $n$.
-LONGs pay SHORTs when $p_{\text{mark}} > p_{\text{index}}$ (CFMM overprices dispersion).
-SHORTs pay LONGs when $p_{\text{mark}} < p_{\text{index}}$ (CFMM underprices dispersion).
+LONGs pay SHORTs when $p_{\text{mark}} > p_{\text{index}}$ (CFMM overprices concentration).
+SHORTs pay LONGs when $p_{\text{mark}} < p_{\text{index}}$ (CFMM underprices concentration).
 \end{definition}
 
 \subsection{Funding Rate Coefficient}
@@ -71,26 +72,26 @@ the fee decreases (encouraging trades that push mark up toward index).
 \subsection{Jump-Adjusted Replication}
 
 \begin{theorem}[Jump Safety]\label{thm:jump-safety}
-When the fee dispersion index $\BT$ jumps discretely from $b$ to $b'$ at a
+When the fee concentration index $\AT$ jumps discretely from $a$ to $a'$ at a
 liquidity event, the LP's value change is bounded by the payoff change:
 \begin{equation}\label{eq:jump-bound}
-  \Delta\text{LP\_value} \leq \VLP\bigl(\tfrac{b'}{1-b'}\bigr) - \VLP\bigl(\tfrac{b}{1-b}\bigr)
+  \Delta\text{LP\_value} \leq \VLP\bigl(\tfrac{a'}{1-a'}\bigr) - \VLP\bigl(\tfrac{a}{1-a}\bigr)
 \end{equation}
 \end{theorem}
 
 \begin{proof}
-The LP's value at index level $b$ is $\VLP(p) = \ln(1 + p)$ where $p = b/(1-b)$.
+The LP's value at index level $a$ is $\VLP(p) = \ln(1 + p)$ where $p = a/(1-a)$.
 
-At a liquidity event, $b$ jumps to $b'$. The oracle updates $p_{\text{index}}$
-to $b'/(1-b')$. The CFMM then settles funding:
+At a liquidity event, $a$ jumps to $a'$. The oracle updates $p_{\text{index}}$
+to $a'/(1-a')$. The CFMM then settles funding:
 
-\textbf{Case 1: $b' > b$ (dispersion increases, favorable to LP).}
+\textbf{Case 1: $a' > a$ (concentration increases).}
 $p_{\text{index}}$ increases. If $p_{\text{mark}} < p_{\text{index}}'$,
 funding flows from SHORTs to LONGs, compensating LPs for the jump.
 The LP's realized gain is at most $\VLP(p') - \VLP(p)$ since the CFMM
 cannot generate more value than the payoff difference.
 
-\textbf{Case 2: $b' < b$ (dispersion decreases, adverse to LP).}
+\textbf{Case 2: $a' < a$ (concentration decreases).}
 $p_{\text{index}}$ decreases. The LP's loss is bounded by $\VLP(p) - \VLP(p')$
 because the reserve curve tracks the payoff exactly (zero replication error,
 \cref{thm:zero-error}).

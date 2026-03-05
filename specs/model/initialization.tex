@@ -7,8 +7,8 @@
 
 The CFMM is initialized from:
 \begin{itemize}
-  \item $B_0 \in [0, 1)$: the initial fee dispersion index (typically $B_0 = 0$
-        at the first \texttt{afterAddLiquidity} event);
+  \item $A_0 \in [0, 1)$: the initial fee concentration index (at genesis before any
+        position removals, $A_0 = 0$);
   \item $L_0 > 0$: the initial liquidity.
 \end{itemize}
 
@@ -17,15 +17,15 @@ The CFMM is initialized from:
 \begin{proposition}[Initial Price]\label{prop:init-price}
 The initial price is the odds-ratio mapping:
 \begin{equation}\label{eq:init-price}
-  p_0 = \frac{B_0}{1 - B_0}
+  p_0 = \frac{A_0}{1 - A_0}
 \end{equation}
 \end{proposition}
 
 \begin{proposition}[Initial Reserves]\label{prop:init-reserves}
 The initial reserves are:
 \begin{align}
-  x_0 &= L_0 \cdot (1 - B_0) \label{eq:init-x}\\
-  y_0 &= L_0 \cdot \bigl(-\ln(1 - B_0) - B_0\bigr) \label{eq:init-y}
+  x_0 &= L_0 \cdot (1 - A_0) \label{eq:init-x}\\
+  y_0 &= L_0 \cdot \bigl(-\ln(1 - A_0) - A_0\bigr) \label{eq:init-y}
 \end{align}
 \end{proposition}
 
@@ -33,16 +33,16 @@ The initial reserves are:
 From \eqref{eq:risky-reserve} with liquidity scaling:
 \[
   x_0 = L_0 \cdot \frac{1}{1 + p_0}
-      = L_0 \cdot \frac{1}{1 + B_0/(1-B_0)}
-      = L_0 \cdot \frac{1}{1/(1-B_0)}
-      = L_0 \cdot (1 - B_0)
+      = L_0 \cdot \frac{1}{1 + A_0/(1-A_0)}
+      = L_0 \cdot \frac{1}{1/(1-A_0)}
+      = L_0 \cdot (1 - A_0)
 \]
 
 From \eqref{eq:numeraire-reserve} with liquidity scaling:
 \begin{align*}
   y_0 &= L_0 \cdot \Bigl(\ln(1 + p_0) - \frac{p_0}{1 + p_0}\Bigr) \\
-      &= L_0 \cdot \Bigl(\ln\bigl(\tfrac{1}{1-B_0}\bigr) - \frac{B_0/(1-B_0)}{1/(1-B_0)}\Bigr) \\
-      &= L_0 \cdot \bigl(-\ln(1 - B_0) - B_0\bigr) \qedhere
+      &= L_0 \cdot \Bigl(\ln\bigl(\tfrac{1}{1-A_0}\bigr) - \frac{A_0/(1-A_0)}{1/(1-A_0)}\Bigr) \\
+      &= L_0 \cdot \bigl(-\ln(1 - A_0) - A_0\bigr) \qedhere
 \end{align*}
 \end{proof}
 
@@ -54,31 +54,30 @@ The initial invariant evaluates to:
 \end{proposition}
 
 \begin{proof}
-Let $u_0 = x_0/L_0 = 1 - B_0$. Then $y_0/L_0 = -\ln(1-B_0) - B_0 = -\ln(u_0) - (1 - u_0) = u_0 - \ln(u_0) - 1$.
+Let $u_0 = x_0/L_0 = 1 - A_0$. Then $y_0/L_0 = -\ln(1-A_0) - A_0 = -\ln(u_0) - (1 - u_0) = u_0 - \ln(u_0) - 1$.
 By \eqref{eq:trading-function-explicit}, $y/L = u - \ln(u) - 1$ is exactly the invariant curve. \qedhere
 \end{proof}
 
-\subsection{Special Case: $B_0 = 0$}
+\subsection{Special Case: $A_0 = 0$ (Genesis)}
 
 At the first \texttt{afterAddLiquidity} event, no positions have been removed yet,
-so $A_0 = 0$ and $B_0 = 1 - A_0 = 1$. However, $B_0 = 1$ is outside the domain
-($p \to \infty$). In practice:
+so $A_0 = 0$ (no concentration measured). This gives a clean initialization:
 
 \begin{remark}[Initialization at Genesis]\label{rem:genesis}
-When $B_0 = 1$ (no concentration), $p_0 \to \infty$ and $x_0 \to 0$.
-The CFMM starts with all reserves in numeraire.
-To avoid degenerate initialization, we set $B_0 = 1 - \epsilon$ for a small
-$\epsilon > 0$ chosen at deployment, giving:
+When $A_0 = 0$, $p_0 = 0$ and the CFMM starts with all reserves in the risky asset (collateral):
 \begin{align}
-  p_0 &= (1 - \epsilon) / \epsilon \\
-  x_0 &= L_0 \cdot \epsilon \\
-  y_0 &= L_0 \cdot (-\ln(\epsilon) - (1 - \epsilon))
+  p_0 &= 0 \\
+  x_0 &= L_0 \\
+  y_0 &= 0
 \end{align}
+As $\AT$ rises (concentration increases), the risky reserve depletes and
+the numeraire reserve grows, reflecting the protection payoff.
+This starting point is perfectly well-defined---no $\epsilon$-workaround is needed.
 \end{remark}
 
 \subsection{Numerical Verification}
 
-At $B_0 = 0.5$, $L_0 = 100$:
+At $A_0 = 0.5$, $L_0 = 100$:
 \begin{align*}
   p_0 &= 0.5 / 0.5 = 1.0 \\
   x_0 &= 100 \cdot 0.5 = 50 \\

@@ -282,21 +282,21 @@ ensuring $\fee(t) = \feebase + \feefund(t) \in [0, \fee_{\max}]$.
 \begin{invariant}{CFMM-28}{Oracle state consistency}
 % Kontrol: prove_cfmm_feeconc_oracleConsistency
 \[
-  \{B_T = \texttt{hook.feeConcentrationIndex()}\}
+  \{A_T = \texttt{hook.feeConcentrationIndex()}\}
   \;\longrightarrow\;
-  \{p_{\text{oracle}} = B_T / (1 - B_T)\}
+  \{p_{\text{oracle}} = A_T / (1 - A_T)\}
 \]
-The oracle price derived from hook state matches the odds-ratio mapping.
+The oracle price derived from the primary tracked quantity $\AT$ matches the odds-ratio mapping.
 \end{invariant}
 
 \begin{invariant}{CFMM-29}{Jump-adjusted replication}
 % Kontrol: prove_cfmm_feeconc_jumpAdjusted
 \[
-  \{B_T \text{ jumps from } b \text{ to } b'\}
+  \{A_T \text{ jumps from } a \text{ to } a'\}
   \;\longrightarrow\;
-  \{\Delta\text{LP\_value} \leq \VLP(b'/(1-b')) - \VLP(b/(1-b))\}
+  \{\Delta\text{LP\_value} \leq \VLP(a'/(1-a')) - \VLP(a/(1-a))\}
 \]
-Discrete jumps in the index at liquidity events do not cause LP losses beyond the
+Discrete jumps in $\AT$ at liquidity events do not cause LP losses beyond the
 payoff change (\cref{thm:jump-safety}).
 \end{invariant}
 
@@ -305,7 +305,7 @@ payoff change (\cref{thm:jump-safety}).
 \[
   \{\texttt{afterAddLiquidity} \lor \texttt{afterRemoveLiquidity}\}
   \;\longrightarrow\;
-  \{B_T \text{ updated} \;\land\; \text{funding settled} \;\land\; \text{P\&L realized}\}
+  \{A_T \text{ updated} \;\land\; \text{funding settled} \;\land\; \text{P\&L realized}\}
 \]
 Every liquidity event triggers oracle update, funding settlement, and P\&L
 realization atomically.
@@ -314,8 +314,8 @@ realization atomically.
 \begin{invariant}{CFMM-31}{Index boundedness}
 % Kontrol: prove_cfmm_feeconc_indexBoundedness
 \[
-  0 \leq B_T \leq 1
+  0 \leq A_T \leq 1
 \]
-always, since $B_T = 1 - A_T$ and $A_T \in [0, 1]$. This ensures
-$p = B_T/(1-B_T) \in [0, \infty)$ and reserves remain well-defined.
+always, ensuring $p = A_T/(1-A_T) \in [0, \infty)$ and reserves remain well-defined.
+The derived quantity $\BT = 1 - \AT$ satisfies $\BT \in [0,1]$ accordingly.
 \end{invariant}

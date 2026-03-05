@@ -49,9 +49,10 @@
 \newcommand{\TradingSet}{\mathcal{S}}       % trading set S
 %
 % ── Fee concentration index ───────────────────────────────────────────────────
-\newcommand{\BT}{B_T}                       % fee dispersion index at T  → IndexValue
-\newcommand{\AT}{A_T}                       % fee concentration index (= 1 - B_T)
+\newcommand{\AT}{A_T}                       % fee concentration index at T (primary, tracked) → IndexValue
+\newcommand{\BT}{B_T}                       % fee dispersion index (= 1 - A_T, derived)
 \newcommand{\thetapos}{\theta}              % position sophistication weight
+\newcommand{\blocklife}{\ell}               % position lifetime in blocks
 %
 % ── Fees and funding ──────────────────────────────────────────────────────────
 \newcommand{\fee}{\varphi}                  % trading fee φ             → FeeRate
@@ -73,5 +74,6 @@
 % | p               | SqrtPriceX96      | Spot price (via sqrt conversion)     |
 % | φ               | FeeRate           | Trading fee rate (uint24)            |
 % | F_x, F_y        | FeeAccumX/Y       | Fee accumulators (uint256)           |
-% | B_T             | IndexValue        | Fee dispersion index (uint256)       |
+% | A_T             | IndexValue        | Fee concentration index (primary)    |
+% | B_T = 1 - A_T   | (derived)         | Fee dispersion index                 |
 % | i_c, i_l, i_u   | TickIndex         | Tick indices (int24)                 |

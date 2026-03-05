@@ -6,39 +6,40 @@
 \subsection{Fee Concentration Index}
 
 The fee concentration index $\AT$ is a path-dependent, HHI-weighted measure of adverse competition
-in liquidity provision. It is defined as:
+in liquidity provision. It is the \emph{primary} computed and tracked quantity. It is defined as:
 \begin{equation}\label{eq:concentration-index}
   \AT = \Bigl(\sum_{k} \thetapos_k \cdot (x_k)^2 \Bigr)^{1/2}
 \end{equation}
-where the sum runs over all positions removed up to swap count $T$, and:
+where the sum runs over all positions removed up to observation time $T$, and:
 \begin{itemize}
   \item $x_k = \dfrac{\text{feeGrowthInside}(\text{position}_k, \text{tickRange})}%
                      {\text{feeGrowth}(\text{tickRange})}$
         is the fee share captured by position $k$;
-  \item $\thetapos_k = \dfrac{1}{\text{lifetime}(\text{position}_k)}$
-        is the sophistication weight, where
-        $\text{lifetime}(\text{position}_k) = \text{swapCount}(\text{removal}) - \text{swapCount}(\text{creation})$;
-  \item $\thetapos_k = 1$ for JIT positions (lifetime $= 1$).
+  \item $\thetapos_k = \dfrac{1}{\blocklife_k}$
+        is the sophistication weight, where $\blocklife_k = \text{block}(\text{removal}) - \text{block}(\text{creation})$
+        is the position lifetime in blocks;
+  \item $\thetapos_k = 1$ for JIT positions ($\blocklife_k = 1$ block: same-block add and remove).
 \end{itemize}
 
 The index satisfies $\AT \in [0,1]$ and updates at every \texttt{afterRemoveLiquidity} event.
 
 \subsection{Fee Dispersion Index}
 
-We define the fee dispersion index as:
+For mathematical convenience in the price mapping, we define the fee dispersion index as:
 \begin{equation}\label{eq:dispersion-index}
   \BT = 1 - \AT
 \end{equation}
-so that $\BT \in [0,1]$, with $\BT = 1$ indicating no concentration (competitive equilibrium)
-and $\BT = 0$ indicating full concentration (single JIT monopoly).
+so that $\BT \in [0,1]$. Since $\AT$ is the primary tracked quantity, $\BT$ is purely derived notation:
+$\BT = 1$ indicates no concentration (competitive equilibrium)
+and $\BT = 0$ indicates full concentration (single JIT monopoly).
 
 \subsection{Derivative Perspective}
 
 \begin{itemize}
-  \item \textbf{PLP (passive LP)} is \textbf{LONG} the derivative: benefits from low concentration
-        (high $\BT$), buys protection against adverse competition.
-  \item \textbf{JIT (just-in-time LP)} is \textbf{SHORT} the derivative: benefits from high
-        concentration (low $\BT$), earns premium for providing the concentration risk.
+  \item \textbf{PLP (passive LP)} is \textbf{LONG} the derivative: benefits from low $\AT$
+        (low concentration), buys protection against adverse competition.
+  \item \textbf{JIT (just-in-time LP)} is \textbf{SHORT} the derivative: benefits from high $\AT$
+        (high concentration), earns premium for providing the concentration risk.
 \end{itemize}
 
 The LP of this CFMM holds the LONG side.
@@ -46,12 +47,13 @@ The LP of this CFMM holds the LONG side.
 \subsection{LP Payoff Function}
 
 \begin{definition}[LP Payoff]\label{def:lp-payoff}
-The LP payoff as a function of the fee dispersion index price $p$ is:
+The LP payoff as a function of the fee concentration price $p$ is:
 \begin{equation}\label{eq:lp-payoff}
   \VLP(p) = \ln(1 + p)
 \end{equation}
-where $p = \BT / (1 - \BT)$ is the odds-ratio mapping from $\BT$ to price space,
-with $p \in [0, \infty)$ for $\BT \in [0, 1)$.
+where $p = \AT / (1 - \AT)$ is the odds-ratio mapping from $\AT$ to price space,
+with $p \in [0, \infty)$ for $\AT \in [0, 1)$.
+This matches \texttt{fromIndex(aT, bT)} in Solidity where $s = \ln(1 + \AT/\BT) = \ln(1 + p)$.
 \end{definition}
 
 \subsection{Convexity Analysis}
@@ -80,5 +82,5 @@ $\VLP'(p) = 1/(1+p) > 0$ for all $p \geq 0$. \qedhere
 Since $\VLP$ is both monotone non-decreasing and strictly concave, it satisfies the requirements
 of both the oracle-assisted framework \cite{angeris2021replicating} and the oracle-free framework
 \cite{angeris2022replicating}. We use the oracle-assisted framework because the hook's own state
-serves as the oracle for $\BT$.
+serves as the oracle for $\AT$.
 \end{remark}
