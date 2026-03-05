@@ -248,3 +248,32 @@ def test_build_exit_panel_lifetime_mean_uses_average() -> None:
     exit_row = [r for r in panel if r.exited == 1]
     assert len(exit_row) == 1
     assert abs(exit_row[0].a_t_lagged - 0.025) < 1e-6
+
+
+# ── Deviation-from-null exit panel tests ─────────────────────────────
+
+
+def test_compute_null_at_map_extracts_proxy() -> None:
+    """compute_null_at_map picks the proxy A_T per burn day."""
+    raw = [
+        ("2025-12-05", 390, 0.07161),
+        ("2025-12-05", 145, 0.07161),
+        ("2025-12-06", 4951, 0.16872),
+    ]
+    null_map = compute_null_at_map(raw)
+    assert null_map["2025-12-05"] == 0.07161
+    assert null_map["2025-12-06"] == 0.16872
+    assert len(null_map) == 2
+
+
+def test_build_exit_panel_deviation_subtracts_null() -> None:
+    """Deviation spec uses real A_T minus null A_T as treatment."""
+    real_at = {"2025-12-05": 0.05, "2025-12-06": 0.03, "2025-12-07": 0.04}
+    null_at = {"2025-12-05": 0.01, "2025-12-06": 0.01, "2025-12-07": 0.01}
+    il = {"2025-12-05": 0.0, "2025-12-06": 0.0, "2025-12-07": 0.0}
+    positions = [("2025-12-07", 14400, 0.0)]  # ~2 day position
+    panel = build_exit_panel_deviation(positions, real_at, null_at, il, lag_days=1)
+    exit_row = [r for r in panel if r.exited == 1]
+    assert len(exit_row) == 1
+    # On 2025-12-07, lag=1, treatment = real_at["2025-12-06"] - null_at["2025-12-06"] = 0.03 - 0.01 = 0.02
+    assert abs(exit_row[0].a_t_lagged - 0.02) < 1e-6
