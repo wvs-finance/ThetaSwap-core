@@ -203,3 +203,150 @@ def build_exit_panel(
             d += timedelta(days=1)
 
     return rows
+
+
+def compute_null_at_map(
+    raw_positions: list[tuple[str, int, float]],
+) -> dict[str, float]:
+    """Compute null A_T (equal-share proxy) per day from RAW_POSITIONS.
+
+    The third element of each tuple is the old proxy A_T for the burn day.
+    Multiple positions may burn on the same day — take the value (they're
+    all the same for the same day since it was a per-day computation).
+    """
+    result: dict[str, float] = {}
+    for burn_date, _blocklife, proxy_at in raw_positions:
+        if burn_date not in result:
+            result[burn_date] = proxy_at
+    return result
+
+
+def build_exit_panel_deviation(
+    raw_positions: list[tuple[str, int, float]],
+    daily_at_map: dict[str, float],
+    null_at_map: dict[str, float],
+    il_map: dict[str, float],
+    lag_days: int = 1,
+) -> list[ExitPanelRow]:
+    """Like build_exit_panel but treatment = real A_T - null A_T (deviation from Ma-Crapis null).
+
+    The deviation measures excess fee concentration above the symmetric
+    equilibrium baseline predicted by Ma & Crapis (2024).
+    """
+    sorted_days = sorted(daily_at_map.keys())
+    if not sorted_days:
+        return []
+
+    window_start = date.fromisoformat(sorted_days[0])
+    window_end = date.fromisoformat(sorted_days[-1])
+
+    rows: list[ExitPanelRow] = []
+    for idx, (burn_date_str, blocklife, _exit_at) in enumerate(raw_positions):
+        if blocklife <= 1:
+            continue
+
+        mint_date_str = approximate_mint_date(burn_date_str, blocklife)
+        mint_d = date.fromisoformat(mint_date_str)
+        burn_d = date.fromisoformat(burn_date_str)
+
+        obs_start = max(mint_d, window_start)
+        obs_end = min(burn_d, window_end)
+
+        d = obs_start
+        while d <= obs_end:
+            day_str = d.isoformat()
+            lag_d = d - timedelta(days=lag_days)
+            lag_key = lag_d.isoformat()
+            if lag_key not in daily_at_map:
+                d += timedelta(days=1)
+                continue
+
+            real_at = daily_at_map[lag_key]
+            null_at = null_at_map.get(lag_key, 0.0)
+            a_t_lagged = real_at - null_at  # deviation from null
+
+            age_days = (d - mint_d).days
+            rows.append(ExitPanelRow(
+                position_idx=idx,
+                day=day_str,
+                exited=1 if d == burn_d else 0,
+                a_t_lagged=a_t_lagged,
+                il=il_map.get(day_str, 0.0),
+                log_age=math.log(max(1, age_days)),
+            ))
+            d += timedelta(days=1)
+
+    return rows
+
+
+def build_exit_panel_lifetime_mean(
+    raw_positions: list[tuple[str, int, float]],
+    daily_at_map: dict[str, float],
+    il_map: dict[str, float],
+    lag_days: int = 1,
+) -> list[ExitPanelRow]:
+    """Build position-day panel using lifetime-mean A_T as treatment.
+
+    Identical to ``build_exit_panel`` except the treatment variable
+    ``a_t_lagged`` is the **mean A_T over [mint_date, day − lag_days]**
+    rather than the single-day point lag.  A passive LP's decision is
+    shaped by accumulated exposure, not one snapshot.
+
+    Rows where no A_T data exists in that range are skipped (same as
+    the point-lag variant).
+    """
+    sorted_days = sorted(daily_at_map.keys())
+    if not sorted_days:
+        return []
+
+    window_start = date.fromisoformat(sorted_days[0])
+    window_end = date.fromisoformat(sorted_days[-1])
+
+    rows: list[ExitPanelRow] = []
+    for idx, (burn_date_str, blocklife, _exit_at) in enumerate(raw_positions):
+        if blocklife <= 1:
+            continue
+
+        mint_date_str = approximate_mint_date(burn_date_str, blocklife)
+        mint_d = date.fromisoformat(mint_date_str)
+        burn_d = date.fromisoformat(burn_date_str)
+
+        obs_start = max(mint_d, window_start)
+        obs_end = min(burn_d, window_end)
+
+        d = obs_start
+        while d <= obs_end:
+            day_str = d.isoformat()
+            lag_d = d - timedelta(days=lag_days)
+
+            # Collect A_T values over [max(mint_d, window_start), lag_d]
+            range_start = max(mint_d, window_start)
+            if lag_d < range_start:
+                d += timedelta(days=1)
+                continue
+
+            values: list[float] = []
+            cursor = range_start
+            while cursor <= lag_d:
+                key = cursor.isoformat()
+                if key in daily_at_map:
+                    values.append(daily_at_map[key])
+                cursor += timedelta(days=1)
+
+            if not values:
+                d += timedelta(days=1)
+                continue
+
+            lifetime_mean = sum(values) / len(values)
+            age_days = (d - mint_d).days
+            rows.append(ExitPanelRow(
+                position_idx=idx,
+                day=day_str,
+                exited=1 if d == burn_d else 0,
+                a_t_lagged=lifetime_mean,
+                il=il_map.get(day_str, 0.0),
+                log_age=math.log(max(1, age_days)),
+            ))
+            d += timedelta(days=1)
+
+    return rows

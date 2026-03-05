@@ -7,8 +7,10 @@ import jax.numpy as jnp
 from econometrics.ingest import (
     approximate_mint_date,
     build_exit_panel,
+    build_exit_panel_deviation,
     build_lagged_positions,
     compute_lagged_treatment,
+    compute_null_at_map,
     ingest_daily_panel,
     merge_jit_instrument,
 )
@@ -223,3 +225,26 @@ def test_build_exit_panel_empty_input() -> None:
     """Empty positions list returns empty panel."""
     panel = build_exit_panel([], PANEL_DAILY_AT, PANEL_IL, lag_days=1)
     assert panel == []
+
+
+# ── Lifetime-mean exit panel tests ───────────────────────────────────
+
+
+def test_build_exit_panel_lifetime_mean_uses_average() -> None:
+    """Lifetime mean uses average A_T over position's life, not point lag."""
+    from econometrics.ingest import build_exit_panel_lifetime_mean
+    daily_at = {
+        "2025-12-05": 0.01,
+        "2025-12-06": 0.02,
+        "2025-12-07": 0.03,
+        "2025-12-08": 0.04,
+        "2025-12-09": 0.05,
+    }
+    il = {"2025-12-05": 0.0, "2025-12-06": 0.0, "2025-12-07": 0.0, "2025-12-08": 0.0, "2025-12-09": 0.0}
+    # Position: burns on 2025-12-09, blocklife=28800 (~4 days), so mint ~2025-12-05
+    positions = [("2025-12-09", 28800, 0.0)]
+    panel = build_exit_panel_lifetime_mean(positions, daily_at, il, lag_days=1)
+    # On day 2025-12-09 with lag=1, lifetime mean = mean(A_T from 2025-12-05 to 2025-12-08) = (0.01+0.02+0.03+0.04)/4 = 0.025
+    exit_row = [r for r in panel if r.exited == 1]
+    assert len(exit_row) == 1
+    assert abs(exit_row[0].a_t_lagged - 0.025) < 1e-6
