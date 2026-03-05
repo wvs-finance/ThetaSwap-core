@@ -32,6 +32,15 @@ class DailyPanelRow:
 
 
 @dataclass(frozen=True)
+class PositionRow:
+    """One LP lifecycle from Dune Q4v2."""
+    burn_date: str
+    blocklife: int
+    daily_a_t: float
+    il_proxy: float  # from Q5, merged by burn_date
+
+
+@dataclass(frozen=True)
 class EstimationResult:
     """Structural logit estimation output."""
     beta_concentration: float   # β₃ — parameter of interest
@@ -44,3 +53,71 @@ class EstimationResult:
     wtp_mean: float             # β₃ × E[A_T] × FeeRevenue
     log_likelihood: float
     aic: float
+
+
+@dataclass(frozen=True)
+class DurationResult:
+    """Duration model: log(blocklife) ~ A_T + IL + constant."""
+    beta_a_t: float        # β₁ — concentration effect on position duration
+    se_a_t: float
+    p_value_a_t: float
+    beta_il: float         # β₂ — IL control
+    se_il: float
+    p_value_il: float
+    beta_intercept: float
+    n_obs: int
+    r_squared: float
+    mean_blocklife: float  # average position duration in blocks
+    mean_blocklife_hours: float  # ~12s per block
+
+
+@dataclass(frozen=True)
+class LaggedPositionRow:
+    """Position with lagged A_T treatment variables."""
+    burn_date: str
+    mint_date: str
+    blocklife: int
+    max_a_t: float
+    mean_a_t: float
+    median_a_t: float
+    il_proxy: float
+
+
+@dataclass(frozen=True)
+class RobustDurationResult:
+    """Duration model with both OLS and HC1 robust standard errors."""
+    beta_a_t: float
+    se_a_t: float
+    p_value_a_t: float
+    robust_se_a_t: float
+    robust_p_value_a_t: float
+    beta_il: float
+    se_il: float
+    p_value_il: float
+    robust_se_il: float
+    robust_p_value_il: float
+    beta_intercept: float
+    n_obs: int
+    r_squared: float
+    mean_blocklife: float
+    mean_blocklife_hours: float
+
+
+@dataclass(frozen=True)
+class SensitivityRow:
+    """One row of the lag/measure sensitivity sweep."""
+    lag: int
+    measure: str  # "max", "mean", "median"
+    beta_a_t: float
+    robust_se_a_t: float
+    robust_p_value_a_t: float
+    n_obs: int
+
+
+@dataclass(frozen=True)
+class QuartileRow:
+    """Dose-response: mean blocklife per A_T quartile."""
+    quartile: int  # 1-4
+    mean_blocklife_hours: float
+    mean_a_t: float
+    n_obs: int
