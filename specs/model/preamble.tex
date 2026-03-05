@@ -1,5 +1,5 @@
 % preamble.tex — Shared packages, notation, theorem environments
-% Fee Concentration Derivative CFMM Specification
+% Fee Concentration Insurance Specification
 
 % ── Packages ──────────────────────────────────────────────────────────────────
 \usepackage{amsmath,amssymb,amsthm}
@@ -25,55 +25,33 @@
   \par\medskip\noindent\textbf{#1} (\textit{#2}).\quad
 }{\par\medskip}
 
-% ── Notation ──────────────────────────────────────────────────────────────────
-%
-% CASING CONVENTION:
-%   Mathematical derivations (Angeris papers): lowercase x, y for reserves.
-%   TDD / Solidity context: CAPITAL X, Y (mapping to ReserveX, ReserveY UDVTs).
-%   This document uses the Angeris convention (lowercase) throughout.
-%   The mapping table below connects to the TDD notation.
-%
-% ── Reserve and liquidity ─────────────────────────────────────────────────────
-% x           = risky asset reserve (feeConcentrationToken)     → ReserveX
-% y           = numeraire reserve (underlying pool token)       → ReserveY
-% L           = liquidity parameter                             → Liquidity
-% u           = x/L (per-liquidity risky reserve)
-%
-% ── Pricing ───────────────────────────────────────────────────────────────────
-% p           = spot price of risky asset in numeraire           → SqrtPriceX96 (via conversion)
-% i_c, i_l, i_u = current, lower, upper tick indices            → TickIndex
-%
-% ── Payoff and trading function ───────────────────────────────────────────────
-\newcommand{\VLP}{V_{\mathrm{LP}}}          % LP payoff function
-\newcommand{\psi}{\psi}                     % trading function ψ(x,y)
-\newcommand{\TradingSet}{\mathcal{S}}       % trading set S
-%
-% ── Fee concentration index ───────────────────────────────────────────────────
-\newcommand{\AT}{A_T}                       % fee concentration index at T (primary, tracked) → IndexValue
-\newcommand{\BT}{B_T}                       % fee dispersion index (= 1 - A_T, derived)
+% ── Fee concentration index (primary state) ──────────────────────────────────
+\newcommand{\AT}{A_T}                       % fee concentration index (primary, tracked)
+\newcommand{\ThetaSum}{\Theta}              % theta sum: Σ θ_k (co-primary, tracked)
+\newcommand{\PosCount}{N}                   % position count (co-primary, tracked)
+\newcommand{\ATnull}{A_T^{1/\PosCount}}     % Ma-Crapis null: sqrt(Θ/N²)
+\newcommand{\DeltaPlus}{\Delta^{+}}         % concentration deviation: max(0, A_T - A_T^{1/N})
+\newcommand{\DeltaStar}{\Delta^{*}}         % econometric turning point (≈ 0.09)
 \newcommand{\thetapos}{\theta}              % position sophistication weight
 \newcommand{\blocklife}{\ell}               % position lifetime in blocks
-%
-% ── Fees and funding ──────────────────────────────────────────────────────────
-\newcommand{\fee}{\varphi}                  % trading fee φ             → FeeRate
+
+% ── Pricing ──────────────────────────────────────────────────────────────────
+% p = Δ⁺/(1-Δ⁺)    odds-ratio from deviation to price space
+% p ∈ [0, ∞)        for Δ⁺ ∈ [0, 1)
+
+% ── Fees and funding ─────────────────────────────────────────────────────────
+\newcommand{\fee}{\varphi}                  % trading fee φ
 \newcommand{\feebase}{\varphi_{\text{base}}}
 \newcommand{\feefund}{\varphi_{\text{fund}}}
-\newcommand{\Fx}{F_x}                      % fee accumulator X         → FeeAccumX
-\newcommand{\Fy}{F_y}                      % fee accumulator Y         → FeeAccumY
 \newcommand{\fundrate}{r}                   % funding rate
+
+% ── Architecture-dependent (TBD pending empirical analysis) ──────────────────
+% The following notation is reserved but definitions depend on whether the
+% protection mechanism is a CFMM pool, hook mutual insurance, or hybrid.
 %
-% ── Payoff parameter ──────────────────────────────────────────────────────────
-\newcommand{\K}{\mathcal{K}}                % payoff parameter (avoids collision)
-%
-% ── Notation mapping table (Angeris → TDD) ────────────────────────────────────
-% | Math (this doc) | TDD UDVT          | Description                          |
-% |-----------------|-------------------|--------------------------------------|
-% | x               | ReserveX          | Risky reserve (feeConcentrationToken)|
-% | y               | ReserveY          | Numeraire reserve                    |
-% | L               | Liquidity         | Liquidity parameter (uint128)        |
-% | p               | SqrtPriceX96      | Spot price (via sqrt conversion)     |
-% | φ               | FeeRate           | Trading fee rate (uint24)            |
-% | F_x, F_y        | FeeAccumX/Y       | Fee accumulators (uint256)           |
-% | A_T             | IndexValue        | Fee concentration index (primary)    |
-% | B_T = 1 - A_T   | (derived)         | Fee dispersion index                 |
-% | i_c, i_l, i_u   | TickIndex         | Tick indices (int24)                 |
+% x, y        = reserves (if CFMM)
+% L           = liquidity (if CFMM)
+% ψ(x,y)     = trading function (if CFMM)
+% γ           = fee extraction rate (if hook insurance)
+% S           = trading set (if CFMM)
+% F_x, F_y   = fee accumulators (if CFMM)

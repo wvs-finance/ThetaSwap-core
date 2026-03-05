@@ -1,12 +1,12 @@
-% payoff.tex — Payoff definition, convexity analysis
-% Kontrol: prove_cfmm_replication_payoffConcavity
+% payoff.tex — Fee concentration index, null hypothesis, deviation, price mapping
+% Kontrol: prove_cfmm_feeconc_indexBoundedness, prove_cfmm_feeconc_nullConsistency
 
-\section{Payoff Definition}\label{sec:payoff}
+\section{Fee Concentration Index}\label{sec:fee-concentration-index}
 
-\subsection{Fee Concentration Index}
+\subsection{Primary Index: $\AT$}
 
 The fee concentration index $\AT$ is a path-dependent, HHI-weighted measure of adverse competition
-in liquidity provision. It is the \emph{primary} computed and tracked quantity. It is defined as:
+in liquidity provision. It is the \emph{primary} computed and tracked quantity:
 \begin{equation}\label{eq:concentration-index}
   \AT = \Bigl(\sum_{k} \thetapos_k \cdot (x_k)^2 \Bigr)^{1/2}
 \end{equation}
@@ -23,64 +23,218 @@ where the sum runs over all positions removed up to observation time $T$, and:
 
 The index satisfies $\AT \in [0,1]$ and updates at every \texttt{afterRemoveLiquidity} event.
 
-\subsection{Fee Dispersion Index}
+\subsection{Co-Primary State Variables}
 
-For mathematical convenience in the price mapping, we define the fee dispersion index as:
-\begin{equation}\label{eq:dispersion-index}
-  \BT = 1 - \AT
-\end{equation}
-so that $\BT \in [0,1]$. Since $\AT$ is the primary tracked quantity, $\BT$ is purely derived notation:
-$\BT = 1$ indicates no concentration (competitive equilibrium)
-and $\BT = 0$ indicates full concentration (single JIT monopoly).
+The hook tracks three state variables at each liquidity event:
 
-\subsection{Derivative Perspective}
-
-\begin{itemize}
-  \item \textbf{PLP (passive LP)} is \textbf{LONG} the derivative: benefits from low $\AT$
-        (low concentration), buys protection against adverse competition.
-  \item \textbf{JIT (just-in-time LP)} is \textbf{SHORT} the derivative: benefits from high $\AT$
-        (high concentration), earns premium for providing the concentration risk.
-\end{itemize}
-
-The LP of this CFMM holds the LONG side.
-
-\subsection{LP Payoff Function}
-
-\begin{definition}[LP Payoff]\label{def:lp-payoff}
-The LP payoff as a function of the fee concentration price $p$ is:
-\begin{equation}\label{eq:lp-payoff}
-  \VLP(p) = \ln(1 + p)
-\end{equation}
-where $p = \AT / (1 - \AT)$ is the odds-ratio mapping from $\AT$ to price space,
-with $p \in [0, \infty)$ for $\AT \in [0, 1)$.
-This matches \texttt{fromIndex(aT, bT)} in Solidity where $s = \ln(1 + \AT/\BT) = \ln(1 + p)$.
+\begin{definition}[Co-Primary State]\label{def:co-primary}
+\begin{align}
+  \AT &= \Bigl(\sum_{k} \thetapos_k \cdot x_k^2 \Bigr)^{1/2}
+    && \text{fee concentration index} \label{eq:at-state}\\
+  \ThetaSum &= \sum_{k} \thetapos_k
+    && \text{theta sum (aggregate turnover rate)} \label{eq:theta-state}\\
+  \PosCount &= |\{k : \text{position}_k \text{ active}\}|
+    && \text{active position count} \label{eq:n-state}
+\end{align}
+All three are stored on-chain. The derived quantities $\ATnull$ and $\DeltaPlus$
+are computed on the fly from these three values.
 \end{definition}
 
-\subsection{Convexity Analysis}
-
-\begin{proposition}[Concavity]\label{prop:concavity}
-$\VLP(p) = \ln(1+p)$ is strictly concave on $(0, \infty)$.
-\end{proposition}
-
-\begin{proof}
-\begin{align}
-  \VLP'(p)  &= \frac{1}{1+p} > 0 \quad \forall\, p > 0 \label{eq:V-first-deriv}\\[4pt]
-  \VLP''(p) &= -\frac{1}{(1+p)^2} < 0 \quad \forall\, p > 0 \label{eq:V-second-deriv}
-\end{align}
-Since $\VLP'' < 0$ everywhere on the domain, $\VLP$ is strictly concave. \qedhere
-\end{proof}
-
-\begin{proposition}[Monotonicity]\label{prop:monotonicity}
-$\VLP(p) = \ln(1+p)$ is strictly increasing on $[0, \infty)$.
-\end{proposition}
-
-\begin{proof}
-$\VLP'(p) = 1/(1+p) > 0$ for all $p \geq 0$. \qedhere
-\end{proof}
-
-\begin{remark}
-Since $\VLP$ is both monotone non-decreasing and strictly concave, it satisfies the requirements
-of both the oracle-assisted framework \cite{angeris2021replicating} and the oracle-free framework
-\cite{angeris2022replicating}. We use the oracle-assisted framework because the hook's own state
-serves as the oracle for $\AT$.
+\begin{remark}[Gas Cost]
+Each liquidity event requires 2 SSTOREs ($\ThetaSum$ and $\PosCount$) plus one
+\texttt{sqrt} computation for $\ATnull$. Approximate cost: $\sim$10.2K gas per event.
+$\AT$ is already tracked in the existing hook; $\ThetaSum$ and $\PosCount$ are additive
+accumulators updated at the same point.
 \end{remark}
+
+\subsection{Ma--Crapis Competitive Null: $\ATnull$}\label{subsec:null}
+
+The Ma--Crapis (2024) symmetric equilibrium assumes all positions capture equal fee shares
+$x_k = 1/\PosCount$. Under this null hypothesis:
+\begin{equation}\label{eq:null-at}
+  \ATnull = \sqrt{\frac{\ThetaSum}{\PosCount^2}}
+\end{equation}
+
+\begin{proposition}[Null as Lower Bound]\label{prop:null-lower-bound}
+For any fee share distribution $\{x_k\}$ with $\sum_k x_k = 1$ and $x_k \geq 0$:
+\begin{equation}
+  \AT \geq \ATnull
+\end{equation}
+with equality if and only if $x_k = 1/\PosCount$ for all $k$.
+\end{proposition}
+
+\begin{proof}
+The Cauchy--Schwarz inequality gives $\sum_k \thetapos_k x_k^2 \geq
+(\sum_k \thetapos_k)(\sum_k x_k^2)/\PosCount$ ... actually, we prove this directly.
+
+Under equal shares $x_k = 1/\PosCount$:
+\[
+  (\ATnull)^2 = \sum_k \thetapos_k \cdot \frac{1}{\PosCount^2}
+             = \frac{\ThetaSum}{\PosCount^2}
+\]
+
+For arbitrary shares, by the power mean inequality (or Jensen's inequality on
+the convex function $x \mapsto x^2$):
+\[
+  \sum_k \thetapos_k x_k^2 \geq \frac{\ThetaSum}{\PosCount^2}
+  \quad \text{when } \sum_k x_k = 1
+\]
+since $\sum_k x_k^2 \geq 1/\PosCount$ by the constraint $\sum x_k = 1$
+(this is the HHI lower bound). Multiplying each term by $\thetapos_k/\ThetaSum$
+and using convexity preserves the inequality. Taking square roots gives $\AT \geq \ATnull$. \qedhere
+\end{proof}
+
+\subsection{Concentration Deviation: $\DeltaPlus$}\label{subsec:deviation}
+
+The economically meaningful treatment variable is the excess concentration above the
+competitive null:
+
+\begin{definition}[Concentration Deviation]\label{def:delta-plus}
+\begin{equation}\label{eq:delta-plus}
+  \DeltaPlus = \max\bigl(0,\; \AT - \ATnull\bigr)
+\end{equation}
+\end{definition}
+
+By \cref{prop:null-lower-bound}, $\DeltaPlus \geq 0$ always.
+$\DeltaPlus = 0$ corresponds to the competitive equilibrium (all LPs earn equal fee shares).
+$\DeltaPlus > 0$ indicates excess concentration: a few LPs capture disproportionate fee revenue.
+
+\begin{remark}[On-Chain Computation]
+$\DeltaPlus$ is \emph{not} stored. It is derived on the fly:
+\begin{verbatim}
+uint256 atNull = sqrt(thetaSum * WAD / (posCount * posCount));
+uint256 deltaPlus = aT > atNull ? aT - atNull : 0;
+\end{verbatim}
+This avoids a third SSTORE and keeps the oracle stateless with respect to $\DeltaPlus$.
+\end{remark}
+
+\subsection{Price Mapping}\label{subsec:price-mapping}
+
+\begin{definition}[Concentration Price]\label{def:price-mapping}
+The price of fee concentration in numeraire (USDC) is the odds ratio:
+\begin{equation}\label{eq:price-mapping}
+  p = \frac{\DeltaPlus}{1 - \DeltaPlus}
+\end{equation}
+with $p \in [0, \infty)$ for $\DeltaPlus \in [0, 1)$.
+The inverse mapping is $\DeltaPlus = p/(1+p)$.
+\end{definition}
+
+\begin{proposition}[Monotonicity]\label{prop:price-monotone}
+$p(\DeltaPlus)$ is strictly increasing on $[0, 1)$.
+\end{proposition}
+
+\begin{proof}
+$\dfrac{dp}{d\DeltaPlus} = \dfrac{1}{(1-\DeltaPlus)^2} > 0$ for all $\DeltaPlus < 1$. \qedhere
+\end{proof}
+
+\begin{remark}[Solidity Mapping to $\sqrt{P}$]
+For integration with Uniswap V4's \texttt{sqrtPriceX96} representation:
+\begin{verbatim}
+uint256 p = (deltaPlus * WAD) / (WAD - deltaPlus);
+uint160 sqrtPriceX96 = uint160(sqrt(p << 192));
+\end{verbatim}
+\end{remark}
+
+\section{Econometric Calibration}\label{sec:econometric}
+
+The econometric identification (see companion document \texttt{lp-insurance-demand.tex})
+establishes the demand structure for fee concentration insurance.
+
+\subsection{Quadratic Deviation Model}
+
+The exit hazard model with quadratic treatment:
+\begin{equation}\label{eq:quadratic-hazard}
+  P(\text{exit}_{i,t} = 1) = \sigma\bigl(
+    \beta_0 + \beta_1 \cdot \text{dev}_t + \beta_2 \cdot \text{dev}_t^2
+    + \beta_3 \cdot \text{IL}_t + \beta_4 \cdot \ln(\text{age}_{i,t})
+  \bigr)
+\end{equation}
+where $\text{dev}_t = \AT - \ATnull$ is the deviation from the competitive null.
+
+\subsection{Key Results}
+
+\begin{center}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Lag & $\beta_1$ (linear) & $p$ & $\beta_2$ (quadratic) & $p$ \\
+\midrule
+1 & $-23.18$ & $0.012^{**}$ & $+129.20$ & $0.030^{**}$ \\
+2 & $-43.42$ & $0.016^{**}$ & $+226.92$ & $0.065^{*}$ \\
+3 & $-32.44$ & $0.001^{***}$ & $+205.34$ & $0.004^{***}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Inverted-U and the Insurance Trigger}
+
+The model produces an inverted-U with turning point:
+\begin{equation}\label{eq:turning-point}
+  \DeltaStar = -\frac{\beta_1}{2\beta_2} \approx 0.09
+\end{equation}
+
+\begin{itemize}
+  \item \textbf{Below $\DeltaStar$ (shelter regime):} Mild fee concentration correlates with
+    high volume. All LPs benefit from elevated fee revenue. $\partial P(\text{exit})/\partial \text{dev} < 0$.
+  \item \textbf{Above $\DeltaStar$ (Capponi regime):} Extreme concentration means passive LPs'
+    effective fee rate drops below their exit threshold.
+    $\partial P(\text{exit})/\partial \text{dev} > 0$.
+    Capponi \& Zhu (2024): $\partial p^*_U/\partial \varphi > 0$, so lower $\varphi \to$ exit.
+\end{itemize}
+
+The turning point $\DeltaStar \approx 0.09$ identifies when insurance demand activates.
+This calibrates the protection mechanism regardless of architecture choice.
+
+\section{Settled Design Properties}\label{sec:design-properties}
+
+The following properties are confirmed independent of the protection architecture:
+
+\begin{enumerate}
+  \item \textbf{Perpetual.} No fixed expiry. The instrument settles via a funding rate mechanism
+    at liquidity events, following the framework of Angeris et al.\ \cite{angeris2022perpetuals}.
+
+  \item \textbf{Jump-adjusted funding.} $\DeltaPlus$ can jump discontinuously when large positions
+    mint or burn, changing $\PosCount$ and $\ThetaSum$ abruptly. The funding rate accounts for
+    this jump risk per the Primer on Perpetuals.
+
+  \item \textbf{Discrete funding at liquidity events.} Funding is exchanged when
+    \texttt{afterAddLiquidity} or \texttt{afterRemoveLiquidity} fires in the underlying pool.
+    No keeper or per-block updates required.
+
+  \item \textbf{USDC numeraire.} Insurance is denominated in USDC.
+
+  \item \textbf{Oracle-free framework.} Following Angeris et al.\ \cite{angeris2022replicating},
+    no external oracle is required. The hook's own state ($\AT$, $\ThetaSum$, $\PosCount$)
+    provides the index endogenously.
+
+  \item \textbf{Monotone payoff.} The protection value is monotone non-decreasing in
+    $p = \DeltaPlus/(1-\DeltaPlus)$. The inverted-U from econometrics calibrates
+    \emph{demand} (where PLPs buy protection), not payoff shape.
+\end{enumerate}
+
+\section{Architecture Decision: Pending}\label{sec:architecture-pending}
+
+The protection mechanism depends on empirical analysis of fee concentration severity
+across Uniswap V3/V4 pool categories. Three architectures are under consideration:
+
+\begin{enumerate}
+  \item \textbf{FCT token + V4 pool.} A separate feeConcentrationToken/USDC V4 pool with
+    underwriter LPs. Composable (FCT is ERC-20), market-priced, but requires underwriters
+    to bootstrap. Works only for high-volume pools.
+
+  \item \textbf{Hook-based mutual insurance.} The hook extracts $\gamma\%$ of underlying pool
+    swap fees into an insurance reserve. When $\DeltaPlus > \DeltaStar$, the reserve pays out
+    to ERC-6909 claim holders. Self-bootstrapping, works for any pool, but no price signal
+    and solvency is limited by accumulated fees.
+
+  \item \textbf{Hybrid.} Hook insurance as primary mechanism with transferable ERC-6909 claims.
+    Secondary markets for claims can emerge organically for high-volume pools.
+\end{enumerate}
+
+\textbf{Blocking empirical question:} Does fee concentration correlate with pool size?
+If large pools have mild concentration and small pools have severe concentration,
+the pools that need insurance most cannot support a market-based solution.
+This analysis will determine the architecture.
+
+The following specification sections---reserves, trading function, fee structure,
+initialization, and mechanism-specific invariants---will be written after the
+architecture decision.

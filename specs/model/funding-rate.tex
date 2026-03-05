@@ -1,107 +1,65 @@
-% funding-rate.tex — Funding rate from Primer on Perpetuals
+% funding-rate.tex — Perpetual funding rate (architecture-independent properties)
 % Kontrol: prove_cfmm_perpetual_fundingConvergence
 
 \section{Funding Rate}\label{sec:funding-rate}
 
-This CFMM is a perpetual instrument: it has no fixed expiry but settles at
-liquidity events. The funding rate mechanism replaces settlement, following
-the framework of \cite{angeris2022perpetuals}.
+This instrument is perpetual: it has no fixed expiry but settles at liquidity events.
+The funding rate mechanism replaces settlement, following the framework of
+\cite{angeris2022perpetuals}.
 
 \subsection{Mark and Index Prices}
 
-\begin{definition}[Mark Price]\label{def:mark-price}
-The mark price is the CFMM's implied price of the fee concentration index:
-\begin{equation}\label{eq:mark-price}
-  p_{\text{mark}} = \frac{1 - x}{x}
+\begin{definition}[Index Price]\label{def:index-price}
+The index price is derived from the hook's co-primary state:
+\begin{equation}\label{eq:index-price}
+  p_{\text{index}} = \frac{\DeltaPlus}{1 - \DeltaPlus}
 \end{equation}
-where $x$ is the current risky reserve (from \cref{prop:spot-price}).
+where $\DeltaPlus = \max(0,\, \AT - \ATnull)$ is the realized concentration deviation
+from the underlying pool. This is computed on the fly from stored $\AT$, $\ThetaSum$, $\PosCount$.
 \end{definition}
 
-\begin{definition}[Index Price]\label{def:index-price}
-The index price is derived from the hook's oracle state:
-\begin{equation}\label{eq:index-price}
-  p_{\text{index}} = \frac{\AT}{1 - \AT}
-\end{equation}
-where $\AT$ is the realized fee concentration index from the underlying pool.
-This matches the \texttt{fromIndex(aT, bT)} mapping in Solidity.
+\begin{definition}[Mark Price]\label{def:mark-price}
+The mark price is the protection mechanism's implied price of fee concentration.
+Its definition depends on the architecture choice (\cref{sec:architecture-pending}):
+\begin{itemize}
+  \item \textbf{If CFMM:} $p_{\text{mark}}$ is the spot price implied by the trading function.
+  \item \textbf{If hook insurance:} $p_{\text{mark}}$ is the implied cost of protection
+    derived from the fee extraction rate $\gamma$ and accumulated reserve.
+\end{itemize}
 \end{definition}
 
 \subsection{Discrete Funding at Liquidity Events}
 
 Funding is exchanged at each liquidity event (\texttt{afterAddLiquidity} or
-\texttt{afterRemoveLiquidity}), not continuously.
+\texttt{afterRemoveLiquidity} in the underlying pool), not continuously.
 
 \begin{definition}[Funding Payment]\label{def:funding-payment}
-At liquidity event $n$, the funding payment per unit of liquidity is:
+At liquidity event $n$, the funding payment per unit of exposure is:
 \begin{equation}\label{eq:funding-payment}
   F_n = \fundrate_n \cdot (p_{\text{mark},n} - p_{\text{index},n})
 \end{equation}
 where $\fundrate_n > 0$ is the funding rate coefficient at event $n$.
-LONGs pay SHORTs when $p_{\text{mark}} > p_{\text{index}}$ (CFMM overprices concentration).
-SHORTs pay LONGs when $p_{\text{mark}} < p_{\text{index}}$ (CFMM underprices concentration).
 \end{definition}
-
-\subsection{Funding Rate Coefficient}
-
-\begin{definition}[Funding Rate]\label{def:funding-rate}
-The funding rate coefficient evolves as:
-\begin{equation}\label{eq:funding-rate-evolution}
-  \fundrate_n = \alpha \cdot \frac{|p_{\text{mark},n} - p_{\text{index},n}|}{p_{\text{index},n} + 1}
-\end{equation}
-where $\alpha > 0$ is a sensitivity parameter set at deployment.
-The normalization by $p_{\text{index}} + 1$ prevents the funding rate from
-diverging when the index price is near zero.
-\end{definition}
-
-\subsection{Embedding in Dynamic Fee}
-
-The funding payment is embedded in the swap fee rather than settled separately:
-\begin{equation}\label{eq:dynamic-fee}
-  \fee(t) = \feebase + \feefund(t)
-\end{equation}
-where:
-\begin{equation}\label{eq:funding-fee-component}
-  \feefund(t) = \text{sign}(p_{\text{mark}} - p_{\text{index}}) \cdot
-  \min\bigl(\fundrate_n,\; \fee_{\max} - \feebase\bigr)
-\end{equation}
-
-When $p_{\text{mark}} > p_{\text{index}}$, the fee increases (discouraging further
-mark appreciation, pushing mark toward index). When $p_{\text{mark}} < p_{\text{index}}$,
-the fee decreases (encouraging trades that push mark up toward index).
 
 \subsection{Jump-Adjusted Replication}
 
 \begin{theorem}[Jump Safety]\label{thm:jump-safety}
-When the fee concentration index $\AT$ jumps discretely from $a$ to $a'$ at a
-liquidity event, the LP's value change is bounded by the payoff change:
+When $\DeltaPlus$ jumps discretely from $\delta$ to $\delta'$ at a liquidity event
+(due to abrupt changes in $\PosCount$ or $\ThetaSum$), the protection value change
+is bounded:
 \begin{equation}\label{eq:jump-bound}
-  \Delta\text{LP\_value} \leq \VLP\bigl(\tfrac{a'}{1-a'}\bigr) - \VLP\bigl(\tfrac{a}{1-a}\bigr)
+  |\Delta\text{value}| \leq |V(\delta') - V(\delta)|
 \end{equation}
+where $V$ is the (monotone) protection payoff function.
 \end{theorem}
 
-\begin{proof}
-The LP's value at index level $a$ is $\VLP(p) = \ln(1 + p)$ where $p = a/(1-a)$.
-
-At a liquidity event, $a$ jumps to $a'$. The oracle updates $p_{\text{index}}$
-to $a'/(1-a')$. The CFMM then settles funding:
-
-\textbf{Case 1: $a' > a$ (concentration increases).}
-$p_{\text{index}}$ increases. If $p_{\text{mark}} < p_{\text{index}}'$,
-funding flows from SHORTs to LONGs, compensating LPs for the jump.
-The LP's realized gain is at most $\VLP(p') - \VLP(p)$ since the CFMM
-cannot generate more value than the payoff difference.
-
-\textbf{Case 2: $a' < a$ (concentration decreases).}
-$p_{\text{index}}$ decreases. The LP's loss is bounded by $\VLP(p) - \VLP(p')$
-because the reserve curve tracks the payoff exactly (zero replication error,
-\cref{thm:zero-error}).
-
-In both cases, the discrete jump does not cause LP losses exceeding the
-payoff change, because the oracle-assisted construction adjusts reserves
-to match the new price after each event. The key insight from
-\cite[Section~3]{angeris2022perpetuals} is that the short-side replication
-strategy under jumps requires the funding rate to compensate for the
-discontinuity, which our discrete funding mechanism achieves. \qedhere
+\begin{proof}[Proof sketch]
+$\DeltaPlus$ can jump when a large position mints (increasing $\PosCount$, potentially
+decreasing $\ATnull$ and thus increasing $\DeltaPlus$) or burns (decreasing $\PosCount$).
+The discrete funding mechanism compensates for the discontinuity, following
+\cite[Section~3]{angeris2022perpetuals}. The bound holds because the oracle-free
+construction adjusts to the new state after each event, and the payoff's
+monotonicity ensures the value change is bounded by the payoff difference. \qedhere
 \end{proof}
 
 \subsection{Convergence Property}
@@ -112,11 +70,8 @@ after each liquidity event (in expectation).
 \end{proposition}
 
 \begin{proof}[Proof sketch]
-When $p_{\text{mark}} > p_{\text{index}}$, the increased fee $\fee(t)$ reduces
-trading activity, which reduces demand pressure on the risky asset, pushing
-$p_{\text{mark}}$ down toward $p_{\text{index}}$. The converse holds when
-$p_{\text{mark}} < p_{\text{index}}$. The convergence rate depends on the
-sensitivity parameter $\alpha$ and the frequency of liquidity events.
-A formal convergence proof under specific trading assumptions is deferred
-to the Kontrol verification phase.
+When $p_{\text{mark}} > p_{\text{index}}$, the funding cost discourages further
+mark appreciation. The converse holds when $p_{\text{mark}} < p_{\text{index}}$.
+A formal convergence proof under specific assumptions is deferred to the
+Kontrol verification phase. \qedhere
 \end{proof}
