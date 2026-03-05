@@ -86,6 +86,24 @@ def test_exit_quartile_analysis_four_quartiles() -> None:
     assert all(q.quartile in (1, 2, 3, 4) for q in quartiles)
 
 
+def test_logit_mle_quadratic_returns_type() -> None:
+    """Quadratic logit returns QuadraticLogitResult with turning point."""
+    from econometrics.data import DAILY_AT_MAP, DAILY_AT_NULL_MAP, IL_MAP, RAW_POSITIONS
+    from econometrics.ingest import build_exit_panel_deviation
+    from econometrics.hazard import logit_mle_quadratic
+    from econometrics.types import QuadraticLogitResult
+
+    panel = build_exit_panel_deviation(
+        RAW_POSITIONS, DAILY_AT_MAP, DAILY_AT_NULL_MAP, IL_MAP, lag_days=1
+    )
+    result = logit_mle_quadratic(panel)
+    assert isinstance(result, QuadraticLogitResult)
+    assert result.n_obs > 0
+    assert result.n_exits > 0
+    assert result.beta_quadratic > 0  # inverted-U: quadratic term positive
+    assert result.cluster_p_quadratic < 0.10  # significant
+
+
 def test_exit_lag_sensitivity_returns_results() -> None:
     from econometrics.data import DAILY_AT_MAP, IL_MAP, RAW_POSITIONS
     rows = exit_lag_sensitivity(RAW_POSITIONS, DAILY_AT_MAP, IL_MAP, lags=[1, 2])

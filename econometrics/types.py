@@ -171,3 +171,25 @@ class MarginalEffect:
     hours_lost: float
     implied_premium_usd: float
     mean_exit_prob: float
+
+
+@dataclass(frozen=True)
+class QuadraticLogitResult:
+    """Logit MLE with quadratic treatment term and day-clustered SEs."""
+    beta_linear: float
+    beta_quadratic: float
+    beta_il: float
+    beta_log_age: float
+    beta_intercept: float
+    cluster_se_linear: float
+    cluster_se_quadratic: float
+    cluster_p_linear: float
+    cluster_p_quadratic: float
+    turning_point: float
+    n_obs: int
+    n_exits: int
+    n_clusters: int
+    log_likelihood: float
+    aic: float
+    pseudo_r2: float
+    mean_exit_prob: float

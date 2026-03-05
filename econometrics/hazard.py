@@ -21,6 +21,7 @@ from econometrics.types import (
     ExitPanelRow,
     LogitResult,
     MarginalEffect,
+    QuadraticLogitResult,
     QuartileRow,
     SensitivityRow,
 )
@@ -138,6 +139,86 @@ def logit_mle(panel: list[ExitPanelRow]) -> LogitResult:
         cluster_se_intercept=float(cluster_ses[0]),
         p_value_a_t=float(p_mle[1]),
         cluster_p_value_a_t=float(p_cluster[1]),
+        n_obs=n,
+        n_exits=int(jnp.sum(y)),
+        n_clusters=n_clusters,
+        log_likelihood=ll,
+        aic=-2.0 * ll + 2.0 * k,
+        pseudo_r2=pseudo_r2,
+        mean_exit_prob=mean_p,
+    )
+
+
+def _panel_to_quadratic_arrays(
+    panel: list[ExitPanelRow],
+) -> tuple[Array, Array, list[str]]:
+    """Convert panel rows to JAX arrays with quadratic treatment term."""
+    n = len(panel)
+    y = jnp.array([float(r.exited) for r in panel])
+    a_t = jnp.array([r.a_t_lagged for r in panel])
+    X = jnp.column_stack([
+        jnp.ones(n),
+        a_t,
+        a_t ** 2,
+        jnp.array([r.il for r in panel]),
+        jnp.array([r.log_age for r in panel]),
+    ])
+    days = [r.day for r in panel]
+    return X, y, days
+
+
+def logit_mle_quadratic(panel: list[ExitPanelRow]) -> QuadraticLogitResult:
+    """Logit MLE with quadratic treatment: b1*dev + b2*dev^2 + b3*IL + b4*log(age).
+
+    Captures inverted-U relationship between fee concentration and exits.
+    """
+    X, y, days = _panel_to_quadratic_arrays(panel)
+    n, k = X.shape
+
+    params = _newton_raphson(X, y)
+
+    ll = -_neg_log_likelihood(params, X, y)
+    ll_null = -_neg_log_likelihood(jnp.zeros(k), X, y)
+    pseudo_r2 = 1.0 - ll / ll_null if ll_null != 0 else 0.0
+
+    H, scores = _hessian_and_scores(params, X, y)
+    H_inv = jnp.linalg.inv(H)
+
+    # Day-clustered sandwich SEs
+    unique_days = sorted(set(days))
+    n_clusters = len(unique_days)
+    meat = jnp.zeros((k, k))
+    for day_label in unique_days:
+        mask = jnp.array([1.0 if d == day_label else 0.0 for d in days])
+        g_t = jnp.sum(scores * mask[:, None], axis=0)
+        meat = meat + jnp.outer(g_t, g_t)
+
+    correction = (n_clusters / (n_clusters - 1)) * (n / (n - k)) if n_clusters > 1 else 1.0
+    cluster_cov = H_inv @ meat @ H_inv * correction
+    cluster_ses = jnp.sqrt(jnp.abs(jnp.diag(cluster_cov)))
+
+    t_cluster = params / cluster_ses
+    p_cluster = 2.0 * jstats.norm.sf(jnp.abs(t_cluster))
+
+    # Turning point: -beta_linear / (2 * beta_quadratic)
+    beta_lin = float(params[1])
+    beta_quad = float(params[2])
+    turning_point = -beta_lin / (2.0 * beta_quad) if beta_quad != 0.0 else float('inf')
+
+    p_hat = jax.nn.sigmoid(X @ params)
+    mean_p = float(jnp.mean(p_hat))
+
+    return QuadraticLogitResult(
+        beta_linear=beta_lin,
+        beta_quadratic=beta_quad,
+        beta_il=float(params[3]),
+        beta_log_age=float(params[4]),
+        beta_intercept=float(params[0]),
+        cluster_se_linear=float(cluster_ses[1]),
+        cluster_se_quadratic=float(cluster_ses[2]),
+        cluster_p_linear=float(p_cluster[1]),
+        cluster_p_quadratic=float(p_cluster[2]),
+        turning_point=turning_point,
         n_obs=n,
         n_exits=int(jnp.sum(y)),
         n_clusters=n_clusters,
