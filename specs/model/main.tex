@@ -31,15 +31,24 @@ LP exits (Capponi regime). This turning point calibrates insurance demand.
 
 The hook tracks three co-primary state variables---$\AT$, $\ThetaSum$, $\PosCount$---with
 $\DeltaPlus$ derived on the fly. The mechanism is perpetual with jump-adjusted
-funding and USDC numeraire. The specific protection architecture (CFMM pool,
-hook-based mutual insurance, or hybrid) is pending empirical analysis of
-fee concentration severity across pool categories.
+funding and USDC numeraire.
+
+Cross-pool empirical analysis (Spearman $\rho(A_T, \log\text{TVL}) = +0.19$,
+weak) confirms no TVL--concentration correlation, selecting the \textbf{hybrid}
+architecture: hook-based mutual insurance with per-pool reserves funded by
+$\premfactor$\% fee redirect, payouts via \texttt{donate()} when
+$\DeltaPlus > \DeltaStar$, and ERC-6909 transferable claims bridging to an
+optional CFMM market layer.
 \end{abstract}
 
 \tableofcontents
 
 \input{payoff}
+\input{trading-function}
+\input{reserves}
+\input{borrow-rate}
 \input{funding-rate}
+\input{initialization}
 \input{invariants}
 
 \bibliographystyle{alpha}

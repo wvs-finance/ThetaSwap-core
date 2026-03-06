@@ -1,0 +1,97 @@
+% initialization.tex — Insurance CFMM initialization and registration
+% Kontrol: prove_ins_init*, prove_ins_registration*
+
+\section{Initialization}\label{sec:initialization}
+
+\subsection{Pool Initialization}
+
+\begin{definition}[Insurance Pool Parameters]\label{def:init-params}
+An insurance CFMM is initialized per underlying V4 pool with:
+\begin{enumerate}[label=(\roman*)]
+  \item $\texttt{fciHook}$: address of the deployed FeeConcentrationIndex hook
+    (oracle for $\pindex$);
+  \item $\texttt{poolManager}$: Uniswap V4 PoolManager address;
+  \item $\premfactor \in (0, 1)$: base premium factor (borrow rate floor);
+  \item $\alpha > 0$: funding rate sensitivity;
+  \item $\lambda > 0$: jump intensity parameter;
+  \item $\kink \in (0, 1)$: utilization target for JumpRate curve;
+  \item $\mlow, \mhigh > 0$: JumpRate slope parameters ($\mhigh \gg \mlow$);
+  \item $\texttt{tickSpacing}$: tick spacing for the insurance CFMM tick array.
+\end{enumerate}
+These parameters are immutable after deployment.
+\end{definition}
+
+\subsection{First Underwriter Deposit}
+
+\begin{definition}[Initialization from Oracle]\label{def:init-oracle}
+The first underwriter deposits $D$ USDC into tick range $[\pl, \pu]$.
+The FCI hook provides current $\DeltaPlus$, yielding $p_0 = \DeltaPlus/(1-\DeltaPlus)$.
+
+\textbf{Case 1:} $p_0 \leq \pl$ (no active concentration---typical at launch):
+\begin{align}
+  L_0 &= \frac{D \cdot \pl^2}{\pu^2 + \pl^2} \label{eq:init-L-cold} \\
+  u_0 &= L_0 \cdot \frac{4\pl^2}{\pl^4} = \frac{4L_0}{\pl^2} \\
+  y_0 &= D
+\end{align}
+Spot price initializes at $\pl$ (the strike boundary).
+
+\textbf{Case 2:} $\pl < p_0 < \pu$ (concentration already active):
+\begin{align}
+  L_0 &= \frac{D \cdot \pl^2}{\pu^2 + p_0^2} \label{eq:init-L-warm} \\
+  u_0 &= L_0 \cdot \frac{4p_0^2}{\pl^4} \\
+  y_0 &= D
+\end{align}
+The underwriter enters mid-range with immediate concentration liability.
+
+\textbf{Case 3:} $p_0 \geq \pu$ (concentration above cap):
+Deposit reverts. The underwriter would face instant max-loss.
+\end{definition}
+
+\begin{proposition}[Invariant at Initialization]\label{prop:init-invariant}
+In all valid cases: $\psi(u_0, y_0) = L_0 \cdot \pu^2/\pl^2$.
+\end{proposition}
+
+\begin{proof}
+For Case~1: $\psi = D - (\pl^2/4)(4L_0/\pl^2) = D - L_0
+= D - D\pl^2/(\pu^2 + \pl^2) = D \cdot \pu^2/(\pu^2 + \pl^2)
+= L_0 \cdot (\pu^2 + \pl^2)/\pl^2 \cdot \pu^2/(\pu^2 + \pl^2)
+= L_0 \cdot \pu^2/\pl^2$. \qedhere
+\end{proof}
+
+\subsection{PLP Registration (Borrowing)}
+
+\begin{definition}[PLP Borrows LP Share]\label{def:plp-borrow}
+A PLP holding a V4 LP position borrows insurance CFMM LP shares:
+\begin{enumerate}[label=(\roman*)]
+  \item PLP calls \texttt{borrow(poolKey, v4PositionId, borrowAmount)}.
+  \item The hook verifies the PLP holds a valid V4 position with active fee stream.
+  \item LP shares are transferred from the insurance CFMM to the PLP
+    (reducing $L_{\text{available}}$, increasing $L_{\text{borrowed}}$).
+  \item The PLP's $\max_t p(t)$ tracker is initialized at current $\pindex$.
+  \item Utilization $\Ua$ increases, raising $\rborrow$ for all borrowers.
+\end{enumerate}
+\end{definition}
+
+\subsection{PLP Exit (Returning LP Share)}
+
+\begin{definition}[Exit Settlement]\label{def:plp-exit}
+At \texttt{afterRemoveLiquidity} (or voluntary deregistration):
+\begin{enumerate}[label=(\roman*)]
+  \item Compute $\text{premium}_i = \premfactor \times \text{lifetime\_fees}_i
+    + \text{accrued\_borrow\_rate}_i + \text{accrued\_funding}_i$.
+  \item Compute payout: $\text{payout}_i = \text{premium}_i \times
+    [(\max_t p(t) / \pl)^2 - 1]^{+}$.
+  \item The payout is capped at $\text{premium}_i \times [(\pu/\pl)^2 - 1]$
+    (tick range cap).
+  \item LP shares are returned to the insurance CFMM. Utilization $\Ua$ decreases.
+  \item Net settlement: PLP receives $\max(\text{payout} - \text{premium}_i, 0)$
+    from the CFMM reserves. If payout $<$ premium, the difference stays in reserves.
+\end{enumerate}
+\end{definition}
+
+\begin{remark}[Max-Price Tracking]
+Each PLP position stores $p_{\max,i} = \max_{t \in [\text{mint}, \text{now}]} \pindex(t)$.
+Updated at every hook callback: $p_{\max,i} \gets \max(p_{\max,i}, \pindex)$.
+This is one SSTORE per position per callback (only if $\pindex > p_{\max,i}$),
+amortized by checking the condition before writing.
+\end{remark}

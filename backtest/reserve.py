@@ -8,6 +8,7 @@ def simulate_reserve(
     daily_states: list[DailyPoolState],
     premium_by_day: dict[str, float],
     delta_star: float = 0.09,
+    initial_balance: float = 0.0,
 ) -> list[ReserveState]:
     """Simulate insurance reserve day-by-day.
 
@@ -17,7 +18,7 @@ def simulate_reserve(
        D = (delta_plus - delta_star) / (1 - delta_star) * balance,
        payout = min(D, balance), balance -= payout
     """
-    balance = 0.0
+    balance = initial_balance
     result: list[ReserveState] = []
 
     for state in daily_states:

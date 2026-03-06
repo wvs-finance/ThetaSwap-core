@@ -186,55 +186,173 @@ This calibrates the protection mechanism regardless of architecture choice.
 
 \section{Settled Design Properties}\label{sec:design-properties}
 
-The following properties are confirmed independent of the protection architecture:
+The following properties are confirmed by the ETH/USDC 30bps historical backtest
+(41 days, 600 positions, 2025-12-05 to 2026-01-14) and hold independent of
+implementation details.
+
+\subsection{Backtest-Confirmed Properties}
 
 \begin{enumerate}
   \item \textbf{Perpetual.} No fixed expiry. The instrument settles via a funding rate mechanism
     at liquidity events, following the framework of Angeris et al.\ \cite{angeris2022perpetuals}.
 
   \item \textbf{Jump-adjusted funding.} $\DeltaPlus$ can jump discontinuously when large positions
-    mint or burn, changing $\PosCount$ and $\ThetaSum$ abruptly. The funding rate accounts for
-    this jump risk per the Primer on Perpetuals.
+    mint or burn, changing $\PosCount$ and $\ThetaSum$ abruptly. The backtest confirms
+    concentration jumps are rare but large (1 trigger day in 41 days, $\DeltaPlus$: $0 \to 0.158$).
+    The funding rate accounts for this jump risk per the Primer on Perpetuals.
 
   \item \textbf{Discrete funding at liquidity events.} Funding is exchanged when
-    \texttt{afterAddLiquidity} or \texttt{afterRemoveLiquidity} fires in the underlying pool.
+    \texttt{afterSwap}, \texttt{afterAddLiquidity}, or \texttt{afterRemoveLiquidity}
+    fires in the underlying pool---matching the FCI update frequency.
     No keeper or per-block updates required.
 
-  \item \textbf{USDC numeraire.} Insurance is denominated in USDC.
+  \item \textbf{USDC numeraire.} Insurance is denominated in USDC (the pool's fee token).
 
-  \item \textbf{Oracle-free framework.} Following Angeris et al.\ \cite{angeris2022replicating},
-    no external oracle is required. The hook's own state ($\AT$, $\ThetaSum$, $\PosCount$)
-    provides the index endogenously.
+  \item \textbf{Oracle-assisted framework.} The FCI hook provides $\pindex = \DeltaPlus/(1-\DeltaPlus)$
+    as the index price. Following Angeris et al.\ \cite{angeris2021replicating}, the oracle-assisted
+    replication framework applies because the hook's own state
+    ($\AT$, $\ThetaSum$, $\PosCount$) provides the index endogenously.
 
   \item \textbf{Monotone payoff.} The protection value is monotone non-decreasing in
     $p = \DeltaPlus/(1-\DeltaPlus)$. The inverted-U from econometrics calibrates
     \emph{demand} (where PLPs buy protection), not payoff shape.
 \end{enumerate}
 
-\section{Architecture Decision: Pending}\label{sec:architecture-pending}
+\subsection{Optimal Payoff Formula: Power-Squared Exit Payoff}\label{subsec:optimal-payoff}
 
-The protection mechanism depends on empirical analysis of fee concentration severity
-across Uniswap V3/V4 pool categories. Three architectures are under consideration:
+The backtest compared seven candidate payoff formulas across the ETH/USDC 30bps
+position dataset:
+
+\begin{center}
+\begin{tabular}{@{}llcc@{}}
+\toprule
+Mode & Formula & \% Better Off & Mean HV (\$) \\
+\midrule
+Trigger 1/N (INS-05) & $\text{payout} = \Res / N_{\text{insured}}$ & 0.0\% & $-107.67$ \\
+Trigger premium-prop & $\text{payout} \propto \text{premium}_i$ & 2.7\% & $-95.16$ \\
+Exit $\times\; \DeltaPlus$ & $\text{payout} = \premfactor \cdot f \cdot \DeltaPlus_{\max}$ & 4.2\% & $-88.03$ \\
+Exit $\times\; p$ & $\text{payout} = \premfactor \cdot f \cdot p_{\max}$ & 8.1\% & $-71.22$ \\
+\textbf{Exit $\times\; p^2$ ($\alpha=2$)} & $\textbf{payout} = \textbf{premium} \times ((p_{\max}/\pstar)^2 - 1)$ & \textbf{18.8\%} & $\mathbf{+23.14}$ \\
+Exit $\times\; p^3$ ($\alpha=3$) & $\text{payout} = \text{premium} \times ((p_{\max}/\pstar)^3 - 1)$ & 12.1\% & $-14.52$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+(All results at $R_0 = \$200\text{K}$ seed capital, $\premfactor = 3.30\%$, $\DeltaStar = 0.09$.)
+
+\begin{definition}[Power-Squared Exit Payoff]\label{def:exit-payoff}
+At position exit (\texttt{afterRemoveLiquidity}), PLP $i$ receives:
+\begin{equation}\label{eq:exit-payoff}
+  \text{payout}_i = \text{premium}_i \times \left[\left(\frac{\max_t\, p(t)}{\pstar}\right)^2 - 1\right]^{+}
+\end{equation}
+where $\text{premium}_i = \premfactor \times \text{lifetime\_fees}_i$,
+$p(t) = \DeltaPlus(t)/(1-\DeltaPlus(t))$ is the concentration price at time $t$,
+and $\max_t$ is taken over the position's lifetime.
+\end{definition}
+
+\subsection{Why Power-Squared Dominates}
 
 \begin{enumerate}
-  \item \textbf{FCT token + V4 pool.} A separate feeConcentrationToken/USDC V4 pool with
-    underwriter LPs. Composable (FCT is ERC-20), market-priced, but requires underwriters
-    to bootstrap. Works only for high-volume pools.
+  \item \textbf{No moral hazard.} The payout depends on the \emph{worst} (highest)
+    concentration experienced during the position's lifetime. Staying in the pool
+    during concentration spikes \emph{increases} the payout. Exiting early reduces it.
+    This is the opposite of the premium-proportional moral hazard.
 
-  \item \textbf{Hook-based mutual insurance.} The hook extracts $\gamma\%$ of underlying pool
-    swap fees into an insurance reserve. When $\DeltaPlus > \DeltaStar$, the reserve pays out
-    to ERC-6909 claim holders. Self-bootstrapping, works for any pool, but no price signal
-    and solvency is limited by accumulated fees.
+  \item \textbf{Tail sensitivity.} The $\alpha = 2$ exponent is the sweet spot for
+    rare severe events at $\DeltaStar = 0.09$: sufficient convexity to reward
+    extreme concentration without draining the reserve at moderate $\DeltaPlus$.
+    Higher $\alpha$ (e.g., $\alpha = 3$) over-concentrates payouts on the single worst event;
+    lower $\alpha$ (e.g., $\alpha = 1$) provides insufficient tail compensation.
 
-  \item \textbf{Hybrid.} Hook insurance as primary mechanism with transferable ERC-6909 claims.
-    Secondary markets for claims can emerge organically for high-volume pools.
+  \item \textbf{Incentive alignment.} Backtest confirms positive correlation between
+    position lifetime and hedge value: longer-lived positions benefit more than
+    short-lived ones (the correct incentive structure for insurance).
+
+  \item \textbf{Bootstrapping resolution.} Equal pro-rata (INS-05) yields 0\% of
+    positions better off at any $\premfactor$ due to the bootstrapping problem:
+    the mutual reserve is too small at trigger time. The exit payoff sidesteps
+    bootstrapping entirely by settling at exit, not at trigger.
 \end{enumerate}
 
-\textbf{Blocking empirical question:} Does fee concentration correlate with pool size?
-If large pools have mild concentration and small pools have severe concentration,
-the pools that need insurance most cannot support a market-based solution.
-This analysis will determine the architecture.
+\section{Architectural Design}\label{sec:architecture}
 
-The following specification sections---reserves, trading function, fee structure,
-initialization, and mechanism-specific invariants---will be written after the
-architecture decision.
+The architecture is a \textbf{Lendgine-style CFMM} following
+Leifke \& Scott \cite{leifke2024powermaker}, adapted from ETH price to
+fee concentration price $p = \DeltaPlus/(1-\DeltaPlus)$.
+
+\subsection{Participants and Token Mapping}
+
+\begin{definition}[Insurance CFMM Roles]\label{def:cfmm-roles}
+\begin{itemize}
+  \item \textbf{Underwriter (LP of insurance CFMM):} External actor who deposits USDC
+    collateral into a tick range $[\pl, \pu]$. Earns borrow rate (premium stream).
+    Commits to $-p^2$ payoff: loses collateral quadratically as concentration rises.
+
+  \item \textbf{PLP (Borrower):} Uniswap V4 LP who borrows the insurance CFMM's LP
+    share. Receives $+p^2$ protection payoff. Pays borrow rate from V4 accrued fees.
+
+  \item \textbf{Token X (virtual):} Concentration exposure token---not a real ERC-20
+    but an internal accounting unit representing units of concentration risk priced
+    by the FCI oracle.
+
+  \item \textbf{Token Y (real):} USDC---underwriter's collateral, PLP's premium currency.
+\end{itemize}
+\end{definition}
+
+\subsection{LP Payoff (Underwriter)}
+
+Within tick range $[\pl, \pu]$, the underwriter's portfolio value per unit liquidity:
+\begin{equation}\label{eq:lp-payoff}
+  V(p) = \begin{cases}
+    \dfrac{\pu^2 - \pl^2}{\pl^2} & p \leq \pl \\[6pt]
+    \dfrac{\pu^2 - p^2}{\pl^2}   & \pl \leq p \leq \pu \\[6pt]
+    0                              & p \geq \pu
+  \end{cases}
+\end{equation}
+
+\begin{proposition}[Concavity]\label{prop:lp-concavity}
+$V(p)$ is concave: $V''(p) = -2/\pl^2 < 0$ in $[\pl, \pu]$.
+\end{proposition}
+
+\subsection{Borrower Payoff (PLP)}
+
+The PLP borrows the LP share and receives the convex complement:
+\begin{equation}\label{eq:plp-payoff}
+  N(p) = V(\pl) - V(p) = \begin{cases}
+    0                                                    & p \leq \pl \\[6pt]
+    \left(\dfrac{p}{\pl}\right)^2 - 1                   & \pl \leq p \leq \pu \\[6pt]
+    \left(\dfrac{\pu}{\pl}\right)^2 - 1                 & p \geq \pu
+  \end{cases}
+\end{equation}
+This matches the backtest-confirmed payoff (\cref{def:exit-payoff}) with
+$\pstar = \pl$ (the lowest active underwriter tick) and cap at $\pu$.
+
+\subsection{Market-Implied Strike}
+
+The strike $\pstar$ is \emph{not} a protocol parameter. It emerges from the market:
+\begin{equation}\label{eq:market-strike}
+  \pstar = \min\{\pl : \exists\; \text{underwriter with liquidity at } \pl\}
+\end{equation}
+Underwriters express their view on where concentration becomes dangerous by
+choosing their tick range $[\pl, \pu]$. The aggregate liquidity profile across
+ticks is the insurance pricing curve. As market conditions change, underwriters
+reposition, and $\pstar$ adjusts naturally---no governance required.
+
+\subsection{Connection to PowerMaker}
+
+The architecture maps directly onto the PowerMaker \cite{leifke2024powermaker}
+Lendgine construction:
+
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+PowerMaker & ThetaSwap Insurance & Role \\
+\midrule
+ETH price $p$ & Concentration price $p = \DeltaPlus/(1-\DeltaPlus)$ & Underlying \\
+LP (deposits into CFMM) & Underwriter (deposits USDC) & Sells convexity \\
+Borrower (borrows LP share) & PLP (borrows LP share) & Buys convexity \\
+$V(p) = 2pk - p^2$ & $V(p) = (\pu^2 - p^2)/\pl^2$ & LP payoff \\
+$\varphi = R_1 - (k - \tfrac{1}{2}R_2)^2$ & $\psi = y - \tfrac{\pl^2}{4}u$ & Trading function \\
+JumpRate borrow curve & JumpRate + $\premfactor$ base & Borrow rate \\
+\bottomrule
+\end{tabular}
+\end{center}

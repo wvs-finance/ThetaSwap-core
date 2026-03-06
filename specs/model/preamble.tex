@@ -45,13 +45,31 @@
 \newcommand{\feefund}{\varphi_{\text{fund}}}
 \newcommand{\fundrate}{r}                   % funding rate
 
-% ── Architecture-dependent (TBD pending empirical analysis) ──────────────────
-% The following notation is reserved but definitions depend on whether the
-% protection mechanism is a CFMM pool, hook mutual insurance, or hybrid.
-%
-% x, y        = reserves (if CFMM)
-% L           = liquidity (if CFMM)
-% ψ(x,y)     = trading function (if CFMM)
-% γ           = fee extraction rate (if hook insurance)
-% S           = trading set (if CFMM)
-% F_x, F_y   = fee accumulators (if CFMM)
+% ── Insurance CFMM notation (power² payoff) ─────────────────────────────────
+\newcommand{\premfactor}{\gamma}            % base premium factor (borrow rate floor)
+\newcommand{\Res}{R}                         % per-pool reserve balance
+\newcommand{\protgrowth}{g^{\text{prot}}}   % protection growth per liquidity (Q128)
+\newcommand{\donateamt}{D}                   % donate amount at a liquidity event
+
+% ── Trading function (linearized power²) ────────────────────────────────────
+% \psi is a standard LaTeX command — use it directly for the trading function ψ(u,y)
+\newcommand{\pl}{p_l}                        % lower tick price (effective strike)
+\newcommand{\pu}{p_u}                        % upper tick price (cap)
+\newcommand{\pstar}{p^{*}}                   % strike price = Δ*/(1-Δ*)
+\newcommand{\pmark}{p_{\text{mark}}}         % CFMM mark price
+\newcommand{\pindex}{p_{\text{index}}}       % FCI oracle index price
+\newcommand{\Lact}{L_{\text{act}}}           % active liquidity
+\newcommand{\Lnet}{\Delta L_{\text{net}}}    % net liquidity at tick crossing
+\newcommand{\Ua}{U_a}                        % utilization ratio (borrowed/total)
+
+% ── Borrow rate (JumpRate) ──────────────────────────────────────────────────
+\newcommand{\rborrow}{r_{\text{borrow}}}     % borrow rate (PLP → underwriter)
+\newcommand{\rfunding}{r_{\text{funding}}}   % funding rate (bidirectional)
+\newcommand{\kink}{\kappa}                   % utilization kink point
+\newcommand{\mlow}{m_1}                      % slope below kink
+\newcommand{\mhigh}{m_2}                     % slope above kink (jump multiplier)
+
+% ── Coordinate transform ────────────────────────────────────────────────────
+% u = x²  (linearized risky reserve; x = virtual concentration exposure)
+% y = numeraire reserve (USDC)
+% ψ(u, y) = y - (p_l²/4)·u = L·C₁  (linear in (u,y), 1-homogeneous in L)

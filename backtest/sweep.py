@@ -46,6 +46,7 @@ def run_single_backtest(
     raw_positions: list[dict],
     gamma: float,
     delta_star: float = 0.09,
+    initial_balance: float = 0.0,
 ) -> BacktestResult:
     """Run one backtest for a given gamma.
 
@@ -59,7 +60,7 @@ def run_single_backtest(
     premium_by_day = _compute_premium_by_day(daily_states, raw_positions, gamma)
 
     # Step 2: reserve simulation
-    reserve_states = simulate_reserve(daily_states, premium_by_day, delta_star)
+    reserve_states = simulate_reserve(daily_states, premium_by_day, delta_star, initial_balance)
 
     # Build lookup dicts
     daily_dict = {ds.day: ds for ds in daily_states}

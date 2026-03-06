@@ -1,0 +1,78 @@
+% reserves.tex — Reserve curves and coordinate transform verification
+% Kontrol: prove_cfmm_reserve*
+
+\section{Reserve Analysis}\label{sec:reserves}
+
+This section verifies the reserve curves derived in \cref{sec:trading-function}
+and establishes boundary behavior and numerical properties.
+
+\subsection{Reserve Curves in Price Space}
+
+Per unit liquidity ($L = 1$), with $p \in [\pl, \pu]$:
+
+\begin{center}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+& $p = \pl$ & $p \in (\pl, \pu)$ & $p = \pu$ \\
+\midrule
+$x(p) = 2p/\pl^2$ & $2/\pl$ & $2p/\pl^2$ & $2\pu/\pl^2$ \\
+$u(p) = x^2 = 4p^2/\pl^4$ & $4/\pl^2$ & $4p^2/\pl^4$ & $4\pu^2/\pl^4$ \\
+$y(p) = (\pu^2+p^2)/\pl^2$ & $(\pu^2+\pl^2)/\pl^2$ & $(\pu^2+p^2)/\pl^2$ & $2\pu^2/\pl^2$ \\
+$V(p) = (\pu^2-p^2)/\pl^2$ & $(\pu^2-\pl^2)/\pl^2$ & $(\pu^2-p^2)/\pl^2$ & $0$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Monotonicity}
+
+\begin{proposition}[Reserve Monotonicity]\label{prop:reserve-monotone}
+Both $x(p)$ and $y(p)$ are strictly increasing in $p$ on $[\pl, \pu]$:
+\[
+  x'(p) = \frac{2}{\pl^2} > 0, \qquad
+  y'(p) = \frac{2p}{\pl^2} > 0 \quad\text{for } p > 0
+\]
+\end{proposition}
+
+\begin{remark}
+Both reserves increasing with $p$ is the correct direction under Framing~C
+(\cref{sec:architecture}): as concentration rises, more virtual exposure
+is absorbed ($x$ rises) and more numeraire accumulates ($y$ rises) because
+the underwriter's collateral drains into the payoff liability. The LP value
+$V(p) = y - px$ decreases, which is the underwriter bearing losses.
+\end{remark}
+
+\subsection{Collateral Accounting}
+
+The underwriter deposits USDC (Token~Y). The virtual Token~X reserve is
+an internal accounting variable with no external token.
+
+\begin{definition}[Collateral Value]\label{def:collateral-value}
+At price $p$, the underwriter's real (USDC) collateral per unit liquidity equals
+the LP value:
+\begin{equation}\label{eq:collateral-value}
+  \text{collateral}(p) = V(p) = y(p) - p \cdot x(p) = \frac{\pu^2 - p^2}{\pl^2}
+\end{equation}
+At $p = \pl$: full collateral $(\pu^2 - \pl^2)/\pl^2$.
+At $p = \pu$: zero (fully drained). The underwriter cannot lose more than
+their initial deposit---the CLAMM tick cap $\pu$ enforces bounded loss.
+\end{definition}
+
+\subsection{Numerical Verification}
+
+For $\DeltaStar = 0.09$, $\pl = 0.0989$, $\pu = 1.0$ ($\DeltaPlus_{\max} = 0.5$):
+
+\begin{center}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+$p$ & $\DeltaPlus$ & $x$ & $y$ & $V$ (USDC/unit $L$) \\
+\midrule
+$0.0989$ ($= \pl$) & $0.09$ & $20.22$ & $103.2$ & $101.2$ \\
+$0.1758$ & $0.149$ & $35.95$ & $105.4$ & $99.04$ \\
+$0.5$ & $0.333$ & $102.2$ & $127.6$ & $76.5$ \\
+$1.0$ ($= \pu$) & $0.5$ & $204.5$ & $204.5$ & $0$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Payoff check at $p = 0.1758$: $N = V(\pl) - V(p) = 101.2 - 99.04 = 2.16$.
+Formula: $(0.1758/0.0989)^2 - 1 = 3.16 - 1 = 2.16$ \checkmark.
