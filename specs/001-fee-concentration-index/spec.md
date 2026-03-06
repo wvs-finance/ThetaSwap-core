@@ -2,8 +2,9 @@
 
 **Feature Branch**: `001-fee-concentration-index`
 **Created**: 2026-03-03
-**Status**: Draft
-**Input**: Build the FeeConcentrationIndex, an independent on-chain component that tracks the risk of adverse competition in liquidity provision for Uniswap V4 pools via a hook.
+**Updated**: 2026-03-06
+**Status**: Draft (v2 — co-primary state + diamond pattern)
+**Input**: Build the FeeConcentrationIndex, an independent on-chain component that tracks the risk of adverse competition in liquidity provision for Uniswap V4 pools via a hook. V2 adds co-primary state variables (Theta, N) for computing the Ma-Crapis competitive null A_T^{1/N} and concentration deviation Delta+, and removes BaseHook inheritance for diamond pattern compatibility.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -72,6 +73,40 @@ All intermediate and stored values use fixed-point arithmetic compatible with Un
 
 ---
 
+### User Story 5 - Track Co-Primary State for Competitive Null (Priority: P1)
+
+When positions are added or removed, the system tracks three co-primary state variables: A_T (fee concentration index, already tracked), Theta (aggregate turnover rate = sum of 1/blockLifetime for all removed positions), and N (count of currently active positions). From these three, the system computes the Ma-Crapis competitive null A_T^{1/N} = sqrt(Theta/N^2) and the concentration deviation Delta+ = max(0, A_T - A_T^{1/N}). Delta+ is the economically meaningful treatment variable — it measures excess concentration above what symmetric competition would produce.
+
+**Why this priority**: The insurance CFMM (feature 002) prices protection using Delta+, not raw A_T. Without Theta and N, the oracle cannot distinguish genuine concentration from the natural baseline of a competitive pool. This is a P1 upgrade because 002 is blocked without it.
+
+**Independent Test**: Can be tested by adding N positions with known fee shares, removing them with known block lifetimes, and verifying that getIndex() returns the correct (A_T, Theta, N) triple from which Delta+ and price can be derived.
+
+**Acceptance Scenarios**:
+
+1. **Given** a fresh pool with no positions, **When** getIndex() is called, **Then** A_T = 0, Theta = 0, N = 0.
+2. **Given** 3 active positions, **When** getIndex() is called, **Then** N = 3.
+3. **Given** 3 active positions and 1 is removed (blockLifetime = 10), **When** getIndex() is called, **Then** N = 2, Theta = Q128/10 (= 1/10 in Q128).
+4. **Given** A_T = 0.5, Theta = Q128, N = 2, **When** atNull is computed, **Then** atNull = sqrt(Q128 / 4) = Q128/2 = 0.5, and Delta+ = max(0, 0.5 - 0.5) = 0.
+5. **Given** a JIT position (blockLifetime = 1) capturing 100% of fees removed in a pool with N = 5 other active positions, **When** Delta+ is computed, **Then** Delta+ > 0 (concentration exceeds the equal-share null).
+
+---
+
+### User Story 6 - Diamond Pattern Compatibility (Priority: P1)
+
+The FeeConcentrationIndex contract does not inherit from BaseHook. It is a standalone facet compatible with the MasterHook diamond proxy pattern, where the diamond dispatches hook callbacks via delegatecall to facets. The poolManager reference is an immutable in the facet's bytecode (survives delegatecall). Hook permission configuration is the diamond's concern, not the facet's.
+
+**Why this priority**: The insurance CFMM (feature 002) requires both FCI and ThetaSwapInsurance to be facets of the same MasterHook diamond (V4 allows only one hook per pool). BaseHook inheritance prevents this because BaseHook stores poolManager via constructor in a way that conflicts with delegatecall. This is P1 because 002's composite facet architecture is blocked.
+
+**Independent Test**: Can be tested by deploying the FCI facet, calling its hook functions via delegatecall from a test diamond contract, and verifying state updates correctly in diamond storage.
+
+**Acceptance Scenarios**:
+
+1. **Given** FCI deployed as a facet, **When** afterAddLiquidity is called via delegatecall, **Then** the position is registered in diamond storage correctly.
+2. **Given** FCI deployed as a facet, **When** poolManager is read, **Then** it returns the correct address (immutable in bytecode, not storage).
+3. **Given** FCI contract source, **When** inspected, **Then** it does not use `is BaseHook`, does not define `getHookPermissions()`, and all hook functions are external.
+
+---
+
 ### Edge Cases
 
 - What happens when a position has lifetime = 0 (no swap ever used the position's liquidity)? The system MUST handle this by skipping the index update for this position (theta is undefined, and x_k = 0 since no fees accrued), or by reverting if x_k > 0 with lifetime = 0 (which would indicate a bug).
@@ -79,6 +114,10 @@ All intermediate and stored values use fixed-point arithmetic compatible with Un
 - What happens when A_T would exceed 1 due to accumulated rounding? The system MUST cap A_T at 1 (and B_T at 0).
 - What happens when many positions are removed in a single block? The index MUST update correctly for each removal in sequence within the same transaction/block.
 - What happens when a position spans multiple tick ranges? The system MUST use feeGrowthInside for the position's specific tick range boundaries.
+- What happens when posCount is decremented to 0? atNull MUST return 0 (division by zero avoided). Delta+ MUST equal A_T (no null to subtract).
+- What happens when posCount overflows? posCount is uint256; overflow is not practically reachable.
+- What happens when Theta and N are both 0 but A_T > 0 (positions were removed but all current positions have exited)? Delta+ = max(0, A_T - 0) = A_T. This is correct — with no active positions, the full historical concentration stands.
+- What happens when the facet is called directly (not via delegatecall)? The facet MUST still function correctly — poolManager is immutable in bytecode, not dependent on caller context.
 
 ## Clarifications
 
@@ -100,31 +139,40 @@ All intermediate and stored values use fixed-point arithmetic compatible with Un
 - **FR-002**: System MUST initialize each position's swap count to 0 on afterAddLiquidity and register the position in the tick-range-indexed data structure under its (tickLower, tickUpper) key.
 - **FR-002b**: On afterRemoveLiquidity, the system MUST remove the position from the TickRangePositionSet. If the position was the last in its (tickLower, tickUpper) group, the system MUST delete the tick range entry entirely.
 - **FR-003**: System MUST compute position lifetime as the position's accumulated swap count at the time of afterRemoveLiquidity.
-- **FR-004**: System MUST compute the sophistication weight theta_k = 1/lifetime for each removed position, where lifetime is measured in swap counts.
+- **FR-004**: System MUST compute the sophistication weight theta_k = 1/blockLifetime for each removed position, where blockLifetime = block.number(removal) - block.number(creation). JIT positions (same-block add+remove) have blockLifetime = 0, floored to 1 for the divisor.
 - **FR-005**: System MUST compute the fee share ratio x_k = feeGrowthInside(position) / feeGrowth(tickRange) on afterRemoveLiquidity, using Uniswap V4's StateLibrary.
-- **FR-006**: System MUST additively accumulate theta_k * x_k^2 into a persistent accumulatedSum on every afterRemoveLiquidity event. The index A_T = sqrt(accumulatedSum) is computed lazily on read, not stored directly.
-- **FR-007**: System MUST expose a view function that computes and returns A_T = sqrt(accumulatedSum) and B_T = 1 - A_T on demand.
+- **FR-006**: System MUST additively accumulate BOTH theta_k * x_k^2 into accumulatedSum AND theta_k into thetaSum on every afterRemoveLiquidity event. A_T = sqrt(accumulatedSum) is computed lazily on read.
+- **FR-007**: System MUST expose a view function that returns the co-primary triple (A_T, thetaSum, posCount) for a given pool. B_T is no longer returned (A_T is the primary index; callers derive Delta+ from the triple).
 - **FR-008**: System MUST use fixed-point arithmetic that avoids overflow when squaring x_k values stored in Q128 format.
-- **FR-009**: System MUST cap A_T at 1 and B_T at 0 to prevent rounding-induced out-of-range values.
-- **FR-010**: System MUST handle the edge case where lifetime = 0 by either reverting or using a defined maximum theta value.
+- **FR-009**: System MUST cap A_T at 1 to prevent rounding-induced out-of-range values.
+- **FR-010**: System MUST handle the edge case where blockLifetime = 0 (JIT) by flooring to 1 for the theta divisor. If swap lifetime is also 0 (no swaps used the position), the index update is skipped entirely.
 - **FR-011**: System MUST handle the edge case where feeGrowth(tickRange) = 0 by returning x_k = 0.
-- **FR-012**: System MUST expose a view function to read the current index values (A_T, B_T) for a given pool.
+- **FR-012**: System MUST expose a view function to read the current co-primary state (A_T, thetaSum, posCount) for a given pool.
+- **FR-013**: System MUST track posCount (active position count) as a uint256 per pool. posCount increments by 1 on afterAddLiquidity and decrements by 1 on afterRemoveLiquidity.
+- **FR-014**: System MUST NOT inherit from BaseHook. The contract is a standalone facet with poolManager as an immutable (set in constructor, lives in bytecode, survives delegatecall). Hook permission configuration is external to the facet.
+- **FR-015**: System MUST store accumulatedSum, thetaSum, and posCount together in a single struct (FeeConcentrationState) within diamond storage, replacing the bare AccumulatedHHI UDVT.
+- **FR-016**: The competitive null A_T^{1/N} = sqrt(thetaSum / posCount^2) MUST be computable from the stored co-primary triple. It is NOT stored — computed on the fly.
+- **FR-017**: The concentration deviation Delta+ = max(0, A_T - A_T^{1/N}) MUST be computable from the stored co-primary triple. It is NOT stored — computed on the fly.
+- **FR-018**: The concentration price p = Delta+ / (1 - Delta+) MUST be computable from the stored co-primary triple. It is NOT stored — computed on the fly.
 
 ### Key Entities
 
-- **PositionLifetime**: Tracks a position's accumulated swap count (incremented only when swaps use the position's liquidity). Key attributes: positionKey (bytes32), swapCount (uint256), tickLower (int24), tickUpper (int24).
+- **PositionLifetime**: Tracks a position's accumulated swap count (incremented only when swaps use the position's liquidity) and block registration time. Key attributes: positionKey (bytes32), swapCount (uint256), tickLower (int24), tickUpper (int24), addBlock (uint256).
 - **TickRangePositionSet**: A data structure indexed by (tickLower, tickUpper) pairs that stores the set of position keys sharing that exact tick range. Enables O(1) lookup per unique tick range on afterSwap. Populated on afterAddLiquidity, cleaned on afterRemoveLiquidity.
 - **FeeShareRatio**: The ratio x_k computed at position removal. Derived from feeGrowthInside / feeGrowth. Stored as fixed-point Q128.
-- **SophisticationWeight**: theta_k = 1/lifetime. Computed at removal, not stored persistently (used only during index update).
-- **FeeConcentrationIndex**: The running accumulated sum of (theta_k * x_k^2) terms. A_T and B_T are computed lazily via sqrt on read. Key attributes: poolId (PoolId), accumulatedSum (uint256). A_T = sqrt(accumulatedSum), B_T = 1 - A_T are derived, not stored.
+- **SophisticationWeight**: theta_k = 1/blockLifetime where blockLifetime = block(removal) - block(creation). Computed at removal, not stored persistently (used only during index update). Floored to 1 for JIT positions (blockLifetime = 0).
+- **FeeConcentrationState**: The co-primary state struct bundling three stored values per pool: accumulatedSum (Sigma theta_k * x_k^2, Q128), thetaSum (Sigma theta_k, Q128), posCount (N = active positions, uint256). Derived quantities (not stored): A_T = sqrt(accumulatedSum), atNull = sqrt(thetaSum/N^2), Delta+ = max(0, A_T - atNull), price = Delta+/(1-Delta+).
 
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
 
-- **SC-001**: For a single JIT position (lifetime=1, x_k=1), the index A_T MUST equal 1.0 exactly (within 1 wei of precision).
-- **SC-002**: For N equal passive positions each capturing 1/N of fees with lifetime L, the index MUST match the formula (N * (1/L) * (1/N)^2)^{1/2} = (1/(L*N))^{1/2} within 0.1% relative error.
+- **SC-001**: For a single JIT position (blockLifetime=1, x_k=1), the index A_T MUST equal 1.0 exactly (within 1 wei of precision).
+- **SC-002**: For N equal passive positions each capturing 1/N of fees with block lifetime L, the index MUST match the formula (N * (1/L) * (1/N)^2)^{1/2} = (1/(L*N))^{1/2} within 0.1% relative error.
 - **SC-003**: The component MUST NOT revert on any valid Uniswap V4 hook callback (afterAddLiquidity, afterSwap, afterRemoveLiquidity) under normal pool operation.
 - **SC-004**: Gas cost for afterSwap (per-position swap counter updates for all active positions in the tick range) MUST be under 50,000 gas for up to 10 active positions.
-- **SC-005**: Gas cost for afterRemoveLiquidity (full index update) MUST be under 100,000 gas.
+- **SC-005**: Gas cost for afterRemoveLiquidity (full index update including thetaSum and posCount) MUST be under 100,000 gas.
 - **SC-006**: All fixed-point arithmetic operations MUST be formally verified to be overflow-free via Kontrol proofs.
+- **SC-007**: getIndex() MUST return a (A_T, thetaSum, posCount) triple from which Delta+ and price can be deterministically computed off-chain, matching on-chain computation within 1 wei.
+- **SC-008**: The FCI contract MUST NOT use `is BaseHook` or any contract inheritance. It MUST be deployable as a diamond facet callable via delegatecall.
+- **SC-009**: posCount MUST equal the exact number of currently active positions at all times (increment on add, decrement on remove, never negative).
