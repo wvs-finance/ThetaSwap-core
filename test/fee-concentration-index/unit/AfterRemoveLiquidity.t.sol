@@ -163,7 +163,7 @@ contract AfterRemoveLiquidityTest is Test, Deployers {
 
     function test_getIndex_returnsCorrectValues() public {
         // Before any removals, indices should be A=0, thetaSum=0, posCount=0
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(poolKey);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(poolKey, false);
         assertEq(indexA, 0, "indexA should be 0 with no removals");
         assertEq(thetaSum_, 0, "thetaSum should be 0 with no removals");
         assertEq(posCount_, 0, "posCount should be 0 with no removals");
@@ -173,7 +173,7 @@ contract AfterRemoveLiquidityTest is Test, Deployers {
         _swap(true, -100);
         _removeLiquidity(-60, 60, 1e18);
 
-        (uint128 indexA2, uint256 thetaSum2, uint256 posCount2) = harness.getIndex(poolKey);
+        (uint128 indexA2, uint256 thetaSum2, uint256 posCount2) = harness.getIndex(poolKey, false);
         assertGt(indexA2, 0, "indexA should be > 0 after removal with fees");
         assertGt(thetaSum2, 0, "thetaSum should be > 0 after removal");
         assertEq(posCount2, 0, "posCount should be 0 after all removed");

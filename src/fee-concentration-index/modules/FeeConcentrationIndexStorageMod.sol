@@ -6,6 +6,8 @@ import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {FeeConcentrationState} from "../types/FeeConcentrationStateMod.sol";
 import {TickRangeRegistry} from "../types/TickRangeRegistryMod.sol";
 import {TickRange, intersects} from "../types/TickRangeMod.sol";
+import {SwapCount} from "../types/SwapCountMod.sol";
+import {BlockCount} from "../types/BlockCountMod.sol";
 
 // Diamond storage for Fee Concentration Index HookFacet.
 // Runs via delegatecall in MasterHook's storage context.
@@ -25,6 +27,11 @@ struct FeeConcentrationIndexStorage {
 
 bytes32 constant FCI_STORAGE_SLOT = keccak256("thetaSwap.fci");
 
+// Reactive FCI: same struct at a disjoint slot for V3 pool state.
+// When FCI runs on behalf of the reactive adapter, position/fee data
+// is stored here so it never collides with native V4 pool state.
+bytes32 constant REACTIVE_FCI_STORAGE_SLOT = keccak256("thetaSwap.fci.reactive");
+
 // Transient storage slots (transaction-scoped, unaffected by delegatecall)
 bytes32 constant TICK_BEFORE_SLOT = keccak256("thetaSwap.fci.tickBefore");
 bytes32 constant FEE_GROWTH_LAST0_SLOT = keccak256("thetaSwap.fci.feeGrowthLast0");
@@ -33,6 +40,13 @@ bytes32 constant RANGE_FEE_GROWTH0_SLOT = keccak256("thetaSwap.fci.rangeFeeGrowt
 
 function fciStorage() pure returns (FeeConcentrationIndexStorage storage s) {
     bytes32 slot = FCI_STORAGE_SLOT;
+    assembly {
+        s.slot := slot
+    }
+}
+
+function reactiveFciStorage() pure returns (FeeConcentrationIndexStorage storage s) {
+    bytes32 slot = REACTIVE_FCI_STORAGE_SLOT;
     assembly {
         s.slot := slot
     }
@@ -96,6 +110,56 @@ function deleteFeeGrowthBaseline(FeeConcentrationIndexStorage storage $, PoolId 
 
 function deleteFeeGrowthBaseline(PoolId poolId, bytes32 positionKey) {
     deleteFeeGrowthBaseline(fciStorage(), poolId, positionKey);
+}
+
+// ── Registry deregister wrappers (parameterized) ──
+
+function deregisterPosition(
+    FeeConcentrationIndexStorage storage $,
+    PoolId poolId,
+    bytes32 positionKey,
+    uint128 posLiquidity
+) returns (TickRange rk, SwapCount swapLifetime, BlockCount blockLifetime, uint128 totalRangeLiq) {
+    return $.registries[poolId].deregister(positionKey, posLiquidity);
+}
+
+function deregisterPosition(
+    PoolId poolId,
+    bytes32 positionKey,
+    uint128 posLiquidity
+) returns (TickRange rk, SwapCount swapLifetime, BlockCount blockLifetime, uint128 totalRangeLiq) {
+    return deregisterPosition(fciStorage(), poolId, positionKey, posLiquidity);
+}
+
+// ── FCI state wrappers (parameterized) ──
+
+function addStateTerm(
+    FeeConcentrationIndexStorage storage $,
+    PoolId poolId,
+    BlockCount blockLifetime,
+    uint256 xSquaredQ128
+) {
+    $.fciState[poolId].addTerm(blockLifetime, xSquaredQ128);
+}
+
+function addStateTerm(PoolId poolId, BlockCount blockLifetime, uint256 xSquaredQ128) {
+    addStateTerm(fciStorage(), poolId, blockLifetime, xSquaredQ128);
+}
+
+function incrementPosCount(FeeConcentrationIndexStorage storage $, PoolId poolId) {
+    $.fciState[poolId].incrementPos();
+}
+
+function incrementPosCount(PoolId poolId) {
+    incrementPosCount(fciStorage(), poolId);
+}
+
+function decrementPosCount(FeeConcentrationIndexStorage storage $, PoolId poolId) {
+    $.fciState[poolId].decrementPos();
+}
+
+function decrementPosCount(PoolId poolId) {
+    decrementPosCount(fciStorage(), poolId);
 }
 
 // ── Transient storage helpers ──

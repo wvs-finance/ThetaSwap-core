@@ -14,6 +14,7 @@ import {PositionDescriptor} from "@uniswap/v4-periphery/src/PositionDescriptor.s
 
 import {FeeConcentrationIndexHarness} from "../harness/FeeConcentrationIndexHarness.sol";
 import {INDEX_ONE} from "../../../src/fee-concentration-index/types/FeeConcentrationStateMod.sol";
+import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
 import {FCITestHelper} from "../helpers/FCITestHelper.sol";
 
 contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
@@ -61,6 +62,13 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
 
     function _clamp(uint256 v, uint256 lo, uint256 hi) internal pure returns (uint256) {
         return lo + (v % (hi - lo + 1));
+    }
+
+    // indexA tolerance: N division rounding errors amplified by sqrt.
+    // Error ≈ n * sqrt(n * max(bl, 1)) / 2. Use n * sqrt(n * max(bl,1)) for safety margin.
+    function _indexATolerance(uint256 n, uint256 bl) internal pure returns (uint256) {
+        uint256 product = n * (bl > 0 ? bl : 1);
+        return 1 + n * FixedPointMathLib.sqrt(product);
     }
 
     function _createLP(uint256 index) internal returns (address lp) {
@@ -128,12 +136,12 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
 
         // Phase 5: Assert
         uint256 hhi = harness.getAccumulatedHHI(poolId);
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
 
         // Tolerance: rounding from Q128 integer division. Scale with N.
         uint256 hhiTolerance = n * 3;
         assertApproxEqAbs(hhi, expectedHHI, hhiTolerance, "Tier1: HHI mismatch");
-        assertApproxEqAbs(uint256(indexA), expectedIndexA, n * 10, "Tier1: indexA mismatch");
+        assertApproxEqAbs(uint256(indexA), expectedIndexA, _indexATolerance(n, bl), "Tier1: indexA mismatch");
         assertLe(indexA, INDEX_ONE, "Tier1: indexA capped");
     }
 
@@ -201,11 +209,11 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
 
         // Phase 5: Assert
         uint256 hhi = harness.getAccumulatedHHI(poolId);
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
 
         uint256 hhiTolerance = n * 3;
         assertApproxEqAbs(hhi, expectedHHI, hhiTolerance, "Tier2: HHI mismatch");
-        assertApproxEqAbs(uint256(indexA), expectedIndexA, n * 10, "Tier2: indexA mismatch");
+        assertApproxEqAbs(uint256(indexA), expectedIndexA, _indexATolerance(n, blockLifetimes[n - 1]), "Tier2: indexA mismatch");
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -247,11 +255,11 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
         (uint256 expectedHHI, uint256 expectedIndexA) = _callOracle(liquidities, blockLifetimes);
 
         uint256 hhi = harness.getAccumulatedHHI(poolId);
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
 
         uint256 hhiTolerance = n * 3;
         assertApproxEqAbs(hhi, expectedHHI, hhiTolerance, "Tier3: HHI mismatch");
-        assertApproxEqAbs(uint256(indexA), expectedIndexA, n * 10, "Tier3: indexA mismatch");
+        assertApproxEqAbs(uint256(indexA), expectedIndexA, _indexATolerance(n, bl), "Tier3: indexA mismatch");
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -308,10 +316,10 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
         (uint256 expectedHHI, uint256 expectedIndexA) = _callOracle(liquidities, blockLifetimes);
 
         uint256 hhi = harness.getAccumulatedHHI(poolId);
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
 
         uint256 hhiTolerance = n * 3;
         assertApproxEqAbs(hhi, expectedHHI, hhiTolerance, "Tier4: HHI mismatch");
-        assertApproxEqAbs(uint256(indexA), expectedIndexA, n * 10, "Tier4: indexA mismatch");
+        assertApproxEqAbs(uint256(indexA), expectedIndexA, _indexATolerance(n, blockLifetimes[n - 1]), "Tier4: indexA mismatch");
     }
 }
