@@ -8,6 +8,7 @@ base_commit: 5b0106509ef91db22732991d27a1d02330eacf11
 created_at: '2026-03-06T17:16:10.543561+00:00'
 subtasks: [T004, T005, T006, T007, T008, T009, T010]
 shell_pid: "187991"
+agent: "claude-opus"
 history:
 - date: '2026-03-06'
   action: created
@@ -216,3 +217,7 @@ The ReactiveHookAdapter sits at `src/reactive-integration/adapters/uniswapV3/` a
 - **incrementOverlappingRanges coupling**: The existing free function reads from `fciStorage()`. The adapter needs its own version reading from `reactiveFciStorage()`. May need to refactor the function to accept a storage pointer, or duplicate with different storage reference.
 - **Registry deregister for unregistered position**: Must verify that `registry.deregister()` handles non-existent positions gracefully (returns early or reverts). If it reverts, wrap in try/catch or add existence check before calling.
 - **Position key derivation consistency**: Must use identical key derivation in onV3Mint, onV3Collect, and onV3Burn. Any mismatch → fees lost or wrong position deregistered.
+
+## Activity Log
+
+- 2026-03-06T17:16:10Z – claude-opus – shell_pid=187991 – lane=doing – Assigned agent via workflow command
