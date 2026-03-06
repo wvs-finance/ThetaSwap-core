@@ -1,0 +1,9 @@
+{
+  "feature_number": "001",
+  "slug": "001-reactive-fci-non-v4-pools",
+  "feature_slug": "001-reactive-fci-non-v4-pools",
+  "friendly_name": "reactive fci non v4 pools",
+  "mission": "software-dev",
+  "target_branch": "001-fci-coprimary-diamond",
+  "created_at": "2026-03-06T12:35:05.594622+00:00"
+}
