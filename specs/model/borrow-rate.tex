@@ -1,0 +1,68 @@
+% borrow-rate.tex — Utilization-based borrow rate (JumpRate) + separate funding
+% Kontrol: prove_ins_borrowRate*, prove_ins_utilizationBound*
+
+\section{Borrow Rate}\label{sec:borrow-rate}
+
+The PLP (borrower) pays two separate rates to the underwriter (lender):
+a unidirectional borrow rate (always PLP $\to$ underwriter) and a bidirectional
+funding rate (\cref{sec:funding-rate}). These are economically distinct mechanisms
+with separate accumulators, following the Primer on Perpetuals
+\cite{angeris2022perpetuals}.
+
+\subsection{Borrow Rate: JumpRate Curve}
+
+\begin{definition}[Borrow Rate]\label{def:borrow-rate}
+\begin{equation}\label{eq:borrow-rate}
+  \rborrow(\Ua) = \premfactor + \mlow \cdot \min(\Ua, \kink)
+                 + \mhigh \cdot \max(0,\, \Ua - \kink)
+\end{equation}
+where:
+\begin{itemize}
+  \item $\premfactor > 0$: base premium (floor), calibrated from econometric WTP;
+  \item $\Ua = L_{\text{borrowed}} / L_{\text{total}} \in [0, 1]$: utilization ratio;
+  \item $\kink \in (0, 1)$: target utilization (e.g., $\kink = 0.8$);
+  \item $\mlow > 0$: slope below kink (gentle increase);
+  \item $\mhigh \gg \mlow$: slope above kink (jump multiplier, strong deterrent).
+\end{itemize}
+\end{definition}
+
+\begin{proposition}[Borrow Rate Properties]\label{prop:borrow-properties}
+\begin{enumerate}[label=(\roman*)]
+  \item $\rborrow \geq \premfactor > 0$ for all $\Ua \geq 0$ (underwriters always earn at least $\premfactor$).
+  \item $\rborrow$ is continuous and piecewise-linear in $\Ua$.
+  \item $\rborrow$ is non-decreasing in $\Ua$ (higher utilization $\to$ higher borrow cost).
+  \item At $\Ua = 1$: $\rborrow = \premfactor + \mlow \kink + \mhigh(1 - \kink)$
+    (very expensive, incentivizing new underwriter deposits or PLP exit).
+\end{enumerate}
+\end{proposition}
+
+\subsection{Borrow Rate Accrual}
+
+\begin{definition}[Borrow Fee Accumulator]\label{def:borrow-accumulator}
+At each hook callback (afterSwap, afterAddLiquidity, afterRemoveLiquidity),
+the borrow fee growth accumulator updates:
+\begin{equation}\label{eq:borrow-accumulator}
+  g^{\text{borrow}} \mathrel{+}= \rborrow(\Ua) \cdot \Delta t
+\end{equation}
+where $\Delta t$ is the time elapsed since the last callback (in blocks or seconds).
+This accumulator is global (per insurance pool) and distributed to underwriters
+pro-rata by liquidity share, using the Synthetix staking pattern
+\cite{batog2018scalable}.
+\end{definition}
+
+\subsection{Separate Accounting Principle}
+
+\begin{remark}[Two Accumulators, Two Purposes]
+The borrow rate and funding rate (\cref{sec:funding-rate}) use separate
+accumulators:
+\begin{itemize}
+  \item $g^{\text{borrow}}$: always positive, PLP $\to$ underwriter.
+    Compensates capital lockup and tail risk.
+  \item $g^{\text{funding}}$: bidirectional. Corrects mark-index mispricing.
+    When positive, PLP pays; when negative, underwriter pays.
+\end{itemize}
+The Primer on Perpetuals \cite[Section~3]{angeris2022perpetuals} establishes that
+conflating these mechanisms breaks funding convergence: a funding term that
+cannot go negative (because it's floored by the borrow rate) cannot fully
+correct underpricing.
+\end{remark}
