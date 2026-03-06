@@ -2,83 +2,95 @@
 pragma solidity ^0.8.26;
 
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
-import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
-import {SwapParams, ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 
-import {V3SwapData, V3MintData, V3BurnData, V3CollectData} from "../../types/ReactiveCallbackDataMod.sol";
+import {V3SwapData, V3MintData, V3BurnData} from "../../types/ReactiveCallbackDataMod.sol";
+import {requireAuthorized} from "./ReactiveAuthMod.sol";
+import {reactiveFciStorage} from "./ReactiveHookAdapterStorageMod.sol";
+import {
+    FeeConcentrationIndexStorage,
+    registerPosition, setFeeGrowthBaseline, deleteFeeGrowthBaseline,
+    incrementOverlappingRanges
+} from "../../../fee-concentration-index/modules/FeeConcentrationIndexStorageMod.sol";
+import {TickRange, fromTicks} from "../../../fee-concentration-index/types/TickRangeMod.sol";
+import {FeeShareRatio} from "../../../fee-concentration-index/types/FeeShareRatioMod.sol";
+import {SwapCount} from "../../../fee-concentration-index/types/SwapCountMod.sol";
+import {BlockCount} from "../../../fee-concentration-index/types/BlockCountMod.sol";
+import {SyntheticFeeGrowth, fromBurnAmount, toFeeShareRatio} from "../../types/SyntheticFeeGrowthMod.sol";
+import {v3PositionKey} from "../../types/CollectedFeesMod.sol";
 import {fromV3Pool} from "../../libraries/PoolKeyExtMod.sol";
 
-// Translates V3 event data into V4 hook calldata.
-// The reactive subscription contract calls these to build arguments
-// for FeeConcentrationIndex's standard hook functions.
+// Destination-chain adapter: receives callbacks from Reactive Network callback proxy,
+// translates V3 event data into FCI state updates on the reactive storage slot.
+// Thin contract shell — all logic in Mod files. SCOP compliant (no is/library/modifier).
+contract ReactiveHookAdapter {
+    address immutable rvmId;
+    address immutable owner;
+    mapping(address => bool) public authorizedCallers;
 
-// V3 Swap → afterSwap calldata
-// hookData carries the swap tick for FCI to consume.
-function adaptV3Swap(
-    V3SwapData calldata data,
-    address adapter
-) view returns (
-    PoolKey memory key,
-    SwapParams memory params,
-    BalanceDelta delta,
-    bytes memory hookData
-) {
-    key = fromV3Pool(data.pool, adapter);
-    // SwapParams fields unused by FCI — zero is fine.
-    params = SwapParams({zeroForOne: true, amountSpecified: 0, sqrtPriceLimitX96: 0});
-    delta = BalanceDelta.wrap(0);
-    hookData = abi.encode(data.tick);
-}
+    event AuthorizedCallerUpdated(address indexed caller, bool authorized);
 
-// V3 Mint → afterAddLiquidity calldata
-function adaptV3Mint(
-    V3MintData calldata data,
-    address adapter
-) view returns (
-    address sender,
-    PoolKey memory key,
-    ModifyLiquidityParams memory params,
-    BalanceDelta delta,
-    BalanceDelta feesAccrued,
-    bytes memory hookData
-) {
-    sender = data.owner;
-    key = fromV3Pool(data.pool, adapter);
-    params = ModifyLiquidityParams({
-        tickLower: data.tickLower,
-        tickUpper: data.tickUpper,
-        liquidityDelta: int256(uint256(data.liquidity)),
-        salt: bytes32(0)
-    });
-    delta = BalanceDelta.wrap(0);
-    feesAccrued = BalanceDelta.wrap(0);
-    hookData = "";
-}
+    error OnlyOwner();
 
-// V3 Burn → afterRemoveLiquidity calldata
-// feeAmount0/feeAmount1: accumulated Collect fees for this position.
-function adaptV3Burn(
-    V3BurnData calldata data,
-    uint256 feeAmount0,
-    uint256 feeAmount1,
-    address adapter
-) view returns (
-    address sender,
-    PoolKey memory key,
-    ModifyLiquidityParams memory params,
-    BalanceDelta delta,
-    BalanceDelta feesAccrued,
-    bytes memory hookData
-) {
-    sender = data.owner;
-    key = fromV3Pool(data.pool, adapter);
-    params = ModifyLiquidityParams({
-        tickLower: data.tickLower,
-        tickUpper: data.tickUpper,
-        liquidityDelta: -int256(uint256(data.liquidity)),
-        salt: bytes32(0)
-    });
-    delta = BalanceDelta.wrap(0);
-    feesAccrued = BalanceDelta.wrap(0);
-    hookData = abi.encode(feeAmount0, feeAmount1);
+    constructor(address callbackProxy) {
+        owner = msg.sender;
+        rvmId = msg.sender;
+        authorizedCallers[callbackProxy] = true;
+    }
+
+    function setAuthorized(address caller, bool authorized) external {
+        if (msg.sender != owner) revert OnlyOwner();
+        authorizedCallers[caller] = authorized;
+        emit AuthorizedCallerUpdated(caller, authorized);
+    }
+
+    function onV3Swap(V3SwapData calldata data) external {
+        requireAuthorized(msg.sender, authorizedCallers);
+        FeeConcentrationIndexStorage storage $ = reactiveFciStorage();
+        PoolKey memory key = fromV3Pool(data.pool, address(this));
+        PoolId poolId = PoolIdLibrary.toId(key);
+        incrementOverlappingRanges($, poolId, data.tick, data.tick);
+    }
+
+    function onV3Mint(V3MintData calldata data) external {
+        requireAuthorized(msg.sender, authorizedCallers);
+        FeeConcentrationIndexStorage storage $ = reactiveFciStorage();
+        PoolKey memory key = fromV3Pool(data.pool, address(this));
+        PoolId poolId = PoolIdLibrary.toId(key);
+        bytes32 posKey = v3PositionKey(data.owner, data.tickLower, data.tickUpper);
+        TickRange rk = fromTicks(data.tickLower, data.tickUpper);
+        registerPosition($, poolId, rk, posKey, data.tickLower, data.tickUpper, data.liquidity);
+        setFeeGrowthBaseline($, poolId, posKey, 0);
+        $.fciState[poolId].incrementPos();
+    }
+
+    function onV3Burn(V3BurnData calldata data, uint256 fee0, uint256 fee1) external {
+        requireAuthorized(msg.sender, authorizedCallers);
+        FeeConcentrationIndexStorage storage $ = reactiveFciStorage();
+        PoolKey memory key = fromV3Pool(data.pool, address(this));
+        PoolId poolId = PoolIdLibrary.toId(key);
+        bytes32 posKey = v3PositionKey(data.owner, data.tickLower, data.tickUpper);
+
+        (, SwapCount swapLifetime, BlockCount blockLifetime, uint128 totalRangeLiq) =
+            $.registries[poolId].deregister(posKey, data.liquidity);
+
+        if (!swapLifetime.isZero()) {
+            SyntheticFeeGrowth posDelta = fromBurnAmount(fee0, data.liquidity);
+            SyntheticFeeGrowth rangeDelta = fromBurnAmount(fee0, totalRangeLiq);
+            FeeShareRatio xk = toFeeShareRatio(posDelta, rangeDelta);
+            uint256 xSquaredQ128 = xk.square();
+            $.fciState[poolId].addTerm(blockLifetime, xSquaredQ128);
+        }
+
+        $.fciState[poolId].decrementPos();
+        deleteFeeGrowthBaseline($, poolId, posKey);
+    }
+
+    function getIndex(PoolKey calldata key) external view returns (uint128 indexA, uint256 thetaSum, uint256 posCount) {
+        FeeConcentrationIndexStorage storage $ = reactiveFciStorage();
+        PoolId poolId = PoolIdLibrary.toId(key);
+        indexA = $.fciState[poolId].toIndexA();
+        thetaSum = $.fciState[poolId].thetaSum;
+        posCount = $.fciState[poolId].posCount;
+    }
 }
