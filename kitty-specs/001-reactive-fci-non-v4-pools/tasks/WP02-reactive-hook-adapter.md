@@ -1,14 +1,18 @@
 ---
-work_package_id: "WP02"
-title: "ReactiveHookAdapter Contract"
-lane: "planned"
-dependencies: ["WP01"]
-subtasks: ["T004", "T005", "T006", "T007", "T008", "T009", "T010"]
-requirement_refs: ["FR-001", "FR-002", "FR-003", "FR-004", "FR-005", "FR-006", "FR-008", "FR-009", "FR-010", "FR-011", "FR-012", "FR-016"]
+work_package_id: WP02
+title: ReactiveHookAdapter Contract
+lane: "doing"
+dependencies: [WP01]
+base_branch: 001-reactive-fci-non-v4-pools-WP01
+base_commit: 5b0106509ef91db22732991d27a1d02330eacf11
+created_at: '2026-03-06T17:16:10.543561+00:00'
+subtasks: [T004, T005, T006, T007, T008, T009, T010]
+shell_pid: "187991"
 history:
-  - date: "2026-03-06"
-    action: "created"
-    by: "spec-kitty.tasks"
+- date: '2026-03-06'
+  action: created
+  by: spec-kitty.tasks
+requirement_refs: [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-008, FR-009, FR-010, FR-011, FR-012, FR-016]
 ---
 
 # WP02: ReactiveHookAdapter Contract
