@@ -11,6 +11,8 @@ remappings = [
     "v4-core/=lib/uniswap-hooks/lib/v4-core/",
     "lib/2025-12-panoptic/:v4-core/=lib/2025-12-panoptic/lib/v4-core/src/",
     "chimera/=lib/chimera/src/",
+    "reactive-lib/=lib/reactive-lib/src/",
+    "@uniswap/v3-core/=lib/v3-core/",
 ]
 
 [rpc_endpoints]
