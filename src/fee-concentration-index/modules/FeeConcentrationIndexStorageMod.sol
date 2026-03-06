@@ -46,6 +46,34 @@ function _poolManager() view returns (IPoolManager) {
     return fciStorage().poolManager;
 }
 
+// ── Registry wrappers ──
+
+function registerPosition(
+    PoolId poolId,
+    TickRange rk,
+    bytes32 positionKey,
+    int24 tickLower,
+    int24 tickUpper,
+    uint128 posLiquidity
+) {
+    FeeConcentrationIndexStorage storage $ = fciStorage();
+    $.registries[poolId].register(rk, positionKey, tickLower, tickUpper, posLiquidity);
+}
+
+// ── Fee growth baseline wrappers ──
+
+function setFeeGrowthBaseline(PoolId poolId, bytes32 positionKey, uint256 feeGrowth0X128) {
+    fciStorage().feeGrowthBaseline0[poolId][positionKey] = feeGrowth0X128;
+}
+
+function getFeeGrowthBaseline(PoolId poolId, bytes32 positionKey) view returns (uint256) {
+    return fciStorage().feeGrowthBaseline0[poolId][positionKey];
+}
+
+function deleteFeeGrowthBaseline(PoolId poolId, bytes32 positionKey) {
+    delete fciStorage().feeGrowthBaseline0[poolId][positionKey];
+}
+
 // ── Transient storage helpers ──
 
 function t_storeTick(int24 tick) {
@@ -59,16 +87,6 @@ function t_readTick() returns (int24 tick) {
     bytes32 slot = TICK_BEFORE_SLOT;
     assembly {
         tick := tload(slot)
-    }
-}
-
-function sortTicks(int24 a, int24 b) pure returns (int24 tickMin, int24 tickMax) {
-    if (a < b) {
-        tickMin = a;
-        tickMax = b;
-    } else {
-        tickMin = b;
-        tickMax = a;
     }
 }
 

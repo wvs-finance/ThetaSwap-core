@@ -8,12 +8,12 @@ import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/src/types/BeforeSwapDelta.sol";
 import {SwapParams, ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
-import {Position} from "v4-core/src/libraries/Position.sol";
-
 import {TickRange, fromTicks} from "./types/TickRangeMod.sol";
+import {derivePoolAndPosition, sortTicks} from "../libraries/HookUtilsMod.sol";
 import {
     FeeConcentrationIndexStorage, fciStorage, _poolManager,
-    t_storeTick, t_readTick, sortTicks,
+    registerPosition, setFeeGrowthBaseline, getFeeGrowthBaseline, deleteFeeGrowthBaseline,
+    t_storeTick, t_readTick,
     t_cacheRemovalData, t_readRemovalData,
     incrementOverlappingRanges
 } from "./modules/FeeConcentrationIndexStorageMod.sol";
@@ -29,6 +29,7 @@ import {IERC165} from "forge-std/interfaces/IERC165.sol";
 // Fee Concentration Index — HookFacet (no BaseHook, no inheritance beyond interfaces).
 // Deployed as a facet in MasterHook diamond — runs via delegatecall.
 // poolManager stored in FCI's own diamond storage namespace (thetaSwap.fci).
+
 
 contract FeeConcentrationIndex is IFeeConcentrationIndex {
 
@@ -46,27 +47,19 @@ contract FeeConcentrationIndex is IFeeConcentrationIndex {
         BalanceDelta,
         bytes calldata
     ) external returns (bytes4, BalanceDelta) {
-        FeeConcentrationIndexStorage storage $ = fciStorage();
-        PoolId poolId = PoolIdLibrary.toId(key);
-
-        bytes32 positionKey = Position.calculatePositionKey(
-            sender, params.tickLower, params.tickUpper, params.salt
-        );
+        (PoolId poolId, bytes32 positionKey) = derivePoolAndPosition(sender, key, params);
         TickRange rk = fromTicks(params.tickLower, params.tickUpper);
 
-        // Read position liquidity from V4 to track totalRangeLiquidity
         (uint128 posLiquidity,) = getPositionFeeGrowthInsideLast0(_poolManager(), poolId, positionKey);
-
-        $.registries[poolId].register(rk, positionKey, params.tickLower, params.tickUpper, posLiquidity);
+        registerPosition(poolId, rk, positionKey, params.tickLower, params.tickUpper, posLiquidity);
 
         int24 currentTick = getCurrentTick(_poolManager(), poolId);
         uint256 feeGrowthInside0X128 = getFeeGrowthInside0(
             _poolManager(), poolId, currentTick, params.tickLower, params.tickUpper
         );
-        $.feeGrowthBaseline0[poolId][positionKey] = feeGrowthInside0X128;
+        setFeeGrowthBaseline(poolId, positionKey, feeGrowthInside0X128);
 
-        // Track active position count
-        $.fciState[poolId].incrementPos();
+        fciStorage().fciState[poolId].incrementPos();
 
         return (IHooks.afterAddLiquidity.selector, BalanceDelta.wrap(0));
     }
@@ -113,10 +106,7 @@ contract FeeConcentrationIndex is IFeeConcentrationIndex {
         ModifyLiquidityParams calldata params,
         bytes calldata
     ) external returns (bytes4) {
-        PoolId poolId = PoolIdLibrary.toId(key);
-        bytes32 positionKey = Position.calculatePositionKey(
-            sender, params.tickLower, params.tickUpper, params.salt
-        );
+        (PoolId poolId, bytes32 positionKey) = derivePoolAndPosition(sender, key, params);
         (uint128 posLiquidity, uint256 feeLast0) = getPositionFeeGrowthInsideLast0(_poolManager(), poolId, positionKey);
 
         // Cache rangeFeeGrowthInside0 BEFORE V4 processes the removal.
@@ -141,19 +131,16 @@ contract FeeConcentrationIndex is IFeeConcentrationIndex {
         BalanceDelta,
         bytes calldata
     ) external returns (bytes4, BalanceDelta) {
-        FeeConcentrationIndexStorage storage $ = fciStorage();
-        PoolId poolId = PoolIdLibrary.toId(key);
-        bytes32 positionKey = Position.calculatePositionKey(
-            sender, params.tickLower, params.tickUpper, params.salt
-        );
+        (PoolId poolId, bytes32 positionKey) = derivePoolAndPosition(sender, key, params);
 
         // Read cached pre-update values from transient storage (set in beforeRemoveLiquidity)
         (uint256 positionFeeLast0X128, uint128 posLiquidity, uint256 rangeFeeGrowthNow0X128) = t_readRemovalData();
 
         // Baseline stored at add time
-        uint256 baseline0X128 = $.feeGrowthBaseline0[poolId][positionKey];
+        uint256 baseline0X128 = getFeeGrowthBaseline(poolId, positionKey);
 
         // Deregister: get swap lifetime (zero-check) + block lifetime (HHI divisor)
+        FeeConcentrationIndexStorage storage $ = fciStorage();
         (, SwapCount swapLifetime, BlockCount blockLifetime, uint128 totalRangeLiq) =
             $.registries[poolId].deregister(positionKey, posLiquidity);
 
@@ -173,7 +160,7 @@ contract FeeConcentrationIndex is IFeeConcentrationIndex {
         $.fciState[poolId].decrementPos();
 
         // Clean up baseline
-        delete $.feeGrowthBaseline0[poolId][positionKey];
+        deleteFeeGrowthBaseline(poolId, positionKey);
 
         return (IHooks.afterRemoveLiquidity.selector, BalanceDelta.wrap(0));
     }
