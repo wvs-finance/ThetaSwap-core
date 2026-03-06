@@ -46,8 +46,21 @@ function _poolManager() view returns (IPoolManager) {
     return fciStorage().poolManager;
 }
 
-// ── Registry wrappers ──
+// ── Registry wrappers (parameterized) ──
 
+function registerPosition(
+    FeeConcentrationIndexStorage storage $,
+    PoolId poolId,
+    TickRange rk,
+    bytes32 positionKey,
+    int24 tickLower,
+    int24 tickUpper,
+    uint128 posLiquidity
+) {
+    $.registries[poolId].register(rk, positionKey, tickLower, tickUpper, posLiquidity);
+}
+
+// No-arg overload — V4 FCI convenience
 function registerPosition(
     PoolId poolId,
     TickRange rk,
@@ -56,22 +69,33 @@ function registerPosition(
     int24 tickUpper,
     uint128 posLiquidity
 ) {
-    FeeConcentrationIndexStorage storage $ = fciStorage();
-    $.registries[poolId].register(rk, positionKey, tickLower, tickUpper, posLiquidity);
+    registerPosition(fciStorage(), poolId, rk, positionKey, tickLower, tickUpper, posLiquidity);
 }
 
-// ── Fee growth baseline wrappers ──
+// ── Fee growth baseline wrappers (parameterized) ──
+
+function setFeeGrowthBaseline(FeeConcentrationIndexStorage storage $, PoolId poolId, bytes32 positionKey, uint256 feeGrowth0X128) {
+    $.feeGrowthBaseline0[poolId][positionKey] = feeGrowth0X128;
+}
 
 function setFeeGrowthBaseline(PoolId poolId, bytes32 positionKey, uint256 feeGrowth0X128) {
-    fciStorage().feeGrowthBaseline0[poolId][positionKey] = feeGrowth0X128;
+    setFeeGrowthBaseline(fciStorage(), poolId, positionKey, feeGrowth0X128);
+}
+
+function getFeeGrowthBaseline(FeeConcentrationIndexStorage storage $, PoolId poolId, bytes32 positionKey) view returns (uint256) {
+    return $.feeGrowthBaseline0[poolId][positionKey];
 }
 
 function getFeeGrowthBaseline(PoolId poolId, bytes32 positionKey) view returns (uint256) {
-    return fciStorage().feeGrowthBaseline0[poolId][positionKey];
+    return getFeeGrowthBaseline(fciStorage(), poolId, positionKey);
+}
+
+function deleteFeeGrowthBaseline(FeeConcentrationIndexStorage storage $, PoolId poolId, bytes32 positionKey) {
+    delete $.feeGrowthBaseline0[poolId][positionKey];
 }
 
 function deleteFeeGrowthBaseline(PoolId poolId, bytes32 positionKey) {
-    delete fciStorage().feeGrowthBaseline0[poolId][positionKey];
+    deleteFeeGrowthBaseline(fciStorage(), poolId, positionKey);
 }
 
 // ── Transient storage helpers ──
@@ -112,10 +136,9 @@ function t_readRemovalData() returns (uint256 feeLast0, uint128 posLiquidity, ui
     }
 }
 
-// ── Loop extracted from afterSwap ──
+// ── Overlapping ranges (parameterized) ──
 
-function incrementOverlappingRanges(PoolId poolId, int24 tickMin, int24 tickMax) {
-    FeeConcentrationIndexStorage storage $ = fciStorage();
+function incrementOverlappingRanges(FeeConcentrationIndexStorage storage $, PoolId poolId, int24 tickMin, int24 tickMax) {
     uint256 count = $.registries[poolId].activeRangeCount();
     for (uint256 i; i < count; ++i) {
         bytes32 rkRaw = $.registries[poolId].activeRangeAt(i);
@@ -126,4 +149,8 @@ function incrementOverlappingRanges(PoolId poolId, int24 tickMin, int24 tickMax)
             $.registries[poolId].incrementRangeSwapCount(TickRange.wrap(rkRaw));
         }
     }
+}
+
+function incrementOverlappingRanges(PoolId poolId, int24 tickMin, int24 tickMax) {
+    incrementOverlappingRanges(fciStorage(), poolId, tickMin, tickMax);
 }
