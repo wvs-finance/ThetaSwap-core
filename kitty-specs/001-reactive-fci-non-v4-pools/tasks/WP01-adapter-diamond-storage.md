@@ -1,7 +1,7 @@
 ---
 work_package_id: WP01
 title: Adapter Diamond Storage
-lane: "doing"
+lane: "for_review"
 dependencies: []
 base_branch: 001-fci-coprimary-diamond
 base_commit: 8f9834420d38a798ea1264285e4d6b2b6dc8a992
@@ -55,8 +55,8 @@ The ReactiveHookAdapter owns a parallel FCI storage instance isolated from the V
 - File-level function with assembly for slot access
 
 **Validation**:
-- [ ] `REACTIVE_FCI_STORAGE_SLOT != FCI_STORAGE_SLOT` (keccak256 of different strings)
-- [ ] Compiles with `forge build`
+- [x]`REACTIVE_FCI_STORAGE_SLOT != FCI_STORAGE_SLOT` (keccak256 of different strings)
+- [x]Compiles with `forge build`
 
 ### T002: Add CollectedFees Struct and Storage
 
@@ -71,8 +71,8 @@ The ReactiveHookAdapter owns a parallel FCI storage instance isolated from the V
 5. On Burn: amounts are read, used for fee share computation, then deleted
 
 **Validation**:
-- [ ] CollectedFees struct is minimal (only amount0, amount1)
-- [ ] Storage layout is clean — no redundant fields
+- [x]CollectedFees struct is minimal (only amount0, amount1)
+- [x]Storage layout is clean — no redundant fields
 
 ### T003: Create Storage Accessor Free Functions
 
@@ -89,18 +89,18 @@ The ReactiveHookAdapter owns a parallel FCI storage instance isolated from the V
 **Pattern reference**: See `FeeConcentrationIndexStorageMod.sol` lines 43-61 for the exact pattern.
 
 **Validation**:
-- [ ] All accessors are free functions (not inside a contract)
-- [ ] All accessors use `reactiveFciStorage()` to get the storage pointer
-- [ ] `addCollectedFees` uses `+=` (accumulation, not overwrite)
-- [ ] Compiles with `forge build`
+- [x]All accessors are free functions (not inside a contract)
+- [x]All accessors use `reactiveFciStorage()` to get the storage pointer
+- [x]`addCollectedFees` uses `+=` (accumulation, not overwrite)
+- [x]Compiles with `forge build`
 
 ## Definition of Done
 
-- [ ] `ReactiveHookAdapterStorageMod.sol` exists at correct path
-- [ ] Storage slot is distinct from FCI_STORAGE_SLOT
-- [ ] All accessor functions are file-level free functions
-- [ ] No `library`, `modifier`, or inheritance keywords
-- [ ] `forge build` succeeds with no errors on new files
+- [x] `ReactiveHookAdapterStorageMod.sol` exists at correct path
+- [x] Storage slot is distinct from FCI_STORAGE_SLOT
+- [x] All accessor functions are file-level free functions
+- [x] No `library`, `modifier`, or inheritance keywords
+- [x] `forge build` succeeds with no errors on new files
 
 ## Risks
 
@@ -110,3 +110,4 @@ The ReactiveHookAdapter owns a parallel FCI storage instance isolated from the V
 ## Activity Log
 
 - 2026-03-06T16:51:19Z – claude-opus – shell_pid=172730 – lane=doing – Assigned agent via workflow command
+- 2026-03-06T17:15:46Z – claude-opus – shell_pid=172730 – lane=for_review – Ready for review: reuses FeeConcentrationIndexStorage at reactive slot, CollectedFeesMod as separate type

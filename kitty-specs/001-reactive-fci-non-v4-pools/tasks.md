@@ -47,9 +47,9 @@
 3. Write accessor free functions following existing FCI storage pattern
 
 **Success criteria**:
-- [ ] Storage struct compiles with `forge build`
-- [ ] Storage slot hashes are distinct from FCI_STORAGE_SLOT
-- [ ] All accessor functions are free functions (SCOP)
+- [x] Storage struct compiles with `forge build`
+- [x] Storage slot hashes are distinct from FCI_STORAGE_SLOT
+- [x] All accessor functions are free functions (SCOP)
 
 ---
 
