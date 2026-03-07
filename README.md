@@ -1,66 +1,93 @@
-## Foundry
+# ThetaSwap Core
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+Fee concentration insurance protocol for Uniswap V4 passive LPs.
 
-Foundry consists of:
+## Prerequisites
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+- [Foundry](https://book.getfoundry.sh/getting-started/installation) (forge, cast, anvil)
+- Python >= 3.11
 
-## Documentation
+## Quick Start
 
-https://book.getfoundry.sh/
+```bash
+# Clone with submodules
+git clone --recurse-submodules <repo-url>
+cd thetaSwap-core-dev
 
-## Usage
+# One-command setup (venv + deps + Jupyter kernel)
+make install
 
-### Build
-
-```shell
-$ forge build
+# Run all tests
+make test
 ```
 
-### Test
+## Solidity (Fee Concentration Index)
 
-```shell
-$ forge test
+```bash
+forge build          # compile contracts
+forge test           # run Solidity tests
+forge test -vvv      # verbose output
 ```
 
-### Format
+Contracts live in `src/fee-concentration-index/`. Tests in `test/fee-concentration-index/`.
 
-```shell
-$ forge fmt
+## Python (Econometrics + Backtest)
+
+```bash
+# Activate venv
+source .venv/bin/activate
+
+# Run Python tests
+make test-py
+# or directly:
+PYTHONPATH=research pytest research/tests -v
+
+# Execute all notebooks headless
+make notebooks
 ```
 
-### Gas Snapshots
+Research code lives in `research/`:
+- `research/econometrics/` — hazard model, duration model, ingestion
+- `research/backtest/` — insurance backtest engine
+- `research/data/` — cached Dune query results
+- `research/notebooks/` — reproducible result notebooks
+- `research/tests/` — Python test suite
 
-```shell
-$ forge snapshot
+### Manual Python Setup (without Make)
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+
+# For notebooks: register a Jupyter kernel
+python -m ipykernel install --user --name=thetaswap \
+    --env PYTHONPATH "$(pwd)/research"
 ```
 
-### Anvil
+### Running Notebooks
 
-```shell
-$ anvil
+Notebooks expect a kernel with `PYTHONPATH` pointing to `research/`. The `make install` command sets this up automatically. To run interactively:
+
+```bash
+source .venv/bin/activate
+jupyter lab --notebook-dir=research/notebooks
 ```
 
-### Deploy
+Select the **thetaswap** kernel when opening notebooks.
 
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
+## Project Structure
+
 ```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
+src/fee-concentration-index/   Solidity hook contract
+test/fee-concentration-index/  Solidity tests (Foundry)
+research/
+  econometrics/                Hazard + duration models
+  backtest/                    Insurance backtest engine
+  data/                        Cached Dune query data
+  notebooks/                   Result notebooks (4)
+  tests/                       Python tests (pytest)
+specs/                         LaTeX specs + econometric model
+docs/plans/                    Implementation plans
+lib/                           Foundry dependencies (submodules)
 ```
