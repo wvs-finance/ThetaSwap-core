@@ -1,96 +1,97 @@
-% initialization.tex — Initial conditions derivation
-% Kontrol: prove_cfmm_replication_initialization
+% initialization.tex — Insurance CFMM initialization and registration
+% Kontrol: prove_ins_init*, prove_ins_registration*
 
 \section{Initialization}\label{sec:initialization}
 
-\subsection{Input Parameters}
+\subsection{Pool Initialization}
 
-The CFMM is initialized from:
-\begin{itemize}
-  \item $B_0 \in [0, 1)$: the initial fee dispersion index (typically $B_0 = 0$
-        at the first \texttt{afterAddLiquidity} event);
-  \item $L_0 > 0$: the initial liquidity.
-\end{itemize}
+\begin{definition}[Insurance Pool Parameters]\label{def:init-params}
+An insurance CFMM is initialized per underlying V4 pool with:
+\begin{enumerate}[label=(\roman*)]
+  \item $\texttt{fciHook}$: address of the deployed FeeConcentrationIndex hook
+    (oracle for $\pindex$);
+  \item $\texttt{poolManager}$: Uniswap V4 PoolManager address;
+  \item $\premfactor \in (0, 1)$: base premium factor (borrow rate floor);
+  \item $\alpha > 0$: funding rate sensitivity;
+  \item $\lambda > 0$: jump intensity parameter;
+  \item $\kink \in (0, 1)$: utilization target for JumpRate curve;
+  \item $\mlow, \mhigh > 0$: JumpRate slope parameters ($\mhigh \gg \mlow$);
+  \item $\texttt{tickSpacing}$: tick spacing for the insurance CFMM tick array.
+\end{enumerate}
+These parameters are immutable after deployment.
+\end{definition}
 
-\subsection{Derived Initial State}
+\subsection{First Underwriter Deposit}
 
-\begin{proposition}[Initial Price]\label{prop:init-price}
-The initial price is the odds-ratio mapping:
-\begin{equation}\label{eq:init-price}
-  p_0 = \frac{B_0}{1 - B_0}
-\end{equation}
-\end{proposition}
+\begin{definition}[Initialization from Oracle]\label{def:init-oracle}
+The first underwriter deposits $D$ USDC into tick range $[\pl, \pu]$.
+The FCI hook provides current $\DeltaPlus$, yielding $p_0 = \DeltaPlus/(1-\DeltaPlus)$.
 
-\begin{proposition}[Initial Reserves]\label{prop:init-reserves}
-The initial reserves are:
+\textbf{Case 1:} $p_0 \leq \pl$ (no active concentration---typical at launch):
 \begin{align}
-  x_0 &= L_0 \cdot (1 - B_0) \label{eq:init-x}\\
-  y_0 &= L_0 \cdot \bigl(-\ln(1 - B_0) - B_0\bigr) \label{eq:init-y}
+  L_0 &= \frac{D \cdot \pl^2}{\pu^2 + \pl^2} \label{eq:init-L-cold} \\
+  u_0 &= L_0 \cdot \frac{4\pl^2}{\pl^4} = \frac{4L_0}{\pl^2} \\
+  y_0 &= D
 \end{align}
+Spot price initializes at $\pl$ (the strike boundary).
+
+\textbf{Case 2:} $\pl < p_0 < \pu$ (concentration already active):
+\begin{align}
+  L_0 &= \frac{D \cdot \pl^2}{\pu^2 + p_0^2} \label{eq:init-L-warm} \\
+  u_0 &= L_0 \cdot \frac{4p_0^2}{\pl^4} \\
+  y_0 &= D
+\end{align}
+The underwriter enters mid-range with immediate concentration liability.
+
+\textbf{Case 3:} $p_0 \geq \pu$ (concentration above cap):
+Deposit reverts. The underwriter would face instant max-loss.
+\end{definition}
+
+\begin{proposition}[Invariant at Initialization]\label{prop:init-invariant}
+In all valid cases: $\psi(u_0, y_0) = L_0 \cdot \pu^2/\pl^2$.
 \end{proposition}
 
 \begin{proof}
-From \eqref{eq:risky-reserve} with liquidity scaling:
-\[
-  x_0 = L_0 \cdot \frac{1}{1 + p_0}
-      = L_0 \cdot \frac{1}{1 + B_0/(1-B_0)}
-      = L_0 \cdot \frac{1}{1/(1-B_0)}
-      = L_0 \cdot (1 - B_0)
-\]
-
-From \eqref{eq:numeraire-reserve} with liquidity scaling:
-\begin{align*}
-  y_0 &= L_0 \cdot \Bigl(\ln(1 + p_0) - \frac{p_0}{1 + p_0}\Bigr) \\
-      &= L_0 \cdot \Bigl(\ln\bigl(\tfrac{1}{1-B_0}\bigr) - \frac{B_0/(1-B_0)}{1/(1-B_0)}\Bigr) \\
-      &= L_0 \cdot \bigl(-\ln(1 - B_0) - B_0\bigr) \qedhere
-\end{align*}
+For Case~1: $\psi = D - (\pl^2/4)(4L_0/\pl^2) = D - L_0
+= D - D\pl^2/(\pu^2 + \pl^2) = D \cdot \pu^2/(\pu^2 + \pl^2)
+= L_0 \cdot (\pu^2 + \pl^2)/\pl^2 \cdot \pu^2/(\pu^2 + \pl^2)
+= L_0 \cdot \pu^2/\pl^2$. \qedhere
 \end{proof}
 
-\begin{proposition}[Invariant Constant]\label{prop:init-invariant}
-The initial invariant evaluates to:
-\begin{equation}\label{eq:init-invariant}
-  \psi\bigl(\tfrac{x_0}{L_0},\, \tfrac{y_0}{L_0}\bigr) = 0
-\end{equation}
-\end{proposition}
+\subsection{PLP Registration (Borrowing)}
 
-\begin{proof}
-Let $u_0 = x_0/L_0 = 1 - B_0$. Then $y_0/L_0 = -\ln(1-B_0) - B_0 = -\ln(u_0) - (1 - u_0) = u_0 - \ln(u_0) - 1$.
-By \eqref{eq:trading-function-explicit}, $y/L = u - \ln(u) - 1$ is exactly the invariant curve. \qedhere
-\end{proof}
+\begin{definition}[PLP Borrows LP Share]\label{def:plp-borrow}
+A PLP holding a V4 LP position borrows insurance CFMM LP shares:
+\begin{enumerate}[label=(\roman*)]
+  \item PLP calls \texttt{borrow(poolKey, v4PositionId, borrowAmount)}.
+  \item The hook verifies the PLP holds a valid V4 position with active fee stream.
+  \item LP shares are transferred from the insurance CFMM to the PLP
+    (reducing $L_{\text{available}}$, increasing $L_{\text{borrowed}}$).
+  \item The PLP's $\max_t p(t)$ tracker is initialized at current $\pindex$.
+  \item Utilization $\Ua$ increases, raising $\rborrow$ for all borrowers.
+\end{enumerate}
+\end{definition}
 
-\subsection{Special Case: $B_0 = 0$}
+\subsection{PLP Exit (Returning LP Share)}
 
-At the first \texttt{afterAddLiquidity} event, no positions have been removed yet,
-so $A_0 = 0$ and $B_0 = 1 - A_0 = 1$. However, $B_0 = 1$ is outside the domain
-($p \to \infty$). In practice:
+\begin{definition}[Exit Settlement]\label{def:plp-exit}
+At \texttt{afterRemoveLiquidity} (or voluntary deregistration):
+\begin{enumerate}[label=(\roman*)]
+  \item Compute $\text{premium}_i = \premfactor \times \text{lifetime\_fees}_i
+    + \text{accrued\_borrow\_rate}_i + \text{accrued\_funding}_i$.
+  \item Compute payout: $\text{payout}_i = \text{premium}_i \times
+    [(\max_t p(t) / \pl)^2 - 1]^{+}$.
+  \item The payout is capped at $\text{premium}_i \times [(\pu/\pl)^2 - 1]$
+    (tick range cap).
+  \item LP shares are returned to the insurance CFMM. Utilization $\Ua$ decreases.
+  \item Net settlement: PLP receives $\max(\text{payout} - \text{premium}_i, 0)$
+    from the CFMM reserves. If payout $<$ premium, the difference stays in reserves.
+\end{enumerate}
+\end{definition}
 
-\begin{remark}[Initialization at Genesis]\label{rem:genesis}
-When $B_0 = 1$ (no concentration), $p_0 \to \infty$ and $x_0 \to 0$.
-The CFMM starts with all reserves in numeraire.
-To avoid degenerate initialization, we set $B_0 = 1 - \epsilon$ for a small
-$\epsilon > 0$ chosen at deployment, giving:
-\begin{align}
-  p_0 &= (1 - \epsilon) / \epsilon \\
-  x_0 &= L_0 \cdot \epsilon \\
-  y_0 &= L_0 \cdot (-\ln(\epsilon) - (1 - \epsilon))
-\end{align}
+\begin{remark}[Max-Price Tracking]
+Each PLP position stores $p_{\max,i} = \max_{t \in [\text{mint}, \text{now}]} \pindex(t)$.
+Updated at every hook callback: $p_{\max,i} \gets \max(p_{\max,i}, \pindex)$.
+This is one SSTORE per position per callback (only if $\pindex > p_{\max,i}$),
+amortized by checking the condition before writing.
 \end{remark}
-
-\subsection{Numerical Verification}
-
-At $B_0 = 0.5$, $L_0 = 100$:
-\begin{align*}
-  p_0 &= 0.5 / 0.5 = 1.0 \\
-  x_0 &= 100 \cdot 0.5 = 50 \\
-  y_0 &= 100 \cdot (-\ln(0.5) - 0.5) = 100 \cdot (0.6931 - 0.5) = 19.31
-\end{align*}
-
-Verification of LP value:
-\[
-  p_0 \cdot x_0 + y_0 = 1.0 \cdot 50 + 19.31 = 69.31 = L_0 \cdot \ln(1 + 1.0) = 100 \cdot 0.6931 \;\checkmark
-\]
-
-Verification of invariant:
-\[
-  \psi(50/100,\, 19.31/100) = 0.1931 + \ln(0.5) + 1 - 0.5 = 0.1931 - 0.6931 + 0.5 = 0.0 \;\checkmark
-\]
