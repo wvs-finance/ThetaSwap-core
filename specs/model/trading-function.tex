@@ -1,141 +1,135 @@
-% trading-function.tex — Trading function derivation and canonical form verification
-% Kontrol: prove_cfmm_replication_tradingFunctionConcavity
+% trading-function.tex — Linearized power² trading function derivation
+% Kontrol: prove_cfmm_tradingFunction*, prove_cfmm_coordinateTransform*
 
 \section{Trading Function}\label{sec:trading-function}
 
-We derive the trading function by eliminating the price parameter $p$ from the
-reserve curves $x(p)$ and $y(p)$ established in \cref{sec:reserves}.
+\subsection{Reserve Derivation}
 
-\subsection{Derivation}
+Starting from the LP payoff $V(p) = (\pu^2 - p^2)/\pl^2$ for $p \in [\pl, \pu]$,
+we derive reserves via the Angeris replication theorem \cite{angeris2021replicating}.
 
-\begin{theorem}[Trading Function]\label{thm:trading-function}
-The trading function for the fee concentration derivative CFMM is:
-\begin{equation}\label{eq:trading-function-explicit}
-  y = x - \ln(x) - 1
+\begin{definition}[Reserves]\label{def:reserves}
+The risky (virtual concentration) and numeraire (USDC) reserves per unit liquidity:
+\begin{align}
+  x(p) &= -V'(p) = \frac{2p}{\pl^2} \label{eq:risky-reserve} \\
+  y(p) &= V(p) + p \cdot x(p) = \frac{\pu^2 + p^2}{\pl^2} \label{eq:numeraire-reserve}
+\end{align}
+for $p \in [\pl, \pu]$, with boundary extensions:
+$x = 2\pl/\pl^2$ and $y = (\pu^2 + \pl^2)/\pl^2$ for $p \leq \pl$;
+$x = 2\pu/\pl^2$ and $y = 2\pu^2/\pl^2$ for $p \geq \pu$.
+\end{definition}
+
+\begin{proposition}[Reserve Verification]\label{prop:reserve-verify}
+$V(p) = y(p) - p \cdot x(p)$ holds exactly:
+\[
+  \frac{\pu^2 + p^2}{\pl^2} - p \cdot \frac{2p}{\pl^2}
+  = \frac{\pu^2 + p^2 - 2p^2}{\pl^2}
+  = \frac{\pu^2 - p^2}{\pl^2}
+  = V(p) \qquad\checkmark
+\]
+\end{proposition}
+
+\subsection{Coordinate Transform: $u = x^2$}\label{subsec:coordinate-transform}
+
+The natural trading function $y = \pu^2/\pl^2 + (\pl^2/4)x^2$ is quadratic in $x$.
+This creates a 2-homogeneous invariant, incompatible with O(1) tick-based
+liquidity aggregation (Uniswap V3-style $\Lact \mathrel{+}= \Lnet$ at tick crossings).
+
+\begin{definition}[Linearization]\label{def:linearization}
+Define the transformed risky reserve $u = x^2$. Then:
+\begin{equation}\label{eq:linearized-invariant}
+  \boxed{\psi(u, y) = y - \frac{\pl^2}{4}\, u}
 \end{equation}
-or equivalently in implicit form:
-\begin{equation}\label{eq:trading-function-implicit}
-  \psi(x, y) = y + \ln(x) + 1 - x = 0
-\end{equation}
-with domain $x \in (0, 1]$ and $y \in [0, \infty)$.
+with invariant constant $C_1 = \pu^2/\pl^2$ per unit liquidity.
+\end{definition}
+
+\begin{theorem}[Linearity and 1-Homogeneity]\label{thm:linearity}
+$\psi(u, y)$ is linear in $(u, y)$. With liquidity $L$:
+\[
+  u_{\text{total}} = L \cdot \tilde{u}(p), \quad
+  y_{\text{total}} = L \cdot \tilde{y}(p)
+\]
+where $\tilde{u}(p) = 4p^2/\pl^4$ and $\tilde{y}(p) = (\pu^2 + p^2)/\pl^2$
+are per-unit-liquidity reserves. The invariant scales as:
+\[
+  \psi(u_{\text{total}}, y_{\text{total}}) = L \cdot C_1
+\]
+which is 1-homogeneous in $L$.
 \end{theorem}
 
 \begin{proof}
-From \eqref{eq:risky-reserve}, $x = 1/(1+p)$, so $p = 1/x - 1 = (1-x)/x$.
-
-Substituting into \eqref{eq:numeraire-reserve}:
-\begin{align}
-  y &= \ln\bigl(1 + \tfrac{1-x}{x}\bigr) - \frac{(1-x)/x}{1 + (1-x)/x} \notag\\
-    &= \ln\bigl(\tfrac{1}{x}\bigr) - \frac{(1-x)/x}{1/x} \notag\\
-    &= -\ln(x) - (1-x) \notag\\
-    &= x - \ln(x) - 1 \label{eq:y-from-x}
-\end{align}
-Rearranging: $y + \ln(x) + 1 - x = 0$, giving $\psi(x,y) = y + \ln(x) + 1 - x$. \qedhere
+$\psi(L\tilde{u}, L\tilde{y}) = L\tilde{y} - (\pl^2/4) \cdot L\tilde{u}
+= L(\tilde{y} - (\pl^2/4)\tilde{u}) = L \cdot C_1$. \qedhere
 \end{proof}
 
-\subsection{Concavity Verification}
-
-\begin{proposition}[Trading Function Concavity]\label{prop:psi-concave}
-$\psi(x,y) = y + \ln(x) + 1 - x$ is concave in $(x,y)$ for $x > 0$.
-\end{proposition}
-
-\begin{proof}
-The Hessian of $\psi$ is:
-\begin{equation}\label{eq:hessian}
-  H_\psi = \begin{pmatrix}
-    \dfrac{\partial^2 \psi}{\partial x^2} & \dfrac{\partial^2 \psi}{\partial x \partial y} \\[8pt]
-    \dfrac{\partial^2 \psi}{\partial y \partial x} & \dfrac{\partial^2 \psi}{\partial y^2}
-  \end{pmatrix}
-  = \begin{pmatrix}
-    -1/x^2 & 0 \\
-    0 & 0
-  \end{pmatrix}
-\end{equation}
-The eigenvalues are $\lambda_1 = -1/x^2 < 0$ and $\lambda_2 = 0$.
-Since $H_\psi$ is negative semidefinite for all $x > 0$, $\psi$ is concave. \qedhere
-\end{proof}
+\begin{remark}[Concavity]
+The Hessian of $\psi$ has eigenvalues $-\pl^2/2$ and $0$, both $\leq 0$.
+Hence $\psi$ is concave, and the trading set
+$S = \{(u, y) : \psi(u, y) \geq L C_1\}$ is convex
+(Geometry paper \cite{angeris2023geometry}, Theorem~1).
+\end{remark}
 
 \subsection{Spot Price}
 
-\begin{proposition}[Spot Price from Trading Function]\label{prop:spot-price}
-The spot price implied by the trading function is:
+\begin{definition}[Spot Price from Reserves]\label{def:spot-price}
 \begin{equation}\label{eq:spot-price}
-  p = -\frac{\partial \psi / \partial x}{\partial \psi / \partial y}
-    = -\frac{1/x - 1}{1}
-    = 1 - \frac{1}{x}
-    = \frac{1-x}{x}
+  p = \frac{\pl^2}{2}\sqrt{\frac{u}{L}}
+  = \frac{\pl^2}{2} \cdot \frac{x}{L}
+  \quad\text{(in } x \text{ space: } p = \pl^2 x / (2L)\text{)}
 \end{equation}
-\end{proposition}
-
-\begin{proof}
-$\partial \psi / \partial x = 1/x - 1$ and $\partial \psi / \partial y = 1$.
-The marginal rate of substitution is $-(1/x - 1)/1 = 1 - 1/x = (x-1)/x$.
-
-Since $x \in (0,1]$, we have $x - 1 \leq 0$, so $(x-1)/x \leq 0$.
-However, price must be non-negative. The sign convention depends on direction:
-$p = |1/x - 1| = (1-x)/x$ for $x \in (0,1]$.
-
-This is consistent with the reserve curve: $x = 1/(1+p) \implies p = (1-x)/x$. \qedhere
-\end{proof}
-
-\subsection{Canonical Form Analysis}
-
-\begin{remark}[Non-Homogeneity]\label{rem:non-homogeneous}
-$\psi(x,y)$ is \emph{not} 1-homogeneous:
-\[
-  \psi(\lambda x, \lambda y)
-  = \lambda y + \ln(\lambda x) + 1 - \lambda x
-  = \lambda y + \ln(\lambda) + \ln(x) + 1 - \lambda x
-  \neq \lambda \psi(x, y)
-\]
-The $\ln(\lambda)$ term breaks homogeneity. This is expected for a fixed-supply CFMM
-where the invariant curve is not scale-invariant. The Geometry paper
-\cite{angeris2023geometry} establishes that canonical trading functions are
-1-homogeneous; our $\psi$ is therefore not in canonical form but is a valid
-(non-canonical) concave trading function.
-\end{remark}
-
-\subsection{Degeneracy Check}
-
-\begin{remark}[Non-Degeneracy]\label{rem:non-degenerate}
-The trading function $y = x - \ln(x) - 1$ is strictly convex in $x$
-(since $y''(x) = 1/x^2 > 0$), meaning the reserve curve has non-zero curvature
-everywhere. This is \emph{not} a degenerate (linear) CFMM.
-The CFMM trades at a continuum of prices, not a single price point.
-\end{remark}
-
-\subsection{Liquidity Scaling}\label{subsec:liquidity-scaling}
-
-With $L$ units of liquidity, reserves scale as $x \to L \cdot u$ where $u = x/L$
-is the per-liquidity risky reserve. The trading function becomes:
-
-\begin{equation}\label{eq:scaled-invariant}
-  \frac{y}{L} = u - \ln(u) - 1
-\end{equation}
-
-\begin{proposition}[Pro-Rata Minting]\label{prop:pro-rata}
-For an LP adding $\Delta L$ liquidity at price $p$, the required deposits are:
-\begin{align}
-  \Delta x &= \frac{\Delta L}{1 + p} \label{eq:mint-x}\\
-  \Delta y &= \Delta L \cdot \Bigl(\ln(1+p) - \frac{p}{1+p}\Bigr) \label{eq:mint-y}
-\end{align}
-and the new shares satisfy $\Delta L / L = \Delta x / x = \Delta y / y$ (pro-rata).
-\end{proposition}
-
-\begin{proof}
-At price $p$, the per-unit reserves are $x/L = 1/(1+p)$ and $y/L = \ln(1+p) - p/(1+p)$.
-Scaling by $\Delta L$ gives the deposit amounts. The pro-rata property follows from
-linearity of the reserve functions in $L$. \qedhere
-\end{proof}
-
-\subsection{Trading Set}
-
-\begin{definition}[Trading Set]\label{def:trading-set}
-The trading set is:
-\begin{equation}\label{eq:trading-set}
-  \TradingSet = \bigl\{(x, y) \in \mathbb{R}_{>0} \times \mathbb{R}_{\geq 0}
-  : y + \ln(x) + 1 - x \geq 0 \bigr\}
-\end{equation}
-By \cref{prop:psi-concave}, $\psi$ is concave, so $\TradingSet$ is convex
-(\cite[Theorem~1]{angeris2023geometry}).
+where the second equality uses $x = \sqrt{u}$.
 \end{definition}
+
+\begin{proof}[Verification]
+From the trading function, $-\partial\psi/\partial u \big/ \partial\psi/\partial y
+= -(-\pl^2/4) / 1 = \pl^2/4$. This is the marginal price in $(u, y)$ space.
+In $(x, y)$ space, $du = 2x\, dx$, so the marginal price is
+$dy/dx = (\pl^2/4) \cdot 2x = \pl^2 x/2 = p$, matching the reserve
+derivation $x(p) = 2p/\pl^2 \Leftrightarrow p = \pl^2 x/2$. \qedhere
+\end{proof}
+
+\subsection{Swap Mechanics}
+
+A swap in the insurance CFMM operates in $(u, y)$ space internally, with
+$x \leftrightarrow u$ conversion at the boundary.
+
+\begin{definition}[Swap]\label{def:swap}
+Trader sells $\Delta x$ units of concentration exposure:
+\begin{align}
+  \Delta u &= (x + \Delta x)^2 - x^2 = 2x\,\Delta x + (\Delta x)^2 \label{eq:delta-u} \\
+  \Delta y &= \frac{\pl^2}{4}\, \Delta u \label{eq:delta-y}
+\end{align}
+The effective price $\Delta y / \Delta x = (\pl^2/4)(2x + \Delta x)$ depends on
+the current state $x$ and trade size $\Delta x$, providing natural slippage
+despite the internal invariant being linear.
+\end{definition}
+
+\begin{remark}[O(1) Complexity]
+Within a tick: the swap is a single multiplication (\cref{eq:delta-y}) plus
+one square root for $x = \sqrt{u}$ conversion (\texttt{FixedPointMathLib.sqrt}).
+Tick crossing: $\Lact \mathrel{+}= \Lnet$, a single addition.
+Total per-swap cost: O(ticks crossed), same as Uniswap V3.
+\end{remark}
+
+\subsection{Liquidity Provisioning}
+
+\begin{definition}[Single-Sided USDC Deposit]\label{def:single-sided}
+An underwriter deposits $\Delta y$ USDC at current price $p$:
+\begin{align}
+  \Delta L &= \frac{\Delta y \cdot \pl^2}{\pu^2 + p^2} \label{eq:mint-L} \\
+  \Delta u &= \Delta L \cdot \frac{4p^2}{\pl^4}
+             = \frac{4p^2 \cdot \Delta y}{\pl^2(\pu^2 + p^2)} \label{eq:mint-u}
+\end{align}
+The virtual $\Delta u$ is computed, not deposited. Only USDC enters the contract.
+\end{definition}
+
+\begin{proposition}[Invariant Preservation on Mint]\label{prop:mint-invariant}
+After minting: $\psi(u + \Delta u, y + \Delta y) = (L + \Delta L) \cdot C_1$.
+\end{proposition}
+
+\begin{proof}
+$\psi(u + \Delta u, y + \Delta y) = (y + \Delta y) - (\pl^2/4)(u + \Delta u)
+= \psi(u, y) + \Delta y - (\pl^2/4)\Delta u
+= L C_1 + \Delta L \cdot \tilde{y} - (\pl^2/4)\Delta L \cdot \tilde{u}
+= L C_1 + \Delta L \cdot C_1 = (L + \Delta L) C_1$. \qedhere
+\end{proof}

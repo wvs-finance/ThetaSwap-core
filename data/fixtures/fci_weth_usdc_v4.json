@@ -1,0 +1,1118 @@
+{
+  "pool": {
+    "poolId": "0x4f88f7c99022eace4740c6898f59ce6a2e798a1e64ce54589720b7153eb224a7",
+    "token0": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "token1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+    "fee": 500,
+    "tickSpacing": 10,
+    "hooks": "0x0000000000000000000000000000000000000000"
+  },
+  "forkBlock": 23655999,
+  "eventCount": 107,
+  "snapshotCount": 4,
+  "events": [
+    {
+      "blockNumber": 23656049,
+      "txHash": "0x991acffce58d6871054bcc6505a9d6167f2402b69389f991272e0c703cefc4e4",
+      "logIndex": 174,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193547,
+      "sqrtPriceX96": "1263274906988990567432817206888633"
+    },
+    {
+      "blockNumber": 23656220,
+      "txHash": "0xb15214f2fe9bf429c2f865b6655ca0b1c683099213d7ac294f0790b485685cdb",
+      "logIndex": 42,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193546,
+      "sqrtPriceX96": "1263200475905374031192282556034765"
+    },
+    {
+      "blockNumber": 23656311,
+      "txHash": "0xfccfa81b171a7f63d3fb629ab550a775cfcf961a215dfa28191dcc355efc5180",
+      "logIndex": 67,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193460,
+      "tickUpper": 193660,
+      "liquidityDelta": -341568939927754,
+      "salt": "0x00000000000000000000000000000000000000000000000000000000000159b1"
+    },
+    {
+      "blockNumber": 23656311,
+      "txHash": "0xfccfa81b171a7f63d3fb629ab550a775cfcf961a215dfa28191dcc355efc5180",
+      "logIndex": 99,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193370,
+      "tickUpper": 193580,
+      "liquidityDelta": 324567862388026,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015aa4"
+    },
+    {
+      "blockNumber": 23656400,
+      "txHash": "0x63f5f8e6d126277d85f53a1f58f8f58e0f191d6e564c85464c6b2ec102a68f3b",
+      "logIndex": 154,
+      "eventType": "Swap",
+      "sender": "0x2b3acfc9f10d52cd3a5bfc2639470e3a7ed15070",
+      "swapTick": 193490,
+      "sqrtPriceX96": "1259655605396079189047533916583886"
+    },
+    {
+      "blockNumber": 23656535,
+      "txHash": "0x438b6b0e31c41da07a3fb286e9874467ff9912b63ddd400d864de17d12e09fee",
+      "logIndex": 172,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193370,
+      "tickUpper": 193580,
+      "liquidityDelta": -324567862388026,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015aa4"
+    },
+    {
+      "blockNumber": 23656608,
+      "txHash": "0x5ece6e2d83d9bc39b220ce88cb910db07034431694f14e8376d187b2e4d014c4",
+      "logIndex": 108,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193482,
+      "sqrtPriceX96": "1259171776637960214995950767531033"
+    },
+    {
+      "blockNumber": 23656801,
+      "txHash": "0xb95dfa655d2e9d4f01c531487cceb7494c9c99781c6e489a7077038f71e874b4",
+      "logIndex": 694,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193498,
+      "sqrtPriceX96": "1260218381772203007935345348819008"
+    },
+    {
+      "blockNumber": 23657011,
+      "txHash": "0x17e4047ea517f76582ecfe256e4deb5ca3c141b1d6af31fcaf06fbd665e3310a",
+      "logIndex": 119,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193502,
+      "sqrtPriceX96": "1260444885573326878279953915502513"
+    },
+    {
+      "blockNumber": 23657022,
+      "txHash": "0xe4cddf0e1cc10bb3d4211de5f94a518b2e64a1f609799b537767b42987bb6153",
+      "logIndex": 131,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193390,
+      "tickUpper": 193590,
+      "liquidityDelta": 346300371784292,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015ace"
+    },
+    {
+      "blockNumber": 23657204,
+      "txHash": "0x2877bf87b3607313dc30fc04e132d82498bc053db7ce03760fe9b6c7c58c4703",
+      "logIndex": 99,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193508,
+      "sqrtPriceX96": "1260851067556848211100611407040283"
+    },
+    {
+      "blockNumber": 23657421,
+      "txHash": "0xb1dbc30111752263289f2bbc8b4b38d70676e8ffecf649f227c408a2a1bae1d7",
+      "logIndex": 105,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193545,
+      "sqrtPriceX96": "1263125057562964906007090649822663"
+    },
+    {
+      "blockNumber": 23657604,
+      "txHash": "0xbcdd6b6d6ffda2f41416df76b67908405353b640ac11508fe650022bfbc4e06a",
+      "logIndex": 38,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193470,
+      "sqrtPriceX96": "1258424145032304185323935113492246"
+    },
+    {
+      "blockNumber": 23657856,
+      "txHash": "0x1780c60491b7004565a1ad1f56a7d13c34d29854465c10af0b5d628924ccf787",
+      "logIndex": 92,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193500,
+      "sqrtPriceX96": "1260299817990447980274344852253649"
+    },
+    {
+      "blockNumber": 23658008,
+      "txHash": "0x3af28bd99da72b43d490cdf954a1455aa838ac75570621428b4f037d19656a31",
+      "logIndex": 117,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193502,
+      "sqrtPriceX96": "1260446851827185281435755882189109"
+    },
+    {
+      "blockNumber": 23658231,
+      "txHash": "0x895c52b5dd2f7a27904b0a75e2c49e9c30396360d5aa05f04d1e701fcef3fc71",
+      "logIndex": 249,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193498,
+      "sqrtPriceX96": "1260165209422811090108802714880646"
+    },
+    {
+      "blockNumber": 23658425,
+      "txHash": "0x16d0d562cb70db1acb2d8fae787f8dee924d4e0d7aac3fc41c998a074880bd30",
+      "logIndex": 502,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193496,
+      "sqrtPriceX96": "1260036700196037360057647659620253"
+    },
+    {
+      "blockNumber": 23658505,
+      "txHash": "0xc7f59df2ef2aef403d9ab2831f4fe455e383cd4cce94e6dbfe0464054030804c",
+      "logIndex": 180,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193390,
+      "tickUpper": 193590,
+      "liquidityDelta": -346300371784292,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015ace"
+    },
+    {
+      "blockNumber": 23658505,
+      "txHash": "0xc7f59df2ef2aef403d9ab2831f4fe455e383cd4cce94e6dbfe0464054030804c",
+      "logIndex": 221,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193470,
+      "tickUpper": 193680,
+      "liquidityDelta": 329516099827659,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015b24"
+    },
+    {
+      "blockNumber": 23658641,
+      "txHash": "0xecdf5a6b09db97d8ac72c4b4cb6f5791eb7b2448eefe2185f51a9f664c7d98bd",
+      "logIndex": 4,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193684,
+      "sqrtPriceX96": "1271988161629412913626130180274907"
+    },
+    {
+      "blockNumber": 23658894,
+      "txHash": "0xb828a6adc032fd87b91d3b1eb70350c48c16096574814a4c86e9448f3e9e5ef5",
+      "logIndex": 23,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193567,
+      "sqrtPriceX96": "1264556793115481534956452535473968"
+    },
+    {
+      "blockNumber": 23659013,
+      "txHash": "0x0d0660cc212671d45147158f47b75ba7f87cfc8d383a606c657bf25f3b75518f",
+      "logIndex": 755,
+      "eventType": "Swap",
+      "sender": "0xa12ffb73efa3b5f2edb0c528cbff7aee34d60e37",
+      "swapTick": 193546,
+      "sqrtPriceX96": "1263242635120312931520726958824018"
+    },
+    {
+      "blockNumber": 23659219,
+      "txHash": "0x8e125f2970400673d94fac1f3142121d46218a28e33e62cccee1921233187370",
+      "logIndex": 85,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193553,
+      "sqrtPriceX96": "1263637857346615350531797330139978"
+    },
+    {
+      "blockNumber": 23659451,
+      "txHash": "0x0d93fbb37cb13c61a78d307fc3bd079e54d41920c3495abf6ea6ce7530cc9dee",
+      "logIndex": 22,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193530,
+      "sqrtPriceX96": "1262204778000392954857612521464625"
+    },
+    {
+      "blockNumber": 23659523,
+      "txHash": "0x0b776a76c1039c0c6f0e4c0069b6723f03c09c18595443d7ec91d1820428286e",
+      "logIndex": 68,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193470,
+      "tickUpper": 193680,
+      "liquidityDelta": -329516099827659,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015b24"
+    },
+    {
+      "blockNumber": 23659523,
+      "txHash": "0x0b776a76c1039c0c6f0e4c0069b6723f03c09c18595443d7ec91d1820428286e",
+      "logIndex": 95,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193380,
+      "tickUpper": 193600,
+      "liquidityDelta": 312054555828089,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015b4e"
+    },
+    {
+      "blockNumber": 23659606,
+      "txHash": "0xb70170be5a7cbd3a9546d44970be3d8cce959809f9a09d2eee15a537d6ace16a",
+      "logIndex": 77,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193519,
+      "sqrtPriceX96": "1261505459638505760014667048905732"
+    },
+    {
+      "blockNumber": 23659827,
+      "txHash": "0x0beb1657d6a17bf827a2025d993710a09c59d5a4553d857f53f5486083618d43",
+      "logIndex": 34,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193520,
+      "sqrtPriceX96": "1261572748811711809067589302637198"
+    },
+    {
+      "blockNumber": 23660008,
+      "txHash": "0x2b4a9609bc979b475656a572b05b76097eb566a209a49671e71b959b5474c4d8",
+      "logIndex": 25,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193520,
+      "sqrtPriceX96": "1261603409363692924948797802901061"
+    },
+    {
+      "blockNumber": 23660233,
+      "txHash": "0xeb2f6e22674f6de17a7dae51dcc8ccb47fe4ceff0e84a0460938f6da7a98a0c5",
+      "logIndex": 90,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193502,
+      "sqrtPriceX96": "1260416110672269080473061267062326"
+    },
+    {
+      "blockNumber": 23660422,
+      "txHash": "0x5006b6b63488ffa070caec75fe77a874d6f7840387c3f9fb72408bf5c4a0f569",
+      "logIndex": 583,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193030,
+      "tickUpper": 194140,
+      "liquidityDelta": 5571556624777,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015789"
+    },
+    {
+      "blockNumber": 23660470,
+      "txHash": "0x7b5c07def6c5047d340e80387d51796bfc0cc0ea0ab0e00842d4d59496cf8cbd",
+      "logIndex": 167,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193454,
+      "sqrtPriceX96": "1257444447820938586145074036706718"
+    },
+    {
+      "blockNumber": 23660619,
+      "txHash": "0xd928c54f2aafa233fdef0a37eaca1309877ea2c9ad64b3bcc583dd73cb895dc3",
+      "logIndex": 64,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193783,
+      "sqrtPriceX96": "1278250437029061172219142077826084"
+    },
+    {
+      "blockNumber": 23660753,
+      "txHash": "0x98f526ad154fdb90fac9ab18817c3d59f5ac9e78d537420f785013426f7fcf3d",
+      "logIndex": 497,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193380,
+      "tickUpper": 193600,
+      "liquidityDelta": -312054555828089,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015b4e"
+    },
+    {
+      "blockNumber": 23660753,
+      "txHash": "0x98f526ad154fdb90fac9ab18817c3d59f5ac9e78d537420f785013426f7fcf3d",
+      "logIndex": 528,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193270,
+      "tickUpper": 193480,
+      "liquidityDelta": 318754015915225,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015b83"
+    },
+    {
+      "blockNumber": 23660803,
+      "txHash": "0x8b627356d30a180eb042f147b7a41907ace34c7f9d2547afe467c17232af5718",
+      "logIndex": 490,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193396,
+      "sqrtPriceX96": "1253808717191622369515587858484343"
+    },
+    {
+      "blockNumber": 23661008,
+      "txHash": "0xba8c53d52eb43c9769d39d38192227a9fa7d9feddeb437181680b8b403f0687d",
+      "logIndex": 401,
+      "eventType": "Swap",
+      "sender": "0xa12ffb73efa3b5f2edb0c528cbff7aee34d60e37",
+      "swapTick": 193425,
+      "sqrtPriceX96": "1255568602290101057220262794076031"
+    },
+    {
+      "blockNumber": 23661167,
+      "txHash": "0x272d4816f90acc60e516bf7f8d1de579014101c91245801d281525a7b1fa7272",
+      "logIndex": 230,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 190800,
+      "tickUpper": 197350,
+      "liquidityDelta": -475817643284589,
+      "salt": "0x000000000000000000000000000000000000000000000000000000000001587d"
+    },
+    {
+      "blockNumber": 23661204,
+      "txHash": "0xc284f8af5eb31f7b73f3dc4864285c0e093dcce8d2f2db94c04b75fc75a085b9",
+      "logIndex": 183,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193425,
+      "sqrtPriceX96": "1255622046027647518243017391110861"
+    },
+    {
+      "blockNumber": 23661407,
+      "txHash": "0x26cb0a2b38b8a00e54d999e0dc2d456778443362535c209892c3ce38d7d662d1",
+      "logIndex": 977,
+      "eventType": "Swap",
+      "sender": "0x809305d724b6e79c71e10a097abadd1274b9c279",
+      "swapTick": 193320,
+      "sqrtPriceX96": "1249054809730980649200065576679820"
+    },
+    {
+      "blockNumber": 23661411,
+      "txHash": "0xb8c1b52e305c0fee564b4bcf66a972718c4ae1c98a4a8a0d17071aaef471994b",
+      "logIndex": 991,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193270,
+      "tickUpper": 193480,
+      "liquidityDelta": -318754015915225,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015b83"
+    },
+    {
+      "blockNumber": 23661411,
+      "txHash": "0xb8c1b52e305c0fee564b4bcf66a972718c4ae1c98a4a8a0d17071aaef471994b",
+      "logIndex": 1028,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193180,
+      "tickUpper": 193390,
+      "liquidityDelta": 314845056670284,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015ba9"
+    },
+    {
+      "blockNumber": 23661601,
+      "txHash": "0x9e1fb00f9bb1c3d1c822b0098651a724850654073691e1ded4ba2d52ad67504a",
+      "logIndex": 125,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193256,
+      "sqrtPriceX96": "1245059493661843006894405357408598"
+    },
+    {
+      "blockNumber": 23661706,
+      "txHash": "0xbcbf513bab1c0e903e9fad3f835beb67038d0d40604e81734d81516b2c0a35a1",
+      "logIndex": 18,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193420,
+      "tickUpper": 193430,
+      "liquidityDelta": 163430828532039680,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015bb8"
+    },
+    {
+      "blockNumber": 23661706,
+      "txHash": "0x2c216d3e67f8f993107e9060f32d999508b6a3a6419ff181494c520528a5ef78",
+      "logIndex": 84,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193420,
+      "tickUpper": 193430,
+      "liquidityDelta": -163430828532039680,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015bb8"
+    },
+    {
+      "blockNumber": 23661793,
+      "txHash": "0x9e4ec00e5e7c442e7554fd8851015cd9b31795d2fa34ebc4b630aa6732e3e66d",
+      "logIndex": 48,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193180,
+      "tickUpper": 193390,
+      "liquidityDelta": -314845056670284,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015ba9"
+    },
+    {
+      "blockNumber": 23661793,
+      "txHash": "0x9e4ec00e5e7c442e7554fd8851015cd9b31795d2fa34ebc4b630aa6732e3e66d",
+      "logIndex": 81,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193090,
+      "tickUpper": 193310,
+      "liquidityDelta": 297390267261432,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015bbb"
+    },
+    {
+      "blockNumber": 23661807,
+      "txHash": "0x47a79eb77dda1b43b1dfb0ee9dca6456c5893c06c7b5e2b4d213c94bcbe95522",
+      "logIndex": 249,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193187,
+      "sqrtPriceX96": "1240754575529562283019600028548884"
+    },
+    {
+      "blockNumber": 23662006,
+      "txHash": "0xa3402b05a2eaf85afab1ad2433e02678a75191fbe280ff949bdcd8aa12dfe51e",
+      "logIndex": 6,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193491,
+      "sqrtPriceX96": "1259770267748759271219661260259790"
+    },
+    {
+      "blockNumber": 23662023,
+      "txHash": "0x9412596e4699f7bce0db985d4eb1270ef13e0bbef73cc9ba4c73b4d349f58bdc",
+      "logIndex": 18,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193030,
+      "tickUpper": 194140,
+      "liquidityDelta": -1167354560868044,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015789"
+    },
+    {
+      "blockNumber": 23662023,
+      "txHash": "0x9412596e4699f7bce0db985d4eb1270ef13e0bbef73cc9ba4c73b4d349f58bdc",
+      "logIndex": 45,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192550,
+      "tickUpper": 193660,
+      "liquidityDelta": 1159222130328082,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015bca"
+    },
+    {
+      "blockNumber": 23662024,
+      "txHash": "0x71adf115bbcf97ad309fdb66cb3b474db05934a83b9715405d5da5ec75654db2",
+      "logIndex": 148,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193090,
+      "tickUpper": 193310,
+      "liquidityDelta": -297390267261432,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015bbb"
+    },
+    {
+      "blockNumber": 23662024,
+      "txHash": "0x71adf115bbcf97ad309fdb66cb3b474db05934a83b9715405d5da5ec75654db2",
+      "logIndex": 181,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192980,
+      "tickUpper": 193200,
+      "liquidityDelta": 295300193084689,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015bcb"
+    },
+    {
+      "blockNumber": 23662116,
+      "txHash": "0x55d6342bae6da28a964e5e141dd375c1acf302412a3c2d0a79cc27c263ecd13f",
+      "logIndex": 211,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192980,
+      "tickUpper": 193200,
+      "liquidityDelta": -295300193084689,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015bcb"
+    },
+    {
+      "blockNumber": 23662116,
+      "txHash": "0x55d6342bae6da28a964e5e141dd375c1acf302412a3c2d0a79cc27c263ecd13f",
+      "logIndex": 241,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193080,
+      "tickUpper": 193290,
+      "liquidityDelta": 306179341403025,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015bd1"
+    },
+    {
+      "blockNumber": 23662210,
+      "txHash": "0x484614175a1daa828c8b0b02659a8aa968fb1af7985704be465802b84fba8b45",
+      "logIndex": 204,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193189,
+      "sqrtPriceX96": "1240899724421833126424983731723976"
+    },
+    {
+      "blockNumber": 23662400,
+      "txHash": "0x3bf80da771f0b5898b1dda0aa7a1b7a5d0fe6e6e3baa5e961b28780dde020b95",
+      "logIndex": 412,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193205,
+      "sqrtPriceX96": "1241891605776210788973553444366399"
+    },
+    {
+      "blockNumber": 23662408,
+      "txHash": "0xae04392c2623b9664cc2f41a29ddbeddea73eac3c97b1738831af248a7370331",
+      "logIndex": 342,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193080,
+      "tickUpper": 193290,
+      "liquidityDelta": -306179341403025,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015bd1"
+    },
+    {
+      "blockNumber": 23662438,
+      "txHash": "0x91393f6bf3b0d435bafd2fbd09a069f6640db7da2b1f67547c22f6fddefbd114",
+      "logIndex": 18,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 190220,
+      "tickUpper": 193220,
+      "liquidityDelta": 914492721419617,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015be6"
+    },
+    {
+      "blockNumber": 23662638,
+      "txHash": "0x9e649b6ee24b203fabfb1b64422aa784dabce4464e9c0170c5b7eb236521e0d6",
+      "logIndex": 43,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193205,
+      "sqrtPriceX96": "1241882553488818961244945008560035"
+    },
+    {
+      "blockNumber": 23662812,
+      "txHash": "0x19f0821be68492128eebbb8f6172af2ad022f1b809e923e8938b7e2c6fb81f6b",
+      "logIndex": 962,
+      "eventType": "Swap",
+      "sender": "0xa12ffb73efa3b5f2edb0c528cbff7aee34d60e37",
+      "swapTick": 193251,
+      "sqrtPriceX96": "1244722926018930969064873424812503"
+    },
+    {
+      "blockNumber": 23662932,
+      "txHash": "0x76ca9a83dedf1b748afd79bbda7233d5563ef80d11d89004529be459c276f1b6",
+      "logIndex": 442,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 190890,
+      "tickUpper": 197690,
+      "liquidityDelta": 674098293296226,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015c13"
+    },
+    {
+      "blockNumber": 23663001,
+      "txHash": "0x6187c9d20f33c2ca5ada9595a20954ac6800ecc581ff27800bc929028eb7c082",
+      "logIndex": 172,
+      "eventType": "Swap",
+      "sender": "0xe80fdb59caec5980704166feb8bd4d33fe81e2bc",
+      "swapTick": 193320,
+      "sqrtPriceX96": "1249054883499646437031645101215077"
+    },
+    {
+      "blockNumber": 23663033,
+      "txHash": "0x7b157be5496d4c85862ad8554167f8b89c70cd589d032b3cc32712a28341f019",
+      "logIndex": 471,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 190750,
+      "tickUpper": 197310,
+      "liquidityDelta": 471834265941244,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015c1a"
+    },
+    {
+      "blockNumber": 23663207,
+      "txHash": "0xee83c2cd50d1f60ca2bed37729755b83390aa420252323a6b51d5474ea74618e",
+      "logIndex": 149,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193230,
+      "sqrtPriceX96": "1243386661783917201566710815642425"
+    },
+    {
+      "blockNumber": 23663405,
+      "txHash": "0x4d8a0beae899f2957cd46696c0fea2bccd175b2b596ab1fdfd060df96e652f79",
+      "logIndex": 392,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 190940,
+      "tickUpper": 198000,
+      "liquidityDelta": 344829560134249,
+      "salt": "0x00000000000000000000000000000000000000000000000000000000000158e2"
+    },
+    {
+      "blockNumber": 23663408,
+      "txHash": "0x81aaeeeace01c9284dec5535cd4e9906c529e7685e9156b59554e81a98c7c9f8",
+      "logIndex": 96,
+      "eventType": "Swap",
+      "sender": "0x2b3acfc9f10d52cd3a5bfc2639470e3a7ed15070",
+      "swapTick": 193193,
+      "sqrtPriceX96": "1241136567771503444071395627221158"
+    },
+    {
+      "blockNumber": 23663604,
+      "txHash": "0xabc9443b67aff9be61d670b02a0404e9b3acc346ee56dc099d9f25d97ea8b683",
+      "logIndex": 57,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193204,
+      "sqrtPriceX96": "1241814996505642928257580212098709"
+    },
+    {
+      "blockNumber": 23663800,
+      "txHash": "0xaca428ffc5085cbb141630dd54c8780f9c050e601b87f9f8fcc8e67784422798",
+      "logIndex": 147,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193209,
+      "sqrtPriceX96": "1242136132500461775494495904014823"
+    },
+    {
+      "blockNumber": 23664024,
+      "txHash": "0x02ea95d429f680b092ef147cada8238c6c547d006c9a01251c5e09a2c447a48e",
+      "logIndex": 431,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193218,
+      "sqrtPriceX96": "1242671788624326284727624010261440"
+    },
+    {
+      "blockNumber": 23664216,
+      "txHash": "0x73d9361979c2f31db4744200e693d98b451962b5bad43d597b838338011587f5",
+      "logIndex": 218,
+      "eventType": "Swap",
+      "sender": "0x12b143d55340c36695adb95bf63ad685eacc7890",
+      "swapTick": 193216,
+      "sqrtPriceX96": "1242527569633420997862034251970876"
+    },
+    {
+      "blockNumber": 23664405,
+      "txHash": "0x1a697c76a00f8523a56419a1f1542406733cb854da5a20da2ef5c904062046b9",
+      "logIndex": 108,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193175,
+      "sqrtPriceX96": "1240032126071966541926310559390153"
+    },
+    {
+      "blockNumber": 23664606,
+      "txHash": "0xbec9cbb5571ca42e091250e2c71dbd7590944b24ee5d2651b5a352a4dde07687",
+      "logIndex": 379,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 193041,
+      "sqrtPriceX96": "1231734041162990146597204940011178"
+    },
+    {
+      "blockNumber": 23664802,
+      "txHash": "0x1f06be55554fe840ffbe99f939aafef0d2cd11302815a57ea183c93c867bdbfb",
+      "logIndex": 381,
+      "eventType": "Swap",
+      "sender": "0x1103fc560de8b710983e7f3ec09d587f3f848566",
+      "swapTick": 192977,
+      "sqrtPriceX96": "1227788271341640498887313801506769"
+    },
+    {
+      "blockNumber": 23665021,
+      "txHash": "0xa9fb5511e09640c1d0df9cb62ea3750d9718cef1c58370feb4e79e7006d56bd1",
+      "logIndex": 30,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 192971,
+      "sqrtPriceX96": "1227404005456134184784113521902571"
+    },
+    {
+      "blockNumber": 23665200,
+      "txHash": "0x7dad452871d516187839834eae83201aee47b187f383769573de948a8e63afb9",
+      "logIndex": 241,
+      "eventType": "Swap",
+      "sender": "0x2b3acfc9f10d52cd3a5bfc2639470e3a7ed15070",
+      "swapTick": 192978,
+      "sqrtPriceX96": "1227850503206273383914393423128397"
+    },
+    {
+      "blockNumber": 23665211,
+      "txHash": "0xccfd55bf959ebde2dd02a818cb1d03d623d157ae6e256a71f0f24575c9d3bcee",
+      "logIndex": 37,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbf060fe5b35aefbb80041e313510294e501b5e38",
+      "tickLower": 193170,
+      "tickUpper": 193190,
+      "liquidityDelta": 59822421188182615,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "blockNumber": 23665211,
+      "txHash": "0x6b46d99e48c4c79bb73f0e0748065fe80b598ac388b028cedf010deea317efe2",
+      "logIndex": 49,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbf060fe5b35aefbb80041e313510294e501b5e38",
+      "tickLower": 193170,
+      "tickUpper": 193190,
+      "liquidityDelta": -59822421188182615,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "blockNumber": 23665416,
+      "txHash": "0x63b0e718fd35b3902da20021738d8852c9543e89a068e17fec7527f03af70b62",
+      "logIndex": 148,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 192955,
+      "sqrtPriceX96": "1226419371554830589287385038221618"
+    },
+    {
+      "blockNumber": 23665529,
+      "txHash": "0x6674e2cce8f3e11527a147ed8d19e3bed0945150f4016f5039feac9f2d6a9da4",
+      "logIndex": 505,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192030,
+      "tickUpper": 194300,
+      "liquidityDelta": 14499552273453,
+      "salt": "0x00000000000000000000000000000000000000000000000000000000000159ee"
+    },
+    {
+      "blockNumber": 23665538,
+      "txHash": "0x5b919e5968fb29b96bb7ac91c2094cd5fc16b411b02408411d59b4e7bd3f0b12",
+      "logIndex": 1255,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192030,
+      "tickUpper": 194300,
+      "liquidityDelta": 4277150223495,
+      "salt": "0x00000000000000000000000000000000000000000000000000000000000159ee"
+    },
+    {
+      "blockNumber": 23665558,
+      "txHash": "0x54d3c1aec80ff95ece97f8dc08410d87285be0c4cce17dd3dceab44c50663ba4",
+      "logIndex": 748,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192030,
+      "tickUpper": 194300,
+      "liquidityDelta": 9277598702414,
+      "salt": "0x00000000000000000000000000000000000000000000000000000000000159ee"
+    },
+    {
+      "blockNumber": 23665609,
+      "txHash": "0x3729f908801867e1ee8b89167d2b640bc078ff55917ea9de600cfb4f91727f24",
+      "logIndex": 282,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 192916,
+      "sqrtPriceX96": "1224043102450472162263989333647502"
+    },
+    {
+      "blockNumber": 23665644,
+      "txHash": "0x6d47cedc3cae36c1a86a3bbdb2312454adc94e70f834828b30c3369da1c9dcf7",
+      "logIndex": 644,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192030,
+      "tickUpper": 194300,
+      "liquidityDelta": 12902547351625,
+      "salt": "0x00000000000000000000000000000000000000000000000000000000000159ee"
+    },
+    {
+      "blockNumber": 23665656,
+      "txHash": "0x6ebe7bf711e56a7ee535dcf6537e4c2a39febf9ff2787e6d20912eb736e16f0f",
+      "logIndex": 346,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192030,
+      "tickUpper": 194300,
+      "liquidityDelta": -185281015267050,
+      "salt": "0x00000000000000000000000000000000000000000000000000000000000159ee"
+    },
+    {
+      "blockNumber": 23665656,
+      "txHash": "0x6ebe7bf711e56a7ee535dcf6537e4c2a39febf9ff2787e6d20912eb736e16f0f",
+      "logIndex": 378,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192030,
+      "tickUpper": 193330,
+      "liquidityDelta": 318910864060172,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015ce0"
+    },
+    {
+      "blockNumber": 23665728,
+      "txHash": "0xb72a5e92fb5e2d16c767f67560a139480a53c85dfc5cc4117c3187c76f555a57",
+      "logIndex": 417,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192550,
+      "tickUpper": 193660,
+      "liquidityDelta": 5370704744288,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015bca"
+    },
+    {
+      "blockNumber": 23665803,
+      "txHash": "0xa07fea49273f080bba93191eb2be61533dc20d586029c6dc9d732a88db45acad",
+      "logIndex": 226,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 192863,
+      "sqrtPriceX96": "1220785711701011944371960887756698"
+    },
+    {
+      "blockNumber": 23666011,
+      "txHash": "0xe3c9c1f0da23b68a834f6e1b56b5d1a63d48bec28d256c98bea2431163bba4b4",
+      "logIndex": 649,
+      "eventType": "Swap",
+      "sender": "0x10848df22554471ba4ed380a6a5a4717605f7005",
+      "swapTick": 192867,
+      "sqrtPriceX96": "1221061025721555932450492262610264"
+    },
+    {
+      "blockNumber": 23666194,
+      "txHash": "0x31eb555241660cc6d088f2bd248787f01df44613c063654b4a62608698d4379b",
+      "logIndex": 5,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xa7c624014699a8b537cc4b326eb65f00852ee2a3",
+      "tickLower": 193210,
+      "tickUpper": 193220,
+      "liquidityDelta": 41152659863242755,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015cfe"
+    },
+    {
+      "blockNumber": 23666194,
+      "txHash": "0x6277da3925c8e74fc4970adaba1966cfc41cd755cd9c6004f7abef8e0cdfafca",
+      "logIndex": 53,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xa7c624014699a8b537cc4b326eb65f00852ee2a3",
+      "tickLower": 193210,
+      "tickUpper": 193220,
+      "liquidityDelta": -41152659863242755,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015cfe"
+    },
+    {
+      "blockNumber": 23666207,
+      "txHash": "0x26ef809c153c0765a4a044aa09d6397ccc119be42e5aa9819cf2c8b1be7f39f5",
+      "logIndex": 431,
+      "eventType": "Swap",
+      "sender": "0x63242a4ea82847b20e506b63b0e2e2eff0cc6cb0",
+      "swapTick": 192874,
+      "sqrtPriceX96": "1221475812237140942778209516996186"
+    },
+    {
+      "blockNumber": 23666301,
+      "txHash": "0xe4a3638412ffd3c3263616bfa51669e74bbbe11a73143cd1b59ef1908a3aed5f",
+      "logIndex": 14,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193140,
+      "tickUpper": 193150,
+      "liquidityDelta": 92868595974611664896,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015d05"
+    },
+    {
+      "blockNumber": 23666301,
+      "txHash": "0x34a1560abb0e6da6f7dd535bab73b4f5be8aa6cbaacd48c15aaa0755c45d1472",
+      "logIndex": 51,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 193140,
+      "tickUpper": 193150,
+      "liquidityDelta": -92868595974611664896,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015d05"
+    },
+    {
+      "blockNumber": 23666400,
+      "txHash": "0x5005a609856c96e27272b57894323500ceae24fc539e8f983991a89cd3d5929d",
+      "logIndex": 9,
+      "eventType": "Swap",
+      "sender": "0x2b3acfc9f10d52cd3a5bfc2639470e3a7ed15070",
+      "swapTick": 192886,
+      "sqrtPriceX96": "1222239076203886004997853560922662"
+    },
+    {
+      "blockNumber": 23666603,
+      "txHash": "0xa892bef942878a767f1a33827b1ce518a6faf140998661321931c4a4dbdf3ed3",
+      "logIndex": 93,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 192847,
+      "sqrtPriceX96": "1219829487722949755489008425666303"
+    },
+    {
+      "blockNumber": 23666806,
+      "txHash": "0x31f816a2f9e0650ee34aa29286cb03eee9865f8f8fcf77c0ccc57fc742f75381",
+      "logIndex": 608,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 192815,
+      "sqrtPriceX96": "1217888178714753568888661261667381"
+    },
+    {
+      "blockNumber": 23667004,
+      "txHash": "0x3ba1bdb980578a9058e030b8b41a67ccef629c5e26a8ba0be8274264904f62eb",
+      "logIndex": 333,
+      "eventType": "Swap",
+      "sender": "0x2b3acfc9f10d52cd3a5bfc2639470e3a7ed15070",
+      "swapTick": 192793,
+      "sqrtPriceX96": "1216558101451427993105475826122270"
+    },
+    {
+      "blockNumber": 23667203,
+      "txHash": "0xb22e052a4224aa72b7e32ca8f169d0a640061278a15a4cae30c27ada62bb6090",
+      "logIndex": 104,
+      "eventType": "Swap",
+      "sender": "0x5745050e787f693ed21e4418d528f78ad9c374a6",
+      "swapTick": 192817,
+      "sqrtPriceX96": "1217983400709500233886827312590606"
+    },
+    {
+      "blockNumber": 23667411,
+      "txHash": "0xe1c25aa69c046fb7f8a8e1b030ccff5798112a8b6a79a94dd7a4993b0c3d2824",
+      "logIndex": 115,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 192870,
+      "sqrtPriceX96": "1221255293100370749392204619845452"
+    },
+    {
+      "blockNumber": 23667514,
+      "txHash": "0xc3919b6ef58b4b32ed6fe0e126dcaa50d5e058682f5fa1c86612d83f09e6881b",
+      "logIndex": 351,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192550,
+      "tickUpper": 193660,
+      "liquidityDelta": -1164592835072370,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015bca"
+    },
+    {
+      "blockNumber": 23667514,
+      "txHash": "0xc3919b6ef58b4b32ed6fe0e126dcaa50d5e058682f5fa1c86612d83f09e6881b",
+      "logIndex": 375,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192640,
+      "tickUpper": 193140,
+      "liquidityDelta": 2568146192830560,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015d47"
+    },
+    {
+      "blockNumber": 23667600,
+      "txHash": "0xdc36930d591ef3b61edfe5a10b259edc1e59b33facb7ee9465e765c7fd3aad49",
+      "logIndex": 309,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 192952,
+      "sqrtPriceX96": "1226257487175572006610505734176968"
+    },
+    {
+      "blockNumber": 23667822,
+      "txHash": "0xeefe2465e547068a560a4145a374c4eb7786712cf6aa89dc73f8997503f7e585",
+      "logIndex": 81,
+      "eventType": "Swap",
+      "sender": "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
+      "swapTick": 192982,
+      "sqrtPriceX96": "1228096209432006373070531908268176"
+    },
+    {
+      "blockNumber": 23667824,
+      "txHash": "0xa7bb810d08857ec1285d7d860ce1a14fda9d93ea771c7338011827246862fbfb",
+      "logIndex": 142,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 191150,
+      "tickUpper": 195310,
+      "liquidityDelta": 549322205581858,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015d54"
+    },
+    {
+      "blockNumber": 23667921,
+      "txHash": "0xed2748684bce2ab709481ab1bed07d52a1344bd690a23fdce36b6f92930af9d8",
+      "logIndex": 7,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192870,
+      "tickUpper": 192880,
+      "liquidityDelta": 86699549866852352,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015d5e"
+    },
+    {
+      "blockNumber": 23667921,
+      "txHash": "0xb80434e387fba3ef217e2369645df5a30e2129e01476880dc8e08dee0f3baec3",
+      "logIndex": 22,
+      "eventType": "ModifyLiquidity",
+      "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
+      "tickLower": 192870,
+      "tickUpper": 192880,
+      "liquidityDelta": -86699549866852352,
+      "salt": "0x0000000000000000000000000000000000000000000000000000000000015d5e"
+    }
+  ],
+  "snapshots": [
+    {
+      "expectedIndexA": 26622420688852835506890025932321536950,
+      "expectedThetaSum": 2082838701715425391831951188292931478,
+      "expectedPosCount": 1,
+      "expectedAccumulatedSum": 2082838701715425391831951188292931478,
+      "expectedAtNull": 26622420688852835506890025932321536950,
+      "expectedDeltaPlus": 0,
+      "expectedDeltaPlusPrice": 0,
+      "blockNumber": 23659523,
+      "afterEventIndex": 25
+    },
+    {
+      "expectedIndexA": 43076431764478365634565467397385840550,
+      "expectedThetaSum": 5453056502310293812024413917362355402,
+      "expectedPosCount": 2,
+      "expectedAccumulatedSum": 5453056502310293812024413917362355402,
+      "expectedAtNull": 21538215882239182817282733698692920271,
+      "expectedDeltaPlus": 21538215882239182817282733698692920279,
+      "expectedDeltaPlusPrice": 22993598645744756647308782417015046824,
+      "blockNumber": 23662024,
+      "afterEventIndex": 52
+    },
+    {
+      "expectedIndexA": 47456582518892860302641446133281559328,
+      "expectedThetaSum": 6618407073957343344433231066101287633,
+      "expectedPosCount": 9,
+      "expectedAccumulatedSum": 6618407073957343344433231066101287633,
+      "expectedAtNull": 5272953613210317811404605125920173251,
+      "expectedDeltaPlus": 42183628905682542491236841007361386077,
+      "expectedDeltaPlusPrice": 48152988452455490117234774253760788214,
+      "blockNumber": 23665656,
+      "afterEventIndex": 85
+    },
+    {
+      "expectedIndexA": 48134815061802394526733833595703178776,
+      "expectedThetaSum": 6808934715010500378847214608896230640,
+      "expectedPosCount": 10,
+      "expectedAccumulatedSum": 6808934715010500378847214608896230640,
+      "expectedAtNull": 4813481506180239452673383359570317863,
+      "expectedDeltaPlus": 43321333555622155074060450236132860913,
+      "expectedDeltaPlusPrice": 49641145686423652102997562513554617096,
+      "blockNumber": 23667514,
+      "afterEventIndex": 101
+    }
+  ]
+}

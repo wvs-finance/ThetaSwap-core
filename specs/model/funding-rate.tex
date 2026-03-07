@@ -1,121 +1,125 @@
-% funding-rate.tex — Funding rate from Primer on Perpetuals
-% Kontrol: prove_cfmm_perpetual_fundingConvergence
+% funding-rate.tex — Bidirectional funding rate with jump adjustment
+% Kontrol: prove_cfmm_perpetual_fundingConvergence, prove_cfmm_perpetual_jumpSafety
 
 \section{Funding Rate}\label{sec:funding-rate}
 
-This CFMM is a perpetual instrument: it has no fixed expiry but settles at
-liquidity events. The funding rate mechanism replaces settlement, following
-the framework of \cite{angeris2022perpetuals}.
+This instrument is perpetual: it has no fixed expiry but settles at liquidity events.
+The funding rate maintains mark-index convergence, following the framework of
+\cite{angeris2022perpetuals}. It is separate from the borrow rate
+(\cref{sec:borrow-rate}) and bidirectional.
 
 \subsection{Mark and Index Prices}
 
-\begin{definition}[Mark Price]\label{def:mark-price}
-The mark price is the CFMM's implied price of the fee dispersion index:
-\begin{equation}\label{eq:mark-price}
-  p_{\text{mark}} = \frac{1 - x}{x}
-\end{equation}
-where $x$ is the current risky reserve (from \cref{prop:spot-price}).
-\end{definition}
-
 \begin{definition}[Index Price]\label{def:index-price}
-The index price is derived from the hook's oracle state:
+The index price is derived from the FCI hook's co-primary state:
 \begin{equation}\label{eq:index-price}
-  p_{\text{index}} = \frac{\BT}{1 - \BT}
+  \pindex = \frac{\DeltaPlus}{1 - \DeltaPlus}
 \end{equation}
-where $\BT$ is the realized fee dispersion index from the underlying pool.
+where $\DeltaPlus = \max(0,\, \AT - \ATnull)$ is the realized concentration deviation
+from the underlying pool. Computed on the fly from stored $\AT$, $\ThetaSum$, $\PosCount$.
 \end{definition}
 
-\subsection{Discrete Funding at Liquidity Events}
+\begin{definition}[Mark Price]\label{def:mark-price}
+The mark price is the CFMM's implied price from virtual reserves:
+\begin{equation}\label{eq:mark-price}
+  \pmark = \frac{\pl^2}{2}\sqrt{\frac{u}{\Lact}}
+\end{equation}
+where $u$ is the current virtual concentration reserve and $\Lact$ is
+the active liquidity in the current tick range.
+\end{definition}
 
-Funding is exchanged at each liquidity event (\texttt{afterAddLiquidity} or
-\texttt{afterRemoveLiquidity}), not continuously.
+\subsection{Discrete Funding at Hook Callbacks}
+
+Funding is exchanged at each hook callback (\texttt{afterSwap},
+\texttt{afterAddLiquidity}, \texttt{afterRemoveLiquidity}), matching
+the FCI oracle update frequency. No keeper or per-block updates required.
 
 \begin{definition}[Funding Payment]\label{def:funding-payment}
-At liquidity event $n$, the funding payment per unit of liquidity is:
-\begin{equation}\label{eq:funding-payment}
-  F_n = \fundrate_n \cdot (p_{\text{mark},n} - p_{\text{index},n})
+At callback $n$, the funding rate is:
+\begin{equation}\label{eq:funding-rate}
+  \rfunding_n = \alpha \cdot \frac{\pmark_n - \pindex_n}{\pindex_n + 1}
 \end{equation}
-where $\fundrate_n > 0$ is the funding rate coefficient at event $n$.
-LONGs pay SHORTs when $p_{\text{mark}} > p_{\text{index}}$ (CFMM overprices dispersion).
-SHORTs pay LONGs when $p_{\text{mark}} < p_{\text{index}}$ (CFMM underprices dispersion).
+where $\alpha > 0$ is the sensitivity parameter (set at pool initialization).
+The denominator $(\pindex + 1)$ normalizes by index level, preventing
+extreme rates when $\pindex$ is small.
 \end{definition}
 
-\subsection{Funding Rate Coefficient}
-
-\begin{definition}[Funding Rate]\label{def:funding-rate}
-The funding rate coefficient evolves as:
-\begin{equation}\label{eq:funding-rate-evolution}
-  \fundrate_n = \alpha \cdot \frac{|p_{\text{mark},n} - p_{\text{index},n}|}{p_{\text{index},n} + 1}
-\end{equation}
-where $\alpha > 0$ is a sensitivity parameter set at deployment.
-The normalization by $p_{\text{index}} + 1$ prevents the funding rate from
-diverging when the index price is near zero.
-\end{definition}
-
-\subsection{Embedding in Dynamic Fee}
-
-The funding payment is embedded in the swap fee rather than settled separately:
-\begin{equation}\label{eq:dynamic-fee}
-  \fee(t) = \feebase + \feefund(t)
-\end{equation}
-where:
-\begin{equation}\label{eq:funding-fee-component}
-  \feefund(t) = \text{sign}(p_{\text{mark}} - p_{\text{index}}) \cdot
-  \min\bigl(\fundrate_n,\; \fee_{\max} - \feebase\bigr)
-\end{equation}
-
-When $p_{\text{mark}} > p_{\text{index}}$, the fee increases (discouraging further
-mark appreciation, pushing mark toward index). When $p_{\text{mark}} < p_{\text{index}}$,
-the fee decreases (encouraging trades that push mark up toward index).
+\begin{remark}[Bidirectionality]
+\begin{itemize}
+  \item $\pmark > \pindex$ (protection overpriced): $\rfunding > 0$,
+    PLPs pay underwriters. Incentivizes arbitrageurs to sell the perpetual,
+    pushing $\pmark$ down.
+  \item $\pmark < \pindex$ (protection underpriced): $\rfunding < 0$,
+    underwriters pay PLPs. Incentivizes buying the perpetual,
+    pushing $\pmark$ up.
+\end{itemize}
+This bidirectionality is essential for convergence and is why funding must
+be in a separate accumulator from the unidirectional borrow rate
+(\cref{sec:borrow-rate}).
+\end{remark}
 
 \subsection{Jump-Adjusted Replication}
 
-\begin{theorem}[Jump Safety]\label{thm:jump-safety}
-When the fee dispersion index $\BT$ jumps discretely from $b$ to $b'$ at a
-liquidity event, the LP's value change is bounded by the payoff change:
-\begin{equation}\label{eq:jump-bound}
-  \Delta\text{LP\_value} \leq \VLP\bigl(\tfrac{b'}{1-b'}\bigr) - \VLP\bigl(\tfrac{b}{1-b}\bigr)
+The backtest (ETH/USDC 30bps, 41 days) confirms that $\DeltaPlus$ exhibits
+rare, large, discontinuous jumps: $0 \to 0.158$ in a single day.
+Between callbacks, a single large swap or JIT event can change the FCI
+dramatically. The funding rate includes a jump premium.
+
+\begin{definition}[Jump Premium]\label{def:jump-premium}
+When $|\Delta\pindex| > \delta_{\text{jump}}$ at callback $n$
+(where $\delta_{\text{jump}}$ is the jump threshold), the funding
+rate receives an additive adjustment:
+\begin{equation}\label{eq:jump-funding}
+  \rfunding_n^{\text{adj}} = \rfunding_n + \lambda \cdot |\Delta\pindex|
 \end{equation}
+where $\lambda > 0$ is the jump intensity parameter. This compensates
+underwriters for unhedgeable gap risk between callbacks.
+\end{definition}
+
+\begin{theorem}[Jump Safety]\label{thm:jump-safety}
+When $\DeltaPlus$ jumps discretely from $\delta$ to $\delta'$ at a liquidity event
+(due to abrupt changes in $\PosCount$ or $\ThetaSum$), the protection value change
+is bounded:
+\begin{equation}\label{eq:jump-bound}
+  |\Delta\text{value}| \leq |V(\delta') - V(\delta)|
+\end{equation}
+where $V$ is the LP payoff function (\cref{eq:lp-payoff}).
 \end{theorem}
 
 \begin{proof}
-The LP's value at index level $b$ is $\VLP(p) = \ln(1 + p)$ where $p = b/(1-b)$.
-
-At a liquidity event, $b$ jumps to $b'$. The oracle updates $p_{\text{index}}$
-to $b'/(1-b')$. The CFMM then settles funding:
-
-\textbf{Case 1: $b' > b$ (dispersion increases, favorable to LP).}
-$p_{\text{index}}$ increases. If $p_{\text{mark}} < p_{\text{index}}'$,
-funding flows from SHORTs to LONGs, compensating LPs for the jump.
-The LP's realized gain is at most $\VLP(p') - \VLP(p)$ since the CFMM
-cannot generate more value than the payoff difference.
-
-\textbf{Case 2: $b' < b$ (dispersion decreases, adverse to LP).}
-$p_{\text{index}}$ decreases. The LP's loss is bounded by $\VLP(p) - \VLP(p')$
-because the reserve curve tracks the payoff exactly (zero replication error,
-\cref{thm:zero-error}).
-
-In both cases, the discrete jump does not cause LP losses exceeding the
-payoff change, because the oracle-assisted construction adjusts reserves
-to match the new price after each event. The key insight from
-\cite[Section~3]{angeris2022perpetuals} is that the short-side replication
-strategy under jumps requires the funding rate to compensate for the
-discontinuity, which our discrete funding mechanism achieves. \qedhere
+The LP payoff $V(p)$ is Lipschitz continuous on $[\pl, \pu]$ with
+$|V'(p)| = 2p/\pl^2 \leq 2\pu/\pl^2$. The value change at a jump
+equals $V(p(\delta')) - V(p(\delta))$, which is bounded by the payoff
+difference because $V$ is monotone and no intermediate states are
+observable between callbacks. The jump-adjusted funding compensates
+for this discontinuity following
+\cite[Section~3]{angeris2022perpetuals}. \qedhere
 \end{proof}
+
+\subsection{Funding Accumulator}
+
+\begin{definition}[Funding Growth]\label{def:funding-accumulator}
+The global funding growth accumulator:
+\begin{equation}\label{eq:funding-accumulator}
+  g^{\text{funding}} \mathrel{+}= \rfunding_n^{\text{adj}} \cdot \Delta t_n
+\end{equation}
+This accumulator can be positive or negative. Per-position funding owed
+is computed via the Synthetix difference pattern:
+$\text{funding}_i = L_i \cdot (g^{\text{funding}} - g^{\text{funding}}_{\text{baseline},i})$.
+\end{definition}
 
 \subsection{Convergence Property}
 
 \begin{proposition}[Mark-Index Convergence]\label{prop:convergence}
-Under the funding mechanism, $|p_{\text{mark}} - p_{\text{index}}|$ decreases
-after each liquidity event (in expectation).
+Under the funding mechanism, $|\pmark - \pindex|$ decreases
+after each callback (in expectation), provided $\alpha > 0$.
 \end{proposition}
 
 \begin{proof}[Proof sketch]
-When $p_{\text{mark}} > p_{\text{index}}$, the increased fee $\fee(t)$ reduces
-trading activity, which reduces demand pressure on the risky asset, pushing
-$p_{\text{mark}}$ down toward $p_{\text{index}}$. The converse holds when
-$p_{\text{mark}} < p_{\text{index}}$. The convergence rate depends on the
-sensitivity parameter $\alpha$ and the frequency of liquidity events.
-A formal convergence proof under specific trading assumptions is deferred
-to the Kontrol verification phase.
+When $\pmark > \pindex$, PLPs pay positive funding, reducing demand
+for the perpetual and pushing $\pmark$ down. When $\pmark < \pindex$,
+underwriters pay, increasing demand and pushing $\pmark$ up.
+The sensitivity $\alpha$ controls convergence speed.
+A formal convergence proof under specific assumptions on arrival rates
+is deferred to the Kontrol verification phase. \qedhere
 \end{proof}
