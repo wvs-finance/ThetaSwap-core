@@ -19,6 +19,8 @@ aiUtils/
 *.pyc
 *.pyo
 !research/**/*.py
+!conftest.py
+!scripts/ffi/**/*.py
 *.pyd
 __pycache__/
 *.so
