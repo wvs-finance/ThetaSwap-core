@@ -120,12 +120,17 @@ class FCIState:
         rk = range_key(tick_lower, tick_upper)
         tr = self._get_or_create_range(rk)
 
-        # Add position (re-add overwrites baseline/addBlock, adds liquidity again)
-        tr.positions[pk] = PositionInfo(
-            liquidity=liquidity_delta,
-            add_block=block_number,
-            baseline_swap_count=tr.swap_count,
-        )
+        # Re-add: accumulate liquidity, reset baseline/addBlock
+        if pk in tr.positions:
+            tr.positions[pk].liquidity += liquidity_delta
+            tr.positions[pk].add_block = block_number
+            tr.positions[pk].baseline_swap_count = tr.swap_count
+        else:
+            tr.positions[pk] = PositionInfo(
+                liquidity=liquidity_delta,
+                add_block=block_number,
+                baseline_swap_count=tr.swap_count,
+            )
         tr.total_liquidity += liquidity_delta
         self.pos_to_range[pk] = rk
         self.pos_count += 1
@@ -217,12 +222,39 @@ class FCIState:
         a = math.isqrt(self.accumulated_sum << 128)
         return min(a, INDEX_ONE)
 
+    def to_at_null(self) -> int:
+        """Competitive null: sqrt(thetaSum / N²) in Q128."""
+        n = self.pos_count
+        if n == 0 or self.theta_sum == 0:
+            return 0
+        ratio = self.theta_sum // (n * n)
+        if ratio >= Q128:
+            return INDEX_ONE
+        a = math.isqrt(ratio << 128)
+        return min(a, INDEX_ONE)
+
+    def to_delta_plus(self) -> int:
+        """Concentration deviation: max(0, A_T - atNull) in Q128."""
+        a = self.to_index_a()
+        n = self.to_at_null()
+        return max(0, a - n)
+
+    def to_delta_plus_price(self) -> int:
+        """Concentration price: Δ+ * Q128 / (Q128 - Δ+) in Q128."""
+        d = self.to_delta_plus()
+        if d == 0:
+            return 0
+        return (d * Q128) // (Q128 - d)
+
     def snapshot(self) -> dict:
         return {
             "expectedIndexA": str(self.to_index_a()),
             "expectedThetaSum": str(self.theta_sum),
             "expectedPosCount": str(self.pos_count),
             "expectedAccumulatedSum": str(self.accumulated_sum),
+            "expectedAtNull": str(self.to_at_null()),
+            "expectedDeltaPlus": str(self.to_delta_plus()),
+            "expectedDeltaPlusPrice": str(self.to_delta_plus_price()),
         }
 
 

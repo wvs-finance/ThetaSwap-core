@@ -35,7 +35,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193460,
       "tickUpper": 193660,
-      "liquidityDelta": "-341568939927754",
+      "liquidityDelta": -341568939927754,
       "salt": "0x00000000000000000000000000000000000000000000000000000000000159b1"
     },
     {
@@ -46,7 +46,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193370,
       "tickUpper": 193580,
-      "liquidityDelta": "324567862388026",
+      "liquidityDelta": 324567862388026,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015aa4"
     },
     {
@@ -66,7 +66,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193370,
       "tickUpper": 193580,
-      "liquidityDelta": "-324567862388026",
+      "liquidityDelta": -324567862388026,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015aa4"
     },
     {
@@ -104,7 +104,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193390,
       "tickUpper": 193590,
-      "liquidityDelta": "346300371784292",
+      "liquidityDelta": 346300371784292,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015ace"
     },
     {
@@ -178,7 +178,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193390,
       "tickUpper": 193590,
-      "liquidityDelta": "-346300371784292",
+      "liquidityDelta": -346300371784292,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015ace"
     },
     {
@@ -189,7 +189,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193470,
       "tickUpper": 193680,
-      "liquidityDelta": "329516099827659",
+      "liquidityDelta": 329516099827659,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015b24"
     },
     {
@@ -245,7 +245,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193470,
       "tickUpper": 193680,
-      "liquidityDelta": "-329516099827659",
+      "liquidityDelta": -329516099827659,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015b24"
     },
     {
@@ -256,7 +256,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193380,
       "tickUpper": 193600,
-      "liquidityDelta": "312054555828089",
+      "liquidityDelta": 312054555828089,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015b4e"
     },
     {
@@ -303,7 +303,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193030,
       "tickUpper": 194140,
-      "liquidityDelta": "5571556624777",
+      "liquidityDelta": 5571556624777,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015789"
     },
     {
@@ -332,7 +332,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193380,
       "tickUpper": 193600,
-      "liquidityDelta": "-312054555828089",
+      "liquidityDelta": -312054555828089,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015b4e"
     },
     {
@@ -343,7 +343,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193270,
       "tickUpper": 193480,
-      "liquidityDelta": "318754015915225",
+      "liquidityDelta": 318754015915225,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015b83"
     },
     {
@@ -372,7 +372,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 190800,
       "tickUpper": 197350,
-      "liquidityDelta": "-475817643284589",
+      "liquidityDelta": -475817643284589,
       "salt": "0x000000000000000000000000000000000000000000000000000000000001587d"
     },
     {
@@ -401,7 +401,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193270,
       "tickUpper": 193480,
-      "liquidityDelta": "-318754015915225",
+      "liquidityDelta": -318754015915225,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015b83"
     },
     {
@@ -412,7 +412,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193180,
       "tickUpper": 193390,
-      "liquidityDelta": "314845056670284",
+      "liquidityDelta": 314845056670284,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015ba9"
     },
     {
@@ -432,7 +432,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193420,
       "tickUpper": 193430,
-      "liquidityDelta": "163430828532039680",
+      "liquidityDelta": 163430828532039680,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015bb8"
     },
     {
@@ -443,7 +443,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193420,
       "tickUpper": 193430,
-      "liquidityDelta": "-163430828532039680",
+      "liquidityDelta": -163430828532039680,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015bb8"
     },
     {
@@ -454,7 +454,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193180,
       "tickUpper": 193390,
-      "liquidityDelta": "-314845056670284",
+      "liquidityDelta": -314845056670284,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015ba9"
     },
     {
@@ -465,7 +465,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193090,
       "tickUpper": 193310,
-      "liquidityDelta": "297390267261432",
+      "liquidityDelta": 297390267261432,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015bbb"
     },
     {
@@ -494,7 +494,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193030,
       "tickUpper": 194140,
-      "liquidityDelta": "-1167354560868044",
+      "liquidityDelta": -1167354560868044,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015789"
     },
     {
@@ -505,7 +505,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192550,
       "tickUpper": 193660,
-      "liquidityDelta": "1159222130328082",
+      "liquidityDelta": 1159222130328082,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015bca"
     },
     {
@@ -516,7 +516,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193090,
       "tickUpper": 193310,
-      "liquidityDelta": "-297390267261432",
+      "liquidityDelta": -297390267261432,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015bbb"
     },
     {
@@ -527,7 +527,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192980,
       "tickUpper": 193200,
-      "liquidityDelta": "295300193084689",
+      "liquidityDelta": 295300193084689,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015bcb"
     },
     {
@@ -538,7 +538,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192980,
       "tickUpper": 193200,
-      "liquidityDelta": "-295300193084689",
+      "liquidityDelta": -295300193084689,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015bcb"
     },
     {
@@ -549,7 +549,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193080,
       "tickUpper": 193290,
-      "liquidityDelta": "306179341403025",
+      "liquidityDelta": 306179341403025,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015bd1"
     },
     {
@@ -578,7 +578,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193080,
       "tickUpper": 193290,
-      "liquidityDelta": "-306179341403025",
+      "liquidityDelta": -306179341403025,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015bd1"
     },
     {
@@ -589,7 +589,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 190220,
       "tickUpper": 193220,
-      "liquidityDelta": "914492721419617",
+      "liquidityDelta": 914492721419617,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015be6"
     },
     {
@@ -618,7 +618,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 190890,
       "tickUpper": 197690,
-      "liquidityDelta": "674098293296226",
+      "liquidityDelta": 674098293296226,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015c13"
     },
     {
@@ -638,7 +638,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 190750,
       "tickUpper": 197310,
-      "liquidityDelta": "471834265941244",
+      "liquidityDelta": 471834265941244,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015c1a"
     },
     {
@@ -658,7 +658,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 190940,
       "tickUpper": 198000,
-      "liquidityDelta": "344829560134249",
+      "liquidityDelta": 344829560134249,
       "salt": "0x00000000000000000000000000000000000000000000000000000000000158e2"
     },
     {
@@ -759,7 +759,7 @@
       "sender": "0xbf060fe5b35aefbb80041e313510294e501b5e38",
       "tickLower": 193170,
       "tickUpper": 193190,
-      "liquidityDelta": "59822421188182615",
+      "liquidityDelta": 59822421188182615,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
@@ -770,7 +770,7 @@
       "sender": "0xbf060fe5b35aefbb80041e313510294e501b5e38",
       "tickLower": 193170,
       "tickUpper": 193190,
-      "liquidityDelta": "-59822421188182615",
+      "liquidityDelta": -59822421188182615,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000000000"
     },
     {
@@ -790,7 +790,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192030,
       "tickUpper": 194300,
-      "liquidityDelta": "14499552273453",
+      "liquidityDelta": 14499552273453,
       "salt": "0x00000000000000000000000000000000000000000000000000000000000159ee"
     },
     {
@@ -801,7 +801,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192030,
       "tickUpper": 194300,
-      "liquidityDelta": "4277150223495",
+      "liquidityDelta": 4277150223495,
       "salt": "0x00000000000000000000000000000000000000000000000000000000000159ee"
     },
     {
@@ -812,7 +812,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192030,
       "tickUpper": 194300,
-      "liquidityDelta": "9277598702414",
+      "liquidityDelta": 9277598702414,
       "salt": "0x00000000000000000000000000000000000000000000000000000000000159ee"
     },
     {
@@ -832,7 +832,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192030,
       "tickUpper": 194300,
-      "liquidityDelta": "12902547351625",
+      "liquidityDelta": 12902547351625,
       "salt": "0x00000000000000000000000000000000000000000000000000000000000159ee"
     },
     {
@@ -843,7 +843,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192030,
       "tickUpper": 194300,
-      "liquidityDelta": "-185281015267050",
+      "liquidityDelta": -185281015267050,
       "salt": "0x00000000000000000000000000000000000000000000000000000000000159ee"
     },
     {
@@ -854,7 +854,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192030,
       "tickUpper": 193330,
-      "liquidityDelta": "318910864060172",
+      "liquidityDelta": 318910864060172,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015ce0"
     },
     {
@@ -865,7 +865,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192550,
       "tickUpper": 193660,
-      "liquidityDelta": "5370704744288",
+      "liquidityDelta": 5370704744288,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015bca"
     },
     {
@@ -894,7 +894,7 @@
       "sender": "0xa7c624014699a8b537cc4b326eb65f00852ee2a3",
       "tickLower": 193210,
       "tickUpper": 193220,
-      "liquidityDelta": "41152659863242755",
+      "liquidityDelta": 41152659863242755,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015cfe"
     },
     {
@@ -905,7 +905,7 @@
       "sender": "0xa7c624014699a8b537cc4b326eb65f00852ee2a3",
       "tickLower": 193210,
       "tickUpper": 193220,
-      "liquidityDelta": "-41152659863242755",
+      "liquidityDelta": -41152659863242755,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015cfe"
     },
     {
@@ -925,7 +925,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193140,
       "tickUpper": 193150,
-      "liquidityDelta": "92868595974611664896",
+      "liquidityDelta": 92868595974611664896,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015d05"
     },
     {
@@ -936,7 +936,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 193140,
       "tickUpper": 193150,
-      "liquidityDelta": "-92868595974611664896",
+      "liquidityDelta": -92868595974611664896,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015d05"
     },
     {
@@ -1001,7 +1001,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192550,
       "tickUpper": 193660,
-      "liquidityDelta": "-1164592835072370",
+      "liquidityDelta": -1164592835072370,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015bca"
     },
     {
@@ -1012,7 +1012,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192640,
       "tickUpper": 193140,
-      "liquidityDelta": "2568146192830560",
+      "liquidityDelta": 2568146192830560,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015d47"
     },
     {
@@ -1041,7 +1041,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 191150,
       "tickUpper": 195310,
-      "liquidityDelta": "549322205581858",
+      "liquidityDelta": 549322205581858,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015d54"
     },
     {
@@ -1052,7 +1052,7 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192870,
       "tickUpper": 192880,
-      "liquidityDelta": "86699549866852352",
+      "liquidityDelta": 86699549866852352,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015d5e"
     },
     {
@@ -1063,42 +1063,56 @@
       "sender": "0xbd216513d74c8cf14cf4747e6aaa6420ff64ee9e",
       "tickLower": 192870,
       "tickUpper": 192880,
-      "liquidityDelta": "-86699549866852352",
+      "liquidityDelta": -86699549866852352,
       "salt": "0x0000000000000000000000000000000000000000000000000000000000015d5e"
     }
   ],
   "snapshots": [
     {
-      "expectedIndexA": "26622420688852835506890025932321536950",
-      "expectedThetaSum": "2082838701715425391831951188292931478",
-      "expectedPosCount": "1",
-      "expectedAccumulatedSum": "2082838701715425391831951188292931478",
+      "expectedIndexA": 26622420688852835506890025932321536950,
+      "expectedThetaSum": 2082838701715425391831951188292931478,
+      "expectedPosCount": 1,
+      "expectedAccumulatedSum": 2082838701715425391831951188292931478,
+      "expectedAtNull": 26622420688852835506890025932321536950,
+      "expectedDeltaPlus": 0,
+      "expectedDeltaPlusPrice": 0,
       "blockNumber": 23659523,
       "afterEventIndex": 25
     },
     {
-      "expectedIndexA": "43076431764478365634565467397385840550",
-      "expectedThetaSum": "5453056502310293812024413917362355402",
-      "expectedPosCount": "2",
-      "expectedAccumulatedSum": "5453056502310293812024413917362355402",
+      "expectedIndexA": 43076431764478365634565467397385840550,
+      "expectedThetaSum": 5453056502310293812024413917362355402,
+      "expectedPosCount": 2,
+      "expectedAccumulatedSum": 5453056502310293812024413917362355402,
+      "expectedAtNull": 21538215882239182817282733698692920271,
+      "expectedDeltaPlus": 21538215882239182817282733698692920279,
+      "expectedDeltaPlusPrice": 22993598645744756647308782417015046824,
       "blockNumber": 23662024,
       "afterEventIndex": 52
     },
     {
-      "expectedIndexA": "47456582518892860302641446133281559328",
-      "expectedThetaSum": "6618407073957343344433231066101287633",
-      "expectedPosCount": "9",
-      "expectedAccumulatedSum": "6618407073957343344433231066101287633",
+      "expectedIndexA": 47456582518892860302641446133281559328,
+      "expectedThetaSum": 6618407073957343344433231066101287633,
+      "expectedPosCount": 9,
+      "expectedAccumulatedSum": 6618407073957343344433231066101287633,
+      "expectedAtNull": 5272953613210317811404605125920173251,
+      "expectedDeltaPlus": 42183628905682542491236841007361386077,
+      "expectedDeltaPlusPrice": 48152988452455490117234774253760788214,
       "blockNumber": 23665656,
       "afterEventIndex": 85
     },
     {
-      "expectedIndexA": "47456597046204077926298941091509054945",
-      "expectedThetaSum": "6808934715010500378847214608896230640",
-      "expectedPosCount": "10",
-      "expectedAccumulatedSum": "6618411125984225233146317399967479216",
+      "expectedIndexA": 48134815061802394526733833595703178776,
+      "expectedThetaSum": 6808934715010500378847214608896230640,
+      "expectedPosCount": 10,
+      "expectedAccumulatedSum": 6808934715010500378847214608896230640,
+      "expectedAtNull": 4813481506180239452673383359570317863,
+      "expectedDeltaPlus": 43321333555622155074060450236132860913,
+      "expectedDeltaPlusPrice": 49641145686423652102997562513554617096,
       "blockNumber": 23667514,
       "afterEventIndex": 101
     }
-  ]
+  ],
+  "eventCount": 107,
+  "snapshotCount": 4
 }
