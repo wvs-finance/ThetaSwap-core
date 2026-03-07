@@ -11,12 +11,14 @@ import {SwapParams, ModifyLiquidityParams} from "v4-core/src/types/PoolOperation
 import {TickRange, fromTicks} from "./types/TickRangeMod.sol";
 import {derivePoolAndPosition, sortTicks} from "../libraries/HookUtilsMod.sol";
 import {
-    FeeConcentrationIndexStorage, fciStorage, _poolManager,
+    FeeConcentrationIndexStorage, fciStorage, reactiveFciStorage, _poolManager,
     registerPosition, setFeeGrowthBaseline, getFeeGrowthBaseline, deleteFeeGrowthBaseline,
+    deregisterPosition, addStateTerm, incrementPosCount, decrementPosCount,
     t_storeTick, t_readTick,
     t_cacheRemovalData, t_readRemovalData,
     incrementOverlappingRanges
 } from "./modules/FeeConcentrationIndexStorageMod.sol";
+import {CalldataReader, CalldataReaderLib} from "angstrom/src/types/CalldataReader.sol";
 import {TickRangeRegistryLib} from "./types/TickRangeRegistryMod.sol";
 import {getCurrentTick, getFeeGrowthInside0, getPositionFeeGrowthInsideLast0} from "./types/FeeGrowthReaderMod.sol";
 import {FeeShareRatio, fromFeeGrowth, fromFeeGrowthDelta} from "./types/FeeShareRatioMod.sol";
@@ -51,10 +53,24 @@ contract FeeConcentrationIndex {
         TickRange rk = fromTicks(params.tickLower, params.tickUpper);
 
         if (hookData.length > 0) {
-            // Reactive path: posLiquidity from params, baseline = 0
+            // Reactive path: posLiquidity from params, feeGrowthInside from hookData
+            FeeConcentrationIndexStorage storage r$ = reactiveFciStorage();
+            CalldataReader reader = CalldataReaderLib.from(hookData);
+            uint256 feeGrowthInside0X128;
+            (reader, feeGrowthInside0X128) = reader.readU256();
+            reader.requireAtEndOf(hookData);
             uint128 posLiquidity = uint128(uint256(params.liquidityDelta));
-            registerPosition(poolId, rk, positionKey, params.tickLower, params.tickUpper, posLiquidity);
-            setFeeGrowthBaseline(poolId, positionKey, 0);
+            registerPosition(
+			     r$,
+			     poolId,
+			     rk,
+			     positionKey,
+			     params.tickLower,
+			     params.tickUpper,
+			     posLiquidity
+	    );
+            setFeeGrowthBaseline(r$, poolId, positionKey, feeGrowthInside0X128);
+            incrementPosCount(r$, poolId);
         } else {
             // V4 path: read from PoolManager
             (uint128 posLiquidity,) = getPositionFeeGrowthInsideLast0(_poolManager(), poolId, positionKey);
@@ -65,9 +81,8 @@ contract FeeConcentrationIndex {
                 _poolManager(), poolId, currentTick, params.tickLower, params.tickUpper
             );
             setFeeGrowthBaseline(poolId, positionKey, feeGrowthInside0X128);
+            incrementPosCount(poolId);
         }
-
-        fciStorage().fciState[poolId].incrementPos();
 
         return (IHooks.afterAddLiquidity.selector, BalanceDelta.wrap(0));
     }
@@ -101,17 +116,21 @@ contract FeeConcentrationIndex {
         int24 tickMin;
         int24 tickMax;
         if (hookData.length > 0) {
-            // Reactive path: single V3 event tick — range is tick..tick+1
-            int24 tick = abi.decode(hookData, (int24));
+            // Reactive path: packed I24 tick via CalldataReader
+            CalldataReader reader = CalldataReaderLib.from(hookData);
+            int24 tick;
+            (reader, tick) = reader.readI24();
+            reader.requireAtEndOf(hookData);
             tickMin = tick;
             tickMax = tick + 1;
+            incrementOverlappingRanges(reactiveFciStorage(), poolId, tickMin, tickMax);
         } else {
             // V4 path: tickBefore from transient storage, tickAfter from PoolManager
             int24 tickBefore = t_readTick();
             int24 tickAfter = getCurrentTick(_poolManager(), poolId);
             (tickMin, tickMax) = sortTicks(tickBefore, tickAfter);
+            incrementOverlappingRanges(poolId, tickMin, tickMax);
         }
-        incrementOverlappingRanges(poolId, tickMin, tickMax);
 
         return (IHooks.afterSwap.selector, 0);
     }
@@ -151,7 +170,6 @@ contract FeeConcentrationIndex {
     ) external returns (bytes4, BalanceDelta) {
         (PoolId poolId, bytes32 positionKey) = derivePoolAndPosition(sender, key, params);
 
-        FeeConcentrationIndexStorage storage $ = fciStorage();
         FeeShareRatio xk;
         uint128 posLiquidity;
         SwapCount swapLifetime;
@@ -159,49 +177,58 @@ contract FeeConcentrationIndex {
         uint128 totalRangeLiq;
 
         if (hookData.length > 0) {
-            // Reactive path: fees from hookData, liquidity share from registry
+            // Reactive path: fees from hookData, liquidity share from reactive registry
+            FeeConcentrationIndexStorage storage r$ = reactiveFciStorage();
             posLiquidity = uint128(uint256(-params.liquidityDelta));
 
             (, swapLifetime, blockLifetime, totalRangeLiq) =
-                $.registries[poolId].deregister(positionKey, posLiquidity);
+                deregisterPosition(r$, poolId, positionKey, posLiquidity);
 
-            // x_k = posLiquidity / totalRangeLiquidity (same fee growth period)
             xk = fromFeeGrowth(uint256(posLiquidity), uint256(totalRangeLiq));
+
+            if (!swapLifetime.isZero()) {
+                uint256 xSquaredQ128 = xk.square();
+                addStateTerm(r$, poolId, blockLifetime, xSquaredQ128);
+            }
+            decrementPosCount(r$, poolId);
+            deleteFeeGrowthBaseline(r$, poolId, positionKey);
         } else {
             // V4 path: read cached pre-update values from transient storage
             (uint256 positionFeeLast0X128, uint128 posLiq, uint256 rangeFeeGrowthNow0X128) = t_readRemovalData();
             posLiquidity = posLiq;
 
+            // Partial removes and fee-only collects (liquidityDelta == 0) leave the
+            // position alive — skip FCI accumulation. Terms are recorded at full exit only.
+            uint128 removedLiq = uint128(uint256(-params.liquidityDelta));
+            if (posLiquidity != removedLiq) {
+                return (IHooks.afterRemoveLiquidity.selector, BalanceDelta.wrap(0));
+            }
+
             uint256 baseline0X128 = getFeeGrowthBaseline(poolId, positionKey);
 
             (, swapLifetime, blockLifetime, totalRangeLiq) =
-                $.registries[poolId].deregister(positionKey, posLiquidity);
+                deregisterPosition(poolId, positionKey, posLiquidity);
 
             xk = fromFeeGrowthDelta(
                 rangeFeeGrowthNow0X128, positionFeeLast0X128, baseline0X128,
                 posLiquidity, totalRangeLiq
             );
+
+            if (!swapLifetime.isZero()) {
+                uint256 xSquaredQ128 = xk.square();
+                addStateTerm(poolId, blockLifetime, xSquaredQ128);
+            }
+            decrementPosCount(poolId);
+            deleteFeeGrowthBaseline(poolId, positionKey);
         }
-
-        // Accumulate HHI term if swaps occurred (zero-guard uses swap count)
-        if (!swapLifetime.isZero()) {
-            uint256 xSquaredQ128 = xk.square();
-            $.fciState[poolId].addTerm(blockLifetime, xSquaredQ128);
-        }
-
-        // Decrement active position count
-        $.fciState[poolId].decrementPos();
-
-        // Clean up baseline
-        deleteFeeGrowthBaseline(poolId, positionKey);
 
         return (IHooks.afterRemoveLiquidity.selector, BalanceDelta.wrap(0));
     }
 
     // ── View ──
 
-    function getIndex(PoolKey calldata key) external view returns (uint128 indexA, uint256 thetaSum, uint256 posCount) {
-        FeeConcentrationIndexStorage storage $ = fciStorage();
+    function getIndex(PoolKey calldata key, bool reactive) external view returns (uint128 indexA, uint256 thetaSum, uint256 posCount) {
+        FeeConcentrationIndexStorage storage $ = reactive ? reactiveFciStorage() : fciStorage();
         PoolId poolId = PoolIdLibrary.toId(key);
         indexA = $.fciState[poolId].toIndexA();
         thetaSum = $.fciState[poolId].thetaSum;

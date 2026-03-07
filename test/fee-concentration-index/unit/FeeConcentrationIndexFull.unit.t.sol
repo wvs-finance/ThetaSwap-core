@@ -114,7 +114,7 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
         assertEq(harness.getAccumulatedHHI(poolId), 0, "accumulatedHHI must be 0 when no swaps");
 
         // Index: A=0, B=1.0 — no concentration data
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
         assertEq(indexA, 0, "indexA must be 0: theta never started");
         assertEq((INDEX_ONE - indexA), INDEX_ONE, "(INDEX_ONE - indexA) must be 1.0: no concentration observed");
     }
@@ -150,7 +150,7 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
 
         assertEq(harness.getAccumulatedHHI(poolId), 0, "HHI still 0 after 3 idle cycles");
 
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
         assertEq(indexA, 0, "indexA still 0");
         assertEq((INDEX_ONE - indexA), INDEX_ONE, "(INDEX_ONE - indexA) still 1.0");
     }
@@ -181,7 +181,7 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
         // square() = mulDiv(2^128-1, 2^128-1, 2^128) = 2^128 - 2 (1 wei below Q128)
         // toIndexA(2^128-2) → sqrt((2^128-2) << 128) → INDEX_ONE - 1 (rounding)
         // 1-wei precision loss from Q128 representation of 1.0 as (2^128-1)
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
         assertGe(indexA, INDEX_ONE - 1, "indexA must be max (within 1 wei): sole provider");
         assertLe((INDEX_ONE - indexA), 1, "(INDEX_ONE - indexA) must be ~0: complement of max concentration");
     }
@@ -240,7 +240,7 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
 
         // indexA = sqrt(Q128/2) ≈ 0.707 * INDEX_ONE
         // sqrt(0.5) ≈ 0.7071067811865475
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
         uint256 expectedIndexA = uint256(INDEX_ONE) * 7071 / 10000;
         assertApproxEqRel(indexA, expectedIndexA, 0.001e18, "indexA should be ~0.707 * INDEX_ONE");
         assertGt(indexA, 0, "indexA > 0: concentration detected");
@@ -287,7 +287,7 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
         assertApproxEqAbs(hhi, expectedHHI, 3, "HHI should be ~5*Q128/9");
 
         // indexA = sqrt(5/9) = sqrt(5)/3 ≈ 0.7454 * INDEX_ONE
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
         uint256 expectedIndexA = uint256(INDEX_ONE) * 7454 / 10000;
         assertApproxEqRel(indexA, expectedIndexA, 0.001e18, "indexA should be ~0.7454 * INDEX_ONE");
 
@@ -349,7 +349,7 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
         assertApproxEqAbs(hhi, expectedHHI, 3, "HHI should be ~3*Q128/16");
 
         // indexA = sqrt(3/16) = sqrt(3)/4 ≈ 0.433 * INDEX_ONE
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
         uint256 expectedIndexA = uint256(INDEX_ONE) * 4330 / 10000;
         assertApproxEqRel(indexA, expectedIndexA, 0.002e18, "indexA should be ~0.433 * INDEX_ONE");
 
@@ -444,7 +444,7 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
         assertApproxEqAbs(hhi, expectedHHI, 5, "HHI should be ~8101/10000 * Q128");
 
         // indexA = sqrt(8101/10000) ≈ 0.9006 * INDEX_ONE
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
         uint256 expectedIndexA = uint256(INDEX_ONE) * 9006 / 10000;
         assertApproxEqRel(indexA, expectedIndexA, 0.002e18, "indexA should be ~0.900 * INDEX_ONE");
 

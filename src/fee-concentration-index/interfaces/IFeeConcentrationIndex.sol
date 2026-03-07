@@ -9,7 +9,7 @@ interface IHookFacet {
 }
 
 interface IFeeConcentrationIndex is IERC165, IHookFacet {
-    function getIndex(PoolKey calldata key)
+    function getIndex(PoolKey calldata key, bool reactive)
         external
         view
         returns (uint128 indexA, uint256 thetaSum, uint256 posCount);

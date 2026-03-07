@@ -159,11 +159,46 @@ contract AfterRemoveLiquidityTest is Test, Deployers {
         assertEq(harness.getActiveRangeCount(poolId), 0, "0 active ranges after last removal");
     }
 
+    // ── Test: partial remove skips FCI accumulation ──
+
+    function test_partialRemove_skipsFCIAccumulation() public {
+        int256 fullLiq = 1e18;
+        int256 halfLiq = 5e17;
+        _addLiquidity(-60, 60, fullLiq);
+
+        bytes32 pk = _positionKey(address(modifyLiquidityRouter), -60, 60, bytes32(0));
+
+        // Generate fees so there's something to accumulate
+        _swap(true, -100);
+
+        // Snapshot state before partial remove
+        uint256 hhiBefore = harness.getAccumulatedHHI(poolId);
+        uint256 posCountBefore = harness.getPosCount(poolId);
+        uint256 baselineBefore = harness.getBaseline0(poolId, pk);
+        bool registeredBefore = harness.containsPosition(poolId, -60, 60, pk);
+
+        // Partial remove: only half the liquidity
+        _removeLiquidity(-60, 60, halfLiq);
+
+        // Position still registered, no HHI update, posCount unchanged, baseline preserved
+        assertTrue(registeredBefore, "was registered before partial remove");
+        assertTrue(harness.containsPosition(poolId, -60, 60, pk), "still registered after partial remove");
+        assertEq(harness.getAccumulatedHHI(poolId), hhiBefore, "HHI unchanged after partial remove");
+        assertEq(harness.getPosCount(poolId), posCountBefore, "posCount unchanged after partial remove");
+        assertEq(harness.getBaseline0(poolId, pk), baselineBefore, "baseline preserved after partial remove");
+        assertEq(harness.getActiveRangeCount(poolId), 1, "active range still present");
+
+        // Full burn of remaining liquidity still completes and deregisters
+        _removeLiquidity(-60, 60, halfLiq);
+        assertFalse(harness.containsPosition(poolId, -60, 60, pk), "deregistered after full burn");
+        assertEq(harness.getActiveRangeCount(poolId), 0, "no active ranges after full burn");
+    }
+
     // ── Test: getIndex returns correct values ──
 
     function test_getIndex_returnsCorrectValues() public {
         // Before any removals, indices should be A=0, thetaSum=0, posCount=0
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(poolKey);
+        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(poolKey, false);
         assertEq(indexA, 0, "indexA should be 0 with no removals");
         assertEq(thetaSum_, 0, "thetaSum should be 0 with no removals");
         assertEq(posCount_, 0, "posCount should be 0 with no removals");
@@ -173,7 +208,7 @@ contract AfterRemoveLiquidityTest is Test, Deployers {
         _swap(true, -100);
         _removeLiquidity(-60, 60, 1e18);
 
-        (uint128 indexA2, uint256 thetaSum2, uint256 posCount2) = harness.getIndex(poolKey);
+        (uint128 indexA2, uint256 thetaSum2, uint256 posCount2) = harness.getIndex(poolKey, false);
         assertGt(indexA2, 0, "indexA should be > 0 after removal with fees");
         assertGt(thetaSum2, 0, "thetaSum should be > 0 after removal");
         assertEq(posCount2, 0, "posCount should be 0 after all removed");

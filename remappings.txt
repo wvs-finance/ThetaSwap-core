@@ -12,3 +12,7 @@ solmate/=lib/uniswap-hooks/lib/v4-core/lib/solmate/
 @bunni-v2/=lib/bunni-v2/src/
 kontrol-cheatcodes/=lib/kontrol-cheatcodes/src/
 solady/=lib/solady/src/
+@hook-bazaar/master-hook/=lib/hook-bazaar/contracts/src/master-hook-pkg/
+@hook-bazaar/=lib/hook-bazaar/contracts/src/
+Compose/=lib/Compose/src/
+compose-extensions/=lib/compose-extensions/src/

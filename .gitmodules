@@ -31,3 +31,13 @@
 [submodule "lib/chimera"]
 	path = lib/chimera
 	url = https://github.com/Recon-Fuzz/chimera.git
+[submodule "lib/hook-bazaar"]
+	path = lib/hook-bazaar
+	url = https://github.com/hook-bazaar/monorepo.git
+	branch = uhi7
+[submodule "lib/Compose"]
+	path = lib/Compose
+	url = https://github.com/Perfect-Abstractions/Compose.git
+[submodule "lib/compose-extensions"]
+	path = lib/compose-extensions
+	url = https://github.com/JMSBPP/compose-extensions.git
