@@ -248,13 +248,13 @@ class FCIState:
 
     def snapshot(self) -> dict:
         return {
-            "expectedIndexA": str(self.to_index_a()),
-            "expectedThetaSum": str(self.theta_sum),
-            "expectedPosCount": str(self.pos_count),
-            "expectedAccumulatedSum": str(self.accumulated_sum),
-            "expectedAtNull": str(self.to_at_null()),
-            "expectedDeltaPlus": str(self.to_delta_plus()),
-            "expectedDeltaPlusPrice": str(self.to_delta_plus_price()),
+            "expectedIndexA": self.to_index_a(),
+            "expectedThetaSum": self.theta_sum,
+            "expectedPosCount": self.pos_count,
+            "expectedAccumulatedSum": self.accumulated_sum,
+            "expectedAtNull": self.to_at_null(),
+            "expectedDeltaPlus": self.to_delta_plus(),
+            "expectedDeltaPlusPrice": self.to_delta_plus_price(),
         }
 
 
@@ -367,12 +367,19 @@ def main():
     events = raw["events"]
     print(f"Loaded {len(events)} events from {input_path}")
 
+    # Normalize event fields: liquidityDelta must be int for Forge vm.parseJson
+    for ev in events:
+        if "liquidityDelta" in ev and isinstance(ev["liquidityDelta"], str):
+            ev["liquidityDelta"] = int(ev["liquidityDelta"])
+
     state, snapshots = replay(events)
 
     # Build output
     output = {
         "pool": raw["pool"],
         "forkBlock": raw["forkBlock"],
+        "eventCount": len(events),
+        "snapshotCount": len(snapshots),
         "events": events,
         "snapshots": snapshots,
     }

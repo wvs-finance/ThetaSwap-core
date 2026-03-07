@@ -8,6 +8,8 @@
     "hooks": "0x0000000000000000000000000000000000000000"
   },
   "forkBlock": 23655999,
+  "eventCount": 107,
+  "snapshotCount": 4,
   "events": [
     {
       "blockNumber": 23656049,
@@ -1112,7 +1114,5 @@
       "blockNumber": 23667514,
       "afterEventIndex": 101
     }
-  ],
-  "eventCount": 107,
-  "snapshotCount": 4
+  ]
 }
