@@ -205,22 +205,6 @@ def build_exit_panel(
     return rows
 
 
-def compute_null_at_map(
-    raw_positions: list[tuple[str, int, float]],
-) -> dict[str, float]:
-    """Compute null A_T (equal-share proxy) per day from RAW_POSITIONS.
-
-    The third element of each tuple is the old proxy A_T for the burn day.
-    Multiple positions may burn on the same day — take the value (they're
-    all the same for the same day since it was a per-day computation).
-    """
-    result: dict[str, float] = {}
-    for burn_date, _blocklife, proxy_at in raw_positions:
-        if burn_date not in result:
-            result[burn_date] = proxy_at
-    return result
-
-
 def build_exit_panel_deviation(
     raw_positions: list[tuple[str, int, float]],
     daily_at_map: dict[str, float],

@@ -10,7 +10,6 @@ from econometrics.ingest import (
     build_exit_panel_deviation,
     build_lagged_positions,
     compute_lagged_treatment,
-    compute_null_at_map,
     ingest_daily_panel,
     merge_jit_instrument,
 )
@@ -252,18 +251,6 @@ def test_build_exit_panel_lifetime_mean_uses_average() -> None:
 
 # ── Deviation-from-null exit panel tests ─────────────────────────────
 
-
-def test_compute_null_at_map_extracts_proxy() -> None:
-    """compute_null_at_map picks the proxy A_T per burn day."""
-    raw = [
-        ("2025-12-05", 390, 0.07161),
-        ("2025-12-05", 145, 0.07161),
-        ("2025-12-06", 4951, 0.16872),
-    ]
-    null_map = compute_null_at_map(raw)
-    assert null_map["2025-12-05"] == 0.07161
-    assert null_map["2025-12-06"] == 0.16872
-    assert len(null_map) == 2
 
 
 def test_build_exit_panel_deviation_subtracts_null() -> None:

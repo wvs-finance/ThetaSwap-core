@@ -197,6 +197,13 @@ contract FeeConcentrationIndex {
             (uint256 positionFeeLast0X128, uint128 posLiq, uint256 rangeFeeGrowthNow0X128) = t_readRemovalData();
             posLiquidity = posLiq;
 
+            // Partial removes and fee-only collects (liquidityDelta == 0) leave the
+            // position alive — skip FCI accumulation. Terms are recorded at full exit only.
+            uint128 removedLiq = uint128(uint256(-params.liquidityDelta));
+            if (posLiquidity != removedLiq) {
+                return (IHooks.afterRemoveLiquidity.selector, BalanceDelta.wrap(0));
+            }
+
             uint256 baseline0X128 = getFeeGrowthBaseline(poolId, positionKey);
 
             (, swapLifetime, blockLifetime, totalRangeLiq) =
