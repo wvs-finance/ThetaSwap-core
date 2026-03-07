@@ -18,9 +18,7 @@ aiUtils/
 *.py
 *.pyc
 *.pyo
-!backtest/**/*.py
-!econometrics/**/*.py
-!data/scripts/**/*.py
+!research/**/*.py
 *.pyd
 __pycache__/
 *.so
@@ -66,6 +64,7 @@ dmypy.json
 # Reference files (PDFs)
 refs/
 *.pdf
+!research/**/*.pdf
 pdf_analysis/
 pdf_env/
 documents/
