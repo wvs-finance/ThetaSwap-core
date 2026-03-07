@@ -18,6 +18,9 @@ aiUtils/
 *.py
 *.pyc
 *.pyo
+!backtest/**/*.py
+!econometrics/**/*.py
+!data/scripts/**/*.py
 *.pyd
 __pycache__/
 *.so
