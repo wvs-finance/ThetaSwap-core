@@ -174,7 +174,8 @@ class FCIStateV3:
 
         pos = tr.positions[pk]
 
-        # Compute FCI term using collected fees as the fee-share signal
+        # Compute FCI term from liquidity share (not fee amounts).
+        # total_liquidity is NOT decremented before computing x_k — matches Solidity.
         swap_lifetime = tr.swap_count - pos.baseline_swap_count
         block_lifetime = max(1, block_number - pos.add_block)
         total_liq = tr.total_liquidity
