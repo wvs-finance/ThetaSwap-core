@@ -28,6 +28,15 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
     uint256 constant MAX_LIQUIDITY = 100e18;
     uint256 constant MAX_BLOCK_LIFETIME = 10_000;
 
+    struct OracleResult {
+        uint256 expectedHHI;
+        uint256 expectedIndexA;
+        uint256 expectedThetaSum;
+        uint256 expectedRemovedPosCount;
+        uint256 expectedAtNull;
+        uint256 expectedDeltaPlus;
+    }
+
     function setUp() public {
         deployFreshManagerAndRouters();
         deployMintAndApprove2Currencies();
@@ -80,14 +89,51 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
     function _callOracle(
         uint256[] memory liquidities,
         uint256[] memory blockLifetimes
-    ) internal returns (uint256 expectedHHI, uint256 expectedIndexA) {
+    ) internal returns (OracleResult memory result) {
         bytes memory input = abi.encode(liquidities, blockLifetimes);
         string[] memory cmd = new string[](3);
         cmd[0] = "python3";
         cmd[1] = "research/scripts/hhi_oracle.py";
         cmd[2] = vm.toString(input);
-        bytes memory result = vm.ffi(cmd);
-        (expectedHHI, expectedIndexA) = abi.decode(result, (uint256, uint256));
+        bytes memory raw = vm.ffi(cmd);
+        (
+            result.expectedHHI,
+            result.expectedIndexA,
+            result.expectedThetaSum,
+            result.expectedRemovedPosCount,
+            result.expectedAtNull,
+            result.expectedDeltaPlus
+        ) = abi.decode(raw, (uint256, uint256, uint256, uint256, uint256, uint256));
+    }
+
+    function _assertFCI(
+        string memory tier,
+        OracleResult memory oracle,
+        uint256 n,
+        uint256 maxBl
+    ) internal view {
+        uint256 hhi = harness.getAccumulatedHHI(poolId);
+        (uint128 indexA, uint256 thetaSum, uint256 removedPosCount) = harness.getIndex(key, false);
+        uint128 atNull = harness.getAtNull(poolId);
+        uint128 deltaPlus = harness.getDeltaPlus(poolId);
+
+        uint256 hhiTolerance = n * 3;
+        uint256 idxTolerance = _indexATolerance(n, maxBl);
+
+        assertApproxEqAbs(hhi, oracle.expectedHHI, hhiTolerance,
+            string.concat(tier, ": HHI mismatch"));
+        assertApproxEqAbs(uint256(indexA), oracle.expectedIndexA, idxTolerance,
+            string.concat(tier, ": indexA mismatch"));
+        assertLe(indexA, INDEX_ONE,
+            string.concat(tier, ": indexA capped"));
+        assertEq(removedPosCount, oracle.expectedRemovedPosCount,
+            string.concat(tier, ": removedPosCount mismatch"));
+        assertApproxEqAbs(thetaSum, oracle.expectedThetaSum, hhiTolerance,
+            string.concat(tier, ": thetaSum mismatch"));
+        assertApproxEqAbs(uint256(atNull), oracle.expectedAtNull, idxTolerance,
+            string.concat(tier, ": atNull mismatch"));
+        assertApproxEqAbs(uint256(deltaPlus), oracle.expectedDeltaPlus, 2 * idxTolerance,
+            string.concat(tier, ": deltaPlus mismatch"));
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -96,7 +142,7 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
     // All LPs mint same liquidity at block 1.
     // 1 deterministic swap (all active).
     // All LPs exit at block 1 + blockLifetime.
-    // x_k = 1/N for each. HHI = N * (1/N)^2 / max(1, blockLifetime).
+    // x_k = 1/N for each → Δ⁺ = 0 (competitive equilibrium).
     // ═══════════════════════════════════════════════════════════════════
 
     function testFuzz_tier1_equalCapitalEqualTime(
@@ -132,17 +178,14 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
             liquidities[i] = liq;
             blockLifetimes[i] = bl;
         }
-        (uint256 expectedHHI, uint256 expectedIndexA) = _callOracle(liquidities, blockLifetimes);
+        OracleResult memory oracle = _callOracle(liquidities, blockLifetimes);
 
-        // Phase 5: Assert
-        uint256 hhi = harness.getAccumulatedHHI(poolId);
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
+        // Phase 5: Assert all FCI quantities
+        _assertFCI("Tier1", oracle, n, bl);
 
-        // Tolerance: rounding from Q128 integer division. Scale with N.
-        uint256 hhiTolerance = n * 3;
-        assertApproxEqAbs(hhi, expectedHHI, hhiTolerance, "Tier1: HHI mismatch");
-        assertApproxEqAbs(uint256(indexA), expectedIndexA, _indexATolerance(n, bl), "Tier1: indexA mismatch");
-        assertLe(indexA, INDEX_ONE, "Tier1: indexA capped");
+        // Tier 1 invariant: equal capital → Δ⁺ = 0 (competitive equilibrium)
+        uint128 deltaPlus = harness.getDeltaPlus(poolId);
+        assertEq(deltaPlus, 0, "Tier1: deltaPlus must be 0 - equal capital = competitive null");
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -151,7 +194,8 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
     // All LPs mint same liquidity at block 1.
     // 1 deterministic swap at block 1 (all active).
     // Each LP exits at a different fuzzed block → different blockLifetimes.
-    // x_k = 1/N for each (all present during swap).
+    // x_k = 1/N for each (all present during swap) → Δ⁺ = 0.
+    // Duration heterogeneity alone does NOT create excess concentration.
     // ═══════════════════════════════════════════════════════════════════
 
     function testFuzz_tier2_equalCapitalDiffTime(
@@ -205,15 +249,14 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
         // Phase 4: Compare with oracle
         uint256[] memory liquidities = new uint256[](n);
         for (uint256 i; i < n; ++i) liquidities[i] = liq;
-        (uint256 expectedHHI, uint256 expectedIndexA) = _callOracle(liquidities, blockLifetimes);
+        OracleResult memory oracle = _callOracle(liquidities, blockLifetimes);
 
-        // Phase 5: Assert
-        uint256 hhi = harness.getAccumulatedHHI(poolId);
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
+        // Phase 5: Assert all FCI quantities
+        _assertFCI("Tier2", oracle, n, blockLifetimes[n - 1]);
 
-        uint256 hhiTolerance = n * 3;
-        assertApproxEqAbs(hhi, expectedHHI, hhiTolerance, "Tier2: HHI mismatch");
-        assertApproxEqAbs(uint256(indexA), expectedIndexA, _indexATolerance(n, blockLifetimes[n - 1]), "Tier2: indexA mismatch");
+        // Tier 2 invariant: equal capital → Δ⁺ = 0 regardless of duration heterogeneity
+        uint128 deltaPlus = harness.getDeltaPlus(poolId);
+        assertEq(deltaPlus, 0, "Tier2: deltaPlus must be 0 - equal fee shares = competitive null");
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -222,7 +265,7 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
     // Each LP mints different fuzzed liquidity at block 1.
     // 1 deterministic swap (all active).
     // All LPs exit at block 1 + blockLifetime.
-    // x_k = liq_k / totalLiq for each.
+    // x_k = liq_k / totalLiq → Δ⁺ ≥ 0, verify against oracle.
     // ═══════════════════════════════════════════════════════════════════
 
     function testFuzz_tier3_diffCapitalEqualTime(
@@ -252,14 +295,9 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
 
         uint256[] memory blockLifetimes = new uint256[](n);
         for (uint256 i; i < n; ++i) blockLifetimes[i] = bl;
-        (uint256 expectedHHI, uint256 expectedIndexA) = _callOracle(liquidities, blockLifetimes);
+        OracleResult memory oracle = _callOracle(liquidities, blockLifetimes);
 
-        uint256 hhi = harness.getAccumulatedHHI(poolId);
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
-
-        uint256 hhiTolerance = n * 3;
-        assertApproxEqAbs(hhi, expectedHHI, hhiTolerance, "Tier3: HHI mismatch");
-        assertApproxEqAbs(uint256(indexA), expectedIndexA, _indexATolerance(n, bl), "Tier3: indexA mismatch");
+        _assertFCI("Tier3", oracle, n, bl);
     }
 
     // ═══════════════════════════════════════════════════════════════════
@@ -313,13 +351,8 @@ contract FeeConcentrationIndexFullFuzzTest is PosmTestSetup, FCITestHelper {
             _burnPositionAs(lps[i], key, tokenIds[i], -60, 60, liquidities[i]);
         }
 
-        (uint256 expectedHHI, uint256 expectedIndexA) = _callOracle(liquidities, blockLifetimes);
+        OracleResult memory oracle = _callOracle(liquidities, blockLifetimes);
 
-        uint256 hhi = harness.getAccumulatedHHI(poolId);
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
-
-        uint256 hhiTolerance = n * 3;
-        assertApproxEqAbs(hhi, expectedHHI, hhiTolerance, "Tier4: HHI mismatch");
-        assertApproxEqAbs(uint256(indexA), expectedIndexA, _indexATolerance(n, blockLifetimes[n - 1]), "Tier4: indexA mismatch");
+        _assertFCI("Tier4", oracle, n, blockLifetimes[n - 1]);
     }
 }
