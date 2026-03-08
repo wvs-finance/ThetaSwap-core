@@ -24,6 +24,10 @@ contract FeeConcentrationIndexForkHarness is FeeConcentrationIndex {
         return reactiveFciStorage().fciState[poolId].posCount;
     }
 
+    function getReactiveRemovedPosCount(PoolId poolId) external view returns (uint256) {
+        return reactiveFciStorage().fciState[poolId].removedPosCount;
+    }
+
     function getReactiveAtNull(PoolId poolId) external view returns (uint128) {
         return reactiveFciStorage().fciState[poolId].atNull();
     }

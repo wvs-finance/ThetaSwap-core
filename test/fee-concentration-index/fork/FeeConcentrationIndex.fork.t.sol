@@ -56,7 +56,7 @@ contract FeeConcentrationIndexForkTest is Test {
         uint256 afterEventIndex;
         uint128 expectedIndexA;
         uint256 expectedThetaSum;
-        uint256 expectedPosCount;
+        uint256 expectedRemovedPosCount;
         uint256 expectedAccumulatedSum;
         uint128 expectedAtNull;
         uint128 expectedDeltaPlus;
@@ -186,7 +186,7 @@ contract FeeConcentrationIndexForkTest is Test {
     // ── Snapshot Assertion ──
 
     function _assertSnapshot(Snapshot memory snap, uint256 eventIdx) internal view {
-        (uint128 indexA, uint256 thetaSum, uint256 posCount) = harness.getIndex(key, true);
+        (uint128 indexA, uint256 thetaSum, uint256 removedPosCount) = harness.getIndex(key, true);
         uint256 accSum = harness.getReactiveAccumulatedSum(poolId);
         uint128 atNull = harness.getReactiveAtNull(poolId);
         uint128 delta = harness.getReactiveDeltaPlus(poolId);
@@ -194,8 +194,8 @@ contract FeeConcentrationIndexForkTest is Test {
 
         string memory blk = vm.toString(snap.blockNumber);
 
-        assertEq(posCount, snap.expectedPosCount,
-            string.concat("posCount mismatch at snapshot block ", blk));
+        assertEq(removedPosCount, snap.expectedRemovedPosCount,
+            string.concat("removedPosCount mismatch at snapshot block ", blk));
         assertEq(thetaSum, snap.expectedThetaSum,
             string.concat("thetaSum mismatch at snapshot block ", blk));
         assertEq(accSum, snap.expectedAccumulatedSum,
@@ -272,8 +272,8 @@ contract FeeConcentrationIndexForkTest is Test {
             snaps[i].expectedThetaSum = abi.decode(
                 vm.parseJson(json, string.concat(prefix, ".expectedThetaSum")), (uint256)
             );
-            snaps[i].expectedPosCount = abi.decode(
-                vm.parseJson(json, string.concat(prefix, ".expectedPosCount")), (uint256)
+            snaps[i].expectedRemovedPosCount = abi.decode(
+                vm.parseJson(json, string.concat(prefix, ".expectedRemovedPosCount")), (uint256)
             );
             snaps[i].expectedAccumulatedSum = abi.decode(
                 vm.parseJson(json, string.concat(prefix, ".expectedAccumulatedSum")), (uint256)

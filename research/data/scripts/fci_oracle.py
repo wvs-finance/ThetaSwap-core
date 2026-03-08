@@ -105,6 +105,7 @@ class FCIState:
         self.accumulated_sum: int = 0
         self.theta_sum: int = 0
         self.pos_count: int = 0
+        self.removed_pos_count: int = 0
         # Tick tracking for swaps
         self.last_known_tick: Optional[int] = None
 
@@ -168,6 +169,8 @@ class FCIState:
             self.accumulated_sum += x_squared // block_lifetime
             # thetaSum += Q128 // blockLifetime
             self.theta_sum += Q128 // block_lifetime
+            # removedPosCount: positions that contributed terms
+            self.removed_pos_count += 1
 
         self.pos_count -= 1
 
@@ -223,8 +226,8 @@ class FCIState:
         return min(a, INDEX_ONE)
 
     def to_at_null(self) -> int:
-        """Competitive null: sqrt(thetaSum / N²) in Q128."""
-        n = self.pos_count
+        """Competitive null: sqrt(thetaSum / N²) in Q128. N = removedPosCount."""
+        n = self.removed_pos_count
         if n == 0 or self.theta_sum == 0:
             return 0
         ratio = self.theta_sum // (n * n)
@@ -250,7 +253,7 @@ class FCIState:
         return {
             "expectedIndexA": self.to_index_a(),
             "expectedThetaSum": self.theta_sum,
-            "expectedPosCount": self.pos_count,
+            "expectedRemovedPosCount": self.removed_pos_count,
             "expectedAccumulatedSum": self.accumulated_sum,
             "expectedAtNull": self.to_at_null(),
             "expectedDeltaPlus": self.to_delta_plus(),
@@ -395,7 +398,7 @@ def main():
         print(
             f"  Block {snap['blockNumber']}: "
             f"indexA={snap['expectedIndexA']}, "
-            f"posCount={snap['expectedPosCount']}, "
+            f"removedPosCount={snap['expectedRemovedPosCount']}, "
             f"accSum={snap['expectedAccumulatedSum']}, "
             f"thetaSum={snap['expectedThetaSum']}"
         )
