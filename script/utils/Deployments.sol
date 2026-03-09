@@ -149,6 +149,10 @@ function resolveDeployments(uint256 chainId, Protocol protocol)
     }
 }
 
+function sepoliaV3CallbackRouter() pure returns (address) {
+    return 0x1284E9d71a87276d05abD860bD9990dce9Dd721E;
+}
+
 function resolveV3(uint256 chainId)
     pure
     returns (IUniswapV3Pool pool, address adapter, IFeeConcentrationIndex fci)
