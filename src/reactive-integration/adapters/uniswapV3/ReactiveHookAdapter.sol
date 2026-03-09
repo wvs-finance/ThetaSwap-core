@@ -6,16 +6,13 @@ import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {V3SwapData, V3MintData, V3BurnData} from "../../types/ReactiveCallbackDataMod.sol";
 import {requireAuthorized} from "./ReactiveAuthMod.sol";
 import {reactiveFciStorage} from "./ReactiveHookAdapterStorageMod.sol";
-import {v3AdapterStorage, V3AdapterStorage} from "./ReactiveHookAdapterStorageMod.sol";
-import {v3FeeGrowthInside0, v3PositionFeeGrowthLast0} from "../../libraries/V3FeeGrowthReaderMod.sol";
 import {
     FeeConcentrationIndexStorage,
-    registerPosition, setFeeGrowthBaseline, deleteFeeGrowthBaseline,
-    getFeeGrowthBaseline,
+    registerPosition,
     incrementOverlappingRanges
 } from "../../../fee-concentration-index/modules/FeeConcentrationIndexStorageMod.sol";
 import {TickRange, fromTicks} from "../../../fee-concentration-index/types/TickRangeMod.sol";
-import {FeeShareRatio, fromFeeGrowthDelta} from "../../../fee-concentration-index/types/FeeShareRatioMod.sol";
+import {FeeShareRatio, fromFeeGrowth} from "../../../fee-concentration-index/types/FeeShareRatioMod.sol";
 import {SwapCount} from "../../../fee-concentration-index/types/SwapCountMod.sol";
 import {BlockCount} from "../../../fee-concentration-index/types/BlockCountMod.sol";
 import {v3PositionKey} from "../../types/CollectedFeesMod.sol";
@@ -35,7 +32,7 @@ contract ReactiveHookAdapter {
     error OnlyOwner();
     error InvalidRvmId();
 
-    constructor(address callbackProxy) {
+    constructor(address callbackProxy) payable {
         owner = msg.sender;
         rvmId = msg.sender;
         authorizedCallers[callbackProxy] = true;
@@ -77,15 +74,10 @@ contract ReactiveHookAdapter {
         bytes32 posKey = v3PositionKey(data.owner, data.tickLower, data.tickUpper);
         TickRange rk = fromTicks(data.tickLower, data.tickUpper);
         registerPosition($, poolId, rk, posKey, data.tickLower, data.tickUpper, data.liquidity);
-
-        // Snapshot feeGrowthInside0 from V3 pool at mint time.
-        // This is the baseline for computing the fee delta on burn.
-        uint256 feeGrowthNow0 = v3FeeGrowthInside0(data.pool, data.tickLower, data.tickUpper);
-        V3AdapterStorage storage v3$ = v3AdapterStorage();
-        v3$.feeGrowthSnapshot0[poolId][posKey] = feeGrowthNow0;
-
-        // Also set FCI baseline to current feeGrowthInside (used by fromFeeGrowthDelta)
-        setFeeGrowthBaseline($, poolId, posKey, feeGrowthNow0);
+        // No feeGrowthInside snapshot needed: reactive callbacks arrive asynchronously,
+        // so V3 pool state at callback time ≠ state at event emission time. x_k is
+        // computed purely from liquidity shares at burn time (exact for V3 since
+        // feeGrowthInside is per-unit-of-liquidity).
         $.fciState[poolId].incrementPos();
     }
 
@@ -101,33 +93,16 @@ contract ReactiveHookAdapter {
             $.registries[poolId].deregister(posKey, data.liquidity);
 
         if (!swapLifetime.isZero()) {
-            // Read position's feeGrowthInsideLast0 from V3 pool.
-            // V3's burn() updates this to current feeGrowthInside BEFORE
-            // de-initializing ticks, so it's valid even after the last LP exits.
-            uint256 rangeFeeGrowthNow0 = v3PositionFeeGrowthLast0(
-                data.pool, data.owner, data.tickLower, data.tickUpper
-            );
-            // Position's snapshot at mint time (stored by onV3Mint).
-            V3AdapterStorage storage v3$ = v3AdapterStorage();
-            uint256 positionFeeLast0 = v3$.feeGrowthSnapshot0[poolId][posKey];
-            // FCI baseline (set to same value as snapshot on mint).
-            uint256 baseline0 = getFeeGrowthBaseline($, poolId, posKey);
-
-            FeeShareRatio xk = fromFeeGrowthDelta(
-                rangeFeeGrowthNow0,
-                positionFeeLast0,
-                baseline0,
-                data.liquidity,
-                totalRangeLiq
-            );
+            // x_k = posLiquidity / totalRangeLiquidity — exact for V3 since
+            // feeGrowthInside is per-unit-of-liquidity (all positions in a tick
+            // range earn fees proportionally). No V3 pool reads needed; avoids
+            // callback timing issue where async delivery makes snapshots stale.
+            FeeShareRatio xk = fromFeeGrowth(uint256(data.liquidity), uint256(totalRangeLiq));
             uint256 xSquaredQ128 = xk.square();
             $.fciState[poolId].addTerm(blockLifetime, xSquaredQ128);
         }
 
-        // Clean up storage
-        delete v3AdapterStorage().feeGrowthSnapshot0[poolId][posKey];
         $.fciState[poolId].decrementPos();
-        deleteFeeGrowthBaseline($, poolId, posKey);
     }
 
     // ── IFeeConcentrationIndex ──

@@ -154,11 +154,23 @@ function sepoliaV3CallbackRouter() pure returns (address) {
 }
 
 function sepoliaReactiveAdapter() pure returns (address) {
-    return 0x302adeea6BE9a6e22f319f9ee2ABE1Be60Cc4C14;
+    return 0xC1ED47e34E95fa74fCf0Ff9B4b75Dac99F1bFF23;
 }
 
 function sepoliaFreshV3Pool() pure returns (IUniswapV3Pool) {
     return IUniswapV3Pool(0xcB80f9b60627DF6915cc8D34F5d1EF11617b8Af8);
+}
+
+// ── Lasna (Reactive Network Testnet) ──
+
+uint256 constant LASNA = 5318007;
+
+function lasnaThetaSwapReactive() pure returns (address) {
+    return 0x4072a68c549af7934296D57Fb3B834A9f11929d0;
+}
+
+function sepoliaCallbackProxy() pure returns (address) {
+    return 0xc9f36411C9897e7F959D99ffca2a0Ba7ee0D7bDA;
 }
 
 function resolveV3(uint256 chainId)

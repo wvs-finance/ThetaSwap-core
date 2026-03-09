@@ -17,4 +17,13 @@ function coverDebt(address self) {
     if (!success) revert DebtPaymentFailed();
 }
 
+// Deposit contract's entire native balance into the SystemContract as a pre-funded
+// reserve. Subscription costs are drawn from this reserve instead of accumulating debt.
+function depositToSystem(address self) {
+    uint256 bal = self.balance;
+    if (bal == 0) return;
+    (bool success,) = payable(SYSTEM_CONTRACT).call{value: bal}("");
+    if (!success) revert DebtPaymentFailed();
+}
+
 error DebtPaymentFailed();

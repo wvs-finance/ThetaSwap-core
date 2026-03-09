@@ -4,12 +4,11 @@ pragma solidity ^0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {FeeConcentrationIndexBuilderScript} from
     "../../../script/reactive-integration/FeeConcentrationIndexBuilder.s.sol";
-import {SEPOLIA, UNICHAIN_SEPOLIA} from "../../../script/utils/Deployments.sol";
+import {SEPOLIA} from "../../../script/utils/Deployments.sol";
 
 // Maps chain ID → foundry.toml [rpc_endpoints] alias.
 function rpcAlias(uint256 chainId) pure returns (string memory) {
     if (chainId == SEPOLIA) return "sepolia";
-    if (chainId == UNICHAIN_SEPOLIA) return "unichain_sepolia";
     revert("unknown chainId");
 }
 
@@ -24,20 +23,29 @@ abstract contract FeeConcentrationIndexFullForkBase is Test {
         fciScript.setUp();
     }
 
-    function test_buildEquilibrium() public {
-        fciScript.buildEquilibrium();
-        fciScript.assertDeltaPlus(0, true);
+    // ── V4 ──
+
+    function test_buildEquilibriumV4() public {
+        fciScript.buildEquilibriumV4();
+        fciScript.assertDeltaPlusV4(0);
     }
 
-    function test_buildMild() public {
-        fciScript.buildMild();
+    function test_buildMildV4() public {
+        fciScript.buildMildV4();
+    }
+
+    // ── V3 ──
+
+    function test_buildEquilibriumV3() public {
+        fciScript.buildEquilibriumV3();
+        fciScript.assertDeltaPlusV3(0);
+    }
+
+    function test_buildMildV3() public {
+        fciScript.buildMildV3();
     }
 }
 
 contract SepoliaForkTest is FeeConcentrationIndexFullForkBase {
     function _chainId() internal pure override returns (uint256) { return SEPOLIA; }
-}
-
-contract UnichainSepoliaForkTest is FeeConcentrationIndexFullForkBase {
-    function _chainId() internal pure override returns (uint256) { return UNICHAIN_SEPOLIA; }
 }

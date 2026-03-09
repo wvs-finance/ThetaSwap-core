@@ -5,7 +5,7 @@ import {IReactive} from "reactive-lib/interfaces/IReactive.sol";
 import {ISubscriptionService} from "reactive-lib/interfaces/ISubscriptionService.sol";
 import {processLog} from "./modules/ReactLogicMod.sol";
 import {subscribeV3Pool, unsubscribeV3Pool, REACTIVE_IGNORE} from "./modules/SubscriptionMod.sol";
-import {coverDebt} from "./modules/DebtMod.sol";
+import {coverDebt, depositToSystem} from "./modules/DebtMod.sol";
 
 // Self-sync events — emitted on RN instance, consumed by ReactVM
 event PoolRegistered(uint256 indexed chainId, address indexed pool);
@@ -33,7 +33,8 @@ contract ThetaSwapReactive {
         assembly { size := extcodesize(0x0000000000000000000000000000000000fffFfF) }
         vm = size == 0;
 
-        // RN instance: subscribe to own events for whitelist sync
+        // RN instance: subscribe to own events for whitelist sync,
+        // then deposit remaining balance into SystemContract as pre-funded reserve.
         if (!vm) {
             service.subscribe(
                 block.chainid,
@@ -47,6 +48,9 @@ contract ThetaSwapReactive {
                 uint256(keccak256("PoolUnregistered(uint256,address)")),
                 REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE
             );
+            // Pre-fund: deposit all remaining balance into SystemContract
+            // so subscription costs are drawn from the reserve, not debt.
+            depositToSystem(address(this));
         }
     }
 
@@ -74,6 +78,11 @@ contract ThetaSwapReactive {
     }
 
     // ── Funding ──
+
+    // Owner can top up the SystemContract reserve at any time.
+    function fund() external payable {
+        depositToSystem(address(this));
+    }
 
     receive() external payable {
         coverDebt(address(this));
