@@ -43,17 +43,19 @@ function processLog(
 
     if (sig == V3_SWAP_SIG) {
         V3SwapData memory data = decodeV3Swap(log);
+        uint256 chainId_ = logChainId(log);
+        address pool = emitter(log);
 
         // Inject pre-swap tick from shadow state
-        (int24 prevTick, bool isSet) = getLastTick(logChainId(log), emitter(log));
+        (int24 prevTick, bool isSet) = getLastTick(chainId_, pool);
         data.tickBefore = prevTick;
-        setLastTick(logChainId(log), emitter(log), data.tick);
+        setLastTick(chainId_, pool, data.tick);
 
         // Skip increment on first swap (no valid tickBefore yet)
         if (!isSet) return;
 
         emit IReactive.Callback(
-            logChainId(log), adapter, CALLBACK_GAS_LIMIT,
+            chainId_, adapter, CALLBACK_GAS_LIMIT,
             abi.encodeWithSignature("onV3Swap(address,(address,int24,int24))", address(0), data)
         );
     } else if (sig == V3_MINT_SIG) {
