@@ -26,7 +26,7 @@ struct V3MintData {
 
 // V3 Burn(address owner, int24 tickLower, int24 tickUpper,
 //         uint128 amount, uint256 amount0, uint256 amount1)
-// Signals position removal. Fee data comes from accumulated Collect events.
+// Signals position removal. Fee data read directly from V3 pool on destination chain.
 struct V3BurnData {
     IUniswapV3Pool pool;
     address owner;

@@ -10,7 +10,7 @@ import {
     decodeV3Swap, decodeV3Mint, decodeV3Burn
 } from "../types/V3EventDecoderMod.sol";
 import {V3SwapData, V3MintData, V3BurnData} from "../types/ReactiveCallbackDataMod.sol";
-import {v3PositionKey} from "../types/CollectedFeesMod.sol";
+
 import {
     isWhitelisted, setWhitelisted
 } from "./ReactVmStorageMod.sol";
