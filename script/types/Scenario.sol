@@ -19,6 +19,8 @@ import {Actions} from "@uniswap/v4-periphery/src/libraries/Actions.sol";
 import {Planner, Plan} from "@uniswap/v4-periphery/test/shared/Planner.sol";
 import {INDEX_ONE} from "../../src/fee-concentration-index/types/FeeConcentrationStateMod.sol";
 import {fromV3Pool} from "../../src/reactive-integration/libraries/PoolKeyExtMod.sol";
+import {V3CallbackRouter} from
+    "../../src/reactive-integration/adapters/uniswapV3/V3CallbackRouter.sol";
 import {Protocol, isUniswapV3, isUniswapV4} from "./Protocol.sol";
 import "../utils/Constants.sol";
 import {Vm} from "forge-std/Vm.sol";
@@ -29,6 +31,7 @@ struct Scenario {
     mapping(uint256 chainId => mapping(Protocol => address)) positionManager;
     mapping(uint256 chainId => address) swapRouter;
     mapping(uint256 chainId => uint256[]) tokenIds;
+    mapping(uint256 chainId => address) v3Router;
 }
 
 // ── Known delta-plus thresholds (Q128, derived from unit tests) ──
@@ -100,10 +103,12 @@ function registerV3Pool(
     Scenario storage s,
     uint256 chainId,
     IUniswapV3Pool pool,
-    address adapter
+    address adapter,
+    address router
 ) {
     s.pools[chainId] = fromV3Pool(pool, adapter);
     s.positionManager[chainId][Protocol.UniswapV3] = address(pool);
+    s.v3Router[chainId] = router;
 }
 
 function registerV4Pool(
@@ -183,8 +188,9 @@ function mintPosition(
     address caller = s.vm.addr(pk);
     if (isUniswapV3(protocol)) {
         IUniswapV3Pool pool = v3Pool(s, chainId);
+        V3CallbackRouter router = V3CallbackRouter(s.v3Router[chainId]);
         s.vm.broadcast(pk);
-        pool.mint(caller, TICK_LOWER, TICK_UPPER, uint128(liquidity), "");
+        router.mint(pool, caller, TICK_LOWER, TICK_UPPER, uint128(liquidity));
     } else {
         IPositionManager lpm = v4Lpm(s, chainId);
         PoolKey memory k = s.pools[chainId];
@@ -245,11 +251,12 @@ function executeSwap(
     address caller = s.vm.addr(pk);
     if (isUniswapV3(protocol)) {
         IUniswapV3Pool pool = v3Pool(s, chainId);
+        V3CallbackRouter router = V3CallbackRouter(s.v3Router[chainId]);
         uint160 sqrtPriceLimit = zeroForOne
             ? TickMath.MIN_SQRT_PRICE + 1
             : TickMath.MAX_SQRT_PRICE - 1;
         s.vm.broadcast(pk);
-        pool.swap(caller, zeroForOne, AMOUNT_SPECIFIED, sqrtPriceLimit, "");
+        router.swap(pool, caller, zeroForOne, AMOUNT_SPECIFIED, sqrtPriceLimit);
     } else {
         PoolSwapTest router = v4SwapRouter(s, chainId);
         PoolKey memory k = s.pools[chainId];
