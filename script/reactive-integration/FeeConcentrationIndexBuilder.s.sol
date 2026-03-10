@@ -109,6 +109,9 @@ function v3Pool() view returns(IUniswapV3Pool){
 function createPools(IUniswapV3Factory v3Factory, IPoolManager v4Manager, address fci) {
     PoolFactoryStorage storage $ = getPools();
 
+    // Seed counter with block.number on first call to avoid CREATE2 collisions across runs
+    if ($.counter == 0) $.counter = block.number * 100;
+
     // Deploy fresh mock tokens (CREATE2 with counter salt for unique addresses)
     MockERC20 tokenA = new MockERC20{salt: bytes32(increment())}("TestA", "TKA", 18);
     MockERC20 tokenB = new MockERC20{salt: bytes32(increment())}("TestB", "TKB", 18);
@@ -199,7 +202,7 @@ contract FeeConcentrationIndexBuilderScript is Script, StdAssertions {
         return Scenario({tokenIds: s.tokenIds, deltaPlus: s.deltaPlus});
     }
 
-    function _initFreshPools() internal {
+    function _initFreshPoolsV4() internal {
         vm.startBroadcast(ctxV4.accounts.deployer.privateKey);
         createPools(
             IUniswapV3Factory(sepoliaV3Factory()),
@@ -208,14 +211,25 @@ contract FeeConcentrationIndexBuilderScript is Script, StdAssertions {
         );
         vm.stopBroadcast();
         ctxV4.v4Pool = v4Pool();
-        ctxV3.v3Pool = v3Pool();
-        ctxV3.v4Pool = fromV3Pool(ctxV3.v3Pool, ctxV3.adapter);
-        _seedActors();
+        _seedActorsFromKey(ctxV4.v4Pool);
     }
 
-    function _seedActors() internal {
-        address t0 = Currency.unwrap(ctxV4.v4Pool.currency0);
-        address t1 = Currency.unwrap(ctxV4.v4Pool.currency1);
+    function _initFreshPoolsV3() internal {
+        vm.startBroadcast(ctxV3.accounts.deployer.privateKey);
+        createPools(
+            IUniswapV3Factory(sepoliaV3Factory()),
+            IPoolManager(ethSepoliaPoolManager()),
+            address(fciIndex)
+        );
+        vm.stopBroadcast();
+        ctxV3.v3Pool = v3Pool();
+        ctxV3.v4Pool = fromV3Pool(ctxV3.v3Pool, ctxV3.adapter);
+        _seedActorsFromKey(ctxV3.v4Pool);
+    }
+
+    function _seedActorsFromKey(PoolKey memory key) internal {
+        address t0 = Currency.unwrap(key.currency0);
+        address t1 = Currency.unwrap(key.currency1);
         uint256 supply = 100e18;
         uint256 deployerPK = ctxV4.accounts.deployer.privateKey;
         address permit2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
@@ -265,14 +279,14 @@ contract FeeConcentrationIndexBuilderScript is Script, StdAssertions {
     // ═══════════════════════════════════════════════════════════════
 
     function buildEquilibriumV4() public returns (Scenario memory) {
-        _initFreshPools();
+        _initFreshPoolsV4();
         deltaPlusFactory(ctxV4, scenarioV4, Protocol.UniswapV4, DELTA_EQUILIBRIUM);
         _logDeltaPlusV4("equilibrium");
         return _toMemory(scenarioV4);
     }
 
     function buildMildV4() public returns (Scenario memory) {
-        _initFreshPools();
+        _initFreshPoolsV4();
         deltaPlusFactory(ctxV4, scenarioV4, Protocol.UniswapV4, DELTA_MILD);
         _logDeltaPlusV4("mild");
         return _toMemory(scenarioV4);
@@ -283,7 +297,7 @@ contract FeeConcentrationIndexBuilderScript is Script, StdAssertions {
     // ═══════════════════════════════════════════════════════════════
 
     function buildCrowdoutPhase1V4() public returns (Scenario memory) {
-        _initFreshPools();
+        _initFreshPoolsV4();
         Recipe memory r = recipeCrowdout();
         uint256 tokenA = crowdoutPhase1(ctxV4, scenarioV4, Protocol.UniswapV4, r.capitalA);
         console2.log("[V4] Phase 1 complete. TOKEN_A=%d", tokenA);
@@ -310,14 +324,40 @@ contract FeeConcentrationIndexBuilderScript is Script, StdAssertions {
     // ═══════════════════════════════════════════════════════════════
 
     function buildEquilibriumV3() public returns (Scenario memory) {
-        _initFreshPools();
+        _initFreshPoolsV3();
         deltaPlusFactory(ctxV3, scenarioV3, Protocol.UniswapV3, DELTA_EQUILIBRIUM);
         _logDeltaPlusV3("equilibrium");
         return _toMemory(scenarioV3);
     }
 
     function buildMildV3() public returns (Scenario memory) {
-        _initFreshPools();
+        _initFreshPoolsV3();
+        deltaPlusFactory(ctxV3, scenarioV3, Protocol.UniswapV3, DELTA_MILD);
+        _logDeltaPlusV3("mild");
+        return _toMemory(scenarioV3);
+    }
+
+    /// @notice Create V3 pools + seed actors without running scenario operations.
+    ///         Call this first, then register the pool on reactive, then call executeMildV3().
+    function initPoolsV3() public {
+        _initFreshPoolsV3();
+        console2.log("[V3] Pools initialized. V3 pool:", address(ctxV3.v3Pool));
+    }
+
+    /// @notice Load an existing V3 pool and seed actors (no new pool creation).
+    ///         Use when resuming from a state file with a known V3 pool address.
+    function loadPoolsV3(address v3PoolAddr) public {
+        IUniswapV3Pool pool = IUniswapV3Pool(v3PoolAddr);
+        ctxV3.v3Pool = pool;
+        ctxV3.v4Pool = fromV3Pool(pool, ctxV3.adapter);
+        _seedActorsFromKey(ctxV3.v4Pool);
+        console2.log("[V3] Loaded existing pool:", v3PoolAddr);
+    }
+
+    /// @notice Run mild scenario on already-initialized V3 pools.
+    ///         Requires initPoolsV3() or loadPoolsV3() to have been called first.
+    function executeMildV3() public returns (Scenario memory) {
+        require(address(ctxV3.v3Pool) != address(0), "V3 pools not initialized");
         deltaPlusFactory(ctxV3, scenarioV3, Protocol.UniswapV3, DELTA_MILD);
         _logDeltaPlusV3("mild");
         return _toMemory(scenarioV3);
@@ -328,7 +368,7 @@ contract FeeConcentrationIndexBuilderScript is Script, StdAssertions {
     // ═══════════════════════════════════════════════════════════════
 
     function buildCrowdoutPhase1V3() public returns (Scenario memory) {
-        _initFreshPools();
+        _initFreshPoolsV3();
         Recipe memory r = recipeCrowdout();
         uint256 tokenA = crowdoutPhase1(ctxV3, scenarioV3, Protocol.UniswapV3, r.capitalA);
         console2.log("[V3] Phase 1 complete. TOKEN_A=%d", tokenA);
@@ -356,6 +396,7 @@ contract FeeConcentrationIndexBuilderScript is Script, StdAssertions {
 
     function v4PoolKey() public view returns (PoolKey memory) { return ctxV4.v4Pool; }
     function v3PoolKey() public view returns (PoolKey memory) { return ctxV3.v4Pool; }
+    function v3PoolAddr() public view returns (address) { return address(ctxV3.v3Pool); }
 
     /// @notice Override hook + adapter addresses (for differential test injection)
     function setDeployments(address fciHook, address adapterAddr) public {

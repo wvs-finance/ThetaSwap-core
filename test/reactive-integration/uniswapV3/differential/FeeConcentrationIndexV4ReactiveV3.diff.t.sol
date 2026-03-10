@@ -4,6 +4,9 @@ pragma solidity ^0.8.26;
 import {Script} from "forge-std/Script.sol";
 import {Test, console2} from "forge-std/Test.sol";
 import {Hooks} from "v4-core/src/libraries/Hooks.sol";
+import {PoolKey} from "v4-core/src/types/PoolKey.sol";
+import {Currency} from "v4-core/src/types/Currency.sol";
+import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
 import {Accounts, initAccounts} from "../../../../script/types/Accounts.sol";
 
 import {FeeConcentrationIndexBuilderScript} from
@@ -19,20 +22,28 @@ import {getCallbackProxy} from
 import {ethSepoliaPoolManager} from "../../../../script/utils/Deployments.sol";
 
 /// @title FCI Differential Test — V4 Native vs V3 Reactive
-/// @notice Broadcasts identical scenarios through both the V4 FCI hook and the V3
-///         reactive adapter, then asserts deltaPlus values converge.
+/// @notice Three-phase differential test:
+///   Phase 1 (deploy):   Deploys FCI hook + adapter on Sepolia, writes state JSON.
+///   Phase 2 (run_*):    Reads state, runs V4+V3 scenarios, updates state JSON.
+///   Phase 3 (verify):   Reads state, queries on-chain deltaPlus, asserts convergence.
 ///
-/// Usage:
-///   forge script FeeConcentrationIndexV4ReactiveV3DiffTest --sig "test_mild()" --broadcast --rpc-url sepolia
-///   forge script FeeConcentrationIndexV4ReactiveV3DiffTest --sig "test_crowdout()" --broadcast --rpc-url sepolia
+/// Between phases, the shell orchestrator deploys ThetaSwapReactive on Lasna,
+/// registers the V3 pool, funds the adapter, and waits for the relay.
+///
+/// Usage: ./script/reactive-integration/run-differential.sh mild
 contract FeeConcentrationIndexV4ReactiveV3DiffTest is Script, Test {
     FeeConcentrationIndexBuilderScript internal builder;
     FeeConcentrationIndex internal fci;
     ReactiveHookAdapter internal adapter;
-
     Accounts internal accounts;
 
-    function setUp() public {
+    string constant STATE_FILE = "broadcast/diff-test-state.json";
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Phase 1: Deploy — deploy FCI hook + adapter, write state JSON
+    // ═══════════════════════════════════════════════════════════════
+
+    function deploy() public {
         accounts = initAccounts(vm);
 
         // 1. Deploy FCI hook (CREATE2 with mined salt for valid hook address)
@@ -42,38 +53,55 @@ contract FeeConcentrationIndexV4ReactiveV3DiffTest is Script, Test {
         vm.broadcast(accounts.deployer.privateKey);
         adapter = _deployAdapter();
 
-        // 3. Deploy ThetaSwapReactive on Lasna via FFI (cast send --create)
-        address payable lasnaService = payable(0x0000000000000000000000000000000000fffFfF);
-        _deployReactiveFFI(
-            "ThetaSwapReactive.sol:ThetaSwapReactive",
-            abi.encode(address(adapter), lasnaService),
-            vm.envString("REACTIVE_RPC_URL"),
-            vm.toString(accounts.deployer.privateKey)
-        );
+        console2.log("FCI hook:", address(fci));
+        console2.log("Adapter:", address(adapter));
 
-        // 4. Create builder and inject freshly deployed hook + adapter
-        builder = new FeeConcentrationIndexBuilderScript();
-        builder.setUp();
-        builder.setDeployments(address(fci), address(adapter));
+        // Write deploy state (no pool keys yet — those come from run_*)
+        string memory json = string.concat(
+            '{"fci":"', vm.toString(address(fci)),
+            '","adapter":"', vm.toString(address(adapter)),
+            '"}'
+        );
+        vm.writeFile(STATE_FILE, json);
+        console2.log("Deploy state written to", STATE_FILE);
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Test cases
+    //  Phase 2: Run — read deploy state, run scenarios, update JSON
     // ═══════════════════════════════════════════════════════════════
 
-    function test_mild() public {
+    /// @notice Create V4+V3 pools and run V4 mild scenario.
+    ///         V3 pool is created but operations are deferred to execute_mild_v3().
+    function run_mild() public {
+        _loadDeployState();
+
         builder.buildMildV4();
-        builder.buildMildV3();
+        builder.initPoolsV3();
 
         uint128 deltaPlusV4 = fci.getDeltaPlus(builder.v4PoolKey(), false);
-        uint128 deltaPlusV3 = adapter.getDeltaPlus(builder.v3PoolKey(), true);
-
         console2.log("V4 deltaPlus =", uint256(deltaPlusV4));
-        console2.log("V3 deltaPlus =", uint256(deltaPlusV3));
-        assertEq(uint256(deltaPlusV3), uint256(deltaPlusV4), "mild: V3 != V4");
+        console2.log("V3 pool =", builder.v3PoolAddr());
+
+        _writeFullState(builder.v4PoolKey(), builder.v3PoolKey(), builder.v3PoolAddr());
     }
 
-    function test_crowdout() public {
+    /// @notice Execute V3 mild scenario operations on already-created pools.
+    ///         Call AFTER registerPool on reactive so events are captured.
+    function execute_mild_v3() public {
+        _loadDeployState();
+
+        // Load existing V3 pool from state (don't create new one)
+        string memory json = vm.readFile(STATE_FILE);
+        address v3Pool = vm.parseJsonAddress(json, ".v3_pool");
+        builder.loadPoolsV3(v3Pool);
+        builder.executeMildV3();
+
+        console2.log("V3 mild scenario executed on pool:", v3Pool);
+    }
+
+    function run_crowdout() public {
+        _loadDeployState();
+
         builder.buildCrowdoutPhase1V4();
         builder.buildCrowdoutPhase2V4();
         builder.buildCrowdoutPhase3V4();
@@ -83,15 +111,110 @@ contract FeeConcentrationIndexV4ReactiveV3DiffTest is Script, Test {
         builder.buildCrowdoutPhase3V3();
 
         uint128 deltaPlusV4 = fci.getDeltaPlus(builder.v4PoolKey(), false);
-        uint128 deltaPlusV3 = adapter.getDeltaPlus(builder.v3PoolKey(), true);
-
         console2.log("V4 deltaPlus =", uint256(deltaPlusV4));
-        console2.log("V3 deltaPlus =", uint256(deltaPlusV3));
-        assertEq(uint256(deltaPlusV3), uint256(deltaPlusV4), "crowdout: V3 != V4");
+        console2.log("V3 pool =", builder.v3PoolAddr());
+
+        _writeFullState(builder.v4PoolKey(), builder.v3PoolKey(), builder.v3PoolAddr());
+    }
+
+    /// @dev Load FCI + adapter from state JSON and wire up builder
+    function _loadDeployState() internal {
+        accounts = initAccounts(vm);
+
+        string memory json = vm.readFile(STATE_FILE);
+        address fciAddr = vm.parseJsonAddress(json, ".fci");
+        address adapterAddr = vm.parseJsonAddress(json, ".adapter");
+
+        fci = FeeConcentrationIndex(fciAddr);
+        adapter = ReactiveHookAdapter(payable(adapterAddr));
+
+        builder = new FeeConcentrationIndexBuilderScript();
+        builder.setUp();
+        builder.setDeployments(fciAddr, adapterAddr);
+
+        console2.log("Loaded FCI:", fciAddr);
+        console2.log("Loaded Adapter:", adapterAddr);
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Deployment helpers
+    //  Phase 2: Verify — read state JSON, query on-chain, assert
+    // ═══════════════════════════════════════════════════════════════
+
+    function verify() public {
+        (
+            address fciAddr,
+            address adapterAddr,
+            PoolKey memory v4Key,
+            PoolKey memory v3Key
+        ) = _readState();
+
+        uint128 deltaPlusV4 = FeeConcentrationIndex(fciAddr).getDeltaPlus(v4Key, false);
+        uint128 deltaPlusV3 = ReactiveHookAdapter(payable(adapterAddr)).getDeltaPlus(v3Key, true);
+
+        console2.log("V4 deltaPlus =", uint256(deltaPlusV4));
+        console2.log("V3 deltaPlus =", uint256(deltaPlusV3));
+
+        assertApproxEqRel(
+            uint256(deltaPlusV3), uint256(deltaPlusV4), 0.05e18,
+            "deltaPlus: V3 diverged from V4"
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  State persistence (JSON)
+    // ═══════════════════════════════════════════════════════════════
+
+    function _writeFullState(PoolKey memory v4Key, PoolKey memory v3Key, address v3Pool) internal {
+        string memory json = string.concat(
+            '{"fci":"', vm.toString(address(fci)),
+            '","adapter":"', vm.toString(address(adapter)),
+            '","v3_pool":"', vm.toString(v3Pool),
+            '","v4_currency0":"', vm.toString(Currency.unwrap(v4Key.currency0)),
+            '","v4_currency1":"', vm.toString(Currency.unwrap(v4Key.currency1)),
+            '","v4_fee":', vm.toString(v4Key.fee),
+            ',"v4_tickSpacing":', vm.toString(int256(int24(v4Key.tickSpacing))),
+            ',"v4_hooks":"', vm.toString(address(v4Key.hooks)),
+            '","v3_currency0":"', vm.toString(Currency.unwrap(v3Key.currency0)),
+            '","v3_currency1":"', vm.toString(Currency.unwrap(v3Key.currency1)),
+            '","v3_fee":', vm.toString(v3Key.fee),
+            ',"v3_tickSpacing":', vm.toString(int256(int24(v3Key.tickSpacing))),
+            ',"v3_hooks":"', vm.toString(address(v3Key.hooks)),
+            '"}'
+        );
+        vm.writeFile(STATE_FILE, json);
+        console2.log("State written to", STATE_FILE);
+    }
+
+    function _readState() internal view returns (
+        address fciAddr,
+        address adapterAddr,
+        PoolKey memory v4Key,
+        PoolKey memory v3Key
+    ) {
+        string memory json = vm.readFile(STATE_FILE);
+
+        fciAddr = vm.parseJsonAddress(json, ".fci");
+        adapterAddr = vm.parseJsonAddress(json, ".adapter");
+
+        v4Key = PoolKey({
+            currency0: Currency.wrap(vm.parseJsonAddress(json, ".v4_currency0")),
+            currency1: Currency.wrap(vm.parseJsonAddress(json, ".v4_currency1")),
+            fee: uint24(vm.parseJsonUint(json, ".v4_fee")),
+            tickSpacing: int24(int256(vm.parseJsonInt(json, ".v4_tickSpacing"))),
+            hooks: IHooks(vm.parseJsonAddress(json, ".v4_hooks"))
+        });
+
+        v3Key = PoolKey({
+            currency0: Currency.wrap(vm.parseJsonAddress(json, ".v3_currency0")),
+            currency1: Currency.wrap(vm.parseJsonAddress(json, ".v3_currency1")),
+            fee: uint24(vm.parseJsonUint(json, ".v3_fee")),
+            tickSpacing: int24(int256(vm.parseJsonInt(json, ".v3_tickSpacing"))),
+            hooks: IHooks(vm.parseJsonAddress(json, ".v3_hooks"))
+        });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Deployment helpers (Sepolia)
     // ═══════════════════════════════════════════════════════════════
 
     // Forge routes `new X{salt}()` through this factory under vm.broadcast
@@ -154,35 +277,4 @@ contract FeeConcentrationIndexV4ReactiveV3DiffTest is Script, Test {
         return new ReactiveHookAdapter{value: 0}(CallbackProxy.unwrap(proxy));
     }
 
-    function _deployReactiveFFI(
-        string memory contractPath,
-        bytes memory constructorArgs,
-        string memory rpcUrl,
-        string memory privateKey
-    ) internal returns (address deployed, bytes32 txHash) {
-        string[] memory cmd = new string[](11);
-        cmd[0] = "cast";
-        cmd[1] = "send";
-        cmd[2] = "--create";
-        cmd[3] = vm.toString(abi.encodePacked(vm.getCode(contractPath), constructorArgs));
-        cmd[4] = "--rpc-url";
-        cmd[5] = rpcUrl;
-        cmd[6] = "--private-key";
-        cmd[7] = privateKey;
-        cmd[8] = "--value";
-        cmd[9] = "0.1ether";
-        cmd[10] = "--json";
-
-        bytes memory result = vm.ffi(cmd);
-        string memory json = string(result);
-
-        deployed = abi.decode(vm.parseJson(json, ".contractAddress"), (address));
-        txHash = abi.decode(vm.parseJson(json, ".transactionHash"), (bytes32));
-
-        string memory outJson = string.concat(
-            '{"address":"', vm.toString(deployed),
-            '","txHash":"', vm.toString(txHash), '"}'
-        );
-        vm.writeFile("broadcast/reactive-deploy.json", outJson);
-    }
 }

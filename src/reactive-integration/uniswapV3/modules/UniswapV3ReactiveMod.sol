@@ -7,7 +7,7 @@ import {
     isSelfSync, topic0, emitter, logChainId,
     decodeTopic1AsAddress, decodeTopic2AsInt24, decodeTopic3AsInt24
 } from "../../types/LogRecordExtMod.sol";
-import {V3SwapData, V3MintData, V3BurnData, V3CollectData} from "../types/UniswapV3CallbackData.sol~";
+import {V3SwapData, V3MintData, V3BurnData, V3CollectData} from "../types/UniswapV3CallbackData.sol";
 import {TickShadow, getTick, setTick} from "../types/TickShadow.sol";
 import {RvmId, rvmIdPlaceHolder, toAddress} from "../../types/RvmId.sol";
 
