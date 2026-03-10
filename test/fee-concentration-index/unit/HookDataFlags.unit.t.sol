@@ -14,7 +14,7 @@ contract HookDataFlagsTest is Test {
     function test_flagConstants_areSingleBits() public pure {
         assertEq(REACTIVE_FLAG, 0x01);
         assertEq(V3_FLAG, 0x02);
-        assertEq(V4_FLAG, 0x04);
+        assertEq(V4_FLAG, 0x00);
     }
 
     function test_flagChecks_composable() public pure {
@@ -68,7 +68,7 @@ contract HookDataFlagsTest is Test {
     function test_emptyHookData_isNotReactive() public pure {
         assertFalse(isReactive(0));
         assertFalse(isV3(0));
-        assertFalse(isV4(0));
+        assertTrue(isV4(0)); // flags=0 means V4 (default)
     }
 
     function testFuzz_swapHookData_roundtrip(uint8 flags, int24 tickBefore, int24 tickAfter) public pure {

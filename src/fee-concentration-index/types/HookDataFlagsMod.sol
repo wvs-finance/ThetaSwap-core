@@ -5,7 +5,29 @@ pragma solidity ^0.8.26;
 // First byte of hookData encodes source + protocol.
 uint8 constant REACTIVE_FLAG = 0x01; // callback from Reactive Network
 uint8 constant V3_FLAG       = 0x02; // Uniswap V3 source
-uint8 constant V4_FLAG       = 0x04; // Uniswap V4 source
+uint8 constant V4_FLAG       = 0x00; // Uniswap V4 source (default: no flags = V4)
+
+// note: The hookData ius the one that has the flags prestent this fucntions are the ones that return
+// wheter the bytes has the flags
+
+function isUniswapV4(bytes calldata hookData) pure returns(bool){
+    if (hookData.length == 0) return true;
+    return (uint8(hookData[0]) & (REACTIVE_FLAG | V3_FLAG)) == 0;
+}
+
+function isUniswapV3(bytes calldata hookData) pure returns(bool){
+    if (hookData.length == 0) return false;
+    return (uint8(hookData[0]) & V3_FLAG) != 0;
+}
+
+function isReactive(bytes calldata hookData) pure returns(bool){
+    if (hookData.length == 0) return false;
+    return (uint8(hookData[0]) & REACTIVE_FLAG) != 0;
+}
+
+function isUniswapV3Reactive(bytes calldata hookData) pure returns(bool){
+    return (isUniswapV3(hookData) && isReactive(hookData));
+}
 
 function isReactive(uint8 flags) pure returns (bool) {
     return (flags & REACTIVE_FLAG) != 0;
@@ -16,7 +38,7 @@ function isV3(uint8 flags) pure returns (bool) {
 }
 
 function isV4(uint8 flags) pure returns (bool) {
-    return (flags & V4_FLAG) != 0;
+    return (flags & (REACTIVE_FLAG | V3_FLAG)) == 0;
 }
 
 // ── Encode helpers (used by ReactLogicMod to build callback hookData) ──
