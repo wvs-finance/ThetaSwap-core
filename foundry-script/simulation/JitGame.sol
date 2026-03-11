@@ -12,7 +12,13 @@ import {SwapParams} from "v4-core/src/types/PoolOperation.sol";
 import {PoolSwapTest} from "v4-core/src/test/PoolSwapTest.sol";
 import {V3CallbackRouter} from "@reactive-integration/adapters/uniswapV3/V3CallbackRouter.sol";
 import {Currency} from "v4-core/src/types/Currency.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import "@foundry-script/utils/Constants.sol";
+
+/// @dev Minimal interface to read delta-plus from FCI hook (harness or production).
+interface IFCIDeltaPlusReader {
+    function getDeltaPlus(PoolId poolId) external view returns (uint128);
+}
 
 struct JitGameConfig {
     uint256 n;
@@ -101,15 +107,24 @@ function executeSwapWithAmount(
 
 uint256 constant UNIT_LIQUIDITY = 1e18;
 
+// Block offsets for Capponi timing model:
+// Passive LPs enter at block B, JIT enters at B+49, passive LPs exit at B+99.
+// This creates lifetime_passive ≈ 100 blocks (θ=1/100) vs lifetime_JIT = 1 block (θ=1).
+uint256 constant PASSIVE_ENTRY_OFFSET = 0;
+uint256 constant JIT_ENTRY_OFFSET = 49;
+uint256 constant PASSIVE_EXIT_OFFSET = 50;
+
 function runJitGame(
     Context storage ctx,
     Scenario storage s,
     JitGameConfig memory cfg,
-    JitAccounts memory acc
+    JitAccounts memory acc,
+    address fciHook
 ) returns (JitGameResult memory result) {
     validateJitConfig(cfg);
 
-    // ── Step 2: Passive LP entry ──
+    // ── Step 2: Passive LP entry (block B) ──
+    // Passive LPs enter early, establishing long-lived positions.
     uint256[] memory passiveTokenIds = new uint256[](cfg.n);
     for (uint256 i; i < cfg.n; ++i) {
         passiveTokenIds[i] = mintPosition(
@@ -117,7 +132,14 @@ function runJitGame(
         );
     }
 
-    // ── Step 3: JIT decision ──
+    // ── Step 3: Advance to JIT entry block (block B + JIT_ENTRY_OFFSET) ──
+    // This creates the block-time gap between passive LP entry and JIT entry.
+    // FCI computes θ_k = 1/blockLifetime_k, so the gap is critical:
+    //   - passive LP: lifetime ≈ 100 blocks → θ ≈ 1/100 (low penalty)
+    //   - JIT LP: lifetime = 1 block → θ = 1 (max penalty)
+    ctx.vm.roll(block.number + JIT_ENTRY_OFFSET);
+
+    // ── Step 4: JIT decision ──
     uint256 jitTokenId;
     uint256 roll = ctx.vm.randomUint(0, 9999);
     if (roll < cfg.jitEntryProbability) {
@@ -127,12 +149,14 @@ function runJitGame(
         );
     }
 
-    // ── Step 4: Trade arrives ──
+    // ── Step 5: Trade arrives (same block as JIT entry) ──
     executeSwapWithAmount(
         ctx, cfg.protocol, acc.swapper.privateKey, cfg.zeroForOne, int256(cfg.tradeSize)
     );
 
-    // ── Step 5: JIT exit ──
+    // ── Step 6: JIT exit (next block — minimum 1-block lifetime) ──
+    ctx.vm.roll(block.number + 1);
+
     if (result.jitEntered) {
         address jitAddr = acc.jitLp.addr;
         (address tokenA, address tokenB) = resolveTokensFromCtx(ctx);
@@ -145,10 +169,10 @@ function runJitGame(
             + (IERC20(tokenB).balanceOf(jitAddr) - jitBalBBefore);
     }
 
-    // ── Step 6: Passive LP exit + fee tracking ──
-    // Note: Payouts sum both token0 and token1 balance deltas as raw uint256.
-    // This is valid for HHI/delta-plus since all LPs share the same tick range
-    // and fee tier — relative shares are preserved regardless of token weighting.
+    // ── Step 7: Advance to passive LP exit (block B + JIT_ENTRY_OFFSET + PASSIVE_EXIT_OFFSET) ──
+    ctx.vm.roll(block.number + PASSIVE_EXIT_OFFSET);
+
+    // ── Step 8: Passive LP exit + fee tracking ──
     uint256[] memory payouts = new uint256[](cfg.n);
     for (uint256 i; i < cfg.n; ++i) {
         address lpAddr = acc.passiveLps[i].addr;
@@ -173,33 +197,51 @@ function runJitGame(
     }
     result.unhedgedLpPayout = minPayout;
 
-    // ── Step 7: Measure delta-plus (inline HHI) ──
-    result.deltaPlus = computeDeltaPlus(payouts, cfg.n);
+    // ── Step 9: Read delta-plus from FCI hook ──
+    // The FCI hook captures θ_k = 1/lifetime_k for each removed position,
+    // computing A_T = √(Σ θ_k · x_k²) and Δ⁺ = max(0, A_T - atNull).
+    // This correctly penalizes short-lived JIT positions via the θ parameter.
+    result.deltaPlus = IFCIDeltaPlusReader(fciHook).getDeltaPlus(
+        PoolIdLibrary.toId(ctx.v4Pool)
+    );
 }
 
-/// @dev HHI-based delta-plus: sum((s_i)^2) - 1/N, where s_i = payout_i / totalPayout
-/// Returns Q128 fixed-point to match existing FCI convention.
-function computeDeltaPlus(uint256[] memory payouts, uint256 n) pure returns (uint128) {
-    uint256 total;
-    for (uint256 i; i < n; ++i) {
-        total += payouts[i];
-    }
-    if (total == 0) return 0; // No fees accrued — equilibrium by default
+struct MultiRoundJitGameConfig {
+    uint256 rounds;
+    JitGameConfig roundConfig;
+}
 
-    // HHI = sum(share_i^2), share_i = payout_i / total
-    // We compute in 1e18 precision then convert to Q128
-    uint256 hhi;
-    for (uint256 i; i < n; ++i) {
-        uint256 share = (payouts[i] * 1e18) / total;
-        hhi += (share * share) / 1e18;
-    }
-    // delta-plus = HHI - 1/N (in 1e18)
-    uint256 baseline = 1e18 / n;
-    if (hhi <= baseline) return 0;
-    uint256 deltaPlusE18 = hhi - baseline;
+struct MultiRoundJitGameResult {
+    uint128[] deltaPlusPerRound;
+    uint256 finalHedgedLpPayout;
+    uint256 finalUnhedgedLpPayout;
+    uint256 totalJitLpPayout;
+}
 
-    // Convert to Q128: deltaPlusE18 * 2^128 / 1e18
-    return uint128((deltaPlusE18 << 128) / 1e18);
+function runMultiRoundJitGame(
+    Context storage ctx,
+    Scenario storage s,
+    MultiRoundJitGameConfig memory cfg,
+    JitAccounts memory acc,
+    address fciHook
+) returns (MultiRoundJitGameResult memory result) {
+    require(cfg.rounds > 0, "MultiRound: rounds must be > 0");
+    validateJitConfig(cfg.roundConfig);
+
+    result.deltaPlusPerRound = new uint128[](cfg.rounds);
+
+    for (uint256 r; r < cfg.rounds; ++r) {
+        JitGameResult memory roundResult = runJitGame(ctx, s, cfg.roundConfig, acc, fciHook);
+
+        result.deltaPlusPerRound[r] = roundResult.deltaPlus;
+        result.totalJitLpPayout += roundResult.jitLpPayout;
+
+        // Keep last round's passive LP payouts as final
+        if (r == cfg.rounds - 1) {
+            result.finalHedgedLpPayout = roundResult.hedgedLpPayout;
+            result.finalUnhedgedLpPayout = roundResult.unhedgedLpPayout;
+        }
+    }
 }
 
 /// @dev Extract token addresses from Context. For V4, read from PoolKey.
