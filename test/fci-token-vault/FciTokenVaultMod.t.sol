@@ -5,18 +5,39 @@ import {Test} from "forge-std/Test.sol";
 import {FciTokenVaultHarness} from "./helpers/FciTokenVaultHarness.sol";
 import {LONG, SHORT} from "@fci-token-vault/modules/FciTokenVaultMod.sol";
 import {SqrtPriceLibrary} from "foundational-hooks/src/libraries/SqrtPriceLibrary.sol";
+import {PoolKey} from "v4-core/src/types/PoolKey.sol";
+import {Currency} from "v4-core/src/types/Currency.sol";
+import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
+import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 
 contract FciTokenVaultModTest is Test {
     FciTokenVaultHarness vault;
+    MockERC20 collateral;
     address alice = makeAddr("alice");
 
     function setUp() public {
         vault = new FciTokenVaultHarness();
+        collateral = new MockERC20("Collateral", "COL", 18);
+
         vault.harness_initVault(
             uint160(SqrtPriceLibrary.Q96), // strike = 1.0
             14 days,                        // halfLife
-            block.timestamp + 30 days       // expiry
+            block.timestamp + 30 days,      // expiry
+            PoolKey({
+                currency0: Currency.wrap(address(0)),
+                currency1: Currency.wrap(address(0)),
+                fee: 0,
+                tickSpacing: 0,
+                hooks: IHooks(address(0))
+            }),
+            false,                          // reactive
+            address(collateral)             // collateralToken
         );
+
+        // Fund alice and approve vault
+        collateral.mint(alice, 1000e18);
+        vm.prank(alice);
+        collateral.approve(address(vault), type(uint256).max);
     }
 
     /// @dev INV-012: deposit mints equal LONG + SHORT
@@ -90,5 +111,18 @@ contract FciTokenVaultModTest is Test {
 
         vm.expectRevert();
         vault.harness_deposit(alice, 50e18);
+    }
+
+    /// @dev poke reverts if vault already settled
+    function test_poke_reverts_after_settle() public {
+        vault.harness_deposit(alice, 100e18);
+
+        uint256 expiry = block.timestamp + 30 days;
+        vault.harness_setHWM(uint160(SqrtPriceLibrary.Q96), expiry - 1);
+        vm.warp(expiry);
+        vault.harness_settle();
+
+        vm.expectRevert();
+        vault.harness_poke();
     }
 }

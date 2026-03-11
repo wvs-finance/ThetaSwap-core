@@ -5,6 +5,7 @@ import {
     deposit as _deposit,
     settle as _settle,
     redeem as _redeem,
+    poke as _poke,
     getFciVaultStorage,
     FciVaultStorage
 } from "@fci-token-vault/modules/FciTokenVaultMod.sol";
@@ -36,5 +37,9 @@ contract FciTokenVaultFacet {
         if (shortPayout > 0) {
             SafeTransferLib.safeTransfer(vs.collateralToken, msg.sender, shortPayout);
         }
+    }
+
+    function poke() external {
+        _poke();
     }
 }

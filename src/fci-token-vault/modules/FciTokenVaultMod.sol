@@ -9,8 +9,12 @@ import {
 import {
     lookbackPayoffX96,
     applyDecay,
-    updateHWM
+    updateHWM,
+    deltaPlusToSqrtPriceX96
 } from "@fci-token-vault/libraries/SqrtPriceLookbackPayoffX96Lib.sol";
+
+import {PoolKey} from "v4-core/src/types/PoolKey.sol";
+import {IFeeConcentrationIndex} from "@fee-concentration-index/interfaces/IFeeConcentrationIndex.sol";
 
 uint256 constant LONG = 0;
 uint256 constant SHORT = 1;
@@ -27,6 +31,8 @@ struct FciVaultStorage {
     bool settled;
     uint256 longPayoutPerToken;  // Q96-scaled
     address collateralToken;
+    PoolKey poolKey;
+    bool reactive;
 }
 
 error VaultAlreadySettled();
@@ -88,4 +94,23 @@ function redeem(address redeemer, uint256 amount) {
 
     burnPair(redeemer, amount);
     vs.totalDeposits -= amount;
+}
+
+error VaultAlreadySettledPoke();
+
+/// @dev Read Δ⁺ from FCI oracle, convert to sqrtPrice, apply decay, update HWM.
+function poke() {
+    FciVaultStorage storage vs = getFciVaultStorage();
+    if (vs.settled) revert VaultAlreadySettledPoke();
+
+    uint128 deltaPlus = IFeeConcentrationIndex(address(vs.poolKey.hooks))
+        .getDeltaPlus(vs.poolKey, vs.reactive);
+
+    uint160 currentSqrtPrice = deltaPlusToSqrtPriceX96(deltaPlus);
+
+    uint256 dt = block.timestamp - vs.lastHwmTimestamp;
+    uint160 decayed = applyDecay(vs.sqrtPriceHWM, dt, vs.halfLifeSeconds);
+
+    vs.sqrtPriceHWM = updateHWM(decayed, currentSqrtPrice);
+    vs.lastHwmTimestamp = block.timestamp;
 }
