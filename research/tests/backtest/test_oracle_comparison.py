@@ -115,3 +115,49 @@ def test_build_dual_series_divergence():
 def test_build_dual_series_empty():
     series = build_dual_series([])
     assert len(series.days) == 0
+
+
+# --- Task 5-6: positions_from_raw_data + real-data integration tests ---
+
+from backtest.oracle_comparison import positions_from_raw_data
+from econometrics.data import RAW_POSITIONS, DAILY_AT_MAP
+
+
+def test_positions_from_raw_data():
+    raw = [
+        ("2025-12-23", 100, 0.15843),
+        ("2025-12-23", 7200, 0.15843),
+        ("2025-12-24", 3600, 0.13833),
+    ]
+    exits = positions_from_raw_data(raw)
+    assert len(exits) == 3
+    assert all(isinstance(e, PositionExit) for e in exits)
+    assert exits[0].token_id == 0
+    assert exits[1].token_id == 1
+    assert exits[2].token_id == 2
+    assert exits[0].burn_date == "2025-12-23"
+    assert exits[2].burn_date == "2025-12-24"
+    assert exits[0].block_lifetime == 100
+    assert exits[0].fee_share_x_k == 0.15843
+
+
+def test_dual_series_real_data_dec23_spike():
+    exits = positions_from_raw_data(RAW_POSITIONS)
+    series = build_dual_series(exits)
+    dec23_idx = series.days.index("2025-12-23")
+    assert series.daily_snapshot_delta_plus[dec23_idx] > 0.01, \
+        f"Dec 23 daily Δ⁺ should be elevated: {series.daily_snapshot_delta_plus[dec23_idx]}"
+    if dec23_idx + 1 < len(series.days):
+        dec24_cum = series.cumulative_delta_plus[dec23_idx + 1]
+        dec24_snap = series.daily_snapshot_delta_plus[dec23_idx + 1]
+        assert dec24_cum > 0.01, f"Cumulative should stay elevated after spike: {dec24_cum}"
+        assert dec24_cum >= dec24_snap * 0.5, "Cumulative should be at least comparable to daily after spike"
+
+
+def test_dual_series_real_data_has_all_days():
+    exits = positions_from_raw_data(RAW_POSITIONS)
+    series = build_dual_series(exits)
+    unique_burn_dates = sorted(set(bd for bd, _, _ in RAW_POSITIONS))
+    assert series.days == tuple(unique_burn_dates)
+    assert len(series.cumulative_delta_plus) == len(unique_burn_dates)
+    assert len(series.daily_snapshot_delta_plus) == len(unique_burn_dates)

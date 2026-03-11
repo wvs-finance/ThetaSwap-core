@@ -74,6 +74,25 @@ class DualDeltaPlusSeries:
     daily_snapshot_delta_plus: tuple[float, ...]
 
 
+def positions_from_raw_data(
+    raw_positions: list[tuple[str, int, float]],
+) -> list[PositionExit]:
+    """Convert RAW_POSITIONS tuples to PositionExit list.
+
+    Uses the exit_day_a_t value from the tuple as fee_share_x_k.
+    This is the per-position x_k approximation available in the existing data.
+    """
+    return [
+        PositionExit(
+            token_id=idx,
+            burn_date=burn_date,
+            block_lifetime=blocklife,
+            fee_share_x_k=exit_day_a_t,
+        )
+        for idx, (burn_date, blocklife, exit_day_a_t) in enumerate(raw_positions)
+    ]
+
+
 def build_dual_series(exits: list[PositionExit]) -> DualDeltaPlusSeries:
     """Group exits by burn_date and compute both Δ⁺ variants per day."""
     if not exits:
