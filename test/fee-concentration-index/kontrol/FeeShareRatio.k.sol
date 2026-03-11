@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
 import {KontrolCheats} from "kontrol-cheatcodes/KontrolCheats.sol";
-import {FeeShareRatio, fromFeeGrowth, Q128, FEE_SHARE_ONE} from "../../../src/fee-concentration-index/types/FeeShareRatioMod.sol";
+import {FeeShareRatio, fromFeeGrowth, Q128, FEE_SHARE_ONE} from "typed-uniswap-v4/fee-concentration-index/types/FeeShareRatioMod.sol";
 
 contract FeeShareRatioProof is Test, KontrolCheats {
     // INV-006: Fee share ratio always in [0, type(uint128).max]

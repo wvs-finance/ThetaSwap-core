@@ -3,11 +3,11 @@ pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
 import {KontrolCheats} from "kontrol-cheatcodes/KontrolCheats.sol";
-import {FeeRevenue} from "../../../src/types/FeeRevenueMod.sol";
+import {FeeRevenue} from "@types/FeeRevenueMod.sol";
 import {
     PremiumFactor, Q128_ONE,
     fromRaw, applyTo, unwrap, isMax
-} from "../../../src/theta-swap-insurance/types/PremiumFactorMod.sol";
+} from "@theta-swap-insurance/types/PremiumFactorMod.sol";
 
 contract PremiumFactorProof is Test, KontrolCheats {
     // Round-trip: fromRaw(x).unwrap() == x for all x > 0

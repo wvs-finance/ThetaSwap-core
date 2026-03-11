@@ -3,10 +3,8 @@
 Last updated: 2026-03-07
 
 ## Active Technologies
-- Solidity ^0.8.26 + Uniswap V4 core (PoolManager, Hooks, StateLibrary), forge-std, kontrol-cheatcodes, Solady (FixedPointMathLib), MasterHook diamond (hook-bazaar/monorepo), Compose extensions (002-theta-swap-cfmm)
-- Diamond storage pattern (keccak256 slot hashing, disjoint slots per facet) (002-theta-swap-cfmm)
-
-- Solidity ^0.8.26 + Uniswap V4 core (PoolManager, Hooks, StateLibrary, TickBitmap), forge-std
+- Solidity ^0.8.26 + Uniswap V4 core (PoolManager, Hooks, StateLibrary, TickBitmap), forge-std, kontrol-cheatcodes, Solady (FixedPointMathLib), MasterHook diamond (hook-bazaar/monorepo), Compose extensions
+- Diamond storage pattern (keccak256 slot hashing, disjoint slots per facet)
 - Python 3.11+ (research: backtest, econometrics, oracle)
 
 ## Project Structure
@@ -52,14 +50,15 @@ The `.gitignore` file must also stay in sync across branches.
 # Forge tests
 forge test --match-path "test/fee-concentration-index/**" -vv
 
-# Python tests (from research/)
-cd research && ../uhi8/bin/python -m pytest tests/ -v
+# Python tests
+make test-py
+# or: PYTHONPATH=research pytest research/tests -v
 
 # Oracle
 uhi8/bin/python research/data/scripts/fci_oracle.py
 
 # Notebooks (execute headless)
-uhi8/bin/jupyter nbconvert --to notebook --execute research/notebooks/<name>.ipynb
+make notebooks
 
 # Verify branch sync
 git diff origin/001-fee-concentration-index origin/002-theta-swap-cfmm -- research/ | wc -l
@@ -71,8 +70,9 @@ git diff origin/001-fee-concentration-index origin/002-theta-swap-cfmm -- resear
 - Python: Frozen dataclasses, free pure functions, full typing (per @functional-python skill)
 
 ## Recent Changes
-- 002-theta-swap-cfmm: Added Solidity ^0.8.26 + Uniswap V4 core (PoolManager, Hooks, StateLibrary), forge-std, kontrol-cheatcodes, Solady (FixedPointMathLib), MasterHook diamond (hook-bazaar/monorepo), Compose extensions
-- 001-fee-concentration-index: Added Solidity ^0.8.26 + Uniswap V4 core (PoolManager, Hooks, StateLibrary, TickBitmap), forge-std, kontrol-cheatcodes
+- 003-reactive-integration: Reactive hook adapter, V3 event integration, merged 001 FCI dependency
+- 002-theta-swap-cfmm: Diamond storage, MasterHook, Compose extensions
+- 001-fee-concentration-index: FCI contract, partial-remove guard, dead code removal, DX setup
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

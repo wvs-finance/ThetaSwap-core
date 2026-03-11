@@ -12,7 +12,7 @@ import {PositionManager} from "@uniswap/v4-periphery/src/PositionManager.sol";
 import {PositionDescriptor} from "@uniswap/v4-periphery/src/PositionDescriptor.sol";
 
 import {FeeConcentrationIndexHarness} from "../harness/FeeConcentrationIndexHarness.sol";
-import {INDEX_ONE} from "../../../src/fee-concentration-index/types/FeeConcentrationStateMod.sol";
+import {INDEX_ONE} from "typed-uniswap-v4/fee-concentration-index/types/FeeConcentrationStateMod.sol";
 import {FCITestHelper} from "../helpers/FCITestHelper.sol";
 
 // US3 integration tests: full add → swap → remove → index lifecycle.
@@ -79,21 +79,16 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
     // Remove: LP burns the position (full removal).
     //
     // Expected:
-    //   - lifetime = 0 (no swaps crossed the range → swap counter never incremented)
-    //   - Because lifetime == 0, the HHI term is skipped entirely (division by zero guard)
-    //   - accumulatedHHI remains 0
-    //   - indexA = 0 (sqrt(0) = 0)
-    //   - (INDEX_ONE - indexA) = INDEX_ONE (1.0 in Q128)
+    //   lifetime = 0 → addTerm skipped (division by zero guard)
+    //   removedPosCount = 0, accumulatedSum = 0, thetaSum = 0
+    //   indexA = 0, atNull = 0, Δ⁺ = 0
     //
     // Interpretation:
-    //   Theta (the swap-time clock) never started. Without swap activity there is
-    //   no fee generation and therefore no concentration measurement. The index
-    //   correctly reports "no data" — (INDEX_ONE - indexA) stays at its ceiling, meaning the
-    //   system has not observed any concentration signal.
+    //   Theta never started. Without swap activity there is no fee generation
+    //   and therefore no concentration measurement. All derived quantities are 0.
     // ═══════════════════════════════════════════════════════════════════════
 
-    function test_US3A_soleProvider_noSwaps_indexUnchanged() public {
-        // 1. Mint: single LP is the only provider (via LiquidityOperations.mint)
+    function test_US3A_soleProvider_noSwaps_allDerivedQuantitiesZero() public {
         uint256 tokenId = _mintPosition(key, -60, 60, 1e18);
 
         // Sanity: position is registered in the hook
@@ -101,22 +96,25 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
         assertTrue(harness.containsPosition(poolId, -60, 60, pk), "position registered");
         assertEq(harness.getActiveRangeCount(poolId), 1, "one active range");
 
-        // 2. No swaps — theta never starts
+        // No swaps — theta never starts
 
-        // 3. Burn: LP withdraws everything
+        // Burn: LP withdraws everything
         _burnPosition(key, tokenId, -60, 60, 1e18);
 
         // Position deregistered
         assertFalse(harness.containsPosition(poolId, -60, 60, pk), "position deregistered");
         assertEq(harness.getActiveRangeCount(poolId), 0, "no active ranges");
 
-        // HHI unchanged — lifetime was 0, term was skipped
-        assertEq(harness.getAccumulatedHHI(poolId), 0, "accumulatedHHI must be 0 when no swaps");
+        // No term was added (lifetime=0 → skipped)
+        assertEq(harness.getAccumulatedHHI(poolId), 0, "accumulatedSum must be 0");
+        assertEq(harness.getThetaSum(poolId), 0, "thetaSum must be 0");
+        assertEq(harness.getRemovedPosCount(poolId), 0, "removedPosCount must be 0");
 
-        // Index: A=0, B=1.0 — no concentration data
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
-        assertEq(indexA, 0, "indexA must be 0: theta never started");
-        assertEq((INDEX_ONE - indexA), INDEX_ONE, "(INDEX_ONE - indexA) must be 1.0: no concentration observed");
+        // All derived quantities are 0
+        (uint128 indexA,,) = harness.getIndex(key, false);
+        assertEq(indexA, 0, "indexA must be 0: no data");
+        assertEq(harness.getAtNull(poolId), 0, "atNull must be 0: no removed positions");
+        assertEq(harness.getDeltaPlus(poolId), 0, "deltaPlus must be 0: no data");
     }
 
     // Variant: storage is fully cleaned up after the position lifecycle.
@@ -137,9 +135,9 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
         assertEq(harness.getRangeLength(poolId, -60, 60), 0, "range empty after removal");
     }
 
-    // Variant: multiple mint/burn cycles with no swaps — index stays at (0, 1.0) every time.
+    // Variant: multiple mint/burn cycles with no swaps — all quantities stay at 0.
 
-    function test_US3A_soleProvider_noSwaps_repeatedCycles_indexStaysDefault() public {
+    function test_US3A_soleProvider_noSwaps_repeatedCycles_allStayZero() public {
         // note: positions coming from the same lp need to add to concentration, this is to be
         // addressed later
 
@@ -148,42 +146,54 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
             _burnPosition(key, tokenId, -60, 60, 1e18);
         }
 
-        assertEq(harness.getAccumulatedHHI(poolId), 0, "HHI still 0 after 3 idle cycles");
+        assertEq(harness.getAccumulatedHHI(poolId), 0, "accumulatedSum still 0 after 3 idle cycles");
+        assertEq(harness.getRemovedPosCount(poolId), 0, "removedPosCount still 0: no terms added");
 
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
+        (uint128 indexA,,) = harness.getIndex(key, false);
         assertEq(indexA, 0, "indexA still 0");
-        assertEq((INDEX_ONE - indexA), INDEX_ONE, "(INDEX_ONE - indexA) still 1.0");
+        assertEq(harness.getDeltaPlus(poolId), 0, "deltaPlus still 0");
     }
 
     // ═══════════════════════════════════════════════════════════════════════
     // US3-B: Single passive LP — sole provider, 1 swap, full burn
     //
-    // Pre-conditions:
-    //   - single passive liquidity provider on [-60, 60]
-    //   - SQRT_PRICE_1_1 → tick 0 in the middle of the range
-    // Test:
-    //   - 1 swap through the range generates fees, increments swap count to 1
-    //   - LP burns position (full removal)
-    //   - sole provider → x_k = 1, lifetime = 1
-    //   - HHI = x_k^2 / lifetime = Q128, indexA = INDEX_ONE (within 1 wei)
+    // Setup:  Single LP on [-60, 60], 1 swap, then burns.
+    //
+    // Expected:
+    //   x_k = 1 (sole provider), lifetime = 1, θ = 1
+    //   N = 1 (removedPosCount), Θ = 1
+    //   A_T = √(1·1²) = 1, atNull = √(1/1) = 1
+    //   Δ⁺ = max(0, 1 - 1) = 0
+    //
+    // Interpretation:
+    //   A single LP is trivially at the competitive null — there's only one
+    //   participant, so fee distribution is necessarily "equal" (100% to the
+    //   sole provider). No excess concentration is possible with N=1.
     // ═══════════════════════════════════════════════════════════════════════
 
-    function test_unit_soleProvider_oneSwapOnRange_indexIsMax() public {
+    function test_unit_soleProvider_oneSwap_deltaPlusMustBeZero() public {
         uint256 tokenId = _mintPosition(key, -60, 60, 1e18);
 
         // 1 swap through the range → generates fees, increments swap count to 1
         _swap(key, true, -100);
 
-        // Full burn: decrease all liquidity + burn NFT
+        // Full burn
         _burnPosition(key, tokenId, -60, 60, 1e18);
 
-        // Sole provider: x_k = FEE_SHARE_ONE (2^128-1), lifetime = 1
-        // square() = mulDiv(2^128-1, 2^128-1, 2^128) = 2^128 - 2 (1 wei below Q128)
-        // toIndexA(2^128-2) → sqrt((2^128-2) << 128) → INDEX_ONE - 1 (rounding)
-        // 1-wei precision loss from Q128 representation of 1.0 as (2^128-1)
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
+        // removedPosCount = 1
+        assertEq(harness.getRemovedPosCount(poolId), 1, "removedPosCount should be 1");
+
+        // indexA ≈ INDEX_ONE (within 1 wei from Q128 rounding)
+        (uint128 indexA,,) = harness.getIndex(key, false);
         assertGe(indexA, INDEX_ONE - 1, "indexA must be max (within 1 wei): sole provider");
-        assertLe((INDEX_ONE - indexA), 1, "(INDEX_ONE - indexA) must be ~0: complement of max concentration");
+
+        // atNull = sqrt(Θ/N²) = sqrt(Q128/1) ≈ INDEX_ONE
+        uint128 null_ = harness.getAtNull(poolId);
+        assertGe(null_, INDEX_ONE - 1, "atNull must be max (within 1 wei): sole provider N=1");
+
+        // Δ⁺ = 0: sole provider is trivially at the null
+        uint128 dp = harness.getDeltaPlus(poolId);
+        assertEq(dp, 0, "deltaPlus must be 0: sole provider = competitive null");
     }
 
     // TODO: partial removal via decreaseLiquidity (without burn) currently triggers
@@ -199,21 +209,26 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
     // US3-C: Two equal passive LPs, same range, 1 swap, both withdraw.
     //
     // Setup:  LP1 and LP2 each mint 1e18 liquidity on [-60, 60].
+    //         N = 2 and let lifetime(1) = 1, lifetime(2) = 1
     // Action: 1 swap through the range.
     // Remove: Both LPs burn their positions.
     //
     // Expected:
     //   Each LP provides 50% of range liquidity → x_k = 1/2 for each.
     //   lifetime = 1 for each (1 swap crossed the range).
-    //   HHI = (1/2)^2 / 1 + (1/2)^2 / 1 = 1/4 + 1/4 = 1/2 (in Q128).
-    //   indexA = sqrt(1/2) ≈ 0.707 * INDEX_ONE.
+    //   θ₁ = θ₂ = 1/1 = 1, Θ = θ₁ + θ₂ = 2
+    //   A_T = √(θ₁·x₁² + θ₂·x₂²) = √(1·(1/2)² + 1·(1/2)²) = √(1/2) ≈ 0.707
+    //   A_T^{1/N} = √(Θ/N²) = √(2/4) = √(1/2) ≈ 0.707  (N = removedPosCount = 2)
+    //   Δ⁺ = max(0, A_T - A_T^{1/N}) = 0.707 - 0.707 = 0
     //
     // Interpretation:
-    //   Equal competition — no LP dominates in sophistication. The index
-    //   reflects moderate concentration (not max, not zero).
+    //   Both LPs are identical (same capital, same lifetime, same range).
+    //   The fee share vector (1/2, 1/2) sits at the 45° ray on the unit circle —
+    //   perfect symmetry. indexA equals the competitive null (atNull),
+    //   so Δ⁺ = 0: this IS the competitive equilibrium. No excess concentration.
     // ═══════════════════════════════════════════════════════════════════════
 
-    function test_unit_twoDifferentHomogeneousLps_oneSwap_indexIsHalf() public {
+    function test_unit_twoHomogeneousLps_oneSwap_deltaPlusMustBeZero() public {
         // Both LPs mint equal liquidity on same range
         uint256 tokenId1 = _mintPosition(key, -60, 60, 1e18);
         uint256 tokenId2 = _mintPositionAs(lp2, key, -60, 60, 1e18);
@@ -228,26 +243,32 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
         _burnPosition(key, tokenId1, -60, 60, 1e18);
         _burnPositionAs(lp2, key, tokenId2, -60, 60, 1e18);
 
-        // HHI = 1/2 in Q128 = (1 << 128) / 2 = Q128 / 2
-        // Each term: x_k = 1/2, x_k^2 = (1/2)^2 = 1/4 in Q128
-        // But FEE_SHARE_ONE = 2^128-1, not 2^128, so minor precision loss.
-        // x_k ≈ (2^128-1)/2, x_k^2 ≈ mulDiv((2^128-1)/2, (2^128-1)/2, 2^128)
-        // Each HHI term ≈ Q128/4, total ≈ Q128/2 (within rounding)
+        // removedPosCount = 2 (both positions contributed to the sum)
+        assertEq(harness.getRemovedPosCount(poolId), 2, "removedPosCount should be 2");
+
+        // accumulatedSum = Σ(θ_k · x_k²) = 1·(1/2)² + 1·(1/2)² = 1/2 in Q128
         uint256 hhi = harness.getAccumulatedHHI(poolId);
         uint256 expectedHHI = (1 << 128) / 2;
-        // Allow small rounding tolerance (a few wei from Q128 arithmetic)
-        assertApproxEqAbs(hhi, expectedHHI, 3, "HHI should be ~Q128/2");
+        assertApproxEqAbs(hhi, expectedHHI, 3, "accumulatedSum should be ~Q128/2");
 
-        // indexA = sqrt(Q128/2) ≈ 0.707 * INDEX_ONE
-        // sqrt(0.5) ≈ 0.7071067811865475
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
+        // thetaSum = Σ(1/ℓ_k) = 1/1 + 1/1 = 2 in Q128
+        uint256 thetaSum = harness.getThetaSum(poolId);
+        uint256 expectedThetaSum = 2 * (uint256(1) << 128);
+        assertApproxEqAbs(thetaSum, expectedThetaSum, 3, "thetaSum should be 2 * Q128");
+
+        // indexA = A_T = sqrt(accumulatedSum) = sqrt(1/2) ≈ 0.707 * INDEX_ONE
+        (uint128 indexA,,) = harness.getIndex(key, false);
         uint256 expectedIndexA = uint256(INDEX_ONE) * 7071 / 10000;
         assertApproxEqRel(indexA, expectedIndexA, 0.001e18, "indexA should be ~0.707 * INDEX_ONE");
-        assertGt(indexA, 0, "indexA > 0: concentration detected");
-        assertLt(indexA, INDEX_ONE, "indexA < 1: not sole provider");
-        // (INDEX_ONE - indexA) = 1 - indexA ≈ 0.293 * INDEX_ONE
-        uint256 expectedIndexB = uint256(INDEX_ONE) - expectedIndexA;
-        assertApproxEqRel((INDEX_ONE - indexA), expectedIndexB, 0.001e18, "(INDEX_ONE - indexA) should be ~0.293 * INDEX_ONE");
+
+        // atNull = sqrt(Θ/N²) = sqrt(2·Q128 / 4) = sqrt(Q128/2) ≈ 0.707 * INDEX_ONE
+        // Now uses removedPosCount=2 (not live posCount=0), so atNull is correct post-removal
+        uint128 null_ = harness.getAtNull(poolId);
+        assertApproxEqRel(null_, expectedIndexA, 0.001e18, "atNull should equal indexA: competitive equilibrium");
+
+        // Δ⁺ = max(0, A_T - atNull) = 0 (competitive equilibrium)
+        uint128 dp = harness.getDeltaPlus(poolId);
+        assertEq(dp, 0, "deltaPlus must be 0: two homogeneous LPs = competitive null");
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -258,17 +279,20 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
     // Remove: Both LPs burn their positions.
     //
     // Expected:
-    //   x_1 = 1e18 / 3e18 = 1/3,  x_2 = 2e18 / 3e18 = 2/3
-    //   HHI = (1/3)^2 + (2/3)^2 = 1/9 + 4/9 = 5/9
-    //   indexA = sqrt(5/9) = sqrt(5)/3 ≈ 0.7454 * INDEX_ONE
+    //   x_1 = 1/3, x_2 = 2/3, lifetime(1) = lifetime(2) = 1
+    //   θ₁ = θ₂ = 1, Θ = 2, N = 2 (removedPosCount)
+    //   A_T = √(1·(1/3)² + 1·(2/3)²) = √(5/9) = √5/3 ≈ 0.7454
+    //   atNull = √(Θ/N²) = √(2/4) = √(1/2) ≈ 0.707
+    //   Δ⁺ = 0.7454 - 0.707 = 0.038
     //
     // Interpretation:
-    //   The index captures "scale economics" — LP2's capital advantage shows
-    //   as higher concentration than the equal-capital case (0.7454 > 0.707).
-    //   The bigger the capital disparity, the closer the index approaches 1.0.
+    //   Same lifetimes → atNull is identical to US3-C (0.707).
+    //   But A_T > atNull because LP2's 2:1 capital advantage skews
+    //   fee shares away from the 45° ray. Δ⁺ > 0: the capital
+    //   disparity is excess concentration above the competitive null.
     // ═══════════════════════════════════════════════════════════════════════
 
-    function test_unit_twoDifferentOnlyCapitalHeterogenousLps_oneSwap_indexIsGtHalf() public {
+    function test_unit_twoDifferentOnlyCapitalHeterogenousLps_oneSwap_deltaPlusGtZero() public {
         uint256 tokenId1 = _mintPosition(key, -60, 60, 1e18);
         uint256 tokenId2 = _mintPositionAs(lp2, key, -60, 60, 2e18);
 
@@ -281,23 +305,29 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
         _burnPosition(key, tokenId1, -60, 60, 1e18);
         _burnPositionAs(lp2, key, tokenId2, -60, 60, 2e18);
 
-        // HHI = 5/9 in Q128 = 5 * Q128 / 9
+        // removedPosCount = 2
+        assertEq(harness.getRemovedPosCount(poolId), 2, "removedPosCount should be 2");
+
+        // accumulatedSum = 5/9 in Q128
         uint256 hhi = harness.getAccumulatedHHI(poolId);
         uint256 expectedHHI = 5 * (uint256(1) << 128) / 9;
-        assertApproxEqAbs(hhi, expectedHHI, 3, "HHI should be ~5*Q128/9");
+        assertApproxEqAbs(hhi, expectedHHI, 3, "accumulatedSum should be ~5*Q128/9");
 
         // indexA = sqrt(5/9) = sqrt(5)/3 ≈ 0.7454 * INDEX_ONE
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
+        (uint128 indexA,,) = harness.getIndex(key, false);
         uint256 expectedIndexA = uint256(INDEX_ONE) * 7454 / 10000;
         assertApproxEqRel(indexA, expectedIndexA, 0.001e18, "indexA should be ~0.7454 * INDEX_ONE");
 
-        // Must be strictly greater than the equal-capital case (sqrt(1/2) ≈ 0.707)
-        uint256 equalCaseIndexA = uint256(INDEX_ONE) * 7071 / 10000;
-        assertGt(indexA, equalCaseIndexA, "capital disparity increases concentration");
+        // atNull = sqrt(2/4) = sqrt(1/2) ≈ 0.707 (same as US3-C: same lifetimes, same N)
+        uint128 null_ = harness.getAtNull(poolId);
+        uint256 expectedNull = uint256(INDEX_ONE) * 7071 / 10000;
+        assertApproxEqRel(null_, expectedNull, 0.001e18, "atNull should be ~0.707 * INDEX_ONE");
 
-        // (INDEX_ONE - indexA) = 1 - indexA ≈ 0.2546 * INDEX_ONE
-        uint256 expectedIndexB = uint256(INDEX_ONE) - expectedIndexA;
-        assertApproxEqRel((INDEX_ONE - indexA), expectedIndexB, 0.001e18, "(INDEX_ONE - indexA) should be ~0.2546 * INDEX_ONE");
+        // Δ⁺ = 0.7454 - 0.707 ≈ 0.038 * INDEX_ONE
+        uint128 dp = harness.getDeltaPlus(poolId);
+        assertGt(dp, 0, "deltaPlus must be > 0: capital disparity causes excess concentration");
+        uint256 expectedDelta = uint256(INDEX_ONE) * 383 / 10000; // 0.7454 - 0.7071 = 0.0383
+        assertApproxEqRel(dp, expectedDelta, 0.05e18, "deltaPlus should be ~0.038 * INDEX_ONE");
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -311,18 +341,22 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
     //   Block 5: LP2 burns (blockLifetime = 5-1 = 4)
     //
     // Expected:
-    //   LP1: x_1 = 1/2, blockLifetime = 2, term = (1/2)^2 / 2 = Q128/8
-    //   LP2: x_2 = 1/2, blockLifetime = 4, term = (1/2)^2 / 4 = Q128/16
-    //   HHI = Q128/8 + Q128/16 = 3*Q128/16
-    //   indexA = sqrt(3/16) = sqrt(3)/4 ≈ 0.433 * INDEX_ONE
+    //   LP1: x_1 = 1/2, blockLifetime = 2, θ₁ = 1/2
+    //   LP2: x_2 = 1/2, blockLifetime = 4, θ₂ = 1/4
+    //   Θ = 1/2 + 1/4 = 3/4, N = 2 (removedPosCount)
+    //   A_T = √(θ₁·x₁² + θ₂·x₂²) = √(1/2·1/4 + 1/4·1/4) = √(3/16) ≈ 0.433
+    //   atNull = √(Θ/N²) = √((3/4)/4) = √(3/16) ≈ 0.433
+    //   Δ⁺ = 0.433 - 0.433 = 0
     //
     // Interpretation:
-    //   Block-based lifetime dilutes concentration more than swap-based.
-    //   Both LPs stay multiple blocks, reducing per-block dominance.
-    //   indexA < US3-C (0.707): block-duration dilution reduces concentration.
+    //   Equal fee shares (x₁ = x₂ = 1/2) but different lifetimes.
+    //   Despite LP1 exiting earlier (shorter lifetime → higher θ),
+    //   the fee shares are still equal, so A_T = atNull and Δ⁺ = 0.
+    //   Duration heterogeneity alone does not create excess concentration
+    //   when fee shares remain equal.
     // ═══════════════════════════════════════════════════════════════════════
 
-    function test_unit_twoDifferentCapitalHomogeneousDurationHeterogeneousLps_twoSwaps_indexGtHalf() public {
+    function test_unit_equalCapitalDurationHeterogeneousLps_twoSwaps_deltaPlusMustBeZero() public {
         // Block 1 (default): both LPs mint equal liquidity
         uint256 tokenId1 = _mintPosition(key, -60, 60, 1e18);
         uint256 tokenId2 = _mintPositionAs(lp2, key, -60, 60, 1e18);
@@ -343,23 +377,31 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
         vm.roll(block.number + 1);
         _burnPositionAs(lp2, key, tokenId2, -60, 60, 1e18);
 
-        // HHI = 3/16 in Q128 = 3 * Q128 / 16
+        // removedPosCount = 2
+        assertEq(harness.getRemovedPosCount(poolId), 2, "removedPosCount should be 2");
+
+        // accumulatedSum = 3/16 in Q128
         uint256 hhi = harness.getAccumulatedHHI(poolId);
         uint256 expectedHHI = 3 * (uint256(1) << 128) / 16;
-        assertApproxEqAbs(hhi, expectedHHI, 3, "HHI should be ~3*Q128/16");
+        assertApproxEqAbs(hhi, expectedHHI, 3, "accumulatedSum should be ~3*Q128/16");
 
-        // indexA = sqrt(3/16) = sqrt(3)/4 ≈ 0.433 * INDEX_ONE
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
+        // thetaSum = Θ = 1/2 + 1/4 = 3/4 in Q128
+        uint256 thetaSum = harness.getThetaSum(poolId);
+        uint256 expectedTheta = 3 * (uint256(1) << 128) / 4;
+        assertApproxEqAbs(thetaSum, expectedTheta, 3, "thetaSum should be ~3*Q128/4");
+
+        // indexA = sqrt(3/16) ≈ 0.433 * INDEX_ONE
+        (uint128 indexA,,) = harness.getIndex(key, false);
         uint256 expectedIndexA = uint256(INDEX_ONE) * 4330 / 10000;
         assertApproxEqRel(indexA, expectedIndexA, 0.002e18, "indexA should be ~0.433 * INDEX_ONE");
 
-        // Less than equal-exit same-block case (block dilution reduces concentration)
-        uint256 equalExitIndexA = uint256(INDEX_ONE) * 7071 / 10000;
-        assertLt(indexA, equalExitIndexA, "indexA < equal-exit case: block-duration dilution");
+        // atNull = sqrt(Θ/N²) = sqrt((3/4)/4) = sqrt(3/16) ≈ 0.433
+        uint128 null_ = harness.getAtNull(poolId);
+        assertApproxEqRel(null_, expectedIndexA, 0.002e18, "atNull should equal indexA");
 
-        // (INDEX_ONE - indexA) = 1 - indexA
-        uint256 expectedIndexB = uint256(INDEX_ONE) - expectedIndexA;
-        assertApproxEqRel((INDEX_ONE - indexA), expectedIndexB, 0.002e18, "(INDEX_ONE - indexA) should be ~0.567 * INDEX_ONE");
+        // Δ⁺ = 0: equal fee shares → competitive equilibrium regardless of lifetime
+        uint128 dp = harness.getDeltaPlus(poolId);
+        assertEq(dp, 0, "deltaPlus must be 0: equal fee shares = competitive null");
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -383,28 +425,22 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
     //   Block 100: Swap 3 (small, only passive active).
     //   Block 101: LP_passive exits (blockLifetime = 101-1 = 100).
     //
-    // x_k computation:
-    //   Both LPs share the same range and both are active during swaps 1 and 2.
-    //   feeGrowthInside accrues per-unit-of-liquidity, so the liquidity ratio
-    //   determines fee share: x_sophisticated = 9e18/10e18 = 9/10.
-    //   The reverse swap adds fees (fees always accrue regardless of direction),
-    //   but the liquidity ratio stays 9:1, so x_k is unchanged.
-    //
     // Expected:
-    //   x_sophisticated = 9/10, blockLifetime = 1, term = (9/10)^2 / 1 = 81*Q128/100
-    //   x_passive = 1/10, blockLifetime = 100, term = (1/10)^2 / 100 = Q128/10000
-    //   HHI = 81*Q128/100 + Q128/10000 = 8101*Q128/10000
-    //   indexA = sqrt(8101/10000) ≈ 0.900 * INDEX_ONE
+    //   x_soph = 9/10, lifetime = 1,   θ_s = 1     → term = (9/10)² / 1 = 81/100
+    //   x_pass = 1/10, lifetime = 100, θ_p = 1/100 → term = (1/10)² / 100 = 1/10000
+    //   Θ = 1 + 1/100 = 101/100, N = 2 (removedPosCount)
+    //   A_T = √(81/100 + 1/10000) = √(8101/10000) ≈ 0.900
+    //   atNull = √(Θ/N²) = √((101/100)/4) = √(101/400) ≈ 0.502
+    //   Δ⁺ = 0.900 - 0.502 ≈ 0.398
     //
     // Interpretation:
     //   The sophisticated LP enters 1 block before the swap, captures 90% of fees
-    //   across a forward+reverse round-trip (neutralizing IL), then exits.
-    //   blockLifetime = 1 → no dilution of its HHI term.
-    //   Passive LP's 100-block lifetime dilutes its negligible contribution further.
-    //   Index ≈ 0.900, close to maximum — crowd-out dominates.
+    //   across a forward+reverse round-trip, then exits. Both capital AND timing
+    //   heterogeneity contribute to Δ⁺ >> 0. This is deep in the Capponi regime
+    //   (Δ⁺ ≈ 0.398 >> Δ* ≈ 0.09): insurance demand is strongly active.
     // ═══════════════════════════════════════════════════════════════════════
 
-    function test_unit_twoDifferentHeterogenousLps_threeSwaps_indexCapturesCrowdOutIsCloseToMax() public {
+    function test_unit_twoDifferentHeterogenousLps_threeSwaps_deltaPlusCapturesCrowdOut() public {
         // Block 1: LP_passive mints
         uint256 tokenId_passive = _mintPosition(key, -60, 60, 1e18);
 
@@ -421,9 +457,6 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
         _swap(key, true, -1e15);
 
         // Block 51: Swap 2 (reverse oneForZero, both still active — nullifies IL for sophisticated LP)
-        // The sophisticated LP does NOT exit before the reverse swap. It stays for the round-trip
-        // to neutralize impermanent loss. This is not pure JIT (same-block exit) but a sophisticated
-        // strategy that spans the forward+reverse swap pair within a 1-block window.
         vm.roll(block.number + 1);
         _swap(key, false, -1e15);
 
@@ -438,25 +471,32 @@ contract FeeConcentrationIndexFullUnitTest is PosmTestSetup, FCITestHelper {
         vm.roll(block.number + 1);
         _burnPosition(key, tokenId_passive, -60, 60, 1e18);
 
-        // HHI = 81/100 + 1/10000 = 8101/10000
+        // removedPosCount = 2
+        assertEq(harness.getRemovedPosCount(poolId), 2, "removedPosCount should be 2");
+
+        // accumulatedSum = 8101/10000 in Q128
         uint256 hhi = harness.getAccumulatedHHI(poolId);
         uint256 expectedHHI = 8101 * (uint256(1) << 128) / 10000;
-        assertApproxEqAbs(hhi, expectedHHI, 5, "HHI should be ~8101/10000 * Q128");
+        assertApproxEqAbs(hhi, expectedHHI, 5, "accumulatedSum should be ~8101/10000 * Q128");
 
         // indexA = sqrt(8101/10000) ≈ 0.9006 * INDEX_ONE
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(key, false);
+        (uint128 indexA,,) = harness.getIndex(key, false);
         uint256 expectedIndexA = uint256(INDEX_ONE) * 9006 / 10000;
         assertApproxEqRel(indexA, expectedIndexA, 0.002e18, "indexA should be ~0.900 * INDEX_ONE");
 
-        // Must dominate US3-D (capital-heterogeneous: 0.745)
-        uint256 capitalHeteroIndexA = uint256(INDEX_ONE) * 7454 / 10000;
-        assertGt(indexA, capitalHeteroIndexA, "crowd-out dominates capital-heterogeneous case");
+        // atNull = sqrt(Θ/N²) = sqrt((101/100)/4) = sqrt(101/400) ≈ 0.502 * INDEX_ONE
+        uint128 null_ = harness.getAtNull(poolId);
+        uint256 expectedNull = uint256(INDEX_ONE) * 5025 / 10000;
+        assertApproxEqRel(null_, expectedNull, 0.01e18, "atNull should be ~0.502 * INDEX_ONE");
 
-        // Close to max (sole provider = 1.0)
-        assertGt(indexA, uint128(uint256(INDEX_ONE) * 9 / 10), "indexA > 0.9: close to maximum concentration");
+        // Δ⁺ ≈ 0.900 - 0.502 ≈ 0.398: deep in Capponi regime (>> Δ* ≈ 0.09)
+        uint128 dp = harness.getDeltaPlus(poolId);
+        assertGt(dp, 0, "deltaPlus must be > 0: crowd-out");
+        uint256 expectedDelta = uint256(INDEX_ONE) * 3981 / 10000;
+        assertApproxEqRel(dp, expectedDelta, 0.02e18, "deltaPlus should be ~0.398 * INDEX_ONE");
 
-        // (INDEX_ONE - indexA) = 1 - indexA ≈ 0.100 * INDEX_ONE
-        uint256 expectedIndexB = uint256(INDEX_ONE) - expectedIndexA;
-        assertApproxEqRel((INDEX_ONE - indexA), expectedIndexB, 0.02e18, "(INDEX_ONE - indexA) should be ~0.100 * INDEX_ONE");
+        // Δ⁺ above insurance trigger Δ* ≈ 0.09
+        uint256 deltaStar = uint256(INDEX_ONE) * 9 / 100;
+        assertGt(dp, deltaStar, "deltaPlus > Delta*: insurance demand active");
     }
 }

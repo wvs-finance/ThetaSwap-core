@@ -15,7 +15,7 @@ import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionMa
 
 import {FeeConcentrationIndexHarness} from "../harness/FeeConcentrationIndexHarness.sol";
 import {MockPositionManager} from "../harness/MockPositionManager.sol";
-import {TickRange, fromTicks} from "../../../src/fee-concentration-index/types/TickRangeMod.sol";
+import {TickRange, fromTicks} from "typed-uniswap-v4/fee-concentration-index/types/TickRangeMod.sol";
 
 contract AfterRemoveLiquidityTest is Test, Deployers {
     FeeConcentrationIndexHarness harness;
@@ -197,20 +197,20 @@ contract AfterRemoveLiquidityTest is Test, Deployers {
     // ── Test: getIndex returns correct values ──
 
     function test_getIndex_returnsCorrectValues() public {
-        // Before any removals, indices should be A=0, thetaSum=0, posCount=0
-        (uint128 indexA, uint256 thetaSum_, uint256 posCount_) = harness.getIndex(poolKey, false);
+        // Before any removals: A=0, thetaSum=0, removedPosCount=0
+        (uint128 indexA, uint256 thetaSum_, uint256 removedPosCount_) = harness.getIndex(poolKey, false);
         assertEq(indexA, 0, "indexA should be 0 with no removals");
         assertEq(thetaSum_, 0, "thetaSum should be 0 with no removals");
-        assertEq(posCount_, 0, "posCount should be 0 with no removals");
+        assertEq(removedPosCount_, 0, "removedPosCount should be 0 with no removals");
 
         // Add, swap, remove to generate HHI
         _addLiquidity(-60, 60, 1e18);
         _swap(true, -100);
         _removeLiquidity(-60, 60, 1e18);
 
-        (uint128 indexA2, uint256 thetaSum2, uint256 posCount2) = harness.getIndex(poolKey, false);
+        (uint128 indexA2, uint256 thetaSum2, uint256 removedPosCount2) = harness.getIndex(poolKey, false);
         assertGt(indexA2, 0, "indexA should be > 0 after removal with fees");
         assertGt(thetaSum2, 0, "thetaSum should be > 0 after removal");
-        assertEq(posCount2, 0, "posCount should be 0 after all removed");
+        assertEq(removedPosCount2, 1, "removedPosCount should be 1 after one removal");
     }
 }

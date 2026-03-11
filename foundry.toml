@@ -6,17 +6,50 @@ evm_version = "cancun"
 solc_version = "0.8.26"
 via_ir = true
 ffi = true
-fs_permissions = [{ access = "read", path = "research/data/fixtures" }]
+fs_permissions = [
+    { access = "read", path = "research/data/fixtures" },
+    { access = "read-write", path = "broadcast/" }
+]
 
 remappings = [
+    "lib/reactive-hooks/:v4-core/=lib/uniswap-hooks/lib/v4-core/src/",
     "v4-core/=lib/uniswap-hooks/lib/v4-core/",
     "lib/2025-12-panoptic/:v4-core/=lib/2025-12-panoptic/lib/v4-core/src/",
     "chimera/=lib/chimera/src/",
+    "reactive-lib/=lib/reactive-lib/src/",
+    "@uniswap/v4-core/=lib/uniswap-hooks/lib/v4-core/",
+    "@uniswap/v3-core/=lib/v3-core/",
     "angstrom/=lib/angstrom/contracts/",
+    "permit2/=lib/v4-periphery/lib/permit2/",
+    "solmate/=lib/v4-periphery/lib/solmate/",
+    "typed-uniswap-v4/=lib/typed-uniswap-v4/src/",
+    "reactive-hooks/=lib/reactive-hooks/src/",
+    "lib/reactive-hooks/:typed-uniswap-v4/=lib/typed-uniswap-v4/src/",
+    "lib/reactive-hooks/:reactive-lib/=lib/reactive-lib/src/",
+    "lib/reactive-hooks/:@uniswap/v3-core/=lib/v3-core/",
+    "lib/typed-uniswap-v4/:v4-core/=lib/uniswap-hooks/lib/v4-core/",
+    "@fee-concentration-index/=src/fee-concentration-index/",
+    "@reactive-integration/=src/reactive-integration/",
+    "@theta-swap-insurance/=src/theta-swap-insurance/",
+    "@types/=src/types/",
+    "@libraries/=src/libraries/",
+    "@foundry-script/=foundry-script/",
 ]
 
+script = "foundry-script"
+
 [rpc_endpoints]
-mainnet = "${ETH_RPC_URL}"
+mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+sepolia = "https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+unichain = "https://unichain-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+unichain_sepolia = "https://unichain-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+reactive = "${REACTIVE_RPC_URL}"
+
+[etherscan]
+mainnet = { key = "${ETHERSCAN_API_KEY}", chain = 1 }
+sepolia = { key = "${ETHERSCAN_API_KEY}", chain = 11155111 }
+unichain = { key = "${ETHERSCAN_API_KEY}", chain = 130, url = "https://unichain.blockscout.com/api" }
+unichain_sepolia = { key = "${ETHERSCAN_API_KEY}", chain = 1301, url = "https://unichain-sepolia.blockscout.com/api" }
 
 [fuzz]
 runs = 256

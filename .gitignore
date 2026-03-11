@@ -77,5 +77,8 @@ ISSUE.md
 # Dotenv file
 .env
 
-# Spec notes (drafts)
-spec/notes/**
+# Notes
+notes.md
+
+# Spec drafts
+spec/

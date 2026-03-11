@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
 import {KontrolCheats} from "kontrol-cheatcodes/KontrolCheats.sol";
-import {SwapCount} from "../../../src/fee-concentration-index/types/SwapCountMod.sol";
+import {SwapCount} from "typed-uniswap-v4/fee-concentration-index/types/SwapCountMod.sol";
 
 contract SwapCountProof is Test, KontrolCheats {
     // INV-001: SwapCount only increases — increment produces a value strictly greater than input
