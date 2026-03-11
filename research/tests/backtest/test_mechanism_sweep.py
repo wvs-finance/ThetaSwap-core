@@ -116,3 +116,83 @@ def test_window_delta_plus():
 def test_window_delta_plus_empty():
     s = WindowState(entries=(), window_size=10)
     assert window_delta_plus(s) == 0.0
+
+
+from backtest.mechanism_sweep import (
+    MechanismSeries, build_mechanism_series,
+    SweepResult, compute_correlation, run_mechanism_sweep,
+)
+
+
+def test_mechanism_series_dataclass():
+    s = MechanismSeries(
+        days=("2025-12-23",), delta_plus_values=(0.15,),
+        mechanism_name="epoch", params={"epoch_length_days": 7},
+    )
+    assert s.mechanism_name == "epoch"
+
+
+def test_build_mechanism_series_epoch():
+    exits = [
+        PositionExit(token_id=1, burn_date="2025-12-23", block_lifetime=100, fee_share_x_k=0.9),
+        PositionExit(token_id=2, burn_date="2025-12-23", block_lifetime=7200, fee_share_x_k=0.1),
+        PositionExit(token_id=3, burn_date="2025-12-24", block_lifetime=7200, fee_share_x_k=0.5),
+    ]
+    series = build_mechanism_series(exits, mechanism="epoch", epoch_length_days=7)
+    assert series.mechanism_name == "epoch"
+    assert len(series.days) == 2
+    assert all(v >= 0 for v in series.delta_plus_values)
+
+
+def test_build_mechanism_series_decay():
+    exits = [
+        PositionExit(token_id=1, burn_date="2025-12-23", block_lifetime=100, fee_share_x_k=0.9),
+        PositionExit(token_id=2, burn_date="2025-12-24", block_lifetime=7200, fee_share_x_k=0.1),
+    ]
+    series = build_mechanism_series(exits, mechanism="decay", half_life_days=7.0)
+    assert series.mechanism_name == "decay"
+    assert len(series.days) == 2
+
+
+def test_build_mechanism_series_window():
+    exits = [
+        PositionExit(token_id=i, burn_date="2025-12-23", block_lifetime=7200, fee_share_x_k=0.5)
+        for i in range(5)
+    ]
+    series = build_mechanism_series(exits, mechanism="window", window_size=3)
+    assert series.mechanism_name == "window"
+
+
+def test_compute_correlation_perfect():
+    assert compute_correlation([1, 2, 3], [1, 2, 3]) == pytest.approx(1.0)
+
+
+def test_compute_correlation_inverse():
+    assert compute_correlation([1, 2, 3], [3, 2, 1]) == pytest.approx(-1.0)
+
+
+def test_compute_correlation_short():
+    assert compute_correlation([1], [1]) == 0.0
+
+
+def test_run_mechanism_sweep_basic():
+    exits = [
+        PositionExit(token_id=1, burn_date="2025-12-23", block_lifetime=100, fee_share_x_k=0.9),
+        PositionExit(token_id=2, burn_date="2025-12-23", block_lifetime=7200, fee_share_x_k=0.1),
+        PositionExit(token_id=3, burn_date="2025-12-24", block_lifetime=7200, fee_share_x_k=0.5),
+        PositionExit(token_id=4, burn_date="2025-12-24", block_lifetime=3600, fee_share_x_k=0.5),
+        PositionExit(token_id=5, burn_date="2025-12-25", block_lifetime=7200, fee_share_x_k=0.3),
+    ]
+    from backtest.oracle_comparison import build_dual_series
+    dual = build_dual_series(exits)
+
+    results = run_mechanism_sweep(
+        exits=exits,
+        daily_snapshot_baseline=list(dual.daily_snapshot_delta_plus),
+        baseline_days=list(dual.days),
+        epoch_lengths=[3, 7],
+        half_lives=[3.0, 7.0],
+        window_sizes=[3],
+    )
+    assert len(results) == 5  # 2 epoch + 2 decay + 1 window
+    assert all(isinstance(r, SweepResult) for r in results)

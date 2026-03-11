@@ -8,6 +8,7 @@ Per @functional-python.
 from __future__ import annotations
 
 import math
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -135,3 +136,168 @@ def window_delta_plus(state: WindowState) -> float:
     theta_sum = sum(1.0 / lifetime for _, lifetime in state.entries)
     n_sq = n ** 2
     return max(0.0, math.sqrt(acc_sum) - math.sqrt(theta_sum / n_sq))
+
+
+# ── Sweep runner ──────────────────────────────────────────────────
+
+@dataclass(frozen=True)
+class MechanismSeries:
+    """Δ⁺ time series for one mechanism with specific parameters."""
+    days: tuple[str, ...]
+    delta_plus_values: tuple[float, ...]
+    mechanism_name: str
+    params: dict[str, float | int]
+
+
+def build_mechanism_series(
+    exits: list[PositionExit],
+    mechanism: str,
+    **kwargs: float | int,
+) -> MechanismSeries:
+    """Build Δ⁺ series for a given mechanism."""
+    by_day: dict[str, list[PositionExit]] = defaultdict(list)
+    for e in exits:
+        by_day[e.burn_date].append(e)
+    sorted_days = sorted(by_day.keys())
+
+    days_acc: list[str] = []
+    values_acc: list[float] = []
+
+    if mechanism == "epoch":
+        epoch_len = int(kwargs.get("epoch_length_days", 7))
+        state = EpochState(
+            accumulated_sum=0.0, theta_sum=0.0, removed_pos_count=0,
+            epoch_start=sorted_days[0] if sorted_days else "2025-01-01",
+            epoch_length_days=epoch_len,
+        )
+        for day in sorted_days:
+            for e in by_day[day]:
+                state = step_epoch(state, e)
+            days_acc.append(day)
+            values_acc.append(epoch_delta_plus(state))
+        params = {"epoch_length_days": epoch_len}
+
+    elif mechanism == "decay":
+        hl = float(kwargs.get("half_life_days", 7.0))
+        state_d = DecayState(
+            accumulated_sum=0.0, theta_sum=0.0, effective_count=0.0,
+            last_update=sorted_days[0] if sorted_days else "2025-01-01",
+            half_life_days=hl,
+        )
+        for day in sorted_days:
+            for e in by_day[day]:
+                state_d = step_decay(state_d, e)
+            days_acc.append(day)
+            values_acc.append(decay_delta_plus(state_d))
+        params = {"half_life_days": hl}
+
+    elif mechanism == "window":
+        ws = int(kwargs.get("window_size", 25))
+        state_w = WindowState(entries=(), window_size=ws)
+        for day in sorted_days:
+            for e in by_day[day]:
+                state_w = step_window(state_w, e)
+            days_acc.append(day)
+            values_acc.append(window_delta_plus(state_w))
+        params = {"window_size": ws}
+
+    else:
+        raise ValueError(f"Unknown mechanism: {mechanism}")
+
+    return MechanismSeries(
+        days=tuple(days_acc),
+        delta_plus_values=tuple(values_acc),
+        mechanism_name=mechanism,
+        params=params,
+    )
+
+
+@dataclass(frozen=True)
+class SweepResult:
+    """Evaluation of one mechanism + parameter combo against daily-snapshot baseline."""
+    mechanism_name: str
+    params: dict[str, float | int]
+    correlation: float
+    max_divergence: float
+    series: MechanismSeries
+
+
+def compute_correlation(xs: list[float], ys: list[float]) -> float:
+    """Pearson correlation between two series. Returns 0 if too few data points."""
+    n = len(xs)
+    if n < 3 or n != len(ys):
+        return 0.0
+    mean_x = sum(xs) / n
+    mean_y = sum(ys) / n
+    cov = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs, ys))
+    var_x = sum((x - mean_x) ** 2 for x in xs)
+    var_y = sum((y - mean_y) ** 2 for y in ys)
+    denom = math.sqrt(var_x * var_y)
+    if denom == 0:
+        return 0.0
+    return cov / denom
+
+
+def _align_series(series: MechanismSeries, target_days: list[str]) -> list[float]:
+    """Align mechanism series to target days, filling 0.0 for missing days."""
+    day_to_val = dict(zip(series.days, series.delta_plus_values))
+    return [day_to_val.get(d, 0.0) for d in target_days]
+
+
+def _max_divergence(candidate: list[float], baseline: list[float]) -> float:
+    """Max absolute difference between two aligned series."""
+    if not candidate or not baseline:
+        return 0.0
+    return max(abs(c - b) for c, b in zip(candidate, baseline))
+
+
+def run_mechanism_sweep(
+    exits: list[PositionExit],
+    daily_snapshot_baseline: list[float],
+    baseline_days: list[str],
+    epoch_lengths: list[int] | None = None,
+    half_lives: list[float] | None = None,
+    window_sizes: list[int] | None = None,
+) -> list[SweepResult]:
+    """Sweep all mechanism × parameter combos, scoring against daily-snapshot baseline."""
+    if epoch_lengths is None:
+        epoch_lengths = [1, 3, 7, 14]
+    if half_lives is None:
+        half_lives = [1.0, 3.0, 7.0, 14.0]
+    if window_sizes is None:
+        window_sizes = [10, 25, 50]
+
+    results: list[SweepResult] = []
+
+    for el in epoch_lengths:
+        series = build_mechanism_series(exits, "epoch", epoch_length_days=el)
+        aligned = _align_series(series, baseline_days)
+        corr = compute_correlation(aligned, list(daily_snapshot_baseline))
+        max_div = _max_divergence(aligned, list(daily_snapshot_baseline))
+        results.append(SweepResult(
+            mechanism_name="epoch", params={"epoch_length_days": el},
+            correlation=corr, max_divergence=max_div, series=series,
+        ))
+
+    for hl in half_lives:
+        series = build_mechanism_series(exits, "decay", half_life_days=hl)
+        aligned = _align_series(series, baseline_days)
+        corr = compute_correlation(aligned, list(daily_snapshot_baseline))
+        max_div = _max_divergence(aligned, list(daily_snapshot_baseline))
+        results.append(SweepResult(
+            mechanism_name="decay", params={"half_life_days": hl},
+            correlation=corr, max_divergence=max_div, series=series,
+        ))
+
+    for ws in window_sizes:
+        series = build_mechanism_series(exits, "window", window_size=ws)
+        aligned = _align_series(series, baseline_days)
+        corr = compute_correlation(aligned, list(daily_snapshot_baseline))
+        max_div = _max_divergence(aligned, list(daily_snapshot_baseline))
+        results.append(SweepResult(
+            mechanism_name="window", params={"window_size": ws},
+            correlation=corr, max_divergence=max_div, series=series,
+        ))
+
+    results.sort(key=lambda r: r.correlation, reverse=True)
+    return results
