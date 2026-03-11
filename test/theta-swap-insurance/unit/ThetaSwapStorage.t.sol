@@ -4,12 +4,12 @@ pragma solidity ^0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {IERC6909Claims} from "@uniswap/v4-core/src/interfaces/external/IERC6909Claims.sol";
 import {PoolId} from "@uniswap/v4-core/src/types/PoolId.sol";
-import {PremiumFactor, PremiumFactor__Zero, fromRaw, Q128_ONE} from "../../../src/theta-swap-insurance/types/PremiumFactorMod.sol";
+import {PremiumFactor, PremiumFactor__Zero, fromRaw, Q128_ONE} from "@theta-swap-insurance/types/PremiumFactorMod.sol";
 import {
     register, deregister, isRegistered, getRegistration,
     setFeeClaimsToken, feeClaimsToken,
     TSI__NotRegistered, TSI__NotOperator
-} from "../../../src/theta-swap-insurance/modules/ThetaSwapStorageMod.sol";
+} from "@theta-swap-insurance/modules/ThetaSwapStorageMod.sol";
 
 contract ThetaSwapStorageTest is Test {
     IERC6909Claims claims;

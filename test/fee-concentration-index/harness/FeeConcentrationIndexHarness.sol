@@ -5,11 +5,11 @@ import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
 
-import {FeeConcentrationIndex} from "../../../src/fee-concentration-index/FeeConcentrationIndex.sol";
-import {FeeConcentrationIndexStorage, fciStorage} from "../../../src/fee-concentration-index/modules/FeeConcentrationIndexStorageMod.sol";
-import {TickRange, fromTicks} from "../../../src/fee-concentration-index/types/TickRangeMod.sol";
-import {SwapCount} from "../../../src/fee-concentration-index/types/SwapCountMod.sol";
-import {FeeConcentrationState} from "../../../src/fee-concentration-index/types/FeeConcentrationStateMod.sol";
+import {FeeConcentrationIndex} from "@fee-concentration-index/FeeConcentrationIndex.sol";
+import {FeeConcentrationIndexStorage, fciStorage} from "@fee-concentration-index/modules/FeeConcentrationIndexStorageMod.sol";
+import {TickRange, fromTicks} from "typed-uniswap-v4/fee-concentration-index/types/TickRangeMod.sol";
+import {SwapCount} from "typed-uniswap-v4/fee-concentration-index/types/SwapCountMod.sol";
+import {FeeConcentrationState} from "typed-uniswap-v4/fee-concentration-index/types/FeeConcentrationStateMod.sol";
 
 // Test harness: inherits FeeConcentrationIndex to expose storage views.
 // Hook functions are already external on FeeConcentrationIndex — no exposed_* wrappers needed.

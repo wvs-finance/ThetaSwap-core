@@ -2,11 +2,11 @@
 pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
-import {FeeRevenue} from "../../../src/types/FeeRevenueMod.sol";
+import {FeeRevenue} from "@types/FeeRevenueMod.sol";
 import {
     PremiumFactor, Q128_ONE, PremiumFactor__Zero,
     fromRaw, applyTo, unwrap, isMax
-} from "../../../src/theta-swap-insurance/types/PremiumFactorMod.sol";
+} from "@theta-swap-insurance/types/PremiumFactorMod.sol";
 
 contract PremiumFactorTest is Test {
     // Round-trip: fromRaw(x).unwrap() == x for all x > 0
