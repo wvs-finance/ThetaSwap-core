@@ -9,7 +9,7 @@ import {
     deltaPlusToSqrtPriceX96,
     applyDecay,
     lookbackPayoffX96
-} from "@fci-token-vault/types/SqrtPriceLookbackPayoffX96Mod.sol";
+} from "@fci-token-vault/libraries/SqrtPriceLookbackPayoffX96Lib.sol";
 
 contract SqrtPriceLookbackPayoffX96FuzzTest is Test {
     /// @dev INV-003: δ⁺ monotonicity — larger δ⁺ → smaller sqrtPrice

@@ -9,7 +9,7 @@ import {
     applyDecay,
     updateHWM,
     lookbackPayoffX96
-} from "@fci-token-vault/types/SqrtPriceLookbackPayoffX96Mod.sol";
+} from "@fci-token-vault/libraries/SqrtPriceLookbackPayoffX96Lib.sol";
 
 contract SqrtPriceLookbackPayoffX96Test is Test {
     /// @dev INV-002: δ⁺=0 maps to SQRT_PRICE_1_1 (2⁹⁶)
