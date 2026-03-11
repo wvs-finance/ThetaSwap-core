@@ -3,8 +3,9 @@ pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {JitAccounts, JitGameConfig, JitGameResult, initJitAccounts} from
+import {JitAccounts, JitGameConfig, JitGameResult, initJitAccounts, validateJitConfig} from
     "@foundry-script/simulation/JitGame.sol";
+import {Protocol} from "@foundry-script/types/Protocol.sol";
 
 contract JitGameAccountsTestHelper {
     function callInitJitAccounts(Vm vm, uint256 n) external returns (JitAccounts memory) {
@@ -60,5 +61,54 @@ contract JitGameAccountsTest is Test {
     function test_initJitAccounts_reverts_zero() public {
         vm.expectRevert("JitGame: N must be >= 2");
         helper.callInitJitAccounts(vm, 0);
+    }
+}
+
+contract JitGameConfigTestHelper {
+    function callValidateJitConfig(JitGameConfig memory cfg) external pure {
+        validateJitConfig(cfg);
+    }
+}
+
+contract JitGameConfigTest is Test {
+    JitGameConfigTestHelper internal helper;
+
+    function setUp() public {
+        helper = new JitGameConfigTestHelper();
+    }
+
+    function test_validateJitConfig_reverts_n_below_2() public {
+        JitGameConfig memory cfg = JitGameConfig({
+            n: 1, jitCapital: 1e18, jitEntryProbability: 5000,
+            tradeSize: 1e18, zeroForOne: true, protocol: Protocol.UniswapV4
+        });
+        vm.expectRevert("JitGame: N must be >= 2");
+        helper.callValidateJitConfig(cfg);
+    }
+
+    function test_validateJitConfig_reverts_probability_over_10000() public {
+        JitGameConfig memory cfg = JitGameConfig({
+            n: 5, jitCapital: 1e18, jitEntryProbability: 10001,
+            tradeSize: 1e18, zeroForOne: true, protocol: Protocol.UniswapV4
+        });
+        vm.expectRevert("JitGame: probability must be <= 10000 bps");
+        helper.callValidateJitConfig(cfg);
+    }
+
+    function test_validateJitConfig_reverts_zero_tradeSize() public {
+        JitGameConfig memory cfg = JitGameConfig({
+            n: 5, jitCapital: 1e18, jitEntryProbability: 5000,
+            tradeSize: 0, zeroForOne: true, protocol: Protocol.UniswapV4
+        });
+        vm.expectRevert("JitGame: tradeSize must be > 0");
+        helper.callValidateJitConfig(cfg);
+    }
+
+    function test_validateJitConfig_accepts_valid() public pure {
+        JitGameConfig memory cfg = JitGameConfig({
+            n: 10, jitCapital: 5e18, jitEntryProbability: 7000,
+            tradeSize: 1e18, zeroForOne: true, protocol: Protocol.UniswapV4
+        });
+        validateJitConfig(cfg);
     }
 }
