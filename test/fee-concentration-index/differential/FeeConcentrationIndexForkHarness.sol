@@ -19,7 +19,7 @@ import {
     registerPosition, setFeeGrowthBaseline, getFeeGrowthBaseline, deleteFeeGrowthBaseline,
     deregisterPosition, addStateTerm, incrementPosCount, decrementPosCount,
     incrementOverlappingRanges
-} from "../../../src/reactive-integration/modules/FeeConcentrationIndexStorageMultiProtocolReactiveExtMod.sol";
+} from "@protocol-adapter/modules/ProtocolAdapterMod.sol";
 import {sortTicks} from "@libraries/HookUtilsMod.sol";
 
 /// @title FCI Differential Test Harness

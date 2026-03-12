@@ -21,7 +21,7 @@ import {
     registerPosition, setFeeGrowthBaseline, getFeeGrowthBaseline, deleteFeeGrowthBaseline,
     deregisterPosition, addStateTerm, incrementPosCount, decrementPosCount,
     incrementOverlappingRanges
-} from "../reactive-integration/modules/FeeConcentrationIndexStorageMultiProtocolReactiveExtMod.sol";
+} from "@protocol-adapter/modules/ProtocolAdapterMod.sol";
 import {CalldataReader, CalldataReaderLib} from "angstrom/src/types/CalldataReader.sol";
 import {TickRangeRegistryLib} from "typed-uniswap-v4/fee-concentration-index/types/TickRangeRegistryMod.sol";
 import {
