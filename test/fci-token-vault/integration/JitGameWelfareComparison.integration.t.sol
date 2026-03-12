@@ -209,4 +209,46 @@ contract JitGameWelfareComparisonTest is PosmTestSetup, FCITestHelper {
         assertGt(w.hedgedWelfare, w.unhedgedWelfare, "B3: hedged should outperform unhedged");
         assertEq(w.longPayout + w.shortPayout, HEDGE_AMOUNT, "B3: conservation");
     }
+
+    // ── Welfare-Targeted Scenarios ──
+
+    function test_W1_sustained_jit_5_rounds() public {
+        console.log("=== W1: SUSTAINED JIT (5 rounds) ===");
+        bool[] memory schedule = new bool[](5);
+        for (uint256 i; i < 5; ++i) schedule[i] = true;
+
+        WelfareResult memory w = _runGame(5, 9e18, schedule);
+
+        assertGt(w.longPayout, 0, "W1: LONG should be positive -- persistent JIT");
+        assertGt(w.hedgedWelfare, w.unhedgedWelfare, "W1: hedged outperforms unhedged");
+        assertEq(w.longPayout + w.shortPayout, HEDGE_AMOUNT, "W1: conservation");
+    }
+
+    function test_W3_early_jit_harm() public {
+        console.log("=== W3: EARLY JIT HARM ===");
+        bool[] memory schedule = new bool[](5);
+        schedule[0] = true;
+        schedule[1] = true;
+        // rounds 2-4 clean
+
+        WelfareResult memory w = _runGame(5, 9e18, schedule);
+
+        assertGt(w.longPayout, 0, "W3: LONG should be positive -- early JIT harm");
+        assertGt(w.hedgedWelfare, w.unhedgedWelfare, "W3: hedged outperforms unhedged");
+        assertEq(w.longPayout + w.shortPayout, HEDGE_AMOUNT, "W3: conservation");
+    }
+
+    function test_W4_late_jit_harm() public {
+        console.log("=== W4: LATE JIT HARM ===");
+        bool[] memory schedule = new bool[](5);
+        // rounds 0-2 clean
+        schedule[3] = true;
+        schedule[4] = true;
+
+        WelfareResult memory w = _runGame(5, 9e18, schedule);
+
+        assertGt(w.longPayout, 0, "W4: LONG should be positive -- late JIT harm");
+        assertGt(w.hedgedWelfare, w.unhedgedWelfare, "W4: hedged outperforms unhedged");
+        assertEq(w.longPayout + w.shortPayout, HEDGE_AMOUNT, "W4: conservation");
+    }
 }
