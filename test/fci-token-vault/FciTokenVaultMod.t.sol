@@ -21,7 +21,6 @@ contract FciTokenVaultModTest is Test {
 
         vault.harness_initVault(
             uint160(SqrtPriceLibrary.Q96), // strike = 1.0
-            14 days,                        // halfLife
             block.timestamp + 30 days,      // expiry
             PoolKey({
                 currency0: Currency.wrap(address(0)),
@@ -60,15 +59,14 @@ contract FciTokenVaultModTest is Test {
     function test_settle_after_expiry() public {
         vault.harness_deposit(alice, 100e18);
 
-        // Set HWM above strike, timestamp near expiry so minimal decay
-        uint256 expiry = block.timestamp + 30 days;
-        vault.harness_setHWM(uint160(SqrtPriceLibrary.Q96) * 2, expiry - 1);
+        // Set HWM above strike
+        vault.harness_setHWM(uint160(SqrtPriceLibrary.Q96) * 2);
 
         // Warp past expiry
-        vm.warp(expiry);
+        vm.warp(block.timestamp + 30 days);
         vault.harness_settle();
 
-        (,,,,, , bool settled, uint256 longPayout) = vault.harness_getVaultStorage();
+        (,,,, bool settled, uint256 longPayout) = vault.harness_getVaultStorage();
         assertTrue(settled);
         assertGt(longPayout, 0);
     }
@@ -85,10 +83,9 @@ contract FciTokenVaultModTest is Test {
     function test_redeem_burns_pair() public {
         vault.harness_deposit(alice, 100e18);
 
-        // Set HWM near expiry, warp, settle
-        uint256 expiry = block.timestamp + 30 days;
-        vault.harness_setHWM(uint160(SqrtPriceLibrary.Q96) * 2, expiry - 1);
-        vm.warp(expiry);
+        // Set HWM, warp past expiry, settle
+        vault.harness_setHWM(uint160(SqrtPriceLibrary.Q96) * 2);
+        vm.warp(block.timestamp + 30 days);
         vault.harness_settle();
 
         vault.harness_redeem(alice, 100e18);
@@ -96,7 +93,7 @@ contract FciTokenVaultModTest is Test {
         assertEq(vault.harness_balanceOf(alice, LONG), 0);
         assertEq(vault.harness_balanceOf(alice, SHORT), 0);
 
-        (,,,, uint256 totalDeposits,,, ) = vault.harness_getVaultStorage();
+        (,,, uint256 totalDeposits,,) = vault.harness_getVaultStorage();
         assertEq(totalDeposits, 0);
     }
 
@@ -104,9 +101,8 @@ contract FciTokenVaultModTest is Test {
     function test_deposit_reverts_after_settle() public {
         vault.harness_deposit(alice, 100e18);
 
-        uint256 expiry = block.timestamp + 30 days;
-        vault.harness_setHWM(uint160(SqrtPriceLibrary.Q96), expiry - 1);
-        vm.warp(expiry);
+        vault.harness_setHWM(uint160(SqrtPriceLibrary.Q96));
+        vm.warp(block.timestamp + 30 days);
         vault.harness_settle();
 
         vm.expectRevert();
@@ -117,9 +113,8 @@ contract FciTokenVaultModTest is Test {
     function test_poke_reverts_after_settle() public {
         vault.harness_deposit(alice, 100e18);
 
-        uint256 expiry = block.timestamp + 30 days;
-        vault.harness_setHWM(uint160(SqrtPriceLibrary.Q96), expiry - 1);
-        vm.warp(expiry);
+        vault.harness_setHWM(uint160(SqrtPriceLibrary.Q96));
+        vm.warp(block.timestamp + 30 days);
         vault.harness_settle();
 
         vm.expectRevert();

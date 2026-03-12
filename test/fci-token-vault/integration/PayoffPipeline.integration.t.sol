@@ -33,7 +33,6 @@ import "@foundry-script/utils/Constants.sol";
 
 import {
     deltaPlusToSqrtPriceX96,
-    applyDecay,
     updateHWM,
     lookbackPayoffX96
 } from "@fci-token-vault/libraries/SqrtPriceLookbackPayoffX96Lib.sol";
@@ -127,7 +126,7 @@ contract PayoffPipelineIntegrationTest is PosmTestSetup, FCITestHelper {
             ctx, scenario, cfg, acc, address(harness)
         );
 
-        // Pipeline: delta-plus → sqrtPrice → HWM → decay → payoff
+        // Pipeline: delta-plus → sqrtPrice → HWM → payoff (epoch-only, no decay)
         uint128 finalDeltaPlus = gameResult.deltaPlusPerRound[cfg.rounds - 1];
         assertGt(finalDeltaPlus, 0, "delta-plus must be non-zero with JIT");
 
@@ -137,18 +136,13 @@ contract PayoffPipelineIntegrationTest is PosmTestSetup, FCITestHelper {
         uint160 hwm = updateHWM(0, sqrtPrice);
         assertEq(hwm, sqrtPrice, "HWM should equal first price");
 
-        // Decay 7 days with 14-day half-life
-        uint160 decayed = applyDecay(hwm, 7 days, 14 days);
-        assertLt(decayed, hwm, "decay must reduce HWM");
-        assertGt(decayed, 0, "decayed HWM must be positive");
-
         // Payoff with strike at SQRT_PRICE_1_1 (1.0)
         uint160 strike = uint160(SqrtPriceLibrary.Q96);
-        uint256 payoff = lookbackPayoffX96(decayed, strike);
+        uint256 payoff = lookbackPayoffX96(hwm, strike);
 
         console.log("Final delta-plus (Q128):", uint256(finalDeltaPlus));
         console.log("SqrtPrice from delta-plus:", uint256(sqrtPrice));
-        console.log("HWM after 7d decay:", uint256(decayed));
+        console.log("HWM:", uint256(hwm));
         console.log("Payoff (Q96):", payoff);
     }
 }

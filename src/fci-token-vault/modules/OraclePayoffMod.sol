@@ -22,7 +22,6 @@ import {
 
 import {
     lookbackPayoffX96,
-    applyDecay,
     updateHWM,
     deltaPlusToSqrtPriceX96
 } from "@fci-token-vault/libraries/SqrtPriceLookbackPayoffX96Lib.sol";
@@ -37,38 +36,32 @@ import {ZeroAmount} from "@fci-token-vault/storage/CustodianStorage.sol";
 uint256 constant LONG = 0;
 uint256 constant SHORT = 1;
 
-/// @dev Read FCI oracle, apply decay, update HWM. Permissionless.
+/// @dev Read epoch Δ⁺ from FCI oracle, update HWM. Permissionless.
+/// Epoch-only: no decay applied. Epoch boundary resets stale signals;
+/// HWM is a pure high-water mark across all poke observations.
 /// Returns currentSqrtPrice so the facet can emit it alongside the new HWM.
 function oraclePoke() returns (uint160 currentSqrtPrice) {
     OraclePayoffStorage storage os = getOraclePayoffStorage();
     if (os.settled) revert VaultAlreadySettledPoke();
 
     uint128 deltaPlus = IFeeConcentrationIndex(address(os.poolKey.hooks))
-        .getDeltaPlus(os.poolKey, os.reactive);
-
-    uint256 dt = block.timestamp - os.lastHwmTimestamp;
-    uint160 decayed = applyDecay(os.sqrtPriceHWM, dt, os.halfLifeSeconds);
+        .getDeltaPlusEpoch(os.poolKey, os.reactive);
 
     if (deltaPlus > 0) {
         currentSqrtPrice = deltaPlusToSqrtPriceX96(deltaPlus);
-        os.sqrtPriceHWM = updateHWM(decayed, currentSqrtPrice);
-    } else {
-        currentSqrtPrice = 0;
-        os.sqrtPriceHWM = decayed;
+        os.sqrtPriceHWM = updateHWM(os.sqrtPriceHWM, currentSqrtPrice);
     }
-    os.lastHwmTimestamp = uint64(block.timestamp);
+    // deltaPlus == 0 → no JIT this epoch → HWM unchanged (no decay)
 }
 
-/// @dev Settle after expiry. Computes final LONG payout from HWM vs strike.
+/// @dev Settle after expiry. Computes final LONG payout from raw HWM vs strike.
+/// Epoch-only: no decay at settlement. The HWM is the peak epoch observation.
 function oracleSettle() {
     OraclePayoffStorage storage os = getOraclePayoffStorage();
     if (os.settled) revert VaultAlreadySettled();
     if (block.timestamp < os.expiry) revert VaultNotExpired();
 
-    uint256 dt = block.timestamp - os.lastHwmTimestamp;
-    uint160 decayedHWM = applyDecay(os.sqrtPriceHWM, dt, os.halfLifeSeconds);
-
-    os.longPayoutPerToken = lookbackPayoffX96(decayedHWM, os.sqrtPriceStrike);
+    os.longPayoutPerToken = lookbackPayoffX96(os.sqrtPriceHWM, os.sqrtPriceStrike);
     os.settled = true;
 }
 
