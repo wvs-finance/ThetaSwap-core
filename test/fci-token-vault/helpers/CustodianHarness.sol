@@ -17,7 +17,9 @@ import {
 } from "@fci-token-vault/storage/CustodianStorage.sol";
 import {
     getOraclePayoffStorage,
-    OraclePayoffStorage
+    OraclePayoffStorage,
+    VaultAlreadySettled,
+    VaultNotSettled
 } from "@fci-token-vault/storage/OraclePayoffStorage.sol";
 import {getERC6909Storage} from "@fci-token-vault/modules/dependencies/ERC6909Lib.sol";
 import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
@@ -29,6 +31,8 @@ import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 ///      for backward compatibility with integration tests.
 contract CustodianHarness {
     function harness_deposit(address depositor, uint256 amount) external {
+        OraclePayoffStorage storage os = getOraclePayoffStorage();
+        if (os.settled) revert VaultAlreadySettled();
         CustodianStorage storage cs = getCustodianStorage();
         SafeTransferLib.safeTransferFrom(cs.collateralToken, depositor, address(this), amount);
         custodianDeposit(depositor, amount);
@@ -40,6 +44,7 @@ contract CustodianHarness {
 
     function harness_redeem(address redeemer, uint256 amount) external {
         OraclePayoffStorage storage os = getOraclePayoffStorage();
+        if (!os.settled) revert VaultNotSettled();
         uint256 longPayout = FixedPointMathLib.mulDiv(amount, os.longPayoutPerToken, SqrtPriceLibrary.Q96);
         uint256 shortPayout = amount - longPayout;
 

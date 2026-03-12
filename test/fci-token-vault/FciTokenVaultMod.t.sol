@@ -2,8 +2,8 @@
 pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
-import {FciTokenVaultHarness} from "./helpers/FciTokenVaultHarness.sol";
-import {LONG, SHORT} from "@fci-token-vault/modules/FciTokenVaultMod.sol";
+import {CustodianHarness} from "./helpers/CustodianHarness.sol";
+import {LONG, SHORT} from "@fci-token-vault/modules/CollateralCustodianMod.sol";
 import {SqrtPriceLibrary} from "foundational-hooks/src/libraries/SqrtPriceLibrary.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {Currency} from "v4-core/src/types/Currency.sol";
@@ -11,12 +11,12 @@ import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
 import {MockERC20} from "solmate/src/test/utils/mocks/MockERC20.sol";
 
 contract FciTokenVaultModTest is Test {
-    FciTokenVaultHarness vault;
+    CustodianHarness vault;
     MockERC20 collateral;
     address alice = makeAddr("alice");
 
     function setUp() public {
-        vault = new FciTokenVaultHarness();
+        vault = new CustodianHarness();
         collateral = new MockERC20("Collateral", "COL", 18);
 
         vault.harness_initVault(
