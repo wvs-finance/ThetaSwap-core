@@ -8,28 +8,30 @@ export interface Breadcrumb {
 }
 
 export interface AppShellProps {
-  children: React.ReactNode
-  currentPath: string
-  onNavigate: (href: string) => void
-  breadcrumbs: Breadcrumb[]
-  sidebarCollapsed: boolean
-  onToggleSidebar: () => void
-  navigationItems: NavItem[]
+  children?: React.ReactNode
+  currentPath?: string
+  onNavigate?: (href: string) => void
+  breadcrumbs?: Breadcrumb[]
+  sidebarCollapsed?: boolean
+  onToggleSidebar?: () => void
+  navigationItems?: NavItem[]
   walletAddress?: string
   network?: string
   theme?: 'dark' | 'light'
   onConnect?: () => void
   onThemeToggle?: () => void
+  /** Allow extra props from design-os shell wrapper */
+  [key: string]: unknown
 }
 
 export function AppShell({
   children,
-  currentPath,
-  onNavigate,
-  breadcrumbs,
-  sidebarCollapsed,
-  onToggleSidebar,
-  navigationItems,
+  currentPath = '/',
+  onNavigate = () => {},
+  breadcrumbs = [],
+  sidebarCollapsed = false,
+  onToggleSidebar = () => {},
+  navigationItems = [],
   walletAddress,
   network = 'Mainnet',
   theme = 'dark',

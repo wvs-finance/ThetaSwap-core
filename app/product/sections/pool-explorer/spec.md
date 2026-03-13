@@ -38,4 +38,4 @@ Discovery and comparison of all monitored Uniswap V4 pools. A dense, sortable, f
 - Compact row height (40-44px) for data density
 
 ## Configuration
-- shell: true
+- shell: false
