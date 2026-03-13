@@ -332,7 +332,7 @@ export function Research({
     <div className="min-h-full bg-zinc-950 text-slate-200">
       <article className="mx-auto max-w-[960px] px-8 py-10 font-[family-name:'IBM_Plex_Sans']">
         {/* Title */}
-        <h1 className="mb-2 font-[family-name:'Instrument_Serif'] text-3xl italic text-slate-100">
+        <h1 className="mb-2 font-[family-name:'IBM_Plex_Sans'] text-3xl font-semibold text-slate-100">
           {title}
         </h1>
         <p className="mb-8 text-sm text-zinc-500">
@@ -343,7 +343,7 @@ export function Research({
 
         {/* §1 Abstract */}
         <section className="mb-10">
-          <h2 className="mb-3 font-[family-name:'Instrument_Serif'] text-xl italic text-slate-200">
+          <h2 className="mb-3 font-[family-name:'IBM_Plex_Sans'] text-xl font-semibold text-slate-200">
             <span className="mr-2 font-[family-name:'IBM_Plex_Mono'] text-sm not-italic text-zinc-500">§1</span>
             Abstract
           </h2>
@@ -367,7 +367,7 @@ export function Research({
 
         {/* §2 Methodology */}
         <section className="mb-10">
-          <h2 className="mb-3 font-[family-name:'Instrument_Serif'] text-xl italic text-slate-200">
+          <h2 className="mb-3 font-[family-name:'IBM_Plex_Sans'] text-xl font-semibold text-slate-200">
             <span className="mr-2 font-[family-name:'IBM_Plex_Mono'] text-sm not-italic text-zinc-500">§2</span>
             Methodology
           </h2>
@@ -399,7 +399,7 @@ export function Research({
 
         {/* §3 Results */}
         <section className="mb-10">
-          <h2 className="mb-4 font-[family-name:'Instrument_Serif'] text-xl italic text-slate-200">
+          <h2 className="mb-4 font-[family-name:'IBM_Plex_Sans'] text-xl font-semibold text-slate-200">
             <span className="mr-2 font-[family-name:'IBM_Plex_Mono'] text-sm not-italic text-zinc-500">§3</span>
             Results
           </h2>
@@ -446,7 +446,7 @@ export function Research({
 
         {/* §4 Parameters */}
         <section className="mb-10">
-          <h2 className="mb-4 font-[family-name:'Instrument_Serif'] text-xl italic text-slate-200">
+          <h2 className="mb-4 font-[family-name:'IBM_Plex_Sans'] text-xl font-semibold text-slate-200">
             <span className="mr-2 font-[family-name:'IBM_Plex_Mono'] text-sm not-italic text-zinc-500">§4</span>
             Calibration Parameters
           </h2>
@@ -461,7 +461,7 @@ export function Research({
 
         {/* §5 Conclusion */}
         <section className="mb-10">
-          <h2 className="mb-3 font-[family-name:'Instrument_Serif'] text-xl italic text-slate-200">
+          <h2 className="mb-3 font-[family-name:'IBM_Plex_Sans'] text-xl font-semibold text-slate-200">
             <span className="mr-2 font-[family-name:'IBM_Plex_Mono'] text-sm not-italic text-zinc-500">§5</span>
             Conclusion
           </h2>

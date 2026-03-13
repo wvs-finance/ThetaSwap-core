@@ -49,7 +49,7 @@ function StatCard({
 }) {
   return (
     <div className="flex flex-1 flex-col gap-1 rounded-none border border-zinc-800 bg-zinc-900 p-4">
-      <span className="font-[family-name:'Instrument_Serif'] text-xs italic text-zinc-500">
+      <span className="font-[family-name:'IBM_Plex_Sans'] text-xs font-medium uppercase tracking-wider text-zinc-500">
         {label}
       </span>
       <span
@@ -99,7 +99,7 @@ export function Portfolio({
         {/* Active Vaults */}
         <div className="p-4">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="font-[family-name:'Instrument_Serif'] text-sm italic text-slate-300">
+            <h2 className="font-[family-name:'IBM_Plex_Sans'] text-sm font-medium text-slate-300">
               Active Vaults
             </h2>
             <span className="font-[family-name:'IBM_Plex_Mono'] text-[10px] text-zinc-500">
@@ -149,7 +149,7 @@ export function Portfolio({
         {settledVaults.length > 0 && (
           <div className="p-4 pt-0">
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-[family-name:'Instrument_Serif'] text-sm italic text-slate-300">
+              <h2 className="font-[family-name:'IBM_Plex_Sans'] text-sm font-medium text-slate-300">
                 Settled Vaults
               </h2>
               <span className="font-[family-name:'IBM_Plex_Mono'] text-[10px] text-zinc-500">

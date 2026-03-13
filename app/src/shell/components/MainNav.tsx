@@ -43,14 +43,15 @@ export function MainNav({
   return (
     <div className="flex h-full flex-col font-[family-name:'IBM_Plex_Sans']">
       {/* Logo */}
-      <div className="flex h-12 items-center border-b border-zinc-800 px-4">
-        {collapsed ? (
-          <span className="text-lg font-semibold italic text-slate-200 font-[family-name:'Instrument_Serif']">
-            T
-          </span>
-        ) : (
-          <span className="text-lg font-semibold italic text-slate-200 font-[family-name:'Instrument_Serif']">
-            ThetaSwap
+      <div className="flex h-12 items-center gap-2.5 border-b border-zinc-800 px-4">
+        <img
+          src="/logo/thetaswap-nav-dark.svg"
+          alt="ThetaSwap"
+          className="h-7 w-7 flex-shrink-0"
+        />
+        {!collapsed && (
+          <span className="text-[15px] font-medium tracking-tight text-slate-200 font-[family-name:'IBM_Plex_Sans']">
+            thetaswap
           </span>
         )}
       </div>

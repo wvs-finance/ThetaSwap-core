@@ -528,7 +528,7 @@ export function PoolTerminal({
         {/* ---- LEFT PANE: Position Table (45%) ---- */}
         <div className="flex w-[45%] flex-col border-r border-zinc-800">
           <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-2">
-            <h2 className="font-[family-name:'Instrument_Serif'] text-sm italic text-slate-300">
+            <h2 className="font-[family-name:'IBM_Plex_Sans'] text-sm font-medium text-slate-300">
               Positions
             </h2>
             <span className="font-[family-name:'IBM_Plex_Mono'] text-[10px] text-zinc-500">
@@ -587,7 +587,7 @@ export function PoolTerminal({
         <div className="flex flex-1 flex-col overflow-auto">
           {/* Oracle State */}
           <div className="border-b border-zinc-800 p-3">
-            <h2 className="mb-2 font-[family-name:'Instrument_Serif'] text-sm italic text-slate-300">
+            <h2 className="mb-2 font-[family-name:'IBM_Plex_Sans'] text-sm font-medium text-slate-300">
               Oracle State
             </h2>
             <div className="flex items-start gap-4">
@@ -629,7 +629,7 @@ export function PoolTerminal({
           {/* Vault State */}
           <div className="border-b border-zinc-800 p-3">
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="font-[family-name:'Instrument_Serif'] text-sm italic text-slate-300">
+              <h2 className="font-[family-name:'IBM_Plex_Sans'] text-sm font-medium text-slate-300">
                 Vault
               </h2>
               {vault.settled ? (
@@ -691,7 +691,7 @@ export function PoolTerminal({
 
           {/* Payoff Curve */}
           <div className="flex-1 p-3">
-            <h2 className="mb-1 font-[family-name:'Instrument_Serif'] text-sm italic text-slate-300">
+            <h2 className="mb-1 font-[family-name:'IBM_Plex_Sans'] text-sm font-medium text-slate-300">
               Payoff Curve
             </h2>
             <p className="mb-2 text-[10px] text-zinc-500">
@@ -713,7 +713,7 @@ export function PoolTerminal({
       <div className="h-[20%] min-h-[120px] border-t border-zinc-800">
         <div className="flex h-full flex-col">
           <div className="flex items-center justify-between border-b border-zinc-800 px-3 py-1.5">
-            <h2 className="font-[family-name:'Instrument_Serif'] text-xs italic text-slate-300">
+            <h2 className="font-[family-name:'IBM_Plex_Sans'] text-xs font-medium text-slate-300">
               Δ⁺ Time Series
             </h2>
             <div className="flex gap-1">
