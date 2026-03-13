@@ -27,9 +27,10 @@ interface IFCIDeltaPlusReader {
 interface IVaultPokeSettle {
     function harness_pokeEpoch() external;
     function harness_settle() external;
-    /// @return sqrtPriceStrike, sqrtPriceHWM, expiry, totalDeposits, settled, longPayoutPerToken
+    /// @return sqrtPriceStrike, sqrtPriceHWM, halfLifeSeconds, expiry,
+    ///         totalDeposits, lastHwmTimestamp, settled, longPayoutPerToken
     function harness_getVaultStorage() external view returns (
-        uint160, uint160, uint256, uint256, bool, uint256
+        uint160, uint160, uint256, uint256, uint256, uint256, bool, uint256
     );
 }
 
@@ -192,7 +193,7 @@ function runJitGame(
         uint256 jitBalBBefore = IERC20(tokenB).balanceOf(jitAddr);
 
         burnPosition(ctx, cfg.protocol, acc.jitLp.privateKey, jitTokenId, cfg.jitCapital);
-	// note: Same observation on multiplying by price
+
         result.jitLpPayout = (IERC20(tokenA).balanceOf(jitAddr) - jitBalABefore)
             + (IERC20(tokenB).balanceOf(jitAddr) - jitBalBBefore);
     }
@@ -209,9 +210,7 @@ function runJitGame(
         uint256 balBBefore = IERC20(tokenB).balanceOf(lpAddr);
 
         burnPosition(ctx, cfg.protocol, acc.passiveLps[i].privateKey, passiveTokenIds[i], UNIT_LIQUIDITY);
-	// note: This is not multiplying the payoff by the price, since the CFMM or V4 pool
-	// is the only market, It MUST use the CFMM price to multiply one of the amounts
-	// by its price 
+
         payouts[i] = (IERC20(tokenA).balanceOf(lpAddr) - balABefore)
             + (IERC20(tokenB).balanceOf(lpAddr) - balBBefore);
     }
@@ -328,11 +327,11 @@ function runMultiRoundJitGameWithSchedule(
 
     // Settlement
     if (vaultCfg.vault != address(0)) {
-        (,, uint256 expiry,,,) = IVaultPokeSettle(vaultCfg.vault).harness_getVaultStorage();
+        (,,, uint256 expiry,,,,) = IVaultPokeSettle(vaultCfg.vault).harness_getVaultStorage();
         ctx.vm.warp(expiry + 1);
         IVaultPokeSettle(vaultCfg.vault).harness_settle();
 
-        (,,,,, uint256 longPayoutPerToken) = IVaultPokeSettle(vaultCfg.vault).harness_getVaultStorage();
+        (,,,,,,, uint256 longPayoutPerToken) = IVaultPokeSettle(vaultCfg.vault).harness_getVaultStorage();
         result.welfare.longPayout = (vaultCfg.depositAmount * longPayoutPerToken) / (2 ** 96);
         result.welfare.shortPayout = vaultCfg.depositAmount - result.welfare.longPayout;
         result.welfare.hedgeValue = int256(result.welfare.longPayout) - int256(vaultCfg.depositAmount);

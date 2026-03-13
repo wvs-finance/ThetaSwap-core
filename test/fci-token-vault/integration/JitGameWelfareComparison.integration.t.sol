@@ -106,9 +106,9 @@ contract JitGameWelfareComparisonTest is PosmTestSetup, FCITestHelper {
 
     function _deployVault() internal returns (FciTokenVaultHarness) {
         FciTokenVaultHarness v = new FciTokenVaultHarness();
-        uint160 strike = SqrtPriceLibrary.fractionToSqrtPriceX96(80, 100);
+        uint160 strike = SqrtPriceLibrary.fractionToSqrtPriceX96(56e18, 100e18);
         address collateral = Currency.unwrap(currency1);
-        v.harness_initVault(strike, block.timestamp + 7 days, key, false, collateral);
+        v.harness_initVault(strike, 14 days, block.timestamp + 7 days, key, false, collateral);
 
         vm.startPrank(depositorAddr);
         IERC20(collateral).approve(address(v), HEDGE_AMOUNT);
@@ -286,34 +286,33 @@ contract JitGameWelfareComparisonTest is PosmTestSetup, FCITestHelper {
         schedule[1] = true;
         schedule[2] = true;
 
-        // Use capitals spanning the partial-payoff region (strike=80/100).
-        // Below ~6x: payoff = 0 (sqrtPrice below strike). Above ~8x: caps at 100%.
-        // 6x/7x/8x stays in the monotonically-increasing partial zone.
-        console.log("--- 6x capital ---");
-        WelfareResult memory wLo = _runGame(3, 6e18, schedule);
+        // Use capitals in the non-saturating range (below ~11x where payout caps at 100%).
+        // 9x → ~68%, so 9.5x and 10x should produce monotonically higher payouts.
+        console.log("--- 9x capital ---");
+        WelfareResult memory wLo = _runGame(3, 9e18, schedule);
         console.log("");
 
         // Rebalance pool price for next sub-game
         _rebalancePool();
 
-        console.log("--- 7x capital ---");
-        WelfareResult memory wMid = _runGame(3, 7e18, schedule);
+        console.log("--- 9.5x capital ---");
+        WelfareResult memory wMid = _runGame(3, 95e17, schedule);
         console.log("");
 
         // Rebalance pool price for next sub-game
         _rebalancePool();
 
-        console.log("--- 8x capital ---");
-        WelfareResult memory wHi = _runGame(3, 8e18, schedule);
+        console.log("--- 10x capital ---");
+        WelfareResult memory wHi = _runGame(3, 10e18, schedule);
 
-        // All should produce positive LONG payouts
+        // All should be hedge-profitable
         assertGt(wLo.longPayout, 0, "W2-lo: LONG > 0");
         assertGt(wMid.longPayout, 0, "W2-mid: LONG > 0");
         assertGt(wHi.longPayout, 0, "W2-hi: LONG > 0");
 
-        // Monotonic: 8x > 7x > 6x (more JIT = more harm = higher payoff)
-        assertGt(wHi.longPayout, wMid.longPayout, "W2: 8x LONG payout > 7x");
-        assertGt(wMid.longPayout, wLo.longPayout, "W2: 7x LONG payout > 6x");
+        // Monotonic: 10x > 9.5x > 9x
+        assertGt(wHi.hedgeValue, wMid.hedgeValue, "W2: 10x hedge value > 9.5x");
+        assertGt(wMid.hedgeValue, wLo.hedgeValue, "W2: 9.5x hedge value > 9x");
 
         // Conservation
         assertEq(wLo.longPayout + wLo.shortPayout, HEDGE_AMOUNT, "W2-lo: conservation");
@@ -323,8 +322,8 @@ contract JitGameWelfareComparisonTest is PosmTestSetup, FCITestHelper {
 
     // ── Cross-Scenario Assertions ──
 
-    function test_W4_vs_W3_timing_comparison() public {
-        console.log("=== CROSS: W4 vs W3 (late JIT vs early JIT) ===");
+    function test_W4_beats_W3_less_decay() public {
+        console.log("=== CROSS: W4 vs W3 (late JIT > early JIT) ===");
 
         // W3: early JIT [Y,Y,N,N,N]
         bool[] memory scheduleW3 = new bool[](5);
@@ -346,10 +345,8 @@ contract JitGameWelfareComparisonTest is PosmTestSetup, FCITestHelper {
         console.log("--- W4: Late JIT ---");
         WelfareResult memory w4 = _runGame(5, 9e18, scheduleW4);
 
-        // Both schedules have 2 JIT rounds; epoch-only HWM captures max signal.
-        // With no decay, timing shouldn't systematically favor late over early.
-        // Assert both produce positive payoffs (same JIT intensity).
-        assertGt(w3.longPayout, 0, "W3: LONG > 0");
-        assertGt(w4.longPayout, 0, "W4: LONG > 0");
+        // Late JIT = less decay before settlement = higher payout
+        assertGt(w4.hedgeValue, w3.hedgeValue, "W4 hedge value > W3: less decay");
+        assertGt(w4.longPayout, w3.longPayout, "W4 LONG payout > W3");
     }
 }

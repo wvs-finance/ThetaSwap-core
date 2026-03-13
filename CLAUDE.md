@@ -24,21 +24,7 @@ research/                     # All research/analysis artifacts
   scripts/                    #   FFI oracles
   tests/                      #   Python tests (114)
 skills/                       # Claude skill definitions
-app/                          # Frontend app (design-os, committed as regular files — NOT a submodule)
 ```
-
-## Frontend App (`app/`)
-
-The `app/` directory contains a copy of [buildermethods/design-os](https://github.com/buildermethods/design-os) (Vite + React). It is committed as regular files in the monorepo (not a git submodule).
-
-### IMPORTANT: Project Documentation Context
-When working inside `app/`, you MUST read project documentation from the parent monorepo at `../` (relative to `app/`). This includes:
-- `../specs/` — contract specifications
-- `../research/` — research artifacts (backtest, econometrics, model, notebooks)
-- `../docs/plans/` — branch-specific plans
-- `../CLAUDE.md` — project guidelines
-
-The app consumes and displays data from the core protocol. Always reference the parent project's specs and research when building UI features.
 
 ## Branch Rules (ENFORCED)
 
