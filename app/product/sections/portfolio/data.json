@@ -1,0 +1,74 @@
+{
+  "summary": {
+    "totalDeposited": 4250000,
+    "longValue": 487500,
+    "shortValue": 3762500,
+    "netPnl": -12340
+  },
+  "activeVaults": [
+    {
+      "pool": ["ETH", "USDC"],
+      "feeTier": 30,
+      "longBalance": 250000,
+      "shortBalance": 250000,
+      "status": "active",
+      "strike": 0.25,
+      "expiry": 1743033600,
+      "payoutPreview": { "long": 0.225, "short": 0.775 }
+    },
+    {
+      "pool": ["WBTC", "ETH"],
+      "feeTier": 30,
+      "longBalance": 100000,
+      "shortBalance": 100000,
+      "status": "active",
+      "strike": 0.30,
+      "expiry": 1743638400,
+      "payoutPreview": { "long": 0.121, "short": 0.879 }
+    },
+    {
+      "pool": ["MATIC", "USDC"],
+      "feeTier": 5,
+      "longBalance": 75000,
+      "shortBalance": 75000,
+      "status": "active",
+      "strike": 0.20,
+      "expiry": 1742428800,
+      "payoutPreview": { "long": 0.361, "short": 0.639 }
+    },
+    {
+      "pool": ["ARB", "ETH"],
+      "feeTier": 30,
+      "longBalance": 50000,
+      "shortBalance": 50000,
+      "status": "active",
+      "strike": 0.35,
+      "expiry": 1744243200,
+      "payoutPreview": { "long": 0.000, "short": 1.000 }
+    }
+  ],
+  "settledVaults": [
+    {
+      "pool": ["CRV", "USDC"],
+      "settlementDate": 1741219200,
+      "longPayout": 42150,
+      "shortPayout": 7850,
+      "netResult": 34300
+    },
+    {
+      "pool": ["LINK", "ETH"],
+      "settlementDate": 1740614400,
+      "longPayout": 3200,
+      "shortPayout": 46800,
+      "netResult": -43600
+    }
+  ],
+  "_meta": {
+    "description": "Portfolio sample data showing user's aggregate positions across multiple vaults",
+    "entities": {
+      "summary": "Aggregated totals across all active and settled vaults",
+      "activeVaults": "Vaults where user holds LONG and/or SHORT tokens, not yet settled",
+      "settledVaults": "Historical vaults that have settled with realized payouts"
+    }
+  }
+}

@@ -6,10 +6,12 @@ import {
     oraclePoke,
     oracleSettle,
     oracleRedeemLong,
-    oracleRedeemShort,
+    oracleRedeemShort
+} from "@fci-token-vault/modules/OraclePayoffMod.sol";
+import {
     getOraclePayoffStorage,
     OraclePayoffStorage
-} from "@fci-token-vault/modules/OraclePayoffMod.sol";
+} from "@fci-token-vault/storage/OraclePayoffStorage.sol";
 import {
     getCustodianStorage,
     CustodianStorage
@@ -26,23 +28,17 @@ contract OraclePayoffModCaller {
     function doSettle() external { oracleSettle(); }
     function doRedeemLong(address r, uint256 a) external returns (uint256) { return oracleRedeemLong(r, a); }
     function doRedeemShort(address r, uint256 a) external returns (uint256) { return oracleRedeemShort(r, a); }
-    // Diamond storage is contract-scoped — getters needed for cross-contract reads
     function doDeposit(address depositor, uint256 amount) external { custodianDeposit(depositor, amount); }
     function initCustodianStorage(address collateral) external {
-        CustodianStorage storage cs = getCustodianStorage();
-        cs.collateralToken = collateral;
+        getCustodianStorage().collateralToken = collateral;
     }
-    function initOracleStorage(uint160 strike, uint256 halfLife, uint256 expiry) external {
+    function initOracleStorage(uint160 strike, uint256 expiry) external {
         OraclePayoffStorage storage os = getOraclePayoffStorage();
         os.sqrtPriceStrike = strike;
-        os.halfLifeSeconds = halfLife;
         os.expiry = expiry;
-        os.lastHwmTimestamp = uint64(block.timestamp);
     }
-    function setHWM(uint160 hwm, uint64 timestamp) external {
-        OraclePayoffStorage storage os = getOraclePayoffStorage();
-        os.sqrtPriceHWM = hwm;
-        os.lastHwmTimestamp = timestamp;
+    function setHWM(uint160 hwm) external {
+        getOraclePayoffStorage().sqrtPriceHWM = hwm;
     }
     function isSettled() external view returns (bool) {
         return getOraclePayoffStorage().settled;
@@ -67,7 +63,6 @@ contract OraclePayoffModTest is Test {
         caller.initCustodianStorage(address(1));
         caller.initOracleStorage(
             uint160(SqrtPriceLibrary.Q96), // strike = 1.0
-            14 days,                        // halfLife
             block.timestamp + 30 days       // expiry
         );
     }
@@ -78,8 +73,7 @@ contract OraclePayoffModTest is Test {
     }
 
     function test_settle_after_expiry_sets_settled() public {
-        // Set HWM above strike
-        caller.setHWM(uint160(SqrtPriceLibrary.Q96) * 2, uint64(block.timestamp + 30 days - 1));
+        caller.setHWM(uint160(SqrtPriceLibrary.Q96) * 2);
         vm.warp(block.timestamp + 30 days);
         caller.doSettle();
         assertTrue(caller.isSettled());
@@ -88,7 +82,7 @@ contract OraclePayoffModTest is Test {
 
     function test_redeemLong_burns_long_only() public {
         caller.doDeposit(alice, 100e6);
-        caller.setHWM(uint160(SqrtPriceLibrary.Q96) * 2, uint64(block.timestamp + 30 days - 1));
+        caller.setHWM(uint160(SqrtPriceLibrary.Q96) * 2);
         vm.warp(block.timestamp + 30 days);
         caller.doSettle();
 
@@ -100,7 +94,7 @@ contract OraclePayoffModTest is Test {
 
     function test_redeemShort_burns_short_only() public {
         caller.doDeposit(alice, 100e6);
-        caller.setHWM(uint160(SqrtPriceLibrary.Q96) * 2, uint64(block.timestamp + 30 days - 1));
+        caller.setHWM(uint160(SqrtPriceLibrary.Q96) * 2);
         vm.warp(block.timestamp + 30 days);
         caller.doSettle();
 
@@ -112,7 +106,7 @@ contract OraclePayoffModTest is Test {
 
     function test_redeemLong_plus_redeemShort_eq_deposit() public {
         caller.doDeposit(alice, 100e6);
-        caller.setHWM(uint160(SqrtPriceLibrary.Q96) * 2, uint64(block.timestamp + 30 days - 1));
+        caller.setHWM(uint160(SqrtPriceLibrary.Q96) * 2);
         vm.warp(block.timestamp + 30 days);
         caller.doSettle();
 

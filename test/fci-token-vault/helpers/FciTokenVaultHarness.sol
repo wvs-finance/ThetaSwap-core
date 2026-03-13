@@ -17,27 +17,19 @@ import {
     getOraclePayoffStorage,
     OraclePayoffStorage,
     VaultAlreadySettled,
-    VaultAlreadySettledPoke,
     VaultNotSettled
 } from "@fci-token-vault/storage/OraclePayoffStorage.sol";
 import {
     getERC6909Storage,
     ERC6909Storage
 } from "@fci-token-vault/modules/dependencies/ERC6909Lib.sol";
-import {
-    applyDecay,
-    updateHWM,
-    deltaPlusToSqrtPriceX96
-} from "@fci-token-vault/libraries/SqrtPriceLookbackPayoffX96Lib.sol";
-import {IFeeConcentrationIndex} from "@fee-concentration-index/interfaces/IFeeConcentrationIndex.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {SafeTransferLib} from "solady/utils/SafeTransferLib.sol";
 import {SqrtPriceLibrary} from "foundational-hooks/src/libraries/SqrtPriceLibrary.sol";
 import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
 
-/// @dev Integration-test harness built on the new separated modules.
-///      Preserves the full API of the old FciTokenVaultHarness so that
-///      all integration tests compile without change.
+/// @dev Integration-test harness built on the separated modules.
+///      Epoch-only: no decay. oraclePoke() reads getDeltaPlusEpoch.
 contract FciTokenVaultHarness {
     function harness_deposit(address depositor, uint256 amount) external {
         OraclePayoffStorage storage os = getOraclePayoffStorage();
@@ -72,24 +64,9 @@ contract FciTokenVaultHarness {
         oraclePoke();
     }
 
-    /// @dev Same as poke() but reads getDeltaPlusEpoch() instead of getDeltaPlus().
+    /// @dev Alias for harness_poke — both now read epoch delta-plus.
     function harness_pokeEpoch() external {
-        OraclePayoffStorage storage os = getOraclePayoffStorage();
-        if (os.settled) revert VaultAlreadySettledPoke();
-
-        uint128 deltaPlus = IFeeConcentrationIndex(address(os.poolKey.hooks))
-            .getDeltaPlusEpoch(os.poolKey, os.reactive);
-
-        uint256 dt = block.timestamp - os.lastHwmTimestamp;
-        uint160 decayed = applyDecay(os.sqrtPriceHWM, dt, os.halfLifeSeconds);
-
-        if (deltaPlus > 0) {
-            uint160 currentSqrtPrice = deltaPlusToSqrtPriceX96(deltaPlus);
-            os.sqrtPriceHWM = updateHWM(decayed, currentSqrtPrice);
-        } else {
-            os.sqrtPriceHWM = decayed;
-        }
-        os.lastHwmTimestamp = uint64(block.timestamp);
+        oraclePoke();
     }
 
     function harness_balanceOf(address owner, uint256 id) external view returns (uint256) {
@@ -99,10 +76,8 @@ contract FciTokenVaultHarness {
     function harness_getVaultStorage() external view returns (
         uint160 sqrtPriceStrike,
         uint160 sqrtPriceHWM,
-        uint256 halfLifeSeconds,
         uint256 expiry,
         uint256 totalDeposits,
-        uint256 lastHwmTimestamp,
         bool settled,
         uint256 longPayoutPerToken
     ) {
@@ -111,10 +86,8 @@ contract FciTokenVaultHarness {
         return (
             os.sqrtPriceStrike,
             os.sqrtPriceHWM,
-            os.halfLifeSeconds,
             os.expiry,
             uint256(cs.totalDeposits),
-            uint256(os.lastHwmTimestamp),
             os.settled,
             os.longPayoutPerToken
         );
@@ -122,7 +95,6 @@ contract FciTokenVaultHarness {
 
     function harness_initVault(
         uint160 sqrtPriceStrike,
-        uint256 halfLifeSeconds,
         uint256 expiry,
         PoolKey calldata poolKey,
         bool reactive,
@@ -133,17 +105,13 @@ contract FciTokenVaultHarness {
 
         OraclePayoffStorage storage os = getOraclePayoffStorage();
         os.sqrtPriceStrike = sqrtPriceStrike;
-        os.halfLifeSeconds = halfLifeSeconds;
         os.expiry = expiry;
-        os.lastHwmTimestamp = uint64(block.timestamp);
         os.poolKey = poolKey;
         os.reactive = reactive;
     }
 
-    function harness_setHWM(uint160 hwm, uint256 timestamp) external {
-        OraclePayoffStorage storage os = getOraclePayoffStorage();
-        os.sqrtPriceHWM = hwm;
-        os.lastHwmTimestamp = uint64(timestamp);
+    function harness_setHWM(uint160 hwm) external {
+        getOraclePayoffStorage().sqrtPriceHWM = hwm;
     }
 
     function harness_getPoolKey() external view returns (PoolKey memory) {
