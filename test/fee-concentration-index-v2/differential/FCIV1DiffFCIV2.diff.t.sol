@@ -1,88 +1,112 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {Test} from "forge-std/Test.sol";
-import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
-import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
-import {PoolKey} from "v4-core/src/types/PoolKey.sol";
-import {PosmTestSetup} from "@uniswap/v4-periphery/test/shared/PosmTestSetup.sol";
-import {PositionManager} from "@uniswap/v4-periphery/src/PositionManager.sol";
-import {PositionDescriptor} from "@uniswap/v4-periphery/src/PositionDescriptor.sol";
-
-import {FeeConcentrationIndex} from "@fee-concentration-index/FeeConcentrationIndex.sol";
-import {FeeConcentrationIndexV2} from "@fee-concentration-index-v2/FeeConcentrationIndexV2.sol";
-import {DeployFci, FCI_HOOK_FLAGS} from "@foundry-script/deploy/DeployFci.s.sol";
-import {FCITestHelper} from "../../fee-concentration-index/helpers/FCITestHelper.sol";
+import {FCIDifferentialBase, FCIContext} from "./FCIDifferentialBase.sol";
 
 /// @title FCI V1 vs V2 Differential Test
-/// @notice Deploys both V1 and V2 hooks via DeployFci script.
-/// Runs the same scenarios on both pools and asserts identical FCI state.
-/// V4 path only — hookData is always empty.
-contract FCIV1DiffFCIV2Test is PosmTestSetup, FCITestHelper {
-    using PoolIdLibrary for PoolKey;
+/// @notice Runs identical scenarios on V1 and V2, asserts same FCI state.
+contract FCIV1DiffFCIV2Test is FCIDifferentialBase {
 
-    FeeConcentrationIndex v1;
-    FeeConcentrationIndexV2 v2;
+    address lp2;
 
-    PoolKey keyV1;
-    PoolKey keyV2;
-    PoolId poolIdV1;
-    PoolId poolIdV2;
-
-    function setUp() public {
-        deployFreshManagerAndRouters();
-        deployMintAndApprove2Currencies();
-        deployAndApprovePosm(manager);
-
-        fciLP = makeAddr("diffLP");
-        fciSwapper = address(this);
-        fciSwapRouter = swapRouter;
-
-        // ── Deploy V1 + V2 via DeployFci script ──
-        DeployFci deployer = new DeployFci(address(manager));
-        (address v1Addr, address v2Addr) = deployer.run();
-        v1 = FeeConcentrationIndex(v1Addr);
-        v2 = FeeConcentrationIndexV2(v2Addr);
-
-        // ── Initialize two pools — identical config, different hooks ──
-        (keyV1, poolIdV1) = initPool(
-            currency0, currency1, IHooks(address(v1)), 3000, SQRT_PRICE_1_1
-        );
-        (keyV2, poolIdV2) = initPool(
-            currency0, currency1, IHooks(address(v2)), 3000, SQRT_PRICE_1_1
-        );
+    function setUp() public override {
+        super.setUp();
+        lp2 = makeAddr("lp2");
+        seedBalance(lp2);
+        approvePosmFor(lp2);
+        seedBalance(fciLP);
+        approvePosmFor(fciLP);
     }
 
-    // ── State comparison helper ──
+    // ── US3-A: sole provider, no swaps ──
 
-    function _assertFCIStateEqual() internal view {
-        // ── getIndex ──
-        (uint128 indexAV1, uint256 thetaSumV1, uint256 removedV1) = v1.getIndex(keyV1, false);
-        (uint128 indexAV2, uint256 thetaSumV2, uint256 removedV2) = v2.getIndex(keyV2, false);
-        assertEq(indexAV1, indexAV2, "indexA mismatch");
-        assertEq(thetaSumV1, thetaSumV2, "thetaSum mismatch");
-        assertEq(removedV1, removedV2, "removedPosCount mismatch");
+    function test_diff_soleProvider_noSwaps() public {
+        uint256 tidV1 = _mint(ctxV1, -60, 60, 1e18);
+        uint256 tidV2 = _mint(ctxV2, -60, 60, 1e18);
 
-        // ── getDeltaPlus ──
-        uint128 dpV1 = v1.getDeltaPlus(keyV1, false);
-        uint128 dpV2 = v2.getDeltaPlus(keyV2, false);
-        assertEq(dpV1, dpV2, "deltaPlus mismatch");
+        _burn(ctxV1, tidV1, -60, 60, 1e18);
+        _burn(ctxV2, tidV2, -60, 60, 1e18);
 
-        // ── getDeltaPlusEpoch ──
-        uint128 dpEpochV1 = v1.getDeltaPlusEpoch(keyV1, false);
-        uint128 dpEpochV2 = v2.getDeltaPlusEpoch(keyV2, false);
-        assertEq(dpEpochV1, dpEpochV2, "deltaPlusEpoch mismatch");
-
-        // ── getAtNull ──
-        uint128 atNullV1 = v1.getAtNull(keyV1, false);
-        uint128 atNullV2 = v2.getAtNull(keyV2, false);
-        assertEq(atNullV1, atNullV2, "atNull mismatch");
-
-        // ── getThetaSum ──
-        uint256 tsV1 = v1.getThetaSum(keyV1, false);
-        uint256 tsV2 = v2.getThetaSum(keyV2, false);
-        assertEq(tsV1, tsV2, "getThetaSum mismatch");
+        _assertStateEqual();
     }
 
-    // TODO: add test scenarios — mint on both, swap on both, burn on both, assert _assertFCIStateEqual()
+    // ── US3-B: sole provider, one swap ──
+
+    function test_diff_soleProvider_oneSwap() public {
+        uint256 tidV1 = _mint(ctxV1, -60, 60, 1e18);
+        uint256 tidV2 = _mint(ctxV2, -60, 60, 1e18);
+
+        _doSwap(ctxV1, true, -100);
+        _doSwap(ctxV2, true, -100);
+
+        _burn(ctxV1, tidV1, -60, 60, 1e18);
+        _burn(ctxV2, tidV2, -60, 60, 1e18);
+
+        _assertStateEqual();
+    }
+
+    // ── US3-C: two equal LPs, one swap ──
+
+    function test_diff_twoEqualLps_oneSwap() public {
+        uint256 t1V1 = _mint(ctxV1, -60, 60, 1e18);
+        uint256 t2V1 = _mintAs(ctxV1, lp2, -60, 60, 1e18);
+        uint256 t1V2 = _mint(ctxV2, -60, 60, 1e18);
+        uint256 t2V2 = _mintAs(ctxV2, lp2, -60, 60, 1e18);
+
+        _doSwap(ctxV1, true, -100);
+        _doSwap(ctxV2, true, -100);
+
+        _burn(ctxV1, t1V1, -60, 60, 1e18);
+        _burnAs(ctxV1, lp2, t2V1, -60, 60, 1e18);
+        _burn(ctxV2, t1V2, -60, 60, 1e18);
+        _burnAs(ctxV2, lp2, t2V2, -60, 60, 1e18);
+
+        _assertStateEqual();
+    }
+
+    // ── US3-D: two unequal LPs, one swap ──
+
+    function test_diff_twoUnequalLps_oneSwap() public {
+        uint256 t1V1 = _mint(ctxV1, -60, 60, 1e18);
+        uint256 t2V1 = _mintAs(ctxV1, lp2, -60, 60, 2e18);
+        uint256 t1V2 = _mint(ctxV2, -60, 60, 1e18);
+        uint256 t2V2 = _mintAs(ctxV2, lp2, -60, 60, 2e18);
+
+        _doSwap(ctxV1, true, -100);
+        _doSwap(ctxV2, true, -100);
+
+        _burn(ctxV1, t1V1, -60, 60, 1e18);
+        _burnAs(ctxV1, lp2, t2V1, -60, 60, 2e18);
+        _burn(ctxV2, t1V2, -60, 60, 1e18);
+        _burnAs(ctxV2, lp2, t2V2, -60, 60, 2e18);
+
+        _assertStateEqual();
+    }
+
+    // ── US3-E: equal capital, different durations ──
+
+    function test_diff_equalCapital_durationHeterogeneous() public {
+        uint256 t1V1 = _mint(ctxV1, -60, 60, 1e18);
+        uint256 t2V1 = _mintAs(ctxV1, lp2, -60, 60, 1e18);
+        uint256 t1V2 = _mint(ctxV2, -60, 60, 1e18);
+        uint256 t2V2 = _mintAs(ctxV2, lp2, -60, 60, 1e18);
+
+        vm.roll(block.number + 1);
+        _doSwap(ctxV1, true, -100);
+        _doSwap(ctxV2, true, -100);
+
+        vm.roll(block.number + 1);
+        _burn(ctxV1, t1V1, -60, 60, 1e18);
+        _burn(ctxV2, t1V2, -60, 60, 1e18);
+
+        vm.roll(block.number + 1);
+        _doSwap(ctxV1, false, -100);
+        _doSwap(ctxV2, false, -100);
+
+        vm.roll(block.number + 1);
+        _burnAs(ctxV1, lp2, t2V1, -60, 60, 1e18);
+        _burnAs(ctxV2, lp2, t2V2, -60, 60, 1e18);
+
+        _assertStateEqual();
+    }
 }

@@ -12,7 +12,7 @@ import {PositionManager} from "@uniswap/v4-periphery/src/PositionManager.sol";
 import {PositionDescriptor} from "@uniswap/v4-periphery/src/PositionDescriptor.sol";
 
 import {FeeConcentrationIndexHarness} from "../harness/FeeConcentrationIndexHarness.sol";
-import {INDEX_ONE} from "typed-uniswap-v4/fee-concentration-index/types/FeeConcentrationStateMod.sol";
+import {INDEX_ONE} from "typed-uniswap-v4/types/FeeConcentrationStateMod.sol";
 import {FCITestHelper} from "../helpers/FCITestHelper.sol";
 
 // US3 integration tests: full add → swap → remove → index lifecycle.

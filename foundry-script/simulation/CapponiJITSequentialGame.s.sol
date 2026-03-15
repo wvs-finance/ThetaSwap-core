@@ -78,7 +78,7 @@ contract CapponiJITSequentialGameScript is Script, StdCheats {
         _approveAll(acc, tokenA, tokenB, d.positionManager, d.swapRouter);
 
         // ── 5. Run game ──
-        JitGameResult memory result = runJitGame(ctx, scenario, cfg, acc);
+        JitGameResult memory result = runJitGame(ctx, scenario, cfg, acc, address(ctx.v4Pool.hooks));
 
         // ── 6. Emit results ──
         console.log("=== Capponi JIT Sequential Game Results ===");

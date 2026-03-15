@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {SqrtPriceLibrary} from "foundational-hooks/src/libraries/SqrtPriceLibrary.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
-import {Q128} from "typed-uniswap-v4/fee-concentration-index/types/FeeConcentrationStateMod.sol";
+import {Q128} from "typed-uniswap-v4/types/FeeConcentrationStateMod.sol";
 import {
     deltaPlusToSqrtPriceX96,
     applyDecay,

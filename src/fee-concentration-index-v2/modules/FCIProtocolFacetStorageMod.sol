@@ -1,38 +1,38 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {FeeConcentrationIndexStorage} from "@fee-concentration-index/modules/FeeConcentrationIndexStorageMod.sol";
+import {FeeConcentrationIndexV2Storage} from "@fee-concentration-index-v2/modules/FeeConcentrationIndexStorageV2Mod.sol";
 import {FeeConcentrationEpochStorage} from "@fee-concentration-index/modules/FeeConcentrationEpochStorageMod.sol";
 
 // ── Per-protocol FCI storage slot derivation ──
 
-function protocolFciStorage(bytes1 flag) pure returns (FeeConcentrationIndexStorage storage $) {
+function protocolFciStorage(bytes2 flag) pure returns (FeeConcentrationIndexV2Storage storage $) {
     bytes32 position = keccak256(abi.encode("thetaSwap.fci", flag));
     assembly ("memory-safe") { $.slot := position }
 }
 
-function protocolEpochFciStorage(bytes1 flag) pure returns (FeeConcentrationEpochStorage storage $) {
+function protocolEpochFciStorage(bytes2 flag) pure returns (FeeConcentrationEpochStorage storage $) {
     bytes32 position = keccak256(abi.encode("thetaSwap.fci.epoch", flag));
     assembly ("memory-safe") { $.slot := position }
 }
 
 // ── Transient storage helpers (per-protocol isolated) ──
 
-function transientBase(bytes1 flag) pure returns (bytes32) {
+function transientBase(bytes2 flag) pure returns (bytes32) {
     return keccak256(abi.encode("thetaSwap.fci.transient", flag));
 }
 
-function tstoreTick(bytes1 flag, int24 tick) {
+function tstoreTick(bytes2 flag, int24 tick) {
     bytes32 slot = transientBase(flag);
     assembly { tstore(slot, tick) }
 }
 
-function tloadTick(bytes1 flag) returns (int24 tick) {
+function tloadTick(bytes2 flag) returns (int24 tick) {
     bytes32 slot = transientBase(flag);
     assembly { tick := tload(slot) }
 }
 
-function tstoreRemovalData(bytes1 flag, uint256 feeLast, uint128 posLiquidity, uint256 rangeFeeGrowth) {
+function tstoreRemovalData(bytes2 flag, uint256 feeLast, uint128 posLiquidity, uint256 rangeFeeGrowth) {
     bytes32 base = transientBase(flag);
     bytes32 feeSlot = bytes32(uint256(base) + 1);
     bytes32 liqSlot = bytes32(uint256(base) + 2);
@@ -44,7 +44,7 @@ function tstoreRemovalData(bytes1 flag, uint256 feeLast, uint128 posLiquidity, u
     }
 }
 
-function tloadRemovalData(bytes1 flag) returns (uint256 feeLast, uint128 posLiquidity, uint256 rangeFeeGrowth) {
+function tloadRemovalData(bytes2 flag) returns (uint256 feeLast, uint128 posLiquidity, uint256 rangeFeeGrowth) {
     bytes32 base = transientBase(flag);
     bytes32 feeSlot = bytes32(uint256(base) + 1);
     bytes32 liqSlot = bytes32(uint256(base) + 2);

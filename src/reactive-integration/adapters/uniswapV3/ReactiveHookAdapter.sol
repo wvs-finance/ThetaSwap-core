@@ -11,10 +11,10 @@ import {
     registerPosition,
     incrementOverlappingRanges
 } from "../../../fee-concentration-index/modules/FeeConcentrationIndexStorageMod.sol";
-import {TickRange, fromTicks} from "typed-uniswap-v4/fee-concentration-index/types/TickRangeMod.sol";
-import {FeeShareRatio, fromFeeGrowth} from "typed-uniswap-v4/fee-concentration-index/types/FeeShareRatioMod.sol";
-import {SwapCount} from "typed-uniswap-v4/fee-concentration-index/types/SwapCountMod.sol";
-import {BlockCount} from "typed-uniswap-v4/fee-concentration-index/types/BlockCountMod.sol";
+import {TickRange, fromTicks} from "typed-uniswap-v4/types/TickRangeMod.sol";
+import {FeeShareRatio, fromFeeGrowth} from "typed-uniswap-v4/types/FeeShareRatioMod.sol";
+import {SwapCount} from "typed-uniswap-v4/types/SwapCountMod.sol";
+import {BlockCount} from "typed-uniswap-v4/types/BlockCountMod.sol";
 import {v3PositionKey} from "reactive-hooks/types/CollectedFeesMod.sol";
 import {fromV3Pool} from "reactive-hooks/libraries/PoolKeyExtMod.sol";
 

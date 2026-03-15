@@ -3,7 +3,7 @@ pragma solidity ^0.8.26;
 
 import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
-import {JitAccounts, JitGameConfig, JitGameResult, initJitAccounts, validateJitConfig, computeDeltaPlus} from
+import {JitAccounts, JitGameConfig, JitGameResult, initJitAccounts, validateJitConfig} from
     "@foundry-script/simulation/JitGame.sol";
 import {Protocol} from "@foundry-script/types/Protocol.sol";
 
@@ -110,51 +110,5 @@ contract JitGameConfigTest is Test {
             tradeSize: 1e18, zeroForOne: true, protocol: Protocol.UniswapV4
         });
         validateJitConfig(cfg);
-    }
-}
-
-contract ComputeDeltaPlusTest is Test {
-    /// All equal payouts → HHI = 1/N → delta-plus = 0
-    function test_computeDeltaPlus_equilibrium() public pure {
-        uint256[] memory payouts = new uint256[](4);
-        payouts[0] = 100;
-        payouts[1] = 100;
-        payouts[2] = 100;
-        payouts[3] = 100;
-        uint128 dp = computeDeltaPlus(payouts, 4);
-        assertEq(dp, 0, "equal payouts should give delta-plus = 0");
-    }
-
-    /// One LP gets everything → HHI = 1 → delta-plus = 1 - 1/N
-    function test_computeDeltaPlus_monopoly() public pure {
-        uint256[] memory payouts = new uint256[](4);
-        payouts[0] = 1000;
-        payouts[1] = 0;
-        payouts[2] = 0;
-        payouts[3] = 0;
-        uint128 dp = computeDeltaPlus(payouts, 4);
-        // delta-plus = 1 - 0.25 = 0.75 in Q128
-        uint128 expected = uint128((75e16 << 128) / 1e18);
-        // Allow 1 unit rounding
-        assertApproxEqAbs(dp, expected, 1, "monopoly should give delta-plus ~ 0.75");
-    }
-
-    /// Zero total payout → delta-plus = 0
-    function test_computeDeltaPlus_zero_total() public pure {
-        uint256[] memory payouts = new uint256[](3);
-        uint128 dp = computeDeltaPlus(payouts, 3);
-        assertEq(dp, 0, "zero fees should give delta-plus = 0");
-    }
-
-    /// Two LPs, 1:2 split → HHI = (1/3)^2 + (2/3)^2 = 5/9
-    /// delta-plus = 5/9 - 1/2 = 1/18 ≈ 0.0556
-    function test_computeDeltaPlus_mild_concentration() public pure {
-        uint256[] memory payouts = new uint256[](2);
-        payouts[0] = 1e18;
-        payouts[1] = 2e18;
-        uint128 dp = computeDeltaPlus(payouts, 2);
-        // 1/18 in Q128
-        uint128 expected = uint128((uint256(1e18) / 18 << 128) / 1e18);
-        assertApproxEqAbs(dp, expected, 1e30, "1:2 split should give delta-plus ~ 0.0556");
     }
 }

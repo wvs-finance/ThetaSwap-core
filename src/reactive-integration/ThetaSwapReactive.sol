@@ -78,7 +78,7 @@ contract ThetaSwapReactive {
         processLog(log, address(this), adapter);
     }
 
-    // ── RN instance: pool management ──
+    // ── Rn instance: pool management ──
 
     function registerPool(uint256 chainId_, address pool) external {
         if (msg.sender != owner) revert OnlyOwner();

@@ -3,8 +3,8 @@ pragma solidity ^0.8.26;
 
 import "forge-std/Test.sol";
 import {PoolId} from "v4-core/src/types/PoolId.sol";
-import {FeeConcentrationState} from "typed-uniswap-v4/fee-concentration-index/types/FeeConcentrationStateMod.sol";
-import {BlockCount} from "typed-uniswap-v4/fee-concentration-index/types/BlockCountMod.sol";
+import {FeeConcentrationState} from "typed-uniswap-v4/types/FeeConcentrationStateMod.sol";
+import {BlockCount} from "typed-uniswap-v4/types/BlockCountMod.sol";
 import {
     FeeConcentrationEpochStorage,
     epochFciStorage,

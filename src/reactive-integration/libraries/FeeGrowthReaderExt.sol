@@ -8,7 +8,7 @@ import {
     getCurrentTick,
     getPositionFeeGrowthInsideLast0,
     getFeeGrowthInside0
-} from "typed-uniswap-v4/fee-concentration-index/types/FeeGrowthReaderMod.sol";
+} from "typed-uniswap-v4/types/FeeGrowthReaderMod.sol";
 
 function getCurrentTick(
     bytes calldata hookData,

@@ -15,7 +15,7 @@ import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionMa
 
 import {FeeConcentrationIndexHarness} from "../harness/FeeConcentrationIndexHarness.sol";
 import {MockPositionManager} from "../harness/MockPositionManager.sol";
-import {TickRange, fromTicks} from "typed-uniswap-v4/fee-concentration-index/types/TickRangeMod.sol";
+import {TickRange, fromTicks} from "typed-uniswap-v4/types/TickRangeMod.sol";
 
 contract AfterRemoveLiquidityTest is Test, Deployers {
     FeeConcentrationIndexHarness harness;

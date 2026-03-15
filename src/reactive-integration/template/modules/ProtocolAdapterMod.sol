@@ -4,9 +4,9 @@ pragma solidity ^0.8.26;
 import {PoolId} from "v4-core/src/types/PoolId.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
-import {TickRange} from "typed-uniswap-v4/fee-concentration-index/types/TickRangeMod.sol";
-import {SwapCount} from "typed-uniswap-v4/fee-concentration-index/types/SwapCountMod.sol";
-import {BlockCount} from "typed-uniswap-v4/fee-concentration-index/types/BlockCountMod.sol";
+import {TickRange} from "typed-uniswap-v4/types/TickRangeMod.sol";
+import {SwapCount} from "typed-uniswap-v4/types/SwapCountMod.sol";
+import {BlockCount} from "typed-uniswap-v4/types/BlockCountMod.sol";
 import {
     FeeConcentrationIndexStorage,
     registerPosition as _registerPosition,

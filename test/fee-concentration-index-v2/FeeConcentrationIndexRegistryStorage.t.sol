@@ -24,15 +24,15 @@ contract FeeConcentrationIndexRegistryStorageTest is Test {
     function test_write_and_read_facet() public {
         FeeConcentrationIndexRegistryStorage storage $ = fciRegistryStorage();
         address facet = address(0xBEEF);
-        $.protocolFacets[bytes1(0x03)] = facet;
-        assertEq($.protocolFacets[bytes1(0x03)], facet);
+        $.protocolFacets[bytes2(uint16(0x03))] = facet;
+        assertEq($.protocolFacets[bytes2(uint16(0x03))], facet);
     }
 
     function test_different_flags_isolated() public {
         FeeConcentrationIndexRegistryStorage storage $ = fciRegistryStorage();
-        $.protocolFacets[bytes1(0x01)] = address(0xAAAA);
-        $.protocolFacets[bytes1(0x03)] = address(0xBBBB);
-        assertEq($.protocolFacets[bytes1(0x01)], address(0xAAAA));
-        assertEq($.protocolFacets[bytes1(0x03)], address(0xBBBB));
+        $.protocolFacets[bytes2(uint16(0x01))] = address(0xAAAA);
+        $.protocolFacets[bytes2(uint16(0x03))] = address(0xBBBB);
+        assertEq($.protocolFacets[bytes2(uint16(0x01))], address(0xAAAA));
+        assertEq($.protocolFacets[bytes2(uint16(0x03))], address(0xBBBB));
     }
 }

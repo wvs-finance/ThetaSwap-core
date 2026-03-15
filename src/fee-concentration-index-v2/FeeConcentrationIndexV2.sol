@@ -2,56 +2,44 @@
 pragma solidity ^0.8.26;
 
 import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
-import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {BalanceDelta} from "v4-core/src/types/BalanceDelta.sol";
 import {BeforeSwapDelta, BeforeSwapDeltaLibrary} from "v4-core/src/types/BeforeSwapDelta.sol";
 import {SwapParams, ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
-import {TickRange, fromTicks} from "typed-uniswap-v4/fee-concentration-index/types/TickRangeMod.sol";
-import {derivePoolAndPosition, sortTicks} from "@libraries/HookUtilsMod.sol";
-import {
-    FeeConcentrationIndexStorage, fciStorage, reactiveFciStorage, _poolManager,
-    registerPosition, setFeeGrowthBaseline, getFeeGrowthBaseline, deleteFeeGrowthBaseline,
-    deregisterPosition, addStateTerm, incrementPosCount, decrementPosCount,
-    incrementOverlappingRanges
-} from "@fee-concentration-index/modules/FeeConcentrationIndexStorageMod.sol";
-import {
-    writeCacheTick, readCacheTick,
-    writeCacheRemovalData, readCacheRemovalData
-} from "@reactive-integration/libraries/FeeConcentrationIndexStorageExt.sol";
-import {
-    getCurrentTick,
-    getPositionFeeGrowthInsideLast0,
-    getFeeGrowthInside0
-} from "@reactive-integration/libraries/FeeGrowthReaderExt.sol";
-import {FeeShareRatio, fromFeeGrowthDelta} from "typed-uniswap-v4/fee-concentration-index/types/FeeShareRatioMod.sol";
-import {FeeConcentrationState} from "typed-uniswap-v4/fee-concentration-index/types/FeeConcentrationStateMod.sol";
-import {SwapCount} from "typed-uniswap-v4/fee-concentration-index/types/SwapCountMod.sol";
-import {BlockCount} from "typed-uniswap-v4/fee-concentration-index/types/BlockCountMod.sol";
+import {TickRange, fromTicksPacked} from "typed-uniswap-v4/types/TickRangeMod.sol";
+import {SwapCount} from "typed-uniswap-v4/types/SwapCountMod.sol";
+import {BlockCount} from "typed-uniswap-v4/types/BlockCountMod.sol";
+import {FeeShareRatio, fromFeeGrowthDelta} from "typed-uniswap-v4/types/FeeShareRatioMod.sol";
 import {IFeeConcentrationIndex} from "@fee-concentration-index/interfaces/IFeeConcentrationIndex.sol";
 import {IERC165} from "forge-std/interfaces/IERC165.sol";
+import {FeeConcentrationEpochStorage} from "@fee-concentration-index/modules/FeeConcentrationEpochStorageMod.sol";
 import {
-    FeeConcentrationEpochStorage, epochFciStorage,
-    addEpochTerm, epochDeltaPlus, initializeEpoch
-} from "@fee-concentration-index/modules/FeeConcentrationEpochStorageMod.sol";
-import {
-    fciRegistryStorage, getProtocolFacet, setProtocolFacet
+    fciRegistryStorage, getProtocolFacet, setProtocolFacet, getProtocolFlagFromHookData
 } from "@fee-concentration-index-v2/modules/FeeConcentrationIndexRegistryStorageMod.sol";
-import {IFCIProtocolFacet} from "@protocol-adapter/interfaces/IFCIProtocolFacet.sol";
+import {
+    setFci as _setFci, setProtocolStateView as _setProtocolStateView
+} from "@fee-concentration-index-v2/modules/FCIFacetAdminStorageMod.sol";
+import {IProtocolStateView} from "@protocol-adapter/interfaces/IProtocolStateView.sol";
+import {IFCIProtocolFacet} from "@fee-concentration-index-v2/interfaces/IFCIProtocolFacet.sol";
+import {
+    FeeConcentrationIndexV2Storage, fciV2Storage
+} from "@fee-concentration-index-v2/modules/FeeConcentrationIndexStorageV2Mod.sol";
 import {
     protocolFciStorage, protocolEpochFciStorage
-} from "@protocol-adapter/modules/FCIProtocolFacetStorageMod.sol";
+} from "@fee-concentration-index-v2/modules/FCIProtocolFacetStorageMod.sol";
+import {sortTicks} from "@libraries/HookUtilsMod.sol";
+import {LibCall} from "solady/utils/LibCall.sol";
+import {requireOwner, initOwner} from "@fee-concentration-index-v2/modules/dependencies/LibOwner.sol";
+import {LiquidityPositionSnapshot} from "@fee-concentration-index-v2/types/LiquidityPositionSnapshot.sol";
+import {PositionConfig} from "@uniswap/v4-periphery/src/libraries/PositionConfig.sol";
 
-// Fee Concentration Index V2 — Protocol-agnostic dispatcher.
-// V4 fast path: empty hookData → inlined logic (identical to V1).
-// Non-V4: hookData[0] flag byte → delegatecall to registered protocol facet.
+// Fee Concentration Index V2 — Protocol-agnostic orchestrator.
+// Hook flow (algorithm) lives here. Protocol-specific behavior is delegatecalled
+// per function to the registered facet via IFCIProtocolFacet.
+// NATIVE_V4 (0xFFFF) is a registered facet like any other protocol.
 
 contract FeeConcentrationIndexV2 {
-
-    constructor(address poolManager_) {
-        fciStorage().poolManager = IPoolManager(poolManager_);
-    }
 
     // ── afterAddLiquidity ──
 
@@ -63,28 +51,49 @@ contract FeeConcentrationIndexV2 {
         BalanceDelta,
         bytes calldata hookData
     ) external virtual returns (bytes4, BalanceDelta) {
-        // ── Protocol dispatch ──
-        if (hookData.length > 0) {
-            bytes1 flags = hookData[0];
-            address facet = address(getProtocolFacet(flags));
-            require(facet != address(0), "FCI: unknown protocol");
-            (bool ok, bytes memory ret) = facet.delegatecall(msg.data);
-            require(ok, "FCI: facet delegatecall failed");
-            return abi.decode(ret, (bytes4, BalanceDelta));
-        }
+        bytes2 protocolFlags = getProtocolFlagFromHookData(hookData);
+        address facet = address(getProtocolFacet(protocolFlags));
+        PoolId poolId = PoolIdLibrary.toId(key);
 
-        // ── V4 fast path (unchanged from V1) ──
-        (PoolId poolId, bytes32 positionKey) = derivePoolAndPosition(sender, key, params, hookData);
-        TickRange rk = fromTicks(params.tickLower, params.tickUpper);
-        (uint128 posLiquidity,) = getPositionFeeGrowthInsideLast0(hookData, _poolManager(), poolId, positionKey);
-        registerPosition(poolId, rk, positionKey, params.tickLower, params.tickUpper, posLiquidity);
-
-        int24 currentTick = getCurrentTick(hookData, _poolManager(), poolId);
-        uint256 feeGrowthInside0X128 = getFeeGrowthInside0(
-            hookData, _poolManager(), poolId, currentTick, params.tickLower, params.tickUpper
+        // 1. positionKey
+        bytes32 posKey = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.positionKey, (hookData, sender, params))),
+            (bytes32)
         );
-        setFeeGrowthBaseline(poolId, positionKey, feeGrowthInside0X128);
-        incrementPosCount(poolId);
+
+        // 2. latestPositionFeeGrowthInside
+        (uint128 posLiquidity,) = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.latestPositionFeeGrowthInside, (hookData, poolId, posKey))),
+            (uint128, uint256)
+        );
+
+        // 3. addPositionInRange
+        TickRange rk = fromTicksPacked(params.tickLower, params.tickUpper);
+        LiquidityPositionSnapshot memory snapshot = LiquidityPositionSnapshot({
+            config: PositionConfig({poolKey: key, tickLower: params.tickLower, tickUpper: params.tickUpper}),
+            liquidity: posLiquidity,
+            feeGrowthInside0LastX128: 0,
+            feeGrowthInside1LastX128: 0
+        });
+        LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.addPositionInRange, (hookData, posKey, snapshot)));
+
+        // 4. currentTick
+        int24 tick = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.currentTick, (hookData, poolId))),
+            (int24)
+        );
+
+        // 5. poolRangeFeeGrowthInside
+        uint256 feeGrowthInside0X128 = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.poolRangeFeeGrowthInside, (hookData, poolId, tick, rk))),
+            (uint256)
+        );
+
+        // 6. setFeeGrowthBaseline
+        LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.setFeeGrowthBaseline, (hookData, poolId, posKey, feeGrowthInside0X128)));
+
+        // 7. incrementPosCount
+        LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.incrementPosCount, (hookData, poolId)));
 
         return (IHooks.afterAddLiquidity.selector, BalanceDelta.wrap(0));
     }
@@ -97,20 +106,18 @@ contract FeeConcentrationIndexV2 {
         SwapParams calldata,
         bytes calldata hookData
     ) external virtual returns (bytes4, BeforeSwapDelta, uint24) {
-        // ── Protocol dispatch ──
-        if (hookData.length > 0) {
-            bytes1 flags = hookData[0];
-            address facet = address(getProtocolFacet(flags));
-            require(facet != address(0), "FCI: unknown protocol");
-            (bool ok, bytes memory ret) = facet.delegatecall(msg.data);
-            require(ok, "FCI: facet delegatecall failed");
-            return abi.decode(ret, (bytes4, BeforeSwapDelta, uint24));
-        }
-
-        // ── V4 fast path ──
+        bytes2 protocolFlags = getProtocolFlagFromHookData(hookData);
+        address facet = address(getProtocolFacet(protocolFlags));
         PoolId poolId = PoolIdLibrary.toId(key);
-        int24 tick = getCurrentTick(hookData, _poolManager(), poolId);
-        writeCacheTick(hookData, tick);
+
+        // 1. currentTick
+        int24 tick = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.currentTick, (hookData, poolId))),
+            (int24)
+        );
+
+        // 2. tstoreTick
+        LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.tstoreTick, (hookData, tick)));
 
         return (IHooks.beforeSwap.selector, BeforeSwapDeltaLibrary.ZERO_DELTA, 0);
     }
@@ -124,22 +131,25 @@ contract FeeConcentrationIndexV2 {
         BalanceDelta,
         bytes calldata hookData
     ) external virtual returns (bytes4, int128) {
-        // ── Protocol dispatch ──
-        if (hookData.length > 0) {
-            bytes1 flags = hookData[0];
-            address facet = address(getProtocolFacet(flags));
-            require(facet != address(0), "FCI: unknown protocol");
-            (bool ok, bytes memory ret) = facet.delegatecall(msg.data);
-            require(ok, "FCI: facet delegatecall failed");
-            return abi.decode(ret, (bytes4, int128));
-        }
-
-        // ── V4 fast path ──
+        bytes2 protocolFlags = getProtocolFlagFromHookData(hookData);
+        address facet = address(getProtocolFacet(protocolFlags));
         PoolId poolId = PoolIdLibrary.toId(key);
-        int24 tickBefore = readCacheTick(hookData);
-        int24 tickAfter = getCurrentTick(hookData, _poolManager(), poolId);
+
+        // 1. tloadTick (tickBefore)
+        int24 tickBefore = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.tloadTick, (hookData))),
+            (int24)
+        );
+
+        // 2. currentTick (tickAfter)
+        int24 tickAfter = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.currentTick, (hookData, poolId))),
+            (int24)
+        );
+
+        // 3. incrementOverlappingRanges
         (int24 tickMin, int24 tickMax) = sortTicks(tickBefore, tickAfter);
-        incrementOverlappingRanges(poolId, tickMin, tickMax);
+        LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.incrementOverlappingRanges, (hookData, poolId, tickMin, tickMax)));
 
         return (IHooks.afterSwap.selector, 0);
     }
@@ -152,26 +162,38 @@ contract FeeConcentrationIndexV2 {
         ModifyLiquidityParams calldata params,
         bytes calldata hookData
     ) external returns (bytes4) {
-        // ── Protocol dispatch ──
-        if (hookData.length > 0) {
-            bytes1 flags = hookData[0];
-            address facet = address(getProtocolFacet(flags));
-            require(facet != address(0), "FCI: unknown protocol");
-            (bool ok, bytes memory ret) = facet.delegatecall(msg.data);
-            require(ok, "FCI: facet delegatecall failed");
-            return abi.decode(ret, (bytes4));
-        }
+        bytes2 protocolFlags = getProtocolFlagFromHookData(hookData);
+        address facet = address(getProtocolFacet(protocolFlags));
+        PoolId poolId = PoolIdLibrary.toId(key);
 
-        // ── V4 fast path (uses 3-arg overload — no hookData for position key) ──
-        (PoolId poolId, bytes32 positionKey) = derivePoolAndPosition(sender, key, params);
-        (uint128 posLiquidity, uint256 feeLast0) = getPositionFeeGrowthInsideLast0(hookData, _poolManager(), poolId, positionKey);
-
-        int24 currentTick = getCurrentTick(hookData, _poolManager(), poolId);
-        uint256 rangeFeeGrowth0 = getFeeGrowthInside0(
-            hookData, _poolManager(), poolId, currentTick, params.tickLower, params.tickUpper
+        // 1. positionKey
+        bytes32 posKey = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.positionKey, (hookData, sender, params))),
+            (bytes32)
         );
 
-        writeCacheRemovalData(hookData, feeLast0, posLiquidity, rangeFeeGrowth0);
+        // 2. latestPositionFeeGrowthInside
+        (uint128 posLiquidity, uint256 feeLast0) = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.latestPositionFeeGrowthInside, (hookData, poolId, posKey))),
+            (uint128, uint256)
+        );
+
+        // 3. currentTick
+        int24 tick = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.currentTick, (hookData, poolId))),
+            (int24)
+        );
+
+        // 4. poolRangeFeeGrowthInside
+        TickRange rk = fromTicksPacked(params.tickLower, params.tickUpper);
+        uint256 rangeFeeGrowth0 = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.poolRangeFeeGrowthInside, (hookData, poolId, tick, rk))),
+            (uint256)
+        );
+
+        // 5. tstoreRemovalData
+        LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.tstoreRemovalData, (hookData, feeLast0, posLiquidity, rangeFeeGrowth0)));
+
         return IHooks.beforeRemoveLiquidity.selector;
     }
 
@@ -185,120 +207,127 @@ contract FeeConcentrationIndexV2 {
         BalanceDelta,
         bytes calldata hookData
     ) external virtual returns (bytes4, BalanceDelta) {
-        // ── Protocol dispatch ──
-        if (hookData.length > 0) {
-            bytes1 flags = hookData[0];
-            address facet = address(getProtocolFacet(flags));
-            require(facet != address(0), "FCI: unknown protocol");
-            (bool ok, bytes memory ret) = facet.delegatecall(msg.data);
-            require(ok, "FCI: facet delegatecall failed");
-            return abi.decode(ret, (bytes4, BalanceDelta));
-        }
+        bytes2 protocolFlags = getProtocolFlagFromHookData(hookData);
+        address facet = address(getProtocolFacet(protocolFlags));
+        PoolId poolId = PoolIdLibrary.toId(key);
 
-        // ── V4 fast path ──
-        (PoolId poolId, bytes32 positionKey) = derivePoolAndPosition(sender, key, params, hookData);
+        // 1. positionKey
+        bytes32 posKey = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.positionKey, (hookData, sender, params))),
+            (bytes32)
+        );
 
-        (uint256 positionFeeLast0X128, uint128 posLiq, uint256 rangeFeeGrowthNow0X128) = readCacheRemovalData(hookData);
+        // 2. tloadRemovalData
+        (uint256 positionFeeLast0X128, uint128 posLiq, uint256 rangeFeeGrowthNow0X128) = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.tloadRemovalData, (hookData))),
+            (uint256, uint128, uint256)
+        );
 
+        // Partial remove guard — skip FCI accumulation if not full exit
         uint128 removedLiq = uint128(uint256(-params.liquidityDelta));
         if (posLiq != removedLiq) {
             return (IHooks.afterRemoveLiquidity.selector, BalanceDelta.wrap(0));
         }
 
-        uint256 baseline0X128 = getFeeGrowthBaseline(poolId, positionKey);
-
-        (, SwapCount swapLifetime, BlockCount blockLifetime, uint128 totalRangeLiq) =
-            deregisterPosition(poolId, positionKey, posLiq);
-
-        FeeShareRatio xk = fromFeeGrowthDelta(
-            rangeFeeGrowthNow0X128, positionFeeLast0X128, baseline0X128,
-            posLiq, totalRangeLiq
+        // 3. getFeeGrowthBaseline
+        uint256 baseline0X128 = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.getFeeGrowthBaseline, (hookData, poolId, posKey))),
+            (uint256)
         );
 
+        // 4. removePositionInRange
+        LiquidityPositionSnapshot memory snapshot = LiquidityPositionSnapshot({
+            config: PositionConfig({poolKey: key, tickLower: params.tickLower, tickUpper: params.tickUpper}),
+            liquidity: posLiq,
+            feeGrowthInside0LastX128: positionFeeLast0X128,
+            feeGrowthInside1LastX128: 0
+        });
+        (SwapCount swapLifetime, BlockCount blockLifetime, uint128 totalRangeLiq) = abi.decode(
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.removePositionInRange, (hookData, posKey, snapshot))),
+            (SwapCount, BlockCount, uint128)
+        );
+
+        // 5. FCI accumulation (xk computation is algorithm, lives in V2)
         if (!swapLifetime.isZero()) {
+            FeeShareRatio xk = fromFeeGrowthDelta(
+                rangeFeeGrowthNow0X128, positionFeeLast0X128, baseline0X128,
+                posLiq, totalRangeLiq
+            );
             uint256 xSquaredQ128 = xk.square();
-            addStateTerm(poolId, blockLifetime, xSquaredQ128);
-            addEpochTerm(poolId, blockLifetime, xSquaredQ128);
+
+            // 6. addStateTerm
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.addStateTerm, (hookData, poolId, blockLifetime, xSquaredQ128)));
+
+            // 7. addEpochTerm
+            LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.addEpochTerm, (hookData, poolId, blockLifetime, xSquaredQ128)));
         }
-        decrementPosCount(poolId);
-        deleteFeeGrowthBaseline(poolId, positionKey);
+
+        // 8. decrementPosCount
+        LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.decrementPosCount, (hookData, poolId)));
+
+        // 9. deleteFeeGrowthBaseline
+        LibCall.delegateCallContract(facet, abi.encodeCall(IFCIProtocolFacet.deleteFeeGrowthBaseline, (hookData, poolId, posKey)));
 
         return (IHooks.afterRemoveLiquidity.selector, BalanceDelta.wrap(0));
     }
 
-    // ── View (V4 — unchanged from V1) ──
+    // ── View (protocol-scoped via bytes2 flags) ──
 
-    function getIndex(PoolKey calldata key, bool reactive) external view returns (uint128 indexA, uint256 thetaSum, uint256 removedPosCount) {
-        FeeConcentrationIndexStorage storage $ = reactive ? reactiveFciStorage() : fciStorage();
+    function getIndex(PoolKey calldata key, bytes2 flags) external view returns (uint128 indexA, uint256 thetaSum, uint256 removedPosCount) {
+        FeeConcentrationIndexV2Storage storage $ = protocolFciStorage(flags);
         PoolId poolId = PoolIdLibrary.toId(key);
         indexA = $.fciState[poolId].toIndexA();
         thetaSum = $.fciState[poolId].thetaSum;
         removedPosCount = $.fciState[poolId].removedPosCount;
     }
 
-    function getDeltaPlus(PoolKey calldata key, bool reactive) external view returns (uint128 deltaPlus_) {
-        FeeConcentrationIndexStorage storage $ = reactive ? reactiveFciStorage() : fciStorage();
+    function getDeltaPlus(PoolKey calldata key, bytes2 flags) external view returns (uint128 deltaPlus_) {
+        FeeConcentrationIndexV2Storage storage $ = protocolFciStorage(flags);
         deltaPlus_ = $.fciState[PoolIdLibrary.toId(key)].deltaPlus();
     }
 
-    function getAtNull(PoolKey calldata key, bool reactive) external view returns (uint128 atNull_) {
-        FeeConcentrationIndexStorage storage $ = reactive ? reactiveFciStorage() : fciStorage();
+    function getAtNull(PoolKey calldata key, bytes2 flags) external view returns (uint128 atNull_) {
+        FeeConcentrationIndexV2Storage storage $ = protocolFciStorage(flags);
         atNull_ = $.fciState[PoolIdLibrary.toId(key)].atNull();
     }
 
-    function getThetaSum(PoolKey calldata key, bool reactive) external view returns (uint256 thetaSum_) {
-        FeeConcentrationIndexStorage storage $ = reactive ? reactiveFciStorage() : fciStorage();
+    function getThetaSum(PoolKey calldata key, bytes2 flags) external view returns (uint256 thetaSum_) {
+        FeeConcentrationIndexV2Storage storage $ = protocolFciStorage(flags);
         thetaSum_ = $.fciState[PoolIdLibrary.toId(key)].thetaSum;
     }
 
-    function getDeltaPlusEpoch(PoolKey calldata key, bool reactive) external view returns (uint128 deltaPlus_) {
-        deltaPlus_ = epochDeltaPlus(PoolIdLibrary.toId(key));
+    function getDeltaPlusEpoch(PoolKey calldata key, bytes2 flags) external view returns (uint128 deltaPlus_) {
+        FeeConcentrationEpochStorage storage $ = protocolEpochFciStorage(flags);
+        deltaPlus_ = $.epochStates[PoolIdLibrary.toId(key)][$.currentEpochId[PoolIdLibrary.toId(key)]].deltaPlus();
     }
 
-    // ── View (protocol-scoped — new V2 overloads) ──
+    // ── Initialization ──
 
-    function getIndex(PoolKey calldata key, bytes1 flags) external view returns (uint128 indexA, uint256 thetaSum, uint256 removedPosCount) {
-        FeeConcentrationIndexStorage storage $ = flags == 0x00 ? fciStorage() : protocolFciStorage(flags);
-        PoolId poolId = PoolIdLibrary.toId(key);
-        indexA = $.fciState[poolId].toIndexA();
-        thetaSum = $.fciState[poolId].thetaSum;
-        removedPosCount = $.fciState[poolId].removedPosCount;
+    function initialize(address _owner) external {
+        initOwner(_owner);
     }
 
-    function getDeltaPlus(PoolKey calldata key, bytes1 flags) external view returns (uint128 deltaPlus_) {
-        FeeConcentrationIndexStorage storage $ = flags == 0x00 ? fciStorage() : protocolFciStorage(flags);
-        deltaPlus_ = $.fciState[PoolIdLibrary.toId(key)].deltaPlus();
+    // ── Facet admin storage (writes to V2's storage context for delegatecall reads) ──
+
+    function setFacetFci(bytes2 flags, IFeeConcentrationIndex fci) external {
+        requireOwner();
+        _setFci(flags, fci);
     }
 
-    function getAtNull(PoolKey calldata key, bytes1 flags) external view returns (uint128 atNull_) {
-        FeeConcentrationIndexStorage storage $ = flags == 0x00 ? fciStorage() : protocolFciStorage(flags);
-        atNull_ = $.fciState[PoolIdLibrary.toId(key)].atNull();
-    }
-
-    function getThetaSum(PoolKey calldata key, bytes1 flags) external view returns (uint256 thetaSum_) {
-        FeeConcentrationIndexStorage storage $ = flags == 0x00 ? fciStorage() : protocolFciStorage(flags);
-        thetaSum_ = $.fciState[PoolIdLibrary.toId(key)].thetaSum;
-    }
-
-    function getDeltaPlusEpoch(PoolKey calldata key, bytes1 flags) external view returns (uint128 deltaPlus_) {
-        FeeConcentrationEpochStorage storage $ = flags == 0x00 ? epochFciStorage() : protocolEpochFciStorage(flags);
-        deltaPlus_ = epochDeltaPlus($, PoolIdLibrary.toId(key));
+    function setFacetProtocolStateView(bytes2 flags, IProtocolStateView stateView) external {
+        requireOwner();
+        _setProtocolStateView(flags, stateView);
     }
 
     // ── Registration ──
 
-    function registerProtocolFacet(bytes1 flags, IFCIProtocolFacet facet) external {
+    function registerProtocolFacet(bytes2 flags, IFCIProtocolFacet facet) external {
+        requireOwner();
         setProtocolFacet(flags, facet);
     }
 
-    function getRegisteredProtocolFacet(bytes1 flags) external view returns (IFCIProtocolFacet) {
+    function getRegisteredProtocolFacet(bytes2 flags) external view returns (IFCIProtocolFacet) {
         return getProtocolFacet(flags);
-    }
-
-    // ── Epoch initialization ──
-
-    function initializeEpochPool(PoolKey calldata key, uint256 epochLengthSeconds) external {
-        initializeEpoch(PoolIdLibrary.toId(key), epochLengthSeconds);
     }
 
     // ── IERC165 ──

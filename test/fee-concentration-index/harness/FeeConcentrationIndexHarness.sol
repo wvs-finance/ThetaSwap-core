@@ -7,9 +7,9 @@ import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionMa
 
 import {FeeConcentrationIndex} from "@fee-concentration-index/FeeConcentrationIndex.sol";
 import {FeeConcentrationIndexStorage, fciStorage} from "@fee-concentration-index/modules/FeeConcentrationIndexStorageMod.sol";
-import {TickRange, fromTicks} from "typed-uniswap-v4/fee-concentration-index/types/TickRangeMod.sol";
-import {SwapCount} from "typed-uniswap-v4/fee-concentration-index/types/SwapCountMod.sol";
-import {FeeConcentrationState} from "typed-uniswap-v4/fee-concentration-index/types/FeeConcentrationStateMod.sol";
+import {TickRange, fromTicks} from "typed-uniswap-v4/types/TickRangeMod.sol";
+import {SwapCount} from "typed-uniswap-v4/types/SwapCountMod.sol";
+import {FeeConcentrationState} from "typed-uniswap-v4/types/FeeConcentrationStateMod.sol";
 
 // Test harness: inherits FeeConcentrationIndex to expose storage views.
 // Hook functions are already external on FeeConcentrationIndex — no exposed_* wrappers needed.

@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
 import {SqrtPriceLibrary} from "foundational-hooks/src/libraries/SqrtPriceLibrary.sol";
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
-import {Q128} from "typed-uniswap-v4/fee-concentration-index/types/FeeConcentrationStateMod.sol";
+import {Q128} from "typed-uniswap-v4/types/FeeConcentrationStateMod.sol";
 
 /// @dev Convert FCI delta-plus (Q128-scaled) to sqrtPriceX96.
 /// Maps δ⁺ ∈ [0, Q128) → sqrtPriceX96 ∈ [MIN_SQRT_PRICE, MAX_SQRT_PRICE].

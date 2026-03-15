@@ -3,11 +3,11 @@ pragma solidity ^0.8.26;
 
 import {PoolId} from "v4-core/src/types/PoolId.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
-import {FeeConcentrationState} from "typed-uniswap-v4/fee-concentration-index/types/FeeConcentrationStateMod.sol";
-import {TickRangeRegistry} from "typed-uniswap-v4/fee-concentration-index/types/TickRangeRegistryMod.sol";
-import {TickRange, intersects} from "typed-uniswap-v4/fee-concentration-index/types/TickRangeMod.sol";
-import {SwapCount} from "typed-uniswap-v4/fee-concentration-index/types/SwapCountMod.sol";
-import {BlockCount} from "typed-uniswap-v4/fee-concentration-index/types/BlockCountMod.sol";
+import {FeeConcentrationState} from "typed-uniswap-v4/types/FeeConcentrationStateMod.sol";
+import {TickRangeRegistry} from "typed-uniswap-v4/types/TickRangeRegistryMod.sol";
+import {TickRange, intersects} from "typed-uniswap-v4/types/TickRangeMod.sol";
+import {SwapCount} from "typed-uniswap-v4/types/SwapCountMod.sol";
+import {BlockCount} from "typed-uniswap-v4/types/BlockCountMod.sol";
 
 // Diamond storage for Fee Concentration Index HookFacet.
 // Runs via delegatecall in MasterHook's storage context.

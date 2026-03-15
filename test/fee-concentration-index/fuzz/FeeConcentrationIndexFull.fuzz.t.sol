@@ -13,7 +13,7 @@ import {PositionManager} from "@uniswap/v4-periphery/src/PositionManager.sol";
 import {PositionDescriptor} from "@uniswap/v4-periphery/src/PositionDescriptor.sol";
 
 import {FeeConcentrationIndexHarness} from "../harness/FeeConcentrationIndexHarness.sol";
-import {INDEX_ONE} from "typed-uniswap-v4/fee-concentration-index/types/FeeConcentrationStateMod.sol";
+import {INDEX_ONE} from "typed-uniswap-v4/types/FeeConcentrationStateMod.sol";
 import {FixedPointMathLib} from "solady/utils/FixedPointMathLib.sol";
 import {FCITestHelper} from "../helpers/FCITestHelper.sol";
 

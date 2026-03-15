@@ -20,7 +20,7 @@ import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionMa
 import {PoolSwapTest} from "v4-core/src/test/PoolSwapTest.sol";
 import {Actions} from "@uniswap/v4-periphery/src/libraries/Actions.sol";
 import {Planner, Plan} from "@uniswap/v4-periphery/test/shared/Planner.sol";
-import {INDEX_ONE} from "typed-uniswap-v4/fee-concentration-index/types/FeeConcentrationStateMod.sol";
+import {INDEX_ONE} from "typed-uniswap-v4/types/FeeConcentrationStateMod.sol";
 import {V3CallbackRouter} from
     "@reactive-integration/adapters/uniswapV3/V3CallbackRouter.sol";
 import {Protocol, isUniswapV3, isUniswapV4} from "@foundry-script/types/Protocol.sol";
