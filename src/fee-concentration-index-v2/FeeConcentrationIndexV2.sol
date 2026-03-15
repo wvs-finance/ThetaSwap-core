@@ -15,7 +15,7 @@ import {IFeeConcentrationIndex} from "@fee-concentration-index/interfaces/IFeeCo
 import {IERC165} from "forge-std/interfaces/IERC165.sol";
 import {FeeConcentrationEpochStorage} from "@fee-concentration-index/modules/FeeConcentrationEpochStorageMod.sol";
 import {
-    fciRegistryStorage, getProtocolFacet, setProtocolFacet
+    fciRegistryStorage, getProtocolFacet, setProtocolFacet, getProtocolFlagFromHookData
 } from "@fee-concentration-index-v2/modules/FeeConcentrationIndexRegistryStorageMod.sol";
 import {IFCIProtocolFacet} from "@fee-concentration-index-v2/interfaces/IFCIProtocolFacet.sol";
 import {
@@ -24,7 +24,6 @@ import {
 import {
     protocolFciStorage, protocolEpochFciStorage
 } from "@fee-concentration-index-v2/modules/FCIProtocolFacetStorageMod.sol";
-import {getProtocolFlagFromHookData} from "@fee-concentration-index-v2/libraries/FCIProtocolLib.sol";
 import {sortTicks} from "@libraries/HookUtilsMod.sol";
 import {LibCall} from "solady/utils/LibCall.sol";
 import {LiquidityPositionSnapshot} from "@fee-concentration-index-v2/types/LiquidityPositionSnapshot.sol";

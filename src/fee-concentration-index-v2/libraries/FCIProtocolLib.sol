@@ -5,18 +5,6 @@ import {PoolId} from "v4-core/src/types/PoolId.sol";
 import {ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
 import {TickRange} from "typed-uniswap-v4/types/TickRangeMod.sol";
 import {IProtocolStateView} from "@protocol-adapter/interfaces/IProtocolStateView.sol";
-import {CalldataReader, CalldataReaderLib} from "angstrom/src/types/CalldataReader.sol";
-import {NATIVE_V4} from "@fee-concentration-index-v2/types/FlagsRegistry.sol";
-
-/// @dev Reads the protocol flag from hookData. The flag occupies the first 2 bytes
-/// at a deterministic position. Empty hookData returns NATIVE_V4 (0xFFFF).
-function getProtocolFlagFromHookData(bytes calldata hookData) pure returns (bytes2 flag) {
-    if (hookData.length == 0) return NATIVE_V4;
-    CalldataReader reader = CalldataReaderLib.from(hookData);
-    uint16 raw;
-    (reader, raw) = reader.readU16();
-    flag = bytes2(raw);
-}
 
 /// @dev Derives a position key from hookData, sender, and liquidity params.
 /// Each protocol MUST implement this function with its own position key logic.
