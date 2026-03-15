@@ -17,7 +17,7 @@ import {
     fciFacetAdminStorage, addPool, setProtocolStateView as _setProtocolStateView
 } from "@fee-concentration-index-v2/modules/FCIFacetAdminStorageMod.sol";
 import {IProtocolStateView} from "@protocol-adapter/interfaces/IProtocolStateView.sol";
-import {fromPoolRptToPoolKey} from "@fee-concentration-index-v2/libraries/PoolKeyExtLib.sol";
+import {fromUniswapV4PoolKeyToPoolKey} from "./libraries/UniswapV4PoolKeyLib.sol";
 import {
     FeeConcentrationIndexV2Storage
 } from "@fee-concentration-index-v2/modules/FeeConcentrationIndexStorageV2Mod.sol";
@@ -54,11 +54,19 @@ contract NativeUniswapV4Facet {
     event PoolAdded(address indexed facet, address indexed callback, PoolId indexed poolId, bytes2 protocolFlag);
 
     /// @notice Register and initialize a V4 pool for FCI tracking.
-    /// @dev poolRpt encodes the PoolManager.initialize calldata (PoolKey + sqrtPriceX96).
-    /// fromPoolRptToPoolKey is to be written per protocol semantics.
+    /// @dev poolRpt = abi.encode(PoolKey, uint160 sqrtPriceX96).
     function listen(bytes calldata poolRpt) payable external returns (PoolKey memory poolKey) {
+        // 1. Decode poolRpt
+        (PoolKey memory rawKey, uint160 sqrtPriceX96) = abi.decode(poolRpt, (PoolKey, uint160));
+
+        // 2. Set FCI hook
         IHooks fciHook = IHooks(address(fciFacetAdminStorage(NATIVE_V4).fci));
-        poolKey = fromPoolRptToPoolKey(poolRpt, fciHook);
+        poolKey = fromUniswapV4PoolKeyToPoolKey(abi.encode(rawKey), fciHook);
+
+        // 3. Initialize pool on PoolManager
+        IPoolManager(address(fciFacetAdminStorage(NATIVE_V4).protocolStateView)).initialize(poolKey, sqrtPriceX96);
+
+        // 4. Register
         PoolId poolId = PoolIdLibrary.toId(poolKey);
         addPool(NATIVE_V4, poolId);
         emit PoolAdded(address(this), address(fciFacetAdminStorage(NATIVE_V4).protocolStateView), poolId, NATIVE_V4);
