@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {IFCIProtocolFacet} from "@protocol-adapter/interfaces/IFCIProtocolFacet.sol";
+import {IFCIProtocolFacet} from "@fee-concentration-index-v2/interfaces/IFCIProtocolFacet.sol";
 
 struct FeeConcentrationIndexRegistryStorage {
     mapping(bytes1 => address) protocolFacets;

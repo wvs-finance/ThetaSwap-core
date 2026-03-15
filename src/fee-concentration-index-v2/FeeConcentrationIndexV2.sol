@@ -38,7 +38,7 @@ import {
 import {
     fciRegistryStorage, getProtocolFacet, setProtocolFacet
 } from "@fee-concentration-index-v2/modules/FeeConcentrationIndexRegistryStorageMod.sol";
-import {IFCIProtocolFacet} from "@protocol-adapter/interfaces/IFCIProtocolFacet.sol";
+import {IFCIProtocolFacet} from "@fee-concentration-index-v2/interfaces/IFCIProtocolFacet.sol";
 import {
     protocolFciStorage, protocolEpochFciStorage
 } from "@fee-concentration-index-v2/modules/FCIProtocolFacetStorageMod.sol";
