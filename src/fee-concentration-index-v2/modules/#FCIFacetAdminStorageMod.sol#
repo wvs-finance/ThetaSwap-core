@@ -17,19 +17,19 @@ struct FCIFacetAdminStorage {
 // Placeholder — protocols MUST define their own PROTOCOL_FLAG constant.
 bytes2 constant PROTOCOL_FLAG = bytes2(keccak256("thetaSwap.protocolId"));
 
-function fciFacetAdminStorage(bytes2 flag) pure returns (FCIFacetAdminStorage storage $) {
+function fciFacetAdminStorage(bytes1 flag) pure returns (FCIFacetAdminStorage storage $) {
     bytes32 position = keccak256(abi.encode("thetaSwap.fci.facetAdmin", flag));
     assembly ("memory-safe") { $.slot := position }
 }
 
-function setProtocolCallback(bytes2 flag, IUnlockCallback protocolCallback) {
+function setProtocolCallback(bytes1 flag, IUnlockCallback protocolCallback) {
     fciFacetAdminStorage(flag).protocolCallback = protocolCallback;
 }
 
-function getProtocolCallback(bytes2 flag) view returns (IUnlockCallback) {
+function getProtocolCallback(bytes1 flag) view returns (IUnlockCallback) {
     return fciFacetAdminStorage(flag).protocolCallback;
 }
 
-function addPool(bytes2 flag, PoolId poolId) {
+function addPool(bytes1 flag, PoolId poolId) {
     EnumerableSet.add(fciFacetAdminStorage(flag).poolIds, PoolId.unwrap(poolId));
 }

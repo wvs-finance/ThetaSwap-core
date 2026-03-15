@@ -13,6 +13,7 @@ import {FeeConcentrationIndex} from "@fee-concentration-index/FeeConcentrationIn
 import {FeeConcentrationIndexV2} from "@fee-concentration-index-v2/FeeConcentrationIndexV2.sol";
 import {DeployFci, FCI_HOOK_FLAGS} from "@foundry-script/deploy/DeployFci.s.sol";
 import {FCITestHelper} from "../../fee-concentration-index/helpers/FCITestHelper.sol";
+import {NATIVE_V4} from "@fee-concentration-index-v2/types/FlagsRegistry.sol";
 
 /// @title FCI V1 vs V2 Differential Test
 /// @notice Deploys both V1 and V2 hooks via DeployFci script.
@@ -58,29 +59,29 @@ contract FCIV1DiffFCIV2Test is PosmTestSetup, FCITestHelper {
     function _assertFCIStateEqual() internal view {
         // ── getIndex ──
         (uint128 indexAV1, uint256 thetaSumV1, uint256 removedV1) = v1.getIndex(keyV1, false);
-        (uint128 indexAV2, uint256 thetaSumV2, uint256 removedV2) = v2.getIndex(keyV2, false);
+        (uint128 indexAV2, uint256 thetaSumV2, uint256 removedV2) = v2.getIndex(keyV2, NATIVE_V4);
         assertEq(indexAV1, indexAV2, "indexA mismatch");
         assertEq(thetaSumV1, thetaSumV2, "thetaSum mismatch");
         assertEq(removedV1, removedV2, "removedPosCount mismatch");
 
         // ── getDeltaPlus ──
         uint128 dpV1 = v1.getDeltaPlus(keyV1, false);
-        uint128 dpV2 = v2.getDeltaPlus(keyV2, false);
+        uint128 dpV2 = v2.getDeltaPlus(keyV2, NATIVE_V4);
         assertEq(dpV1, dpV2, "deltaPlus mismatch");
 
         // ── getDeltaPlusEpoch ──
         uint128 dpEpochV1 = v1.getDeltaPlusEpoch(keyV1, false);
-        uint128 dpEpochV2 = v2.getDeltaPlusEpoch(keyV2, false);
+        uint128 dpEpochV2 = v2.getDeltaPlusEpoch(keyV2, NATIVE_V4);
         assertEq(dpEpochV1, dpEpochV2, "deltaPlusEpoch mismatch");
 
         // ── getAtNull ──
         uint128 atNullV1 = v1.getAtNull(keyV1, false);
-        uint128 atNullV2 = v2.getAtNull(keyV2, false);
+        uint128 atNullV2 = v2.getAtNull(keyV2, NATIVE_V4);
         assertEq(atNullV1, atNullV2, "atNull mismatch");
 
         // ── getThetaSum ──
         uint256 tsV1 = v1.getThetaSum(keyV1, false);
-        uint256 tsV2 = v2.getThetaSum(keyV2, false);
+        uint256 tsV2 = v2.getThetaSum(keyV2, NATIVE_V4);
         assertEq(tsV1, tsV2, "getThetaSum mismatch");
     }
 

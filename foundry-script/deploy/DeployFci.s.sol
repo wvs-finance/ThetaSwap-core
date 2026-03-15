@@ -30,13 +30,13 @@ contract DeployFci is Script {
         FeeConcentrationIndex v1 = new FeeConcentrationIndex{salt: v1Salt}(address(poolManager));
         require(address(v1) == v1Addr, "DeployFci: V1 hook address mismatch");
 
-        // ── Deploy V2 ──
+        // ── Deploy V2 (no constructor args — pure dispatcher) ──
         (address v2Addr, bytes32 v2Salt) = HookMiner.find(
             msg.sender, FCI_HOOK_FLAGS,
-            type(FeeConcentrationIndexV2).creationCode, constructorArgs
+            type(FeeConcentrationIndexV2).creationCode, ""
         );
         vm.broadcast();
-        FeeConcentrationIndexV2 v2 = new FeeConcentrationIndexV2{salt: v2Salt}(address(poolManager));
+        FeeConcentrationIndexV2 v2 = new FeeConcentrationIndexV2{salt: v2Salt}();
         require(address(v2) == v2Addr, "DeployFci: V2 hook address mismatch");
 
         v1Address = address(v1);
