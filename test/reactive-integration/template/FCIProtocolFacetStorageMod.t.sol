@@ -12,7 +12,7 @@ import {
     tloadTick,
     tstoreRemovalData,
     tloadRemovalData
-} from "@protocol-adapter/modules/FCIProtocolFacetStorageMod.sol";
+} from "@fee-concentration-index-v2/modules/FCIProtocolFacetStorageMod.sol";
 
 contract FCIProtocolFacetStorageModTest is Test {
     function test_different_flags_different_slots() public {

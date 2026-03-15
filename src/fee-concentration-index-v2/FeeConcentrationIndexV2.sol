@@ -41,7 +41,7 @@ import {
 import {IFCIProtocolFacet} from "@protocol-adapter/interfaces/IFCIProtocolFacet.sol";
 import {
     protocolFciStorage, protocolEpochFciStorage
-} from "@protocol-adapter/modules/FCIProtocolFacetStorageMod.sol";
+} from "@fee-concentration-index-v2/modules/FCIProtocolFacetStorageMod.sol";
 
 // Fee Concentration Index V2 — Protocol-agnostic dispatcher.
 // V4 fast path: empty hookData → inlined logic (identical to V1).
