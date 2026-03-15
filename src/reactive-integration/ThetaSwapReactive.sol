@@ -4,7 +4,7 @@ pragma solidity ^0.8.26;
 import {IReactive} from "reactive-lib/interfaces/IReactive.sol";
 import {ISubscriptionService} from "reactive-lib/interfaces/ISubscriptionService.sol";
 import {processLog} from "reactive-hooks/modules/ReactLogicMod.sol";
-import {subscribeV3Pool, unsubscribeV3Pool, REACTIVE_IGNORE} from "reactive-hooks/modules/SubscriptionMod.sol";
+import {REACTIVE_IGNORE} from "reactive-hooks/libraries/SubscriptionLib.sol";
 import {coverDebt, depositToSystem} from "reactive-hooks/modules/DebtMod.sol";
 import {requireVM} from "reactive-hooks/modules/ReactVMMod.sol";
 import {requireSolvency} from "reactive-hooks/libraries/DebtLib.sol";
@@ -83,14 +83,18 @@ contract ThetaSwapReactive {
     function registerPool(uint256 chainId_, address pool) external {
         if (msg.sender != owner) revert OnlyOwner();
         if (vm) revert OnlyRN();
-        subscribeV3Pool(service, chainId_, pool);
+        service.subscribe(chainId_, pool, uint256(keccak256("Swap(address,address,int256,int256,uint160,uint128,int24)")), REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
+        service.subscribe(chainId_, pool, uint256(keccak256("Mint(address,address,int24,int24,uint128,uint256,uint256)")), REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
+        service.subscribe(chainId_, pool, uint256(keccak256("Burn(address,int24,int24,uint128,uint256,uint256)")), REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
         emit PoolRegistered(chainId_, pool);
     }
 
     function unregisterPool(uint256 chainId_, address pool) external {
         if (msg.sender != owner) revert OnlyOwner();
         if (vm) revert OnlyRN();
-        unsubscribeV3Pool(service, chainId_, pool);
+        service.unsubscribe(chainId_, pool, uint256(keccak256("Swap(address,address,int256,int256,uint160,uint128,int24)")), REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
+        service.unsubscribe(chainId_, pool, uint256(keccak256("Mint(address,address,int24,int24,uint128,uint256,uint256)")), REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
+        service.unsubscribe(chainId_, pool, uint256(keccak256("Burn(address,int24,int24,uint128,uint256,uint256)")), REACTIVE_IGNORE, REACTIVE_IGNORE, REACTIVE_IGNORE);
         emit PoolUnregistered(chainId_, pool);
     }
 
