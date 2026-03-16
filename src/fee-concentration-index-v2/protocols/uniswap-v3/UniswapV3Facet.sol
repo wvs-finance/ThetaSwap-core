@@ -121,7 +121,9 @@ contract UniswapV3Facet {
     }
 
     function removePositionInRange(bytes calldata, bytes32 posKey, LiquidityPositionSnapshot calldata snapshot) external onlyDelegateCall returns (SwapCount swapLifetime, BlockCount blockLifetime, uint128 totalRangeLiq) {
-        // TODO: implement in Burn flow
+        FeeConcentrationIndexV2Storage storage $ = protocolFciStorage(UNISWAP_V3_REACTIVE);
+        PoolId poolId = PoolIdLibrary.toId(snapshot.config.poolKey);
+        (, swapLifetime, blockLifetime, totalRangeLiq) = $.registries[poolId].deregister(posKey, snapshot.liquidity);
     }
 
     // ── Tick ──
@@ -173,6 +175,8 @@ contract UniswapV3Facet {
     }
 
     function tstoreRemovalData(bytes calldata, uint256 feeLast, uint128 posLiquidity, uint256 rangeFeeGrowth) external onlyDelegateCall {
+        // Uses transient storage — beforeRemoveLiquidity and afterRemoveLiquidity
+        // are called sequentially in the same transaction by the callback.
         _tstoreRemovalData(UNISWAP_V3_REACTIVE, feeLast, posLiquidity, rangeFeeGrowth);
     }
 
