@@ -1,0 +1,163 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.26;
+
+import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
+import {PoolKey} from "v4-core/src/types/PoolKey.sol";
+import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
+import {ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
+import {TickRange} from "typed-uniswap-v4/types/TickRangeMod.sol";
+import {SwapCount} from "typed-uniswap-v4/types/SwapCountMod.sol";
+import {BlockCount} from "typed-uniswap-v4/types/BlockCountMod.sol";
+import {LiquidityPositionSnapshot} from "@fee-concentration-index-v2/types/LiquidityPositionSnapshot.sol";
+import {UNISWAP_V3} from "@fee-concentration-index-v2/types/FlagsRegistry.sol";
+import {IFeeConcentrationIndex} from "@fee-concentration-index/interfaces/IFeeConcentrationIndex.sol";
+import {IProtocolStateView} from "@protocol-adapter/interfaces/IProtocolStateView.sol";
+import {
+    fciFacetAdminStorage, addPool, setProtocolStateView as _setProtocolStateView, setFci as _setFci
+} from "@fee-concentration-index-v2/modules/FCIFacetAdminStorageMod.sol";
+import {requireOwner, initOwner} from "@fee-concentration-index-v2/modules/dependencies/LibOwner.sol";
+import {fromUniswapV3PoolToPoolKey} from "./libraries/UniswapV3PoolKeyLib.sol";
+import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
+
+/// @title UniswapV3Facet
+/// @dev Protocol facet for Uniswap V3 reactive integration.
+/// Called via delegatecall from FeeConcentrationIndexV2 for each behavioral function.
+/// Contains ONLY behavioral functions — hook orchestration lives in V2.
+/// Does NOT inherit IFCIProtocolFacet explicitly (SCOP: no is inheritance).
+contract UniswapV3Facet {
+
+    address immutable _self;
+
+    constructor() {
+        _self = address(this);
+    }
+
+    modifier onlyDelegateCall() {
+        require(
+		address(this) != _self
+		&&
+		address(this) == address(fciFacetAdminStorage(UNISWAP_V3).fci),
+                "UniswapV3Facet: direct call"
+	);
+        _;
+    /* } */
+
+    /* // ── Admin (direct call, NOT delegatecall) ── */
+
+    /* event PoolAdded(address indexed facet, address indexed callback, PoolId indexed poolId, bytes2 protocolFlag); */
+    /* error PoolAlreadyRegistered(PoolId poolId); */
+
+    /* function initialize(address _owner, IProtocolStateView _protocolStateView, IFeeConcentrationIndex _fci) external { */
+    /*     initOwner(_owner); */
+    /*     _setProtocolStateView(UNISWAP_V3, _protocolStateView); */
+    /*     _setFci(UNISWAP_V3, _fci); */
+    /* } */
+
+    /* /// @notice Register a V3 pool for FCI tracking. */
+    /* /// @dev poolRpt = abi.encode(IUniswapV3Pool). */
+    /
+    /* function listen(bytes calldata poolRpt) payable external returns (PoolKey memory poolKey) { */
+    /*     IUniswapV3Pool v3Pool = abi.decode(poolRpt, (IUniswapV3Pool)); */
+    /*     IHooks fciHook = IHooks(address(fciFacetAdminStorage(UNISWAP_V3).fci)); */
+    /*     poolKey = fromUniswapV3PoolToPoolKey(v3Pool, fciHook); */
+    /*     PoolId poolId = PoolIdLibrary.toId(poolKey); */
+    /*     addPool(UNISWAP_V3, poolId); */
+    /*     emit PoolAdded(address(this), address(fciFacetAdminStorage(UNISWAP_V3).protocolStateView), poolId, UNISWAP_V3); */
+    /* } */
+    /
+
+    function setProtocolStateView(IProtocolStateView stateView) external {
+        requireOwner();
+        _setProtocolStateView(UNISWAP_V3, stateView);
+    }
+
+    // ── Position key derivation ──
+
+    function positionKey(bytes calldata hookData, address sender, ModifyLiquidityParams calldata params) external view onlyDelegateCall returns (bytes32) {
+        // TODO: v3PositionKey(owner, tickLower, tickUpper) — decode owner from hookData
+    }
+
+    // ── Fee growth reads ──
+
+    function latestPositionFeeGrowthInside(bytes calldata hookData, PoolId poolId, bytes32 posKey) external view onlyDelegateCall returns (uint128 posLiquidity, uint256 feeGrowthLast) {
+        // TODO: V3 reactive — posLiquidity comes from hookData, feeGrowthLast = 0
+    }
+
+    function poolRangeFeeGrowthInside(bytes calldata hookData, PoolId poolId, int24 currentTick_, TickRange tickRange) external view onlyDelegateCall returns (uint256) {
+        // TODO: V3 reactive — feeGrowthInside arrives in hookData, not from pool
+    }
+
+    // ── Position registration ──
+
+    function addPositionInRange(bytes calldata hookData, bytes32 posKey, LiquidityPositionSnapshot calldata snapshot) external onlyDelegateCall {
+        // TODO: register position in V2 storage at UNISWAP_V3 slot
+    }
+
+    function removePositionInRange(bytes calldata hookData, bytes32 posKey, LiquidityPositionSnapshot calldata snapshot) external onlyDelegateCall returns (SwapCount swapLifetime, BlockCount blockLifetime, uint128 totalRangeLiq) {
+        // TODO: deregister position from V2 storage at UNISWAP_V3 slot
+    }
+
+    // ── Tick ──
+
+    function currentTick(bytes calldata hookData, PoolId poolId) external view onlyDelegateCall returns (int24) {
+        // TODO: V3 reactive — tick arrives in hookData, not from pool
+    }
+
+    // ── Fee growth baseline ──
+
+    function setFeeGrowthBaseline(bytes calldata hookData, PoolId poolId, bytes32 posKey, uint256 feeGrowth) external onlyDelegateCall {
+        // TODO: write to V2 storage at UNISWAP_V3 slot
+    }
+
+    function getFeeGrowthBaseline(bytes calldata hookData, PoolId poolId, bytes32 posKey) external view onlyDelegateCall returns (uint256) {
+        // TODO: read from V2 storage at UNISWAP_V3 slot
+    }
+
+    function deleteFeeGrowthBaseline(bytes calldata hookData, PoolId poolId, bytes32 posKey) external onlyDelegateCall {
+        // TODO: delete from V2 storage at UNISWAP_V3 slot
+    }
+
+    // ── Position count ──
+
+    function incrementPosCount(bytes calldata hookData, PoolId poolId) external onlyDelegateCall {
+        // TODO: increment in V2 storage at UNISWAP_V3 slot
+    }
+
+    function decrementPosCount(bytes calldata hookData, PoolId poolId) external onlyDelegateCall {
+        // TODO: decrement in V2 storage at UNISWAP_V3 slot
+    }
+
+    // ── Transient storage ──
+
+    function tstoreTick(bytes calldata hookData, int24 tick) external onlyDelegateCall {
+        // TODO: transient store via FCIProtocolFacetStorageMod with UNISWAP_V3
+    }
+
+    function tloadTick(bytes calldata hookData) external onlyDelegateCall returns (int24 tick) {
+        // TODO: transient load via FCIProtocolFacetStorageMod with UNISWAP_V3
+    }
+
+    function tstoreRemovalData(bytes calldata hookData, uint256 feeLast, uint128 posLiquidity, uint256 rangeFeeGrowth) external onlyDelegateCall {
+        // TODO: transient store via FCIProtocolFacetStorageMod with UNISWAP_V3
+    }
+
+    function tloadRemovalData(bytes calldata hookData) external onlyDelegateCall returns (uint256 feeLast, uint128 posLiquidity, uint256 rangeFeeGrowth) {
+        // TODO: transient load via FCIProtocolFacetStorageMod with UNISWAP_V3
+    }
+
+    // ── Overlapping ranges ──
+
+    function incrementOverlappingRanges(bytes calldata hookData, PoolId poolId, int24 tickMin, int24 tickMax) external onlyDelegateCall {
+        // TODO: iterate V2 registry ranges at UNISWAP_V3 slot
+    }
+
+    // ── FCI state accumulation ──
+
+    function addStateTerm(bytes calldata hookData, PoolId poolId, BlockCount blockLifetime, uint256 xSquaredQ128) external onlyDelegateCall {
+        // TODO: accumulate in V2 storage at UNISWAP_V3 slot
+    }
+
+    function addEpochTerm(bytes calldata hookData, PoolId poolId, BlockCount blockLifetime, uint256 xSquaredQ128) external onlyDelegateCall {
+        // TODO: accumulate in epoch storage at UNISWAP_V3 slot
+    }
+}

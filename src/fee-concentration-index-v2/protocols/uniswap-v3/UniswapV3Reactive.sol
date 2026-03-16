@@ -60,7 +60,7 @@ contract UniswapV3Reactive {
             abi.encodeWithSignature(
                 "unlockCallbackReactive(address,bytes)",
                 address(0),
-                log.data
+                abi.encode(log)
             )
         );
     }
