@@ -19,8 +19,12 @@ import {IProtocolStateView} from "@protocol-adapter/interfaces/IProtocolStateVie
 import {UNISWAP_V3_REACTIVE} from "@fee-concentration-index-v2/types/FlagsRegistry.sol";
 
 /// @title FCI V2 Full Integration — Uniswap V3 Reactive (Sepolia Live)
-/// @notice Run against live Sepolia RPC:
-///   forge test --match-contract FeeConcentrationIndexV2FullIntegration --rpc-url $SEPOLIA_RPC -vv
+/// @notice Deploy:
+///   forge script test/.../FeeConcentrationIndexV2Full.integration.t.sol:FeeConcentrationIndexV2FullIntegrationTest \
+///     --sig "run()" --broadcast --rpc-url $SEPOLIA_RPC
+/// Listen (after reactive on Lasna):
+///   forge script test/.../FeeConcentrationIndexV2Full.integration.t.sol:FeeConcentrationIndexV2FullIntegrationTest \
+///     --sig "test_listen()" --broadcast --rpc-url $SEPOLIA_RPC
 contract FeeConcentrationIndexV2FullIntegrationTest is Test {
     using PoolIdLibrary for PoolKey;
 
@@ -111,6 +115,11 @@ contract FeeConcentrationIndexV2FullIntegrationTest is Test {
         console2.log("ReactVM should auto-subscribe to V3 pool events.");
         console2.log("");
         console2.log("Next: add liquidity to V3 pool, then check FCI state.");
+    }
+
+    /// @notice Entry point for forge script --broadcast
+    function run() public {
+        setUp();
     }
 
     // TODO: test_addLiquidity — LP mints position on V3 pool
