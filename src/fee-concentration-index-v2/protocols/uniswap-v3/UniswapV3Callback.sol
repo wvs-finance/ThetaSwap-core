@@ -57,9 +57,9 @@ contract UniswapV3Callback {
         _pay(msg.sender, amount, address(this));
     }
 
-    receive() external payable {
-        coverDebt(address(this));
-    }
+    // Accept ETH for callback gas payments via pay().
+    // No coverDebt — callback lives on destination chain, not Reactive Network.
+    receive() external payable {}
 
     function _handleMint(V3MintData memory data) internal {
         PoolKey memory key = fromUniswapV3PoolToPoolKey(data.pool, fci);

@@ -25,7 +25,7 @@ import {
 import {reactVMBatchSubscription} from "reactive-hooks/libraries/SubscriptionLib.sol";
 
 import {POOL_ADDED_SIG} from "@fee-concentration-index-v2/libraries/PoolAddedSig.sol";
-import {UNISWAP_V3} from "@fee-concentration-index-v2/types/FlagsRegistry.sol";
+import {UNISWAP_V3_REACTIVE} from "@fee-concentration-index-v2/types/FlagsRegistry.sol";
 import {V3_SWAP_SIG, V3_MINT_SIG, V3_BURN_SIG, v3PoolSigs}
     from "@fee-concentration-index-v2/protocols/uniswap-v3/libraries/EventSignatures.sol";
 import {decodeV3PoolAddedData}
@@ -49,7 +49,7 @@ function handlePoolAdded(
     (bytes2 protocolFlag, bytes memory poolData) = abi.decode(log.data, (bytes2, bytes));
     address callbackTarget = address(uint160(log.topic_2));
 
-    if (protocolFlag == UNISWAP_V3) {
+    if (protocolFlag == UNISWAP_V3_REACTIVE) {
         handleV3PoolAdded(service, callbackTarget, poolData);
     }
 }
