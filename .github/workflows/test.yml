@@ -37,8 +37,8 @@ jobs:
       - name: Run Forge tests
         run: forge test -vvv
 
-  python:
-    name: Python
+  research:
+    name: Research (Python tests + data provenance + notebooks)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -49,10 +49,38 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
+          python-version: "3.13"
 
-      - name: Install dependencies
-        run: pip install -e ".[dev]"
+      - name: Install uv
+        run: pip install uv
+
+      - name: Create venv and install dependencies
+        run: |
+          uv venv uhi8 --python 3.13
+          uv pip install --python uhi8/bin/python -e ".[dev]"
+
+      - name: Install Jupyter kernel
+        run: |
+          uhi8/bin/python -m ipykernel install --user --name=thetaswap \
+            --display-name "thetaswap" \
+            --env PYTHONPATH "${{ github.workspace }}/research"
+
+      - name: Verify data provenance (SHA-256 hashes)
+        run: uhi8/bin/python research/data/scripts/verify_provenance.py
 
       - name: Run Python tests
-        run: PYTHONPATH=research pytest research/tests -v
+        run: cd research && ../uhi8/bin/python -m pytest tests/ -v
+
+      - name: Run notebooks
+        run: |
+          tmpdir=$(mktemp -d)
+          for nb in research/notebooks/*.ipynb; do
+            echo "Executing $nb ..."
+            PYTHONPATH=research uhi8/bin/jupyter nbconvert \
+              --to notebook --execute \
+              --ExecutePreprocessor.timeout=300 \
+              --ExecutePreprocessor.kernel_name=thetaswap \
+              --output-dir="$tmpdir" \
+              "$nb" || echo "WARN: $nb failed (non-blocking)"
+          done
+          rm -rf "$tmpdir"

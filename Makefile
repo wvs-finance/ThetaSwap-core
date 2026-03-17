@@ -1,9 +1,12 @@
-.PHONY: install setup-kernel test-sol test-py test notebooks clean
+.PHONY: build install setup-kernel test notebooks verify-data clean
 
 VENV := uhi8
 PYTHON := $(VENV)/bin/python
 JUPYTER := $(VENV)/bin/jupyter
 PYTEST := $(VENV)/bin/pytest
+
+# ── Build (full pipeline: install → verify → notebooks) ──────────────
+build: install verify-data test notebooks
 
 # ── Setup ────────────────────────────────────────────────────────────
 install:
@@ -18,17 +21,9 @@ setup-kernel:
 		--env PYTHONPATH "$(CURDIR)/research"
 	@echo "Kernel 'thetaswap' installed. PYTHONPATH=$(CURDIR)/research"
 
-# ── Solidity ─────────────────────────────────────────────────────────
-test-sol:
-	forge build
-	forge test
-
 # ── Python ───────────────────────────────────────────────────────────
-test-py:
+test:
 	cd research && ../$(PYTEST) tests/ -v
-
-# ── All tests ────────────────────────────────────────────────────────
-test: test-sol test-py
 
 # ── Notebooks (headless execute) ─────────────────────────────────────
 notebooks: setup-kernel
@@ -51,4 +46,6 @@ verify-data:
 
 # ── Clean ────────────────────────────────────────────────────────────
 clean:
-	rm -rf out/ cache/
+	find research -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find research -type f -name "*.pyc" -delete 2>/dev/null || true
+	rm -rf research/.pytest_cache
