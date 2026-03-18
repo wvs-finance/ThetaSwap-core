@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Completed 02-deploy-logic-01-PLAN.md
-last_updated: "2026-03-18T00:52:12.394Z"
+stopped_at: Completed 02-deploy-logic-02-PLAN.md
+last_updated: "2026-03-18T00:55:58.912Z"
 last_activity: 2026-03-17 — Roadmap created
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 3
-  completed_plans: 2
+  completed_plans: 3
   percent: 100
 ---
 
@@ -52,6 +52,7 @@ Progress: [██████████] 100%
 *Updated after each plan completion*
 | Phase 01-crate-foundation P01 | 2 | 2 tasks | 5 files |
 | Phase 02-deploy-logic P01 | 144s | 2 tasks | 4 files |
+| Phase 02-deploy-logic P02 | 3m | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,9 @@ Recent decisions affecting current work:
 - [Phase 02-deploy-logic]: serde crate with derive feature added to Cargo.toml (serde_json alone insufficient for #[derive(serde::Deserialize)])
 - [Phase 02-deploy-logic]: --constructor-args enforced last in forge create arg vec (Foundry issue #770, DEP-06)
 - [Phase 02-deploy-logic]: No --legacy on cast send fallback path; cast uses EIP-1559 by default (DEP-03)
+- [Phase 02-deploy-logic]: parse_receipt_status accepts only hex 0x1; human string 1 (success) from positional cast receipt is rejected (Pitfall 3, DEP-05)
+- [Phase 02-deploy-logic]: check_prerequisites uses io::ErrorKind::NotFound on Command::new(tool).arg(--version) — no which crate needed
+- [Phase 02-deploy-logic]: Runner::deploy() calls check_prerequisites() as first operation; verify::verify() called unconditionally after primary or fallback succeeds
 
 ### Pending Todos
 
@@ -83,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-18T00:52:05.932Z
-Stopped at: Completed 02-deploy-logic-01-PLAN.md
+Last session: 2026-03-18T00:55:58.910Z
+Stopped at: Completed 02-deploy-logic-02-PLAN.md
 Resume file: None

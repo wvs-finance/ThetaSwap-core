@@ -19,19 +19,19 @@
 
 ### Deployment Logic
 
-- [ ] **DEP-01**: Primary path runs `forge create UniswapV3Reactive --constructor-args <callback> --broadcast --legacy --value <value> --rpc-url <rpc> --private-key <key>`
-- [ ] **DEP-02**: If forge create fails, fallback runs `cast send --create` with identical bytecode and constructor args
-- [ ] **DEP-03**: `--legacy` is only applied to the forge create path, not the cast send fallback
-- [ ] **DEP-04**: On startup, CLI checks `forge` and `cast` are on PATH; fails with actionable error ("Install Foundry: https://getfoundry.sh") if missing
-- [ ] **DEP-05**: After successful deployment, CLI runs `cast receipt <txhash> --field status` and verifies `0x1` before printing output
-- [ ] **DEP-06**: `--constructor-args` is placed last in the forge create command (Foundry variadic parsing bug workaround)
+- [x] **DEP-01**: Primary path runs `forge create UniswapV3Reactive --constructor-args <callback> --broadcast --legacy --value <value> --rpc-url <rpc> --private-key <key>`
+- [x] **DEP-02**: If forge create fails, fallback runs `cast send --create` with identical bytecode and constructor args
+- [x] **DEP-03**: `--legacy` is only applied to the forge create path, not the cast send fallback
+- [x] **DEP-04**: On startup, CLI checks `forge` and `cast` are on PATH; fails with actionable error ("Install Foundry: https://getfoundry.sh") if missing
+- [x] **DEP-05**: After successful deployment, CLI runs `cast receipt <txhash> --field status` and verifies `0x1` before printing output
+- [x] **DEP-06**: `--constructor-args` is placed last in the forge create command (Foundry variadic parsing bug workaround)
 
 ### Output Contract
 
-- [ ] **OUT-01**: On success, stdout prints deployed contract address and tx hash (pipe-friendly)
+- [x] **OUT-01**: On success, stdout prints deployed contract address and tx hash (pipe-friendly)
 - [ ] **OUT-02**: On failure, stderr shows which command was attempted and what went wrong
 - [ ] **OUT-03**: Exit code 0 on verified success, exit code 1 on any failure
-- [ ] **OUT-04**: No diagnostic noise on stdout — all logs/warnings go to stderr
+- [x] **OUT-04**: No diagnostic noise on stdout — all logs/warnings go to stderr
 
 ### Project Setup
 
@@ -75,16 +75,16 @@
 | CMD-07 | Phase 3 | Pending |
 | CMD-08 | Phase 3 | Pending |
 | CMD-09 | Phase 3 | Pending |
-| DEP-01 | Phase 2 | Pending |
-| DEP-02 | Phase 2 | Pending |
-| DEP-03 | Phase 2 | Pending |
-| DEP-04 | Phase 2 | Pending |
-| DEP-05 | Phase 2 | Pending |
-| DEP-06 | Phase 2 | Pending |
-| OUT-01 | Phase 2 | Pending |
+| DEP-01 | Phase 2 | Complete |
+| DEP-02 | Phase 2 | Complete |
+| DEP-03 | Phase 2 | Complete |
+| DEP-04 | Phase 2 | Complete |
+| DEP-05 | Phase 2 | Complete |
+| DEP-06 | Phase 2 | Complete |
+| OUT-01 | Phase 2 | Complete |
 | OUT-02 | Phase 3 | Pending |
 | OUT-03 | Phase 3 | Pending |
-| OUT-04 | Phase 2 | Pending |
+| OUT-04 | Phase 2 | Complete |
 | SET-01 | Phase 1 | Complete |
 | SET-02 | Phase 1 | Complete |
 | SET-03 | Phase 1 | Complete |
