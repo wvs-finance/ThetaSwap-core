@@ -27,11 +27,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. A reader with no DeFi background can explain in one sentence what adverse competition risk is and why it differs from impermanent loss
   2. The research summary includes the inverted-U finding, turning point delta* ~ 0.09, and the key statistics (41 days, 600 positions, 2.65x real vs null)
   3. Problem and research narrative exists as standalone text that downstream phases (READMEs, Beamer) can consume
-**Plans**: TBD
+**Plans:** 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Write adverse competition problem narrative and three-pillar research summary (2 markdown files in research/narrative/)
+- [ ] 01-02-PLAN.md — Add publication rcParams to plotting.py, update notebooks with figure export, generate 4 PNGs in research/figures/
 
 ### Phase 2: Architecture Diagrams
 **Goal**: System architecture is visually communicable through two mermaid diagrams that work in GitHub markdown
@@ -85,7 +85,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Problem & Research Narrative | 0/2 | Not started | - |
+| 1. Problem & Research Narrative | 0/2 | Planned | - |
 | 2. Architecture Diagrams | 0/1 | Not started | - |
 | 3. Repository Artifacts | 0/3 | Not started | - |
 | 4. Beamer Slide Deck | 0/2 | Not started | - |
