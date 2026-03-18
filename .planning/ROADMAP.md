@@ -12,7 +12,7 @@ Transform ThetaSwap's research, architecture, and implementation into a cohesive
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Problem & Research Narrative** - Synthesize econometric research into presentation-ready problem statement and research summary
+- [x] **Phase 1: Problem & Research Narrative** - Synthesize econometric research into presentation-ready problem statement and research summary (completed 2026-03-18)
 - [ ] **Phase 2: Architecture Diagrams** - Create mermaid context and sequence diagrams showing FCI system architecture and pool listening flow
 - [ ] **Phase 3: Repository Artifacts** - Create root README (architecture + pointers), research README (detailed findings + artifact links), and document the demo
 - [ ] **Phase 4: Beamer Slide Deck** - Produce LaTeX Beamer .tex file with problem, research, solution, demo, and roadmap frames
@@ -27,7 +27,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   1. A reader with no DeFi background can explain in one sentence what adverse competition risk is and why it differs from impermanent loss
   2. The research summary includes the inverted-U finding, turning point delta* ~ 0.09, and the key statistics (41 days, 600 positions, 2.65x real vs null)
   3. Problem and research narrative exists as standalone text that downstream phases (READMEs, Beamer) can consume
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 01-01-PLAN.md — Write adverse competition problem narrative and three-pillar research summary (2 markdown files in research/narrative/)
@@ -85,7 +85,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Problem & Research Narrative | 0/2 | Planned | - |
+| 1. Problem & Research Narrative | 0/2 | Complete    | 2026-03-18 |
 | 2. Architecture Diagrams | 0/1 | Not started | - |
 | 3. Repository Artifacts | 0/3 | Not started | - |
 | 4. Beamer Slide Deck | 0/2 | Not started | - |
