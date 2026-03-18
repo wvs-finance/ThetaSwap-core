@@ -13,7 +13,7 @@ Transform ThetaSwap's research, architecture, and implementation into a cohesive
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Problem & Research Narrative** - Synthesize econometric research into presentation-ready problem statement and research summary (completed 2026-03-18)
-- [ ] **Phase 2: Architecture Diagrams** - Create mermaid context and sequence diagrams showing FCI system architecture and pool listening flow
+- [x] **Phase 2: Architecture Diagrams** - Create mermaid context and sequence diagrams showing FCI system architecture and pool listening flow (completed 2026-03-18)
 - [ ] **Phase 3: Repository Artifacts** - Create root README (architecture + pointers), research README (detailed findings + artifact links), and document the demo
 - [ ] **Phase 4: Beamer Slide Deck** - Produce LaTeX Beamer .tex file with problem, research, solution, demo, and roadmap frames
 
@@ -41,7 +41,7 @@ Plans:
   1. Context diagram shows FCI Hook, Vault, CFMM, Protocol Adapters (V3, V4), and Reactive Network with their relationships
   2. Sequence diagram traces the full pool listening flow from listenPool() through swap/mint/burn events to metric update and DeltaPlus derivation
   3. Both diagrams render correctly when viewed on GitHub (mermaid fenced code blocks in markdown)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 - [ ] 02-01-PLAN.md — Create mermaid context diagram (system components) and sequence diagram (pool listening flow), export PNGs for Beamer
@@ -86,6 +86,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Problem & Research Narrative | 0/2 | Complete    | 2026-03-18 |
-| 2. Architecture Diagrams | 0/1 | Not started | - |
+| 2. Architecture Diagrams | 0/1 | Complete    | 2026-03-18 |
 | 3. Repository Artifacts | 0/3 | Not started | - |
 | 4. Beamer Slide Deck | 0/2 | Not started | - |
