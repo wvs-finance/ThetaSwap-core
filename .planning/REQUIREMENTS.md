@@ -13,9 +13,9 @@
 
 ### Architecture Diagrams
 
-- [ ] **ARCH-01**: Context diagram (mermaid) showing FCI Hook, Vault, CFMM, Protocol Adapters (V3, V4), and Reactive Network
-- [ ] **ARCH-02**: Sequence diagram (mermaid) for pool listening flow: listenPool() -> swap/mint/burn events -> metric update -> DeltaPlus derivation
-- [ ] **ARCH-03**: Diagrams render correctly in GitHub README markdown
+- [x] **ARCH-01**: Context diagram (mermaid) showing FCI Hook, Vault, CFMM, Protocol Adapters (V3, V4), and Reactive Network
+- [x] **ARCH-02**: Sequence diagram (mermaid) for pool listening flow: listenPool() -> swap/mint/burn events -> metric update -> DeltaPlus derivation
+- [x] **ARCH-03**: Diagrams render correctly in GitHub README markdown
 
 ### Root README
 
@@ -66,9 +66,9 @@
 | PROB-01 | Phase 1 | Complete |
 | PROB-02 | Phase 1 | Complete |
 | PROB-03 | Phase 1 | Complete |
-| ARCH-01 | Phase 2 | Pending |
-| ARCH-02 | Phase 2 | Pending |
-| ARCH-03 | Phase 2 | Pending |
+| ARCH-01 | Phase 2 | Complete |
+| ARCH-02 | Phase 2 | Complete |
+| ARCH-03 | Phase 2 | Complete |
 | ROOT-01 | Phase 3 | Pending |
 | ROOT-02 | Phase 3 | Pending |
 | ROOT-03 | Phase 3 | Pending |
