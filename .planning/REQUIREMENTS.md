@@ -25,9 +25,9 @@
 
 ### Research README
 
-- [ ] **RREAD-01**: research/README.md provides detailed research summary (problem, methodology, key findings)
-- [ ] **RREAD-02**: research/README.md has pointers to actual artifacts: notebooks, econometrics modules, model LaTeX, data fixtures
-- [ ] **RREAD-03**: research/README.md organized by research domain (econometrics, backtest, model, data)
+- [x] **RREAD-01**: research/README.md provides detailed research summary (problem, methodology, key findings)
+- [x] **RREAD-02**: research/README.md has pointers to actual artifacts: notebooks, econometrics modules, model LaTeX, data fixtures
+- [x] **RREAD-03**: research/README.md organized by research domain (econometrics, backtest, model, data)
 
 ### Demo
 
@@ -72,9 +72,9 @@
 | ROOT-01 | Phase 3 | Complete |
 | ROOT-02 | Phase 3 | Complete |
 | ROOT-03 | Phase 3 | Complete |
-| RREAD-01 | Phase 3 | Pending |
-| RREAD-02 | Phase 3 | Pending |
-| RREAD-03 | Phase 3 | Pending |
+| RREAD-01 | Phase 3 | Complete |
+| RREAD-02 | Phase 3 | Complete |
+| RREAD-03 | Phase 3 | Complete |
 | DEMO-01 | Phase 3 | Complete |
 | DEMO-02 | Phase 3 | Complete |
 | BEAM-01 | Phase 4 | Pending |

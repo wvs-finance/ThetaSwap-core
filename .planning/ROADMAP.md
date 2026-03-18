@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Problem & Research Narrative** - Synthesize econometric research into presentation-ready problem statement and research summary (completed 2026-03-18)
 - [x] **Phase 2: Architecture Diagrams** - Create mermaid context and sequence diagrams showing FCI system architecture and pool listening flow (completed 2026-03-18)
-- [ ] **Phase 3: Repository Artifacts** - Create root README (architecture + pointers), research README (detailed findings + artifact links), and document the demo
+- [x] **Phase 3: Repository Artifacts** - Create root README (architecture + pointers), research README (detailed findings + artifact links), and document the demo (completed 2026-03-18)
 - [ ] **Phase 4: Beamer Slide Deck** - Produce LaTeX Beamer .tex file with problem, research, solution, demo, and roadmap frames
 
 ## Phase Details
@@ -55,7 +55,7 @@ Plans:
   2. Root README is accessible to a mixed audience -- brief and high-level, not dense
   3. research/README.md provides detailed research summary organized by domain (econometrics, backtest, model, data) with pointers to actual artifacts (notebooks, modules, LaTeX, fixtures)
   4. A developer unfamiliar with the project can find and run the demo test using only the documented forge command, and the demo shows FCI tracking through swap, mint, and burn scenarios on V4
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 03-01-PLAN.md — Write root README.md with overview, architecture diagrams, demo section, and directory pointers
@@ -86,5 +86,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Problem & Research Narrative | 0/2 | Complete    | 2026-03-18 |
 | 2. Architecture Diagrams | 0/1 | Complete    | 2026-03-18 |
-| 3. Repository Artifacts | 0/2 | Not started | - |
+| 3. Repository Artifacts | 2/2 | Complete   | 2026-03-18 |
 | 4. Beamer Slide Deck | 0/2 | Not started | - |
