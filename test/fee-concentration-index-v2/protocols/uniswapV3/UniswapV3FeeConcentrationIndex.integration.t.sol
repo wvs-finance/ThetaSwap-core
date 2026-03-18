@@ -88,7 +88,10 @@ contract UniswapV3FCI_IntegrationScript is Script, Test {
         );
 
         // Listen (register pool on facet)
-        facet.listen(abi.encode(IUniswapV3Pool(v3Pool)));
+        PoolKey memory poolKey = facet.listen(abi.encode(IUniswapV3Pool(v3Pool)));
+
+        // Initialize epoch (1 day) on FCI V2's storage
+        fci.initializeEpochPool(poolKey, UNISWAP_V3_REACTIVE, 86400);
 
         vm.stopBroadcast();
 
@@ -208,13 +211,15 @@ contract UniswapV3FCI_IntegrationScript is Script, Test {
     //  Phase 4: Verify (read-only — query on-chain, assert vs fixture)
     // ══════════════════════════════════════════════════════════════
 
-    function verify(string calldata fixtureName) public {
+    function verify(string calldata fixtureName) public view {
         string memory stateJson = vm.readFile(STATE_FILE);
-        address fci = vm.parseJsonAddress(stateJson, ".fci");
+        address fciAddr = vm.parseJsonAddress(stateJson, ".fci");
+        address facetAddr = vm.parseJsonAddress(stateJson, ".facet");
+        FeeConcentrationIndexV2 fci_ = FeeConcentrationIndexV2(fciAddr);
 
         string memory fixtureJson = vm.readFile(string.concat(FIXTURE_DIR, fixtureName, ".json"));
 
-        // Parse expected metrics
+        // ── Parse expected metrics ──
         uint256 expectedDeltaPlus = vm.parseJsonUint(fixtureJson, ".expected.deltaPlus");
         uint256 expectedIndexA = vm.parseJsonUint(fixtureJson, ".expected.indexA");
         uint256 expectedThetaSum = vm.parseJsonUint(fixtureJson, ".expected.thetaSum");
@@ -223,30 +228,86 @@ contract UniswapV3FCI_IntegrationScript is Script, Test {
 
         // Build PoolKey (V3 reactive uses hooks = fci address)
         address v3Pool = vm.parseJsonAddress(stateJson, ".v3Pool");
-        PoolKey memory poolKey = _buildPoolKey(v3Pool, fci);
+        PoolKey memory poolKey = _buildPoolKey(v3Pool, fciAddr);
 
-        // Query actual metrics
+        // ══════════════════════════════════════════════════════
+        //  Query ALL FCI V2 view functions
+        // ══════════════════════════════════════════════════════
+
+        // ── getIndex() ──
         (uint128 actualIndexA, uint256 actualThetaSum, uint256 actualRemovedPosCount) =
-            FeeConcentrationIndexV2(fci).getIndex(poolKey, UNISWAP_V3_REACTIVE);
-        uint128 actualDeltaPlus = FeeConcentrationIndexV2(fci).getDeltaPlus(poolKey, UNISWAP_V3_REACTIVE);
-        uint128 actualAtNull = FeeConcentrationIndexV2(fci).getAtNull(poolKey, UNISWAP_V3_REACTIVE);
+            fci_.getIndex(poolKey, UNISWAP_V3_REACTIVE);
 
-        // Log
+        // ── getDeltaPlus() ──
+        uint128 actualDeltaPlus = fci_.getDeltaPlus(poolKey, UNISWAP_V3_REACTIVE);
+
+        // ── getAtNull() ──
+        uint128 actualAtNull = fci_.getAtNull(poolKey, UNISWAP_V3_REACTIVE);
+
+        // ── getThetaSum() — must equal thetaSum from getIndex() ──
+        uint256 actualThetaSumDirect = fci_.getThetaSum(poolKey, UNISWAP_V3_REACTIVE);
+
+        // ── getDeltaPlusEpoch() — within 1 day, must equal cumulative deltaPlus ──
+        uint128 actualDeltaPlusEpoch = fci_.getDeltaPlusEpoch(poolKey, UNISWAP_V3_REACTIVE);
+
+        // ── getRegisteredProtocolFacet() ──
+        address actualFacet = address(fci_.getRegisteredProtocolFacet(UNISWAP_V3_REACTIVE));
+
+        // ══════════════════════════════════════════════════════
+        //  Log
+        // ══════════════════════════════════════════════════════
+
         console2.log("=== Verify: %s ===", fixtureName);
         console2.log("removedPosCount: expected=%d actual=%d", expectedRemovedPosCount, actualRemovedPosCount);
-        console2.log("deltaPlus: expected=%s actual=%s", vm.toString(expectedDeltaPlus), vm.toString(uint256(actualDeltaPlus)));
+        console2.log("deltaPlus (cumulative): %s", vm.toString(uint256(actualDeltaPlus)));
+        console2.log("deltaPlus (epoch):      %s", vm.toString(uint256(actualDeltaPlusEpoch)));
 
-        // Assert — tolerance for sqrt rounding + V3 reactive timing
+        // ══════════════════════════════════════════════════════
+        //  Assertions — 5% tolerance for V3 reactive async timing
+        // ══════════════════════════════════════════════════════
+
+        // Exact: removedPosCount
         assertEq(actualRemovedPosCount, expectedRemovedPosCount, "removedPosCount mismatch");
-        assertApproxEqAbs(actualThetaSum, expectedThetaSum, expectedThetaSum / 20, "thetaSum mismatch (5% tolerance)");
-        assertApproxEqAbs(uint256(actualIndexA), expectedIndexA, expectedIndexA / 20, "indexA mismatch (5% tolerance)");
-        assertApproxEqAbs(uint256(actualAtNull), expectedAtNull, expectedAtNull / 20, "atNull mismatch (5% tolerance)");
 
-        // deltaPlus direction check
-        if (expectedDeltaPlus > 0) {
-            assertGt(uint256(actualDeltaPlus), 0, "deltaPlus must be > 0");
+        // 5% tolerance for async-affected quantities
+        if (expectedThetaSum > 0) {
+            assertApproxEqAbs(actualThetaSum, expectedThetaSum, expectedThetaSum / 20, "getIndex().thetaSum mismatch");
         } else {
-            assertEq(uint256(actualDeltaPlus), 0, "deltaPlus must be 0");
+            assertEq(actualThetaSum, 0, "thetaSum must be 0");
+        }
+        if (expectedIndexA > 0) {
+            assertApproxEqAbs(uint256(actualIndexA), expectedIndexA, expectedIndexA / 20, "getIndex().indexA mismatch");
+        } else {
+            assertEq(uint256(actualIndexA), 0, "indexA must be 0");
+        }
+        if (expectedAtNull > 0) {
+            assertApproxEqAbs(uint256(actualAtNull), expectedAtNull, expectedAtNull / 20, "getAtNull() mismatch");
+        } else {
+            assertEq(uint256(actualAtNull), 0, "atNull must be 0");
+        }
+
+        // deltaPlus direction check + tolerance
+        if (expectedDeltaPlus > 0) {
+            assertGt(uint256(actualDeltaPlus), 0, "getDeltaPlus() must be > 0");
+        } else {
+            assertEq(uint256(actualDeltaPlus), 0, "getDeltaPlus() must be 0");
+        }
+
+        // getThetaSum() must be consistent with getIndex()
+        assertEq(actualThetaSumDirect, actualThetaSum, "getThetaSum() != getIndex().thetaSum");
+
+        // getDeltaPlusEpoch() must equal getDeltaPlus() within same epoch
+        assertEq(uint256(actualDeltaPlusEpoch), uint256(actualDeltaPlus),
+            "getDeltaPlusEpoch() must equal getDeltaPlus() within same epoch");
+
+        // getRegisteredProtocolFacet()
+        assertEq(actualFacet, facetAddr, "getRegisteredProtocolFacet() mismatch");
+
+        // Cross-getter consistency: deltaPlus == max(0, indexA - atNull)
+        if (actualIndexA > actualAtNull) {
+            assertEq(uint256(actualDeltaPlus), uint256(actualIndexA - actualAtNull), "deltaPlus != indexA - atNull");
+        } else {
+            assertEq(uint256(actualDeltaPlus), 0, "deltaPlus must be 0 when indexA <= atNull");
         }
     }
 
