@@ -57,8 +57,10 @@ contract UniswapV3FCI_IntegrationScript is Script, Test {
 
         FeeConcentrationIndexV2 fci = new FeeConcentrationIndexV2();
         UniswapV3Facet facet = new UniswapV3Facet();
+        // rvmId = reactiveDeployer (index 4) — the EOA that deploys the reactive on Lasna.
+        // The callback proxy replaces address(0) with the reactive's deployer address.
         UniswapV3Callback callback = new UniswapV3Callback{value: 0.1 ether}(
-            address(fci), CALLBACK_PROXY, accts.deployer.addr
+            address(fci), CALLBACK_PROXY, accts.reactiveDeployer.addr
         );
 
         fci.initialize(accts.deployer.addr);
