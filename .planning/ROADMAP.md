@@ -61,5 +61,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Crate Foundation | 1/1 | Complete    | 2026-03-18 |
-| 2. Deploy Logic | 0/2 | Not started | - |
+| 2. Deploy Logic | 1/2 | In Progress|  |
 | 3. CLI Wiring | 0/? | Not started | - |
