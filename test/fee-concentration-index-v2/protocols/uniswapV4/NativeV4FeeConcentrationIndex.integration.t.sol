@@ -197,20 +197,58 @@ contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
             }
         }
 
-        // ── Query actual metrics ──
+        // ══════════════════════════════════════════════════════
+        //  Assert ALL FCI V2 view functions against fixture
+        // ══════════════════════════════════════════════════════
+
+        // ── getIndex() ──
         (uint128 actualIndexA, uint256 actualThetaSum, uint256 actualRemovedPosCount) =
             fci.getIndex(key, NATIVE_V4);
+
+        // ── getDeltaPlus() ──
         uint128 actualDeltaPlus = fci.getDeltaPlus(key, NATIVE_V4);
+
+        // ── getAtNull() ──
         uint128 actualAtNull = fci.getAtNull(key, NATIVE_V4);
 
-        // ── Assert against Python fixture ──
-        // Exact for additive quantities (no sqrt rounding)
-        assertEq(actualThetaSum, expectedThetaSum, "thetaSum mismatch");
-        assertEq(actualRemovedPosCount, expectedRemovedPosCount, "removedPosCount mismatch");
-        // 1-wei tolerance for sqrt-derived quantities (Python isqrt vs Solidity FixedPointMathLib.sqrt)
-        assertApproxEqAbs(uint256(actualIndexA), expectedIndexA, 1, "indexA mismatch");
-        assertApproxEqAbs(uint256(actualAtNull), expectedAtNull, 1, "atNull mismatch");
-        assertApproxEqAbs(uint256(actualDeltaPlus), expectedDeltaPlus, 2, "deltaPlus mismatch");
+        // ── getThetaSum() — must equal thetaSum from getIndex() ──
+        uint256 actualThetaSumDirect = fci.getThetaSum(key, NATIVE_V4);
+
+        // ── getDeltaPlusEpoch() — 0 when no epoch initialized ──
+        uint128 actualDeltaPlusEpoch = fci.getDeltaPlusEpoch(key, NATIVE_V4);
+
+        // ── getRegisteredProtocolFacet() — must return our facet ──
+        address actualFacet = address(fci.getRegisteredProtocolFacet(NATIVE_V4));
+
+        // ══════════════════════════════════════════════════════
+        //  Assertions: exact for additive, 1-2 wei for sqrt
+        // ══════════════════════════════════════════════════════
+
+        // Additive quantities (no sqrt rounding)
+        assertEq(actualThetaSum, expectedThetaSum, "getIndex().thetaSum mismatch");
+        assertEq(actualRemovedPosCount, expectedRemovedPosCount, "getIndex().removedPosCount mismatch");
+
+        // getThetaSum() must be consistent with getIndex()
+        assertEq(actualThetaSumDirect, actualThetaSum, "getThetaSum() != getIndex().thetaSum");
+
+        // sqrt-derived quantities (1-2 wei tolerance)
+        assertApproxEqAbs(uint256(actualIndexA), expectedIndexA, 1, "getIndex().indexA mismatch");
+        assertApproxEqAbs(uint256(actualAtNull), expectedAtNull, 1, "getAtNull() mismatch");
+        assertApproxEqAbs(uint256(actualDeltaPlus), expectedDeltaPlus, 2, "getDeltaPlus() mismatch");
+
+        // Epoch: 0 when not initialized
+        assertEq(uint256(actualDeltaPlusEpoch), 0, "getDeltaPlusEpoch() must be 0 (no epoch)");
+
+        // Facet registration
+        assertEq(actualFacet, address(facet), "getRegisteredProtocolFacet() mismatch");
+
+        // ── Cross-getter consistency ──
+        // getDeltaPlus() == max(0, indexA - atNull)
+        if (actualIndexA > actualAtNull) {
+            assertEq(uint256(actualDeltaPlus), uint256(actualIndexA - actualAtNull), "deltaPlus != indexA - atNull");
+        } else {
+            assertEq(uint256(actualDeltaPlus), 0, "deltaPlus must be 0 when indexA <= atNull");
+        }
     }
 
     // ══════════════════════════════════════════════════════════════
