@@ -14,7 +14,7 @@ import {FeeConcentrationIndexV2} from "@fee-concentration-index-v2/FeeConcentrat
 import {UniswapV3Facet} from "@fee-concentration-index-v2/protocols/uniswap-v3/UniswapV3Facet.sol";
 import {UniswapV3Callback} from "@fee-concentration-index-v2/protocols/uniswap-v3/UniswapV3Callback.sol";
 import {IFCIProtocolFacet} from "@fee-concentration-index-v2/interfaces/IFCIProtocolFacet.sol";
-import {IFeeConcentrationIndex} from "@fee-concentration-index/interfaces/IFeeConcentrationIndex.sol";
+import {IFeeConcentrationIndex} from "@fee-concentration-index-v2/interfaces/IFeeConcentrationIndex.sol";
 import {IProtocolStateView} from "@protocol-adapter/interfaces/IProtocolStateView.sol";
 import {IUnlockCallback} from "v4-core/src/interfaces/callback/IUnlockCallback.sol";
 import {UNISWAP_V3_REACTIVE} from "@fee-concentration-index-v2/types/FlagsRegistry.sol";
@@ -95,18 +95,23 @@ contract UniswapV3FCI_IntegrationScript is Script, Test {
         console2.log("=== Phase 2: Deploy Reactive on Lasna ===");
 
         string memory callbackStr = vm.toString(address(callback));
-        bytes memory deployResult = _ffiCast(lasnaRpc, accts.deployer.privateKey,
-            string.concat(
-                "forge create --broadcast --rpc-url ", lasnaRpc,
-                " --private-key ", vm.toString(accts.deployer.privateKey),
-                " --value 5ether",
-                " src/fee-concentration-index-v2/protocols/uniswap-v3/UniswapV3Reactive.sol:UniswapV3Reactive",
-                " --constructor-args ", callbackStr
-            )
-        );
-        // TODO: parse reactive address from FFI output
-        // For now, manually set or use the last deployed reactive
-        console2.log("Reactive deployed (check Lasna explorer)");
+        string memory pkHex = vm.toString(bytes32(accts.deployer.privateKey));
+        string memory v3PoolStr = vm.toString(v3Pool);
+        string memory reactiveFile = "broadcast/reactive-addr.txt";
+
+        // Deploy reactive on Lasna + register pool + fund (all in one script)
+        string[] memory deployCmd = new string[](6);
+        deployCmd[0] = "scripts/deploy-reactive.sh";
+        deployCmd[1] = lasnaRpc;
+        deployCmd[2] = pkHex;
+        deployCmd[3] = callbackStr;
+        deployCmd[4] = v3PoolStr;
+        deployCmd[5] = reactiveFile;
+        vm.ffi(deployCmd);
+
+        // Read reactive address from file
+        string memory reactiveStr = vm.readFile(reactiveFile);
+        console2.log("Reactive: %s", reactiveStr);
 
         // ── Phase 3: Mint LPs + Swap ──
         console2.log("=== Phase 3: Mint 2 LPs (1:2 ratio) + Swap ===");
@@ -196,13 +201,6 @@ contract UniswapV3FCI_IntegrationScript is Script, Test {
         }
     }
 
-    function _ffiCast(string memory, uint256, string memory cmd) internal returns (bytes memory) {
-        string[] memory args = new string[](3);
-        args[0] = "bash";
-        args[1] = "-c";
-        args[2] = cmd;
-        return vm.ffi(args);
-    }
 }
 
 // ══════════════════════════════════════════════════════════════
