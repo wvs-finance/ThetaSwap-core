@@ -41,10 +41,10 @@ created: 2026-03-18
 | 1-01-01 | 01 | 1 | PROB-01 | file check | `grep -l "adverse competition" .planning/phases/01-problem-research-narrative/narrative.md` | ❌ W0 | ⬜ pending |
 | 1-01-02 | 01 | 1 | PROB-02 | file check | `grep -l "inverted-U" .planning/phases/01-problem-research-narrative/narrative.md` | ❌ W0 | ⬜ pending |
 | 1-01-03 | 01 | 1 | PROB-03 | file check | `grep -l "2.65" .planning/phases/01-problem-research-narrative/narrative.md` | ❌ W0 | ⬜ pending |
-| 1-02-01 | 02 | 1 | PROB-01 | file check | `test -f research/figures/dose_response.png` | ❌ W0 | ⬜ pending |
-| 1-02-02 | 02 | 1 | PROB-02 | file check | `test -f research/figures/trigger_days.png` | ❌ W0 | ⬜ pending |
-| 1-02-03 | 02 | 1 | PROB-02 | file check | `test -f research/figures/alpha_sweep.png` | ❌ W0 | ⬜ pending |
-| 1-02-04 | 02 | 1 | PROB-03 | file check | `test -f research/figures/reserve_dynamics.png` | ❌ W0 | ⬜ pending |
+| 1-02-01 | 02 | 1 | PROB-01 | file check | `test -f research/figures/dose-response.png` | ❌ W0 | ⬜ pending |
+| 1-02-02 | 02 | 1 | PROB-02 | file check | `test -f research/figures/trigger-days.png` | ❌ W0 | ⬜ pending |
+| 1-02-03 | 02 | 1 | PROB-02 | file check | `test -f research/figures/alpha-sweep.png` | ❌ W0 | ⬜ pending |
+| 1-02-04 | 02 | 1 | PROB-03 | file check | `test -f research/figures/reserve-dynamics.png` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
