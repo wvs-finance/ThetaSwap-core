@@ -1,3 +1,5 @@
+pub mod primary;
+
 use std::path::PathBuf;
 
 /// All inputs required to attempt a deployment via any strategy.
