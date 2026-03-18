@@ -8,7 +8,7 @@ Three phases deliver the `d2p` binary: scaffolding the Rust crate (Phase 1), imp
 
 - [x] **Phase 1: Crate Foundation** - Rust crate skeleton with typed errors, deploy params, and output structs (completed 2026-03-17)
 - [x] **Phase 2: Deploy Logic** - forge-to-cast fallback runner with receipt verification and pipe-friendly output (completed 2026-03-18)
-- [ ] **Phase 3: CLI Wiring** - clap argument parser wired to deploy runner, producing the complete `d2p` binary
+- [x] **Phase 3: CLI Wiring** - clap argument parser wired to deploy runner, producing the complete `d2p` binary (completed 2026-03-18)
 
 ## Phase Details
 
@@ -65,4 +65,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. Crate Foundation | 1/1 | Complete    | 2026-03-18 |
 | 2. Deploy Logic | 2/2 | Complete    | 2026-03-18 |
-| 3. CLI Wiring | 0/1 | Not started | - |
+| 3. CLI Wiring | 1/1 | Complete   | 2026-03-18 |
