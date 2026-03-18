@@ -132,6 +132,34 @@ def two_hetero_capital_one_swap() -> Scenario:
     )
 
 
+def two_hetero_capital_partial_exit() -> Scenario:
+    """
+    2 LPs (1:2 capital), 1 swap, only LP0 burns. LP1 stays active.
+
+    Tests registry reads with active positions at query time:
+    - getRegistryAllSnapshots: 1 active range with LP1's 2e18
+    - getRegistryActiveRanges: 1 range
+    - getRegistryPositionBaseline: LP1's baseline feeGrowth
+    - getRegistryPositionAddBlock: LP1's entry block
+    - getRegistryPositionSwapLifetime: swaps since LP1 entered
+    """
+    lp0 = _passive("lp0", 1_000_000_000_000_000_000)   # 1e18
+    lp1 = _passive("lp1", 2_000_000_000_000_000_000)   # 2e18
+    return Scenario(
+        name="two_hetero_capital_partial_exit",
+        description="2 LPs (1:2), 1 swap, LP0 burns, LP1 stays. Registry has active position.",
+        agents=(lp0, lp1),
+        actions=(
+            _mint("lp0", lp0.liquidity, block=1),
+            _mint("lp1", lp1.liquidity, block=1),
+            _swap(block=5),
+            _roll(10),
+            _burn("lp0", lp0.liquidity, block=10),
+            # LP1 stays — registry has active data at query time
+        ),
+    )
+
+
 def equal_capital_hetero_duration() -> Scenario:
     """
     2 LPs, equal capital, different entry blocks, 2 swaps → deltaPlus=0.
@@ -201,6 +229,7 @@ ALL_UNIT_SCENARIOS = (
     sole_provider_one_swap,
     two_homogeneous_lps_one_swap,
     two_hetero_capital_one_swap,
+    two_hetero_capital_partial_exit,
     equal_capital_hetero_duration,
     jit_crowdout_three_swaps,
 )

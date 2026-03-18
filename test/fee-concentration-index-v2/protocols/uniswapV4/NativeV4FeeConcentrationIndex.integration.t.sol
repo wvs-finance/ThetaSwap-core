@@ -25,6 +25,9 @@ import {IFeeConcentrationIndex} from "@fee-concentration-index/interfaces/IFeeCo
 import {IProtocolStateView} from "@protocol-adapter/interfaces/IProtocolStateView.sol";
 import {IUnlockCallback} from "v4-core/src/interfaces/callback/IUnlockCallback.sol";
 import {NATIVE_V4} from "@fee-concentration-index-v2/types/FlagsRegistry.sol";
+import {RangeSnapshot} from "@fee-concentration-index-v2/types/RangeSnapshot.sol";
+import {TickRange} from "typed-uniswap-v4/types/TickRangeMod.sol";
+import {Position} from "v4-core/src/libraries/Position.sol";
 
 // Deploy script (used as test client)
 import {DeployFCIV2HookV4Script} from "@foundry-script/deploy/DeployFCIV2HookV4.s.sol";
@@ -259,6 +262,64 @@ contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
         } else {
             assertEq(uint256(actualDeltaPlus), 0, "deltaPlus must be 0 when indexA <= atNull");
         }
+
+        // ══════════════════════════════════════════════════════
+        //  Registry reads (per-range + per-position)
+        // ══════════════════════════════════════════════════════
+
+        // Parse expected ranges from fixture
+        bytes memory rangesRaw = vm.parseJson(json, ".expected.ranges");
+        // If ranges exist in fixture, assert them
+        if (rangesRaw.length > 0) {
+            _assertRegistryRanges(json, key);
+        }
+
+        // Parse expected positions from fixture
+        bytes memory positionsRaw = vm.parseJson(json, ".expected.positions");
+        if (positionsRaw.length > 0) {
+            _assertRegistryPositions(json, key);
+        }
+    }
+
+    function _assertRegistryRanges(string memory json, PoolKey memory poolKey) internal {
+        // Query actual registry snapshots
+        RangeSnapshot[] memory snapshots = fci.getRegistryAllSnapshots(poolKey, NATIVE_V4);
+        TickRange[] memory activeRanges = fci.getRegistryActiveRanges(poolKey, NATIVE_V4);
+
+        // Parse expected range[0] (all current scenarios have at most 1 range)
+        int256 expectedTickLower = vm.parseJsonInt(json, ".expected.ranges[0].tickLower");
+        int256 expectedTickUpper = vm.parseJsonInt(json, ".expected.ranges[0].tickUpper");
+        uint256 expectedTotalLiq = vm.parseJsonUint(json, ".expected.ranges[0].totalLiquidity");
+        uint256 expectedSwapCount = vm.parseJsonUint(json, ".expected.ranges[0].swapCount");
+        uint256 expectedPosCount = vm.parseJsonUint(json, ".expected.ranges[0].positionCount");
+
+        assertGt(snapshots.length, 0, "registry must have at least 1 range");
+        assertEq(activeRanges.length, snapshots.length, "active range count mismatch");
+
+        assertEq(snapshots[0].tickLower, int24(expectedTickLower), "range tickLower mismatch");
+        assertEq(snapshots[0].tickUpper, int24(expectedTickUpper), "range tickUpper mismatch");
+        assertEq(uint256(snapshots[0].totalLiquidity), expectedTotalLiq, "range totalLiquidity mismatch");
+        assertEq(snapshots[0].swapCount, expectedSwapCount, "range swapCount mismatch");
+        assertEq(snapshots[0].positionCount, expectedPosCount, "range positionCount mismatch");
+    }
+
+    function _assertRegistryPositions(string memory json, PoolKey memory poolKey) internal {
+        // Parse expected position[0] (all current scenarios have at most 1 active position)
+        string memory agentId = vm.parseJsonString(json, ".expected.positions[0].posKey");
+        uint256 expectedAddBlock = vm.parseJsonUint(json, ".expected.positions[0].addBlock");
+        uint256 expectedSwapLifetime = vm.parseJsonUint(json, ".expected.positions[0].swapLifetime");
+
+        // Compute posKey from agent address
+        address lp = agents[agentId];
+        require(lp != address(0), "agent not setup for registry assertion");
+        // V4 positionKey uses Position.calculatePositionKey(owner, tickLower, tickUpper, salt)
+        bytes32 posKey = Position.calculatePositionKey(lp, int24(-60), int24(60), bytes32(0));
+
+        uint256 actualAddBlock = fci.getRegistryPositionAddBlock(poolKey, NATIVE_V4, posKey);
+        uint256 actualSwapLifetime = fci.getRegistryPositionSwapLifetime(poolKey, NATIVE_V4, posKey);
+
+        assertEq(actualAddBlock, expectedAddBlock, "position addBlock mismatch");
+        assertEq(actualSwapLifetime, expectedSwapLifetime, "position swapLifetime mismatch");
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -283,6 +344,10 @@ contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
 
     function test_integrationNativeV4_unit_twoDifferentOnlyCapitalHeterogenousLps_oneSwap_deltaPlusGtZero() public {
         _runFixture("two_hetero_capital_one_swap");
+    }
+
+    function test_integrationNativeV4_unit_twoHeteroCapitalPartialExit_registryHasActivePosition() public {
+        _runFixture("two_hetero_capital_partial_exit");
     }
 
     function test_integrationNativeV4_unit_equalCapitalDurationHeterogeneousLps_twoSwaps_deltaPlusMustBeZero() public {
