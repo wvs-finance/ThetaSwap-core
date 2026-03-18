@@ -21,8 +21,7 @@ import {PoolSwapTest} from "v4-core/src/test/PoolSwapTest.sol";
 import {Actions} from "@uniswap/v4-periphery/src/libraries/Actions.sol";
 import {Planner, Plan} from "@uniswap/v4-periphery/test/shared/Planner.sol";
 import {INDEX_ONE} from "typed-uniswap-v4/types/FeeConcentrationStateMod.sol";
-import {V3CallbackRouter} from
-    "@reactive-integration/adapters/uniswapV3/V3CallbackRouter.sol";
+import {V3CallbackRouter} from "@utils/V3CallbackRouter.sol";
 import {Protocol, isUniswapV3, isUniswapV4} from "@foundry-script/types/Protocol.sol";
 import {Context} from "@foundry-script/types/Context.sol";
 import "@foundry-script/utils/Constants.sol";

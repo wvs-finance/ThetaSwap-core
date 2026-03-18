@@ -10,7 +10,7 @@ import {Scenario, mintPosition, burnPosition} from "@foundry-script/types/Scenar
 import {TickMath} from "v4-core/src/libraries/TickMath.sol";
 import {SwapParams} from "v4-core/src/types/PoolOperation.sol";
 import {PoolSwapTest} from "v4-core/src/test/PoolSwapTest.sol";
-import {V3CallbackRouter} from "@reactive-integration/adapters/uniswapV3/V3CallbackRouter.sol";
+import {V3CallbackRouter} from "@utils/V3CallbackRouter.sol";
 import {Currency} from "v4-core/src/types/Currency.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {console} from "forge-std/console.sol";

@@ -22,7 +22,7 @@ import {UNISWAP_V3_REACTIVE} from "@fee-concentration-index-v2/types/FlagsRegist
 
 import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
-import {V3CallbackRouter} from "@reactive-integration/adapters/uniswapV3/V3CallbackRouter.sol";
+import {V3CallbackRouter} from "@utils/V3CallbackRouter.sol";
 
 import {Accounts, initAccounts} from "@utils/Accounts.sol";
 

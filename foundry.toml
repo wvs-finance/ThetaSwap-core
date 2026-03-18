@@ -1,6 +1,6 @@
 [profile.default]
 src = "src"
-out = "out"
+out = "out-sol"
 libs = ["lib"]
 evm_version = "cancun"
 solc_version = "0.8.26"
@@ -36,7 +36,7 @@ remappings = [
     "@fee-concentration-index/=src/fee-concentration-index/",
     "@fee-concentration-index-v2/=src/fee-concentration-index-v2/",
     "@reactive-integration/=src/reactive-integration/",
-    "@protocol-adapter/=src/reactive-integration/template/",
+    "@protocol-adapter/=src/protocol-adapter/",
     "@theta-swap-insurance/=src/theta-swap-insurance/",
     "@types/=src/types/",
     "@libraries/=src/libraries/",
@@ -46,6 +46,29 @@ remappings = [
 ]
 
 script = "foundry-script"
+threads = 6
+force = true
+ignored_error_codes = [2018, 2394, 5667, 6321]
+
+[profile.lite]
+skip = ["test/**", "foundry-script/**"]
+
+[profile.ci]
+ffi = false
+force = false
+
+[lint]
+exclude_lints = [
+    "asm-keccak256",
+    "erc20-unchecked-transfer",
+    "mixed-case-function",
+    "mixed-case-variable",
+    "pascal-case-struct",
+    "screaming-snake-case-immutable",
+    "unsafe-typecast",
+    "unused-import",
+    "unwrapped-modifier-logic",
+]
 
 [rpc_endpoints]
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"

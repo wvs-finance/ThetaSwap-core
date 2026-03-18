@@ -5,8 +5,8 @@ import {PoolKey} from "v4-core/src/types/PoolKey.sol";
 import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
 import {ModifyLiquidityParams} from "v4-core/src/types/PoolOperation.sol";
 import {Position} from "v4-core/src/libraries/Position.sol";
-import {v3PositionKey} from "../reactive-integration/libraries/PoolKeyExtMod.sol";
-import {isUniswapV3, isUniswapV4} from "../reactive-integration/uniswapV3/types/HookDataFlagsMod.sol";
+import {v3PositionKey} from "@libraries/PoolKeyExtMod.sol";
+import {isUniswapV3, isUniswapV4} from "@types/HookDataFlagsMod.sol";
 
 // Shared hook utilities — free functions (SCOP: no library keyword).
 // Used by FCI and other hook facets that need poolId + positionKey from hook params.

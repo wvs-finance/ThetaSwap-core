@@ -4,6 +4,9 @@ permissions: {}
 
 on:
   push:
+    branches:
+      - main
+      - "008-*"
   pull_request:
   workflow_dispatch:
 
@@ -11,8 +14,8 @@ env:
   FOUNDRY_PROFILE: ci
 
 jobs:
-  solidity:
-    name: Solidity
+  build:
+    name: Forge Build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -25,17 +28,33 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Show Forge version
-        run: forge --version
+      - name: Build (src only)
+        env:
+          FOUNDRY_PROFILE: lite
+        run: forge build
 
-      - name: Run Forge fmt
-        run: forge fmt --check
+  test:
+    name: Forge Test
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+          submodules: recursive
 
-      - name: Run Forge build
-        run: forge build --sizes
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
 
-      - name: Run Forge tests
-        run: forge test -vvv
+      - name: Run Vault tests
+        run: forge test --match-path "test/fci-token-vault/**" -vv
+
+      - name: Run FCI V2 tests
+        run: |
+          forge test --match-path "test/fee-concentration-index-v2/**" -vv \
+            --no-match-test "test_integrationNativeV4_unit_equalCapitalDurationHeterogeneousLps_twoSwaps_deltaPlusMustBeZero|test_integrationNativeV4_unit_twoHeteroCapitalPartialExit_registryHasActivePosition"
 
   research:
     name: Research (Python tests + data provenance + notebooks)

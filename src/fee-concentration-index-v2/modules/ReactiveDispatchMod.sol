@@ -34,7 +34,7 @@ import {mutateV3Payload}
     from "@fee-concentration-index-v2/protocols/uniswap-v3/libraries/UniswapV3PayloadMutatorLib.sol";
 
 import {IUnlockCallbackReactiveExt}
-    from "@reactive-integration/template/interfaces/IUnlockCallbackReactiveExt.sol";
+    from "@protocol-adapter/interfaces/IUnlockCallbackReactiveExt.sol";
 
 uint64 constant CALLBACK_GAS_LIMIT = 1_000_000;
 

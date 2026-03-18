@@ -29,6 +29,7 @@ import {RangeSnapshot} from "@fee-concentration-index-v2/types/RangeSnapshot.sol
 import {TickRange} from "typed-uniswap-v4/types/TickRangeMod.sol";
 import {Position} from "v4-core/src/libraries/Position.sol";
 
+// import {FCITestHelper}
 // Deploy script (used as test client)
 import {DeployFCIV2HookV4Script} from "@foundry-script/deploy/DeployFCIV2HookV4.s.sol";
 
@@ -44,6 +45,8 @@ import {Mode} from "@utils/Mode.sol";
 /// queries all FCI interface getters, and asserts exact match against Python output.
 ///
 /// Deploy uses DeployFCIV2HookV4Script.deployLocal() — same code path as live.
+
+// note: is FCITesthelper
 contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
     using PoolIdLibrary for PoolKey;
 
@@ -114,7 +117,7 @@ contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
         approvePosmFor(agent);
         return agent;
     }
-
+    // note: These utils are given on FCITestHelper
     function _mintPosition(address lp, int24 tickLower, int24 tickUpper, uint256 liquidity)
         internal
         returns (uint256 tokenId)

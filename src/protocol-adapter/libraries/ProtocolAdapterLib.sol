@@ -8,7 +8,7 @@ import {
     FeeConcentrationIndexStorage,
     fciStorage, reactiveFciStorage
 } from "@fee-concentration-index/modules/FeeConcentrationIndexStorageMod.sol";
-import {isUniswapV3Reactive} from "@reactive-integration/uniswapV3/types/HookDataFlagsMod.sol";
+import {isUniswapV3Reactive} from "@types/HookDataFlagsMod.sol";
 import {IFeeConcentrationIndex} from "@fee-concentration-index-v2/interfaces/IFeeConcentrationIndex.sol";
 
 // ── FCI storage dispatch (Option C: hookData flags) ──

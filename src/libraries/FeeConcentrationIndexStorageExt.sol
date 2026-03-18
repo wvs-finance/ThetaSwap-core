@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.26;
 
-import {isUniswapV3Reactive} from "../uniswapV3/types/HookDataFlagsMod.sol";
+import {isUniswapV3Reactive} from "@types/HookDataFlagsMod.sol";
 import {
     t_storeTick, t_readTick,
     t_cacheRemovalData, t_readRemovalData
-} from "../../fee-concentration-index/modules/FeeConcentrationIndexStorageMod.sol";
+} from "@fee-concentration-index/modules/FeeConcentrationIndexStorageMod.sol";
 
 function writeCacheTick(bytes calldata hookData, int24 tick) {
     if (isUniswapV3Reactive(hookData)) return;

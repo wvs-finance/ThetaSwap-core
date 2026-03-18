@@ -112,3 +112,4 @@ tmp/
 *.out
 *.toc
 !research/**/*.log
+out-sol/

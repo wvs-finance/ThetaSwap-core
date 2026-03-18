@@ -16,7 +16,7 @@ import {
 import {
     writeCacheTick, readCacheTick,
     writeCacheRemovalData, readCacheRemovalData
-} from "../reactive-integration/libraries/FeeConcentrationIndexStorageExt.sol";
+} from "@libraries/FeeConcentrationIndexStorageExt.sol";
 import {
     registerPosition, setFeeGrowthBaseline, getFeeGrowthBaseline, deleteFeeGrowthBaseline,
     deregisterPosition, addStateTerm, incrementPosCount, decrementPosCount,
@@ -28,7 +28,7 @@ import {
     getCurrentTick,
     getPositionFeeGrowthInsideLast0,
     getFeeGrowthInside0
-} from "../reactive-integration/libraries/FeeGrowthReaderExt.sol";
+} from "@libraries/FeeGrowthReaderExt.sol";
 import {FeeShareRatio, fromFeeGrowth, fromFeeGrowthDelta} from "typed-uniswap-v4/types/FeeShareRatioMod.sol";
 import {FeeConcentrationState} from "typed-uniswap-v4/types/FeeConcentrationStateMod.sol";
 import {SwapCount} from "typed-uniswap-v4/types/SwapCountMod.sol";

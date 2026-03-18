@@ -1,4 +1,5 @@
-.PHONY: build install setup-kernel test notebooks verify-data clean
+.PHONY: build install setup-kernel test notebooks verify-data clean \
+       show-build sol-test sol-test-demo test-py
 
 VENV := uhi8
 PYTHON := $(VENV)/bin/python
@@ -21,9 +22,22 @@ setup-kernel:
 		--env PYTHONPATH "$(CURDIR)/research"
 	@echo "Kernel 'thetaswap' installed. PYTHONPATH=$(CURDIR)/research"
 
+# ── Solidity ──────────────────────────────────────────────────────────
+show-build:
+	FOUNDRY_PROFILE=lite forge build --no-cache --threads 6
+
+sol-test:
+	forge test --no-cache --match-path "test/fci-token-vault/**" -vv
+	forge test --no-cache --match-path "test/fee-concentration-index-v2/**" -vv
+
+sol-test-demo:
+	forge test --no-cache --match-path "test/fee-concentration-index-v2/protocols/uniswapV4/*" -vvvv
+
 # ── Python ───────────────────────────────────────────────────────────
-test:
+test-py:
 	cd research && ../$(PYTEST) tests/ -v
+
+test: test-py
 
 # ── Notebooks (headless execute) ─────────────────────────────────────
 notebooks: setup-kernel

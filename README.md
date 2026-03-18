@@ -40,12 +40,12 @@ make test
 ## Solidity (Fee Concentration Index)
 
 ```bash
-forge build          # compile contracts
-forge test           # run Solidity tests
-forge test -vvv      # verbose output
+make show-build      # src-only build, no cache, optimized threads (~3s)
+make sol-test        # vault + FCI V2 test suites
+make sol-test-demo   # NativeV4 FCI integration scenarios (full trace)
 ```
 
-Contracts live in `src/fee-concentration-index/`. Tests in `test/fee-concentration-index/`.
+`sol-test-demo` runs the FCI V2 NativeUniswapV4 integration tests — fixture-driven scenarios that verify delta-plus captures JIT crowd-out on Uniswap V4 pools.
 
 ## Python (Econometrics + Backtest)
 
