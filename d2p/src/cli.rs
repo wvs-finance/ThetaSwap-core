@@ -168,18 +168,15 @@ mod tests {
 
     #[test]
     fn test_env_rpc_url() {
-        // Use a unique env var value to avoid cross-test pollution when running in parallel.
-        // Tests that set env vars run with serial isolation via unique values.
+        // Only set ETH_RPC_URL; supply --private-key as a flag to avoid polluting ETH_PRIVATE_KEY.
         let unique_url = "http://from-env-rpc-url-test-unique";
-        let unique_pk = "0xenv-key-unique-rpc-test";
         std::env::set_var("ETH_RPC_URL", unique_url);
-        std::env::set_var("ETH_PRIVATE_KEY", unique_pk);
         let result = Cli::try_parse_from([
             "d2p", "ts", "reactive", "uniswap-v3",
+            "--private-key", "0xexplicit-key",
             "--callback", "0xc",
         ]);
         std::env::remove_var("ETH_RPC_URL");
-        std::env::remove_var("ETH_PRIVATE_KEY");
         assert!(result.is_ok(), "env fallback failed: {:?}", result.err());
         match result.unwrap().command {
             Commands::Ts(ts) => match ts.command {
@@ -192,15 +189,14 @@ mod tests {
 
     #[test]
     fn test_env_private_key() {
-        let unique_url = "http://rpc-for-pk-test-unique";
+        // Only set ETH_PRIVATE_KEY; supply --rpc-url as a flag to avoid polluting ETH_RPC_URL.
         let unique_pk = "0xprivate-from-env-unique";
-        std::env::set_var("ETH_RPC_URL", unique_url);
         std::env::set_var("ETH_PRIVATE_KEY", unique_pk);
         let result = Cli::try_parse_from([
             "d2p", "ts", "reactive", "uniswap-v3",
+            "--rpc-url", "http://explicit-rpc",
             "--callback", "0xc",
         ]);
-        std::env::remove_var("ETH_RPC_URL");
         std::env::remove_var("ETH_PRIVATE_KEY");
         assert!(result.is_ok(), "env fallback failed: {:?}", result.err());
         match result.unwrap().command {
