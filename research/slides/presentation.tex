@@ -32,6 +32,7 @@
 
 % ── Packages ─────────────────────────────────────────────────────────────────
 \usepackage{amsmath,amssymb}
+\usepackage{array}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{xcolor}
@@ -173,9 +174,6 @@ $P(\text{exit}_{i,t}) = \sigma\!\bigl(
   \item Beyond a threshold, concentration no longer signals volume ---
     it signals \emph{fee extraction} by sophisticated actors
 
-  \item Passive LP's effective fee rate $\hat{\phi}_i = x_i \cdot \phi_{\text{pool}}$
-    drops below exit threshold \citep{capponi2024optimal}
-
   \item The quadratic term $\Delta^2$ captures this \textbf{nonlinear regime shift}:
     the marginal effect of concentration \emph{flips sign} at the turning point
 
@@ -202,11 +200,40 @@ Lag & $\hat{\beta}_1$ (linear) & $p$ & $\hat{\beta}_2$ (quadratic) & $p$ & Turni
 
 \bigskip
 
-\begin{itemize}
-  \item \textbf{Lags 1 and 3}: both coefficients significant at 5\%
-  \item \textbf{Lag 2}: linear significant, quadratic marginal ($p = 0.065$)
-  \item Signal \textbf{dissipates at lags 5--7} --- LPs react to recent shocks
-\end{itemize}
+\textit{At lag 3, passive LPs exhibit statistically significant hedging demand:
+$\hat{\beta}_1 = -32.44$, $\hat{\beta}_2 = +205.34$ ($p = 0.004$), turning
+point $\DeltaStar = 0.079$. At $\Delta = 0.15$, each $0.01$ increase in
+concentration raises exit probability by ${\sim}2.3$ percentage points ---
+implying a willingness to pay of \$110 per position per event.}
+
+\end{frame}
+
+% ── Frame 7: Evidence — Answers ──────────────────────────────────────────────
+\begin{frame}{Answers}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{@{}>{\bfseries}p{4.5cm} p{8cm}@{}}
+\toprule
+Question & Finding \\
+\midrule
+Is there demand for hedging adverse competition?
+  & \textbf{Yes.} Quadratic deviation model: $\beta_1 < 0$ (shelter),
+    $\beta_2 > 0$ (exit), both significant at lags 1--3 ($p < 0.03$).
+    Turning point $\DeltaStar \approx 0.08$--$0.09$. \\
+
+What is the price?
+  & At $\Delta = 0.15$: implied premium \textbf{\$110 per position}.
+    Marginal effect $= 2.27$ --- each 0.01 $\Delta$ raises exit probability
+    by 2.3 pp. \\
+
+Does hedging improve outcomes?
+  & Backtest ($p^2$ payoff, $R_0 = \$200$K):
+    \textbf{18.8\%} of positions better off, mean hedge value
+    \textbf{+\$23.21}. \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 \end{frame}
 
