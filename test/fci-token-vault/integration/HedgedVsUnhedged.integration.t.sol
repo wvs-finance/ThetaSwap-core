@@ -1,0 +1,377 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.26;
+
+import {Test, console} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {Hooks} from "v4-core/src/libraries/Hooks.sol";
+import {IHooks} from "v4-core/src/interfaces/IHooks.sol";
+import {PoolId, PoolIdLibrary} from "v4-core/src/types/PoolId.sol";
+import {PoolKey} from "v4-core/src/types/PoolKey.sol";
+import {Currency} from "v4-core/src/types/Currency.sol";
+import {HookMiner} from "@uniswap/v4-periphery/src/utils/HookMiner.sol";
+import {PosmTestSetup} from "@uniswap/v4-periphery/test/shared/PosmTestSetup.sol";
+import {IERC20} from "forge-std/interfaces/IERC20.sol";
+import {PositionManager} from "@uniswap/v4-periphery/src/PositionManager.sol";
+import {PositionDescriptor} from "@uniswap/v4-periphery/src/PositionDescriptor.sol";
+
+import {FeeConcentrationIndexHarness} from "../../fee-concentration-index/harness/FeeConcentrationIndexHarness.sol";
+import {FCITestHelper} from "../../fee-concentration-index/helpers/FCITestHelper.sol";
+import {SqrtPriceLibrary} from "foundational-hooks/src/libraries/SqrtPriceLibrary.sol";
+
+import {Context} from "@foundry-script/types/Context.sol";
+import {Protocol} from "@foundry-script/types/Protocol.sol";
+import {Scenario, mintPosition, burnPosition} from "@foundry-script/types/Scenario.sol";
+import {executeSwapWithAmount} from "@foundry-script/simulation/JitGame.sol";
+import "@foundry-script/utils/Constants.sol";
+
+import {FciTokenVaultHarness} from "../helpers/FciTokenVaultHarness.sol";
+import {V4_ADAPTER_SLOT} from "@protocol-adapter/storage/ProtocolAdapterStorage.sol";
+import {LONG, SHORT} from "@fci-token-vault/modules/CollateralCustodianMod.sol";
+import {lookbackPayoffX96} from "@fci-token-vault/libraries/SqrtPriceLookbackPayoffX96Lib.sol";
+import {IFeeConcentrationIndex} from "@fee-concentration-index/interfaces/IFeeConcentrationIndex.sol";
+
+/// @title HedgedVsUnhedged — FCI V1 + Vault integration
+/// @notice Equal total capital (0.6 ETH each), different allocation:
+///   Hedged:   0.5 pool + 0.1 insurance
+///   Unhedged: 0.6 pool
+/// Single-round JIT sandwich: swap → JIT enters → reverse swap → JIT exits → LPs exit.
+contract HedgedVsUnhedgedTest is PosmTestSetup, FCITestHelper {
+    using PoolIdLibrary for PoolKey;
+
+    Context ctx;
+    Scenario scenario;
+    FeeConcentrationIndexHarness fciHarness;
+    FciTokenVaultHarness vault;
+    PoolId poolId;
+
+    // Scenario parameters — equal total capital, different allocation.
+    // Hedged:   0.5 pool + 0.1 insurance = 0.6 total
+    // Unhedged: 0.6 pool                 = 0.6 total
+    // JIT:      2.1 pool (enters mid-round, captures fees, exits)
+    uint256 constant HEDGED_LIQ = 0.5e18;
+    uint256 constant UNHEDGED_LIQ = 0.6e18;
+    uint256 constant HEDGE_AMOUNT = 0.1e18;
+    uint256 constant JIT_CAPITAL = 2.1e18;
+    uint256 constant TRADE_SIZE = 1e15;
+    uint256 constant ROUND_INTERVAL = 1 days;
+
+    address hedgedPlpAddr;
+    uint256 hedgedPlpPk;
+    address unhedgedPlpAddr;
+    uint256 unhedgedPlpPk;
+    address jitLpAddr;
+    uint256 jitLpPk;
+    address swapperAddr;
+    uint256 swapperPk;
+
+    function setUp() public {
+        // Deploy V4 infrastructure
+        deployFreshManagerAndRouters();
+        deployMintAndApprove2Currencies();
+        deployAndApprovePosm(manager);
+
+        fciLP = makeAddr("defaultLP");
+        fciSwapper = address(this);
+        fciSwapRouter = swapRouter;
+
+        // Deploy FCI hook via HookMiner
+        uint160 flags = uint160(
+            Hooks.AFTER_ADD_LIQUIDITY_FLAG
+                | Hooks.BEFORE_REMOVE_LIQUIDITY_FLAG
+                | Hooks.AFTER_REMOVE_LIQUIDITY_FLAG
+                | Hooks.BEFORE_SWAP_FLAG
+                | Hooks.AFTER_SWAP_FLAG
+        );
+        bytes memory constructorArgs = abi.encode(address(lpm));
+        (address hookAddress, bytes32 salt) = HookMiner.find(
+            address(this),
+            flags,
+            type(FeeConcentrationIndexHarness).creationCode,
+            constructorArgs
+        );
+        fciHarness = new FeeConcentrationIndexHarness{salt: salt}(lpm);
+        require(address(fciHarness) == hookAddress, "hook address mismatch");
+
+        // Init pool
+        (key, poolId) = initPool(
+            currency0, currency1,
+            IHooks(address(fciHarness)),
+            3000,
+            SQRT_PRICE_1_1
+        );
+
+        // Wire Context
+        ctx.vm = vm;
+        ctx.v4Pool = key;
+        ctx.v4PositionManager = address(lpm);
+        ctx.v4SwapRouter = address(swapRouter);
+        ctx.chainId = block.chainid;
+
+        // Initialize epoch metric on FCI hook
+        fciHarness.initializeEpochPool(key, ROUND_INTERVAL);
+
+        // Deploy vault harness — strike at sqrtPrice = 0.80 (price = 0.64).
+        // δ⁺ close to 1 under JIT crowd-out → HWM ≈ 0.98 → ratio ≈ 1.22 → saturated payoff.
+        // Intentional: with 2.1 ETH JIT on 1.1 ETH passive, concentration is extreme.
+        vault = new FciTokenVaultHarness();
+        uint160 strikePrice = SqrtPriceLibrary.fractionToSqrtPriceX96(80, 100);
+        vault.harness_initAdapter(
+            V4_ADAPTER_SLOT,
+            address(manager),
+            key.hooks,
+            key,
+            false
+        );
+        vault.harness_initVault(
+            strikePrice,
+            block.timestamp + 5 days,
+            V4_ADAPTER_SLOT,
+            Currency.unwrap(currency1)
+        );
+
+        // Create wallets
+        Vm.Wallet memory w;
+        w = vm.createWallet("hedgedPlp");
+        hedgedPlpAddr = w.addr; hedgedPlpPk = w.privateKey;
+        w = vm.createWallet("unhedgedPlp");
+        unhedgedPlpAddr = w.addr; unhedgedPlpPk = w.privateKey;
+        w = vm.createWallet("jitLp");
+        jitLpAddr = w.addr; jitLpPk = w.privateKey;
+        w = vm.createWallet("swapper");
+        swapperAddr = w.addr; swapperPk = w.privateKey;
+
+        // Fund and approve all actors
+        _setupLP(hedgedPlpAddr);
+        _setupLP(unhedgedPlpAddr);
+        _setupLP(jitLpAddr);
+        _setupSwapper(swapperAddr);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Helpers
+    // ═══════════════════════════════════════════════════════════
+
+    function _setupLP(address account) internal {
+        seedBalance(account);
+        approvePosmFor(account);
+    }
+
+    function _setupSwapper(address account) internal {
+        seedBalance(account);
+        vm.startPrank(account);
+        IERC20(Currency.unwrap(currency0)).approve(address(swapRouter), type(uint256).max);
+        IERC20(Currency.unwrap(currency1)).approve(address(swapRouter), type(uint256).max);
+        vm.stopPrank();
+    }
+
+    function _depositToVault(address plpAddr, uint256 amount) internal {
+        vm.startPrank(plpAddr);
+        IERC20(Currency.unwrap(currency1)).approve(address(vault), amount);
+        vault.harness_deposit(plpAddr, amount);
+        vm.stopPrank();
+    }
+
+    function _settleAndRedeem(FciTokenVaultHarness v, address plpAddr, uint256 depositAmount)
+        internal
+        returns (uint256 longPayout, uint256 shortPayout)
+    {
+        (,, uint256 expiry,,,) = v.harness_getVaultStorage();
+        vm.warp(expiry + 1);
+        v.harness_settle();
+        (,,,,, uint256 longPayoutPerToken) = v.harness_getVaultStorage();
+        longPayout = (depositAmount * longPayoutPerToken) / SqrtPriceLibrary.Q96;
+        shortPayout = depositAmount - longPayout;
+        vm.prank(plpAddr);
+        v.harness_redeem(plpAddr, depositAmount);
+    }
+
+    function _snapshotBal(address who) internal view returns (uint256 a, uint256 b) {
+        a = IERC20(Currency.unwrap(currency0)).balanceOf(who);
+        b = IERC20(Currency.unwrap(currency1)).balanceOf(who);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Scenario 1: Equilibrium — no JIT, single round
+    // ═══════════════════════════════════════════════════════════
+
+    function test_equilibrium_no_jit() public {
+        _depositToVault(hedgedPlpAddr, HEDGE_AMOUNT);
+
+        (uint256 hA0, uint256 hB0) = _snapshotBal(hedgedPlpAddr);
+        (uint256 uA0, uint256 uB0) = _snapshotBal(unhedgedPlpAddr);
+
+        // Both LPs enter
+        uint256 hedgedTokenId = mintPosition(ctx, scenario, Protocol.UniswapV4, hedgedPlpPk, HEDGED_LIQ);
+        uint256 unhedgedTokenId = mintPosition(ctx, scenario, Protocol.UniswapV4, unhedgedPlpPk, UNHEDGED_LIQ);
+
+        // Swap — fees shared proportionally, no JIT
+        vm.roll(block.number + 1);
+        executeSwapWithAmount(ctx, Protocol.UniswapV4, swapperPk, ZERO_FOR_ONE, int256(TRADE_SIZE));
+
+        // Both LPs exit — FCI observes
+        vm.roll(block.number + 50);
+        burnPosition(ctx, Protocol.UniswapV4, hedgedPlpPk, hedgedTokenId, HEDGED_LIQ);
+        burnPosition(ctx, Protocol.UniswapV4, unhedgedPlpPk, unhedgedTokenId, UNHEDGED_LIQ);
+
+        vault.harness_pokeEpoch();
+
+        (uint256 hA1, uint256 hB1) = _snapshotBal(hedgedPlpAddr);
+        (uint256 uA1, uint256 uB1) = _snapshotBal(unhedgedPlpAddr);
+        uint256 hedgedFeePayout = (hA1 + hB1) - (hA0 + hB0);
+        uint256 unhedgedFeePayout = (uA1 + uB1) - (uA0 + uB0);
+
+        (uint256 longPayout, uint256 shortPayout) = _settleAndRedeem(vault, hedgedPlpAddr, HEDGE_AMOUNT);
+
+        uint256 hedgedWelfare = hedgedFeePayout + longPayout;
+        uint256 unhedgedWelfare = unhedgedFeePayout;
+
+        // No JIT → δ⁺ ≈ 0 → LONG = 0
+        assertEq(longPayout, 0, "LONG should be 0 in equilibrium");
+        assertEq(longPayout + shortPayout, HEDGE_AMOUNT, "conservation: long + short = deposit");
+
+        console.log("=== EQUILIBRIUM (no JIT) ===");
+        console.log("Hedged fee payout:", hedgedFeePayout);
+        console.log("Unhedged fee payout:", unhedgedFeePayout);
+        console.log("LONG payout:", longPayout);
+        console.log("Hedged welfare:", hedgedWelfare);
+        console.log("Unhedged welfare:", unhedgedWelfare);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Scenario 2: JIT crowd-out — hedge compensates
+    // ═══════════════════════════════════════════════════════════
+
+    function test_jit_crowdout_hedge_compensates() public {
+        _depositToVault(hedgedPlpAddr, HEDGE_AMOUNT);
+
+        (uint256 hA0, uint256 hB0) = _snapshotBal(hedgedPlpAddr);
+        (uint256 uA0, uint256 uB0) = _snapshotBal(unhedgedPlpAddr);
+
+        // 1. Both passive LPs enter
+        uint256 hedgedTokenId = mintPosition(ctx, scenario, Protocol.UniswapV4, hedgedPlpPk, HEDGED_LIQ);
+        uint256 unhedgedTokenId = mintPosition(ctx, scenario, Protocol.UniswapV4, unhedgedPlpPk, UNHEDGED_LIQ);
+
+        // 2. Swap 1 — generates fees for passive LPs
+        vm.roll(block.number + 1);
+        executeSwapWithAmount(ctx, Protocol.UniswapV4, swapperPk, ZERO_FOR_ONE, int256(TRADE_SIZE));
+
+        // 3. JIT enters — will capture most of swap 2 fees
+        vm.roll(block.number + 1);
+        uint256 jitTokenId = mintPosition(ctx, scenario, Protocol.UniswapV4, jitLpPk, JIT_CAPITAL);
+
+        // 4. Swap 2 — reverse direction, JIT captures most fees
+        executeSwapWithAmount(ctx, Protocol.UniswapV4, swapperPk, !ZERO_FOR_ONE, int256(TRADE_SIZE));
+
+        // 5. JIT exits (1 block lifetime → high fee concentration)
+        vm.roll(block.number + 1);
+        burnPosition(ctx, Protocol.UniswapV4, jitLpPk, jitTokenId, JIT_CAPITAL);
+
+        // 6. Passive LPs exit — FCI observes fee concentration
+        vm.roll(block.number + 49);
+        burnPosition(ctx, Protocol.UniswapV4, hedgedPlpPk, hedgedTokenId, HEDGED_LIQ);
+        burnPosition(ctx, Protocol.UniswapV4, unhedgedPlpPk, unhedgedTokenId, UNHEDGED_LIQ);
+
+        // 7. Poke vault — reads δ⁺, updates HWM
+        vault.harness_pokeEpoch();
+
+        (uint256 hA1, uint256 hB1) = _snapshotBal(hedgedPlpAddr);
+        (uint256 uA1, uint256 uB1) = _snapshotBal(unhedgedPlpAddr);
+        uint256 hedgedFeePayout = (hA1 + hB1) - (hA0 + hB0);
+        uint256 unhedgedFeePayout = (uA1 + uB1) - (uA0 + uB0);
+
+        // 8. Settle and redeem
+        (uint256 longPayout, uint256 shortPayout) = _settleAndRedeem(vault, hedgedPlpAddr, HEDGE_AMOUNT);
+
+        uint256 hedgedWelfare = hedgedFeePayout + longPayout;
+        uint256 unhedgedWelfare = unhedgedFeePayout;
+
+        // Property 1: Insurance compensates for JIT crowd-out
+        assertGt(hedgedWelfare, unhedgedWelfare, "hedged should earn more under JIT crowd-out");
+        assertGt(longPayout, 0, "LONG should be positive under JIT crowd-out");
+
+        // Property 3: Vault solvency
+        assertEq(longPayout + shortPayout, HEDGE_AMOUNT, "conservation: long + short = deposit");
+
+        console.log("=== JIT CROWD-OUT (equal total capital) ===");
+        console.log("Hedged fee payout:", hedgedFeePayout);
+        console.log("Unhedged fee payout:", unhedgedFeePayout);
+        console.log("LONG payout:", longPayout);
+        console.log("SHORT payout:", shortPayout);
+        console.log("Hedged welfare:", hedgedWelfare);
+        console.log("Unhedged welfare:", unhedgedWelfare);
+        console.log("Net hedge benefit:", hedgedWelfare - unhedgedWelfare);
+        (uint160 strikeStored, uint160 hwmStored,,,,) = vault.harness_getVaultStorage();
+        console.log("Strike:", uint256(strikeStored));
+        console.log("HWM:", uint256(hwmStored));
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // Scenario 3: Below-strike JIT — no false trigger
+    // ═══════════════════════════════════════════════════════════
+
+    function test_below_strike_no_false_trigger() public {
+        // Vault with strike above expected HWM → payoff = 0
+        FciTokenVaultHarness highStrikeVault = new FciTokenVaultHarness();
+        uint160 highStrike = SqrtPriceLibrary.fractionToSqrtPriceX96(990, 1000);
+        highStrikeVault.harness_initAdapter(
+            V4_ADAPTER_SLOT,
+            address(manager),
+            key.hooks,
+            key,
+            false
+        );
+        highStrikeVault.harness_initVault(
+            highStrike, block.timestamp + 5 days,
+            V4_ADAPTER_SLOT, Currency.unwrap(currency1)
+        );
+        vm.startPrank(hedgedPlpAddr);
+        IERC20(Currency.unwrap(currency1)).approve(address(highStrikeVault), HEDGE_AMOUNT);
+        highStrikeVault.harness_deposit(hedgedPlpAddr, HEDGE_AMOUNT);
+        vm.stopPrank();
+
+        (uint256 hA0, uint256 hB0) = _snapshotBal(hedgedPlpAddr);
+        (uint256 uA0, uint256 uB0) = _snapshotBal(unhedgedPlpAddr);
+
+        // Same JIT scenario but with high-strike vault
+        uint256 hedgedTokenId = mintPosition(ctx, scenario, Protocol.UniswapV4, hedgedPlpPk, HEDGED_LIQ);
+        uint256 unhedgedTokenId = mintPosition(ctx, scenario, Protocol.UniswapV4, unhedgedPlpPk, UNHEDGED_LIQ);
+
+        vm.roll(block.number + 1);
+        executeSwapWithAmount(ctx, Protocol.UniswapV4, swapperPk, ZERO_FOR_ONE, int256(TRADE_SIZE));
+
+        vm.roll(block.number + 1);
+        uint256 jitTokenId = mintPosition(ctx, scenario, Protocol.UniswapV4, jitLpPk, JIT_CAPITAL);
+        executeSwapWithAmount(ctx, Protocol.UniswapV4, swapperPk, !ZERO_FOR_ONE, int256(TRADE_SIZE));
+
+        vm.roll(block.number + 1);
+        burnPosition(ctx, Protocol.UniswapV4, jitLpPk, jitTokenId, JIT_CAPITAL);
+
+        vm.roll(block.number + 49);
+        burnPosition(ctx, Protocol.UniswapV4, hedgedPlpPk, hedgedTokenId, HEDGED_LIQ);
+        burnPosition(ctx, Protocol.UniswapV4, unhedgedPlpPk, unhedgedTokenId, UNHEDGED_LIQ);
+
+        highStrikeVault.harness_pokeEpoch();
+
+        (uint256 hA1, uint256 hB1) = _snapshotBal(hedgedPlpAddr);
+        (uint256 uA1, uint256 uB1) = _snapshotBal(unhedgedPlpAddr);
+        uint256 hedgedFeePayout = (hA1 + hB1) - (hA0 + hB0);
+        uint256 unhedgedFeePayout = (uA1 + uB1) - (uA0 + uB0);
+
+        (uint256 longPayout, uint256 shortPayout) = _settleAndRedeem(highStrikeVault, hedgedPlpAddr, HEDGE_AMOUNT);
+
+        uint256 hedgedWelfare = hedgedFeePayout + longPayout;
+        uint256 unhedgedWelfare = unhedgedFeePayout;
+
+        // HWM < strike → LONG = 0, hedge costs without paying
+        assertEq(longPayout, 0, "LONG should be 0 when below strike");
+        assertLt(hedgedWelfare, unhedgedWelfare, "hedged should earn less when below strike");
+        assertEq(longPayout + shortPayout, HEDGE_AMOUNT, "conservation: long + short = deposit");
+
+        console.log("=== BELOW-STRIKE JIT ===");
+        console.log("Hedged fee payout:", hedgedFeePayout);
+        console.log("Unhedged fee payout:", unhedgedFeePayout);
+        console.log("LONG payout:", longPayout);
+        console.log("Hedged welfare:", hedgedWelfare);
+        console.log("Unhedged welfare:", unhedgedWelfare);
+    }
+}

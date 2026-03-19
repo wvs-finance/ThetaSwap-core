@@ -1,0 +1,76 @@
+{
+  "specs": {
+    "Contemporaneous A_T": {
+      "beta_concentration": -0.17475661635398865,
+      "se_concentration": 0.03409264236688614,
+      "p_value_concentration": 2.9606709972540557e-07,
+      "beta_swap": 0.4834235906600952,
+      "beta_jit_lag": -2.2200076580047607,
+      "n_obs": 91,
+      "pseudo_r2": 0.35850627278075187,
+      "wtp_mean": 5.494315567182063e-07,
+      "log_likelihood": -41.344149082899094,
+      "aic": 90.68829816579819
+    },
+    "Lag-1 A_T (yesterday)": {
+      "beta_concentration": -0.45389237999916077,
+      "se_concentration": 0.031070390716195107,
+      "p_value_concentration": 0.0,
+      "beta_swap": 0.39870426058769226,
+      "beta_jit_lag": -2.290127754211426,
+      "n_obs": 91,
+      "pseudo_r2": 0.3724469343087604,
+      "wtp_mean": 5.232440183593471e-06,
+      "log_likelihood": -40.25616607069969,
+      "aic": 88.51233214139938
+    },
+    "3-day MA A_T": {
+      "beta_concentration": -0.6461412906646729,
+      "se_concentration": 0.03860550746321678,
+      "p_value_concentration": 0.0,
+      "beta_swap": 0.15569424629211426,
+      "beta_jit_lag": -2.321226119995117,
+      "n_obs": 91,
+      "pseudo_r2": 0.3799308032277834,
+      "wtp_mean": 1.7605953749232685e-05,
+      "log_likelihood": -39.738006472587585,
+      "aic": 87.47601294517517
+    },
+    "7-day MA A_T": {
+      "beta_concentration": -0.7499967217445374,
+      "se_concentration": 0.03667193278670311,
+      "p_value_concentration": 0.0,
+      "beta_swap": 0.11086227744817734,
+      "beta_jit_lag": -2.1329877376556396,
+      "n_obs": 91,
+      "pseudo_r2": 0.3933494514675874,
+      "wtp_mean": 7.859918865698924e-06,
+      "log_likelihood": -38.91062605381012,
+      "aic": 85.82125210762024
+    },
+    "Cumulative Max A_T": {
+      "beta_concentration": 0.5404588580131531,
+      "se_concentration": 0.03460679575800896,
+      "p_value_concentration": 0.0,
+      "beta_swap": 0.6173231601715088,
+      "beta_jit_lag": -2.019716262817383,
+      "n_obs": 91,
+      "pseudo_r2": 0.3737391818691239,
+      "wtp_mean": 0.0,
+      "log_likelihood": -40.153844594955444,
+      "aic": 88.30768918991089
+    }
+  },
+  "predictive": {
+    "beta_concentration": -0.26626938581466675,
+    "se_concentration": 0.028628626838326454,
+    "p_value_concentration": 1.39381403399477e-20,
+    "beta_swap": 0.10539599508047104,
+    "beta_jit_lag": -0.7259478569030762,
+    "n_obs": 90,
+    "pseudo_r2": 0.09637322742168686,
+    "wtp_mean": 0.0,
+    "log_likelihood": -56.355228424072266,
+    "aic": 120.71045684814453
+  }
+}

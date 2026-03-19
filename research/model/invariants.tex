@@ -1,0 +1,557 @@
+% invariants.tex — Complete invariant set for the fee concentration insurance CFMM
+% Kontrol: prove_cfmm_*, prove_fci_*, prove_ins_*
+
+\section{Invariants}\label{sec:invariants}
+
+This section contains all invariants for the fee concentration insurance system.
+The invariant set is organized into five groups:
+\begin{enumerate}
+  \item CFMM-01 through CFMM-19: Base CFMM invariants (trading set, reserves, fees, ticks).
+  \item CFMM-20 through CFMM-25: Replication invariants (payoff, reserves, canonical form).
+  \item CFMM-26 through CFMM-28: Perpetual invariants (funding, jump safety).
+  \item FCI-01 through FCI-13: Fee concentration index invariants (state, price mapping, perpetual funding).
+  \item INS-01 through INS-10: Insurance CFMM invariants (borrow, settlement, utilization).
+\end{enumerate}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{Base CFMM Invariants (CFMM-01 through CFMM-19)}\label{sec:base-cfmm}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{invariant}{CFMM-01}{Trading set convexity}
+% Kontrol: prove_cfmm_tradingSetConvexity
+\[
+  S = \{(u, y) : \psi(u, y) \geq L \cdot C_1\} \text{ is convex}
+\]
+The trading set is convex. Since $\psi(u,y) = y - (\pl^2/4)u$ is linear (hence concave),
+the superlevel set is convex (Geometry paper \cite{angeris2023geometry}, Theorem~1).
+\end{invariant}
+
+\begin{invariant}{CFMM-02}{Reserve non-negativity}
+% Kontrol: prove_cfmm_reserveNonNeg
+\[
+  u \geq 0 \quad\text{and}\quad y \geq 0
+\]
+Both virtual concentration reserve $u$ and USDC reserve $y$ are non-negative at all times.
+\end{invariant}
+
+\begin{invariant}{CFMM-03}{Invariant preservation on swap}
+% Kontrol: prove_cfmm_invariantSwap
+\[
+  \{\psi(u, y) = L \cdot C_1\}
+  \;\xrightarrow{\text{swap}(\Delta u)}\;
+  \{\psi(u + \Delta u, y - \Delta y) = L \cdot C_1\}
+\]
+Every swap preserves the trading function invariant. From $\Delta y = (\pl^2/4)\Delta u$.
+\end{invariant}
+
+\begin{invariant}{CFMM-04}{Invariant preservation on mint}
+% Kontrol: prove_cfmm_invariantMint
+\[
+  \{\psi(u, y) = L \cdot C_1\}
+  \;\xrightarrow{\text{mint}(\Delta L)}\;
+  \{\psi(u + \Delta u, y + \Delta y) = (L + \Delta L) \cdot C_1\}
+\]
+Minting new liquidity preserves the invariant at the new liquidity level
+(\cref{prop:mint-invariant}).
+\end{invariant}
+
+\begin{invariant}{CFMM-05}{Invariant preservation on burn}
+% Kontrol: prove_cfmm_invariantBurn
+\[
+  \{\psi(u, y) = L \cdot C_1\}
+  \;\xrightarrow{\text{burn}(\Delta L)}\;
+  \{\psi(u - \Delta u, y - \Delta y) = (L - \Delta L) \cdot C_1\}
+\]
+Burning liquidity preserves the invariant at the reduced liquidity level.
+\end{invariant}
+
+\begin{invariant}{CFMM-06}{Spot price consistency}
+% Kontrol: prove_cfmm_spotPriceConsistency
+\[
+  p = \frac{\pl^2}{2}\sqrt{\frac{u}{\Lact}}
+  = -\frac{\partial\psi/\partial u}{\partial\psi/\partial y} \cdot \frac{du}{dx}
+\]
+The spot price derived from reserves matches the marginal rate of substitution
+(\cref{def:spot-price}).
+\end{invariant}
+
+\begin{invariant}{CFMM-07}{Price within tick range}
+% Kontrol: prove_cfmm_priceInRange
+\[
+  \pl \leq p \leq \pu \quad\text{when } \Lact > 0
+\]
+The spot price stays within the active tick range $[\pl, \pu]$
+when there is active liquidity.
+\end{invariant}
+
+\begin{invariant}{CFMM-08}{Liquidity additivity at tick crossing}
+% Kontrol: prove_cfmm_tickCrossing
+\[
+  \Lact' = \Lact + \Lnet
+\]
+At each tick crossing, active liquidity updates by adding the signed net liquidity
+of the crossed tick. This is O(1) because $\psi$ is 1-homogeneous in $L$
+(\cref{thm:linearity}).
+\end{invariant}
+
+\begin{invariant}{CFMM-09}{Liquidity non-negativity}
+% Kontrol: prove_cfmm_liquidityNonNeg
+\[
+  L \geq 0 \quad\text{and}\quad \Lact \geq 0
+\]
+Total and active liquidity are non-negative.
+\end{invariant}
+
+\begin{invariant}{CFMM-10}{No-arbitrage (monotone reserves)}
+% Kontrol: prove_cfmm_noArbitrage
+\[
+  p' > p \;\longrightarrow\; u(p') > u(p) \;\land\; y(p') > y(p)
+\]
+Both reserves are strictly increasing in price (\cref{prop:reserve-monotone}).
+Under Framing~C, rising concentration absorbs more virtual exposure and
+accumulates more USDC.
+\end{invariant}
+
+\begin{invariant}{CFMM-11}{Fee accumulator monotonicity}
+% Kontrol: prove_cfmm_feeAccMonotone
+\[
+  g^{\text{borrow}}_{n+1} \geq g^{\text{borrow}}_n
+\]
+The borrow fee growth accumulator is non-decreasing (borrow rate $\geq \premfactor > 0$).
+\end{invariant}
+
+\begin{invariant}{CFMM-12}{Fee accumulator per-position}
+% Kontrol: prove_cfmm_feeAccPerPosition
+\[
+  \text{fees}_i = L_i \cdot (g^{\text{borrow}} - g^{\text{borrow}}_{\text{baseline},i})
+\]
+Per-position borrow fees use the Synthetix difference pattern \cite{batog2018scalable}.
+\end{invariant}
+
+\begin{invariant}{CFMM-13}{LP value bounded}
+% Kontrol: prove_cfmm_lpValueBounded
+\[
+  0 \leq V(p) = \frac{\pu^2 - p^2}{\pl^2} \leq \frac{\pu^2 - \pl^2}{\pl^2}
+\]
+LP value is bounded between 0 (at $p = \pu$, full loss) and the initial
+collateral (at $p = \pl$, no loss).
+\end{invariant}
+
+\begin{invariant}{CFMM-14}{Swap output positive}
+% Kontrol: prove_cfmm_swapOutputPositive
+\[
+  \Delta x > 0 \;\longrightarrow\; \Delta y > 0
+  \quad\text{and}\quad
+  \Delta x < 0 \;\longrightarrow\; \Delta y < 0
+\]
+Swaps in either direction produce correctly-signed outputs.
+\end{invariant}
+
+\begin{invariant}{CFMM-15}{Slippage non-negative}
+% Kontrol: prove_cfmm_slippageNonNeg
+\[
+  \frac{\Delta y}{\Delta x} = \frac{\pl^2}{4}(2x + \Delta x) \geq \frac{\pl^2}{4} \cdot 2x = p
+\]
+The effective price is always at least the spot price (natural slippage from
+the $u = x^2$ transform). Equality only for infinitesimal trades.
+\end{invariant}
+
+\begin{invariant}{CFMM-16}{Coordinate transform bijection}
+% Kontrol: prove_cfmm_coordTransformBijection
+\[
+  u = x^2 \;\longleftrightarrow\; x = \sqrt{u} \quad\text{for } x \geq 0
+\]
+The $u \leftrightarrow x$ mapping is a bijection on the non-negative reals.
+One \texttt{FixedPointMathLib.sqrt} call per swap.
+\end{invariant}
+
+\begin{invariant}{CFMM-17}{1-homogeneity}
+% Kontrol: prove_cfmm_oneHomogeneity
+\[
+  \psi(\lambda u, \lambda y) = \lambda \psi(u, y) \quad\forall\, \lambda > 0
+\]
+The trading function is 1-homogeneous, enabling O(1) tick-based liquidity
+aggregation (\cref{thm:linearity}).
+\end{invariant}
+
+\begin{invariant}{CFMM-18}{Concavity}
+% Kontrol: prove_cfmm_concavity
+\[
+  \nabla^2 \psi =
+  \begin{pmatrix} 0 & 0 \\ 0 & 0 \end{pmatrix}
+\]
+$\psi(u,y) = y - (\pl^2/4)u$ is linear, hence (weakly) concave.
+The Hessian is zero. The trading set is convex.
+\end{invariant}
+
+\begin{invariant}{CFMM-19}{Single-sided deposit consistency}
+% Kontrol: prove_cfmm_singleSidedDeposit
+\[
+  \Delta L = \frac{\Delta y \cdot \pl^2}{\pu^2 + p^2}
+  \quad\text{and}\quad
+  \Delta u = \Delta L \cdot \frac{4p^2}{\pl^4}
+\]
+Single-sided USDC deposits correctly compute $\Delta L$ and virtual $\Delta u$
+(\cref{def:single-sided}). Only USDC enters the contract.
+\end{invariant}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{Replication Invariants (CFMM-20 through CFMM-25)}\label{sec:replication}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Source: Angeris et al.\ \cite{angeris2021replicating,angeris2023geometry}.
+
+\begin{invariant}{CFMM-20}{Replication accuracy}
+% Kontrol: prove_cfmm_replicationAccuracy
+\[
+  \{V(p)\}
+  \;\xrightarrow{\text{evolve}(p \to p')}\;
+  \{|\text{LP\_value}(p') - V(p')| \leq \varepsilon\}
+\]
+The CFMM LP position replicates the target payoff $V(p) = (\pu^2 - p^2)/\pl^2$
+within error $\varepsilon$ (determined by discretization and fee leakage).
+\end{invariant}
+
+\begin{invariant}{CFMM-21}{LP payoff concavity}
+% Kontrol: prove_cfmm_payoffConcavity
+\[
+  V''(p) = -\frac{2}{\pl^2} < 0 \quad\forall\, p \in [\pl, \pu]
+\]
+The LP payoff is strictly concave on the active domain.
+Required for Angeris replication theorem \cite{angeris2021replicating}.
+\end{invariant}
+
+\begin{invariant}{CFMM-22}{Reserve-payoff consistency}
+% Kontrol: prove_cfmm_reservePayoffConsistency
+\[
+  x(p) = -V'(p) = \frac{2p}{\pl^2}
+  \quad\text{and}\quad
+  y(p) = V(p) + p \cdot x(p) = \frac{\pu^2 + p^2}{\pl^2}
+\]
+Reserves are the derivatives and Legendre transform of the payoff
+(\cref{def:reserves}).
+\end{invariant}
+
+\begin{invariant}{CFMM-23}{Boundary reserves}
+% Kontrol: prove_cfmm_boundaryReserves
+\begin{align*}
+  p = \pl &:\quad x = 2/\pl,\; y = (\pu^2 + \pl^2)/\pl^2,\; V = (\pu^2 - \pl^2)/\pl^2 \\
+  p = \pu &:\quad x = 2\pu/\pl^2,\; y = 2\pu^2/\pl^2,\; V = 0
+\end{align*}
+At the lower boundary, full collateral remains. At the upper boundary, collateral
+is fully drained (max loss for underwriter, max payout for PLP).
+\end{invariant}
+
+\begin{invariant}{CFMM-24}{Price-reserve consistency}
+% Kontrol: prove_cfmm_priceReserveConsistency
+\[
+  p = \frac{\pl^2}{2} \cdot \frac{x}{L}
+  \quad\Longleftrightarrow\quad
+  x(p) = \frac{2pL}{\pl^2}
+\]
+The price derived from the trading function marginal rate matches the
+reserve curve parameterization (\cref{def:spot-price}).
+\end{invariant}
+
+\begin{invariant}{CFMM-25}{Canonical form}
+% Kontrol: prove_cfmm_canonicalForm
+\[
+  \psi(u, y) = y - \frac{\pl^2}{4}\, u
+\]
+is nondecreasing in $y$, nonincreasing in $u$, concave, and 1-homogeneous.
+This is the unique canonical trading function for this CFMM
+(Geometry paper \cite{angeris2023geometry}, Theorem~1).
+\end{invariant}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{Perpetual Invariants (CFMM-26 through CFMM-28)}\label{sec:perpetual-invariants}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Source: Angeris et al.\ \cite{angeris2022perpetuals}.
+
+\begin{invariant}{CFMM-26}{Funding rate convergence}
+% Kontrol: prove_cfmm_perpetual_fundingConvergence
+\[
+  \{|\pmark - \pindex| > \delta\}
+  \;\xrightarrow{\text{funding}(\Delta t)}\;
+  \{|\pmark' - \pindex'| < |\pmark - \pindex|\}
+\]
+The bidirectional funding mechanism drives mark-index convergence
+(\cref{prop:convergence}). Sensitivity $\alpha > 0$ controls speed.
+\end{invariant}
+
+\begin{invariant}{CFMM-27}{Funding rate bounds}
+% Kontrol: prove_cfmm_perpetual_fundingBounds
+\[
+  |\rfunding_n| \leq \alpha + \lambda \cdot |\Delta\pindex|_{\max}
+\]
+The funding rate (including jump premium) is bounded. The bound depends on
+the sensitivity $\alpha$, jump intensity $\lambda$, and maximum observable
+$\pindex$ change between callbacks.
+\end{invariant}
+
+\begin{invariant}{CFMM-28}{Jump-adjusted value bound}
+% Kontrol: prove_cfmm_perpetual_jumpSafety
+\[
+  \{\DeltaPlus \text{ jumps from } \delta \text{ to } \delta'\}
+  \;\longrightarrow\;
+  \{|\Delta\text{value}| \leq |V(\delta') - V(\delta)|\}
+\]
+Discrete jumps in $\DeltaPlus$ at liquidity events produce value changes
+bounded by the payoff difference (\cref{thm:jump-safety}).
+\end{invariant}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{Fee Concentration State Invariants (FCI-01 through FCI-08)}\label{sec:fci-state}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{invariant}{FCI-01}{Index boundedness}
+% Kontrol: prove_fci_indexBoundedness
+\[
+  0 \leq \AT \leq 1
+\]
+The fee concentration index is bounded in $[0,1]$ at all times.
+$\AT = 0$ when no positions have been removed. $\AT = 1$ is the theoretical
+maximum (single JIT monopoly).
+\end{invariant}
+
+\begin{invariant}{FCI-02}{Theta sum non-negativity}
+% Kontrol: prove_fci_thetaSumNonNeg
+\[
+  \ThetaSum \geq 0
+\]
+The aggregate turnover rate $\ThetaSum = \sum_k \thetapos_k$ is non-negative
+since each $\thetapos_k = 1/\blocklife_k > 0$.
+\end{invariant}
+
+\begin{invariant}{FCI-03}{Position count non-negativity}
+% Kontrol: prove_fci_posCountNonNeg
+\[
+  \PosCount \geq 0
+\]
+The active position count is a non-negative integer.
+\end{invariant}
+
+\begin{invariant}{FCI-04}{Null lower bound}
+% Kontrol: prove_fci_nullLowerBound
+\[
+  \{\PosCount > 0\} \;\longrightarrow\; \{\AT \geq \ATnull\}
+\]
+The real fee concentration index is always at least as large as the Ma--Crapis
+equal-share null (\cref{prop:null-lower-bound}). Equivalently, $\DeltaPlus \geq 0$.
+\end{invariant}
+
+\begin{invariant}{FCI-05}{Deviation non-negativity}
+% Kontrol: prove_fci_deviationNonNeg
+\[
+  \DeltaPlus = \max(0,\, \AT - \ATnull) \geq 0
+\]
+By construction ($\max$ with zero) and by \cref{prop:null-lower-bound}.
+\end{invariant}
+
+\begin{invariant}{FCI-06}{Deviation upper bound}
+% Kontrol: prove_fci_deviationUpperBound
+\[
+  \DeltaPlus < 1
+\]
+Since $\AT \leq 1$ and $\ATnull \geq 0$, the deviation satisfies $\DeltaPlus \leq 1$.
+Strict inequality holds when $\PosCount \geq 1$ (at least one position implies $\ATnull > 0$).
+This ensures the price mapping $p = \DeltaPlus/(1-\DeltaPlus)$ is well-defined.
+\end{invariant}
+
+\begin{invariant}{FCI-07}{Co-primary consistency}
+% Kontrol: prove_fci_coPrimaryConsistency
+\[
+  \ATnull = \sqrt{\frac{\ThetaSum}{\PosCount^2}}
+  \quad\text{and}\quad
+  \DeltaPlus = \max(0,\, \AT - \ATnull)
+\]
+The derived quantities $\ATnull$ and $\DeltaPlus$ are deterministic functions of
+the three stored state variables $(\AT, \ThetaSum, \PosCount)$.
+No additional state is needed.
+\end{invariant}
+
+\begin{invariant}{FCI-08}{Liquidity event atomicity}
+% Kontrol: prove_fci_liquidityEventAtomicity
+\[
+  \{\texttt{afterRemoveLiquidity}\}
+  \;\longrightarrow\;
+  \{\AT \text{ updated} \;\land\; \ThetaSum \text{ updated} \;\land\; \PosCount \text{ updated}\}
+\]
+All three co-primary state variables update atomically at each liquidity event.
+No intermediate state is observable where some variables are updated and others are not.
+\end{invariant}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{Price Mapping Invariants (FCI-09 through FCI-11)}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{invariant}{FCI-09}{Price non-negativity}
+% Kontrol: prove_fci_priceNonNeg
+\[
+  p = \frac{\DeltaPlus}{1 - \DeltaPlus} \geq 0
+\]
+Since $\DeltaPlus \geq 0$ (FCI-05) and $1 - \DeltaPlus > 0$ (FCI-06).
+\end{invariant}
+
+\begin{invariant}{FCI-10}{Price monotonicity}
+% Kontrol: prove_fci_priceMonotonicity
+\[
+  \DeltaPlus_1 < \DeltaPlus_2
+  \;\longrightarrow\;
+  p(\DeltaPlus_1) < p(\DeltaPlus_2)
+\]
+The price mapping is strictly increasing (\cref{prop:price-monotone}).
+Higher concentration deviation $\to$ higher insurance price.
+\end{invariant}
+
+\begin{invariant}{FCI-11}{Price-deviation invertibility}
+% Kontrol: prove_fci_priceInvertibility
+\[
+  \DeltaPlus = \frac{p}{1 + p}
+  \quad\text{is the unique inverse of}\quad
+  p = \frac{\DeltaPlus}{1 - \DeltaPlus}
+\]
+The mapping is a bijection from $[0,1) \to [0,\infty)$.
+\end{invariant}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{FCI Perpetual Funding Invariants (FCI-12 through FCI-13)}
+% ══════════════════════════════════════════════════════════════════════════════
+
+Source: Angeris et al.\ \cite{angeris2022perpetuals}.
+
+\begin{invariant}{FCI-12}{Funding rate convergence (FCI)}
+% Kontrol: prove_fci_fundingConvergence
+\[
+  \{|\pmark - \pindex| > \delta\}
+  \;\longrightarrow\; \text{funding}(\text{liquidityEvent})
+  \;\longrightarrow\; \{|\pmark' - \pindex'| < |\pmark - \pindex|\}
+\]
+The funding mechanism drives mark-index convergence (\cref{prop:convergence}).
+\end{invariant}
+
+\begin{invariant}{FCI-13}{Jump-adjusted value bound (FCI)}
+% Kontrol: prove_fci_jumpBound
+\[
+  \{\DeltaPlus \text{ jumps from } \delta \text{ to } \delta'\}
+  \;\longrightarrow\;
+  \{|\Delta\text{value}| \leq |V(\delta') - V(\delta)|\}
+\]
+Discrete jumps in $\DeltaPlus$ at liquidity events do not cause value changes
+exceeding the payoff difference (\cref{thm:jump-safety}).
+\end{invariant}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\subsection{Insurance CFMM Invariants (INS-01 through INS-10)}\label{sec:insurance-cfmm}
+% ══════════════════════════════════════════════════════════════════════════════
+
+\begin{invariant}{INS-01}{Collateral solvency}
+% Kontrol: prove_ins_collateralSolvency
+\[
+  y \geq L \cdot \frac{\pu^2 + p^2}{\pl^2} \quad\text{(USDC reserve covers all LP positions)}
+\]
+The USDC reserve is sufficient to cover the numeraire reserve requirement
+at the current price. Underwriters cannot lose more than their deposit
+(\cref{def:collateral-value}).
+\end{invariant}
+
+\begin{invariant}{INS-02}{Utilization bound}
+% Kontrol: prove_ins_utilizationBound
+\[
+  0 \leq \Ua = \frac{L_{\text{borrowed}}}{L_{\text{total}}} \leq 1
+\]
+Utilization is bounded in $[0,1]$. $L_{\text{borrowed}} \leq L_{\text{total}}$
+is enforced by reverting borrows that would exceed available liquidity.
+\end{invariant}
+
+\begin{invariant}{INS-03}{Borrow rate positivity}
+% Kontrol: prove_ins_borrowRatePositivity
+\[
+  \rborrow(\Ua) \geq \premfactor > 0 \quad\forall\, \Ua \in [0,1]
+\]
+The borrow rate is always at least $\premfactor$ (the base premium floor).
+Underwriters always earn a positive rate (\cref{prop:borrow-properties}).
+\end{invariant}
+
+\begin{invariant}{INS-04}{Borrow rate monotonicity}
+% Kontrol: prove_ins_borrowRateMonotonicity
+\[
+  \Ua_1 < \Ua_2 \;\longrightarrow\; \rborrow(\Ua_1) \leq \rborrow(\Ua_2)
+\]
+The borrow rate is non-decreasing in utilization. Higher utilization
+means higher cost, incentivizing new underwriter deposits or PLP exit
+(\cref{prop:borrow-properties}).
+\end{invariant}
+
+\begin{invariant}{INS-05}{Separate accumulator accounting}
+% Kontrol: prove_ins_separateAccumulators
+\[
+  g^{\text{borrow}} \geq 0
+  \quad\text{(always positive)}
+  \qquad
+  g^{\text{funding}} \in \mathbb{R}
+  \quad\text{(bidirectional)}
+\]
+The borrow and funding accumulators are maintained separately
+(\cref{def:borrow-accumulator,def:funding-accumulator}).
+The borrow accumulator is non-negative (PLP always pays underwriter).
+The funding accumulator can be positive or negative (bidirectional).
+Conflating them breaks funding convergence \cite{angeris2022perpetuals}.
+\end{invariant}
+
+\begin{invariant}{INS-06}{Max-price tracking}
+% Kontrol: prove_ins_maxPriceTracking
+\[
+  p_{\max,i} = \max_{t \in [\text{mint}_i, \text{now}]} \pindex(t)
+  \quad\text{and}\quad
+  p_{\max,i}' \geq p_{\max,i}
+\]
+Each PLP position stores the running maximum of $\pindex$ since mint.
+Updated at every hook callback when $\pindex > p_{\max,i}$.
+This value is monotone non-decreasing.
+\end{invariant}
+
+\begin{invariant}{INS-07}{Payout formula}
+% Kontrol: prove_ins_payoutFormula
+\[
+  \text{payout}_i = \text{premium}_i \times \left[\left(\frac{p_{\max,i}}{\pl}\right)^2 - 1\right]^{+}
+\]
+The PLP payout at exit follows the power-2 payoff. The plus operator
+$[\cdot]^+$ ensures non-negative payouts. The premium is defined as
+$\text{premium}_i = \premfactor \cdot \text{lifetime\_fees}_i
++ \text{accrued\_borrow}_i + \text{accrued\_funding}_i$.
+\end{invariant}
+
+\begin{invariant}{INS-08}{Payout cap}
+% Kontrol: prove_ins_payoutCap
+\[
+  \text{payout}_i \leq \text{premium}_i \times \left[\left(\frac{\pu}{\pl}\right)^2 - 1\right]
+\]
+The payout is capped by the tick range. Since $p_{\max,i} \leq \pu$ within
+the CLAMM range, the payout cannot exceed the cap. No global cap parameter
+is needed---the per-position tick range enforces bounded loss for underwriters.
+\end{invariant}
+
+\begin{invariant}{INS-09}{Initialization invariant}
+% Kontrol: prove_ins_initInvariant
+\[
+  \psi(u_0, y_0) = L_0 \cdot \frac{\pu^2}{\pl^2}
+\]
+At initialization (first deposit), the invariant holds with
+$C_1 = \pu^2/\pl^2$ (\cref{prop:init-invariant}).
+\end{invariant}
+
+\begin{invariant}{INS-10}{Exit settlement conservation}
+% Kontrol: prove_ins_exitSettlement
+\[
+  \{\texttt{exit}_i\}
+  \;\longrightarrow\;
+  \{L_{\text{borrowed}}' = L_{\text{borrowed}} - L_i\}
+  \;\land\;
+  \{\text{net}_i = \max(\text{payout}_i - \text{premium}_i, 0)\}
+\]
+At PLP exit: borrowed liquidity returns to the pool (utilization decreases),
+and the PLP receives the net settlement (payout minus premium, floored at zero).
+If payout $<$ premium, the excess stays in reserves as underwriter profit.
+\end{invariant}

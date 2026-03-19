@@ -1,0 +1,86 @@
+{
+  "scenario": {
+    "name": "two_hetero_capital_one_swap",
+    "description": "2 LPs (1:2 capital), 1 swap. deltaPlus > 0 from capital asymmetry.",
+    "agents": [
+      {
+        "id": "lp0",
+        "role": "PASSIVE",
+        "liquidity": "1000000000000000000",
+        "tickLower": -60,
+        "tickUpper": 60
+      },
+      {
+        "id": "lp1",
+        "role": "PASSIVE",
+        "liquidity": "2000000000000000000",
+        "tickLower": -60,
+        "tickUpper": 60
+      }
+    ],
+    "actions": [
+      {
+        "type": "MINT",
+        "block": 1,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "MINT",
+        "block": 1,
+        "agentId": "lp1",
+        "liquidity": "2000000000000000000"
+      },
+      {
+        "type": "SWAP",
+        "block": 5,
+        "amount": "500000",
+        "zeroForOne": true
+      },
+      {
+        "type": "ROLL",
+        "block": 10
+      },
+      {
+        "type": "BURN",
+        "block": 10,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "BURN",
+        "block": 10,
+        "agentId": "lp1",
+        "liquidity": "2000000000000000000"
+      }
+    ]
+  },
+  "expected": {
+    "accumulatedSum": "0xfcd6e9e06522c3f35ba781948b0fcd6",
+    "indexA": "0x3f9a8cd3e365e2af8b782ac014a69e42",
+    "thetaSum": "0x38e38e38e38e38e38e38e38e38e38e38",
+    "removedPosCount": 2,
+    "atNull": "0x3c56fbbbfdf4cc2c1dd4833bd1c394df",
+    "deltaPlus": "0x3439117e57116836da3a78442e30963"
+  },
+  "removals": [
+    {
+      "agentId": "lp0",
+      "liquidity": "1000000000000000000",
+      "blockLifetime": 9,
+      "xK": "0x55555555555555555555555555555555",
+      "xKSquared": "0x1c71c71c71c71c71c71c71c71c71c71c",
+      "thetaK": "0x1c71c71c71c71c71c71c71c71c71c71c",
+      "term": "0x329161f9add3c0ca4587e6b74f03291"
+    },
+    {
+      "agentId": "lp1",
+      "liquidity": "2000000000000000000",
+      "blockLifetime": 9,
+      "xK": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "xKSquared": "0x71c71c71c71c71c71c71c71c71c71c70",
+      "thetaK": "0x1c71c71c71c71c71c71c71c71c71c71c",
+      "term": "0xca4587e6b74f0329161f9add3c0ca45"
+    }
+  ]
+}

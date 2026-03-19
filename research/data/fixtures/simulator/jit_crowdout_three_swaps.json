@@ -1,0 +1,106 @@
+{
+  "scenario": {
+    "name": "jit_crowdout_three_swaps",
+    "description": "JIT crowd-out: passive LP0 (1e18, 99 blocks) vs JIT LP1 (9e18, 2 blocks). deltaPlus captures concentration.",
+    "agents": [
+      {
+        "id": "lp0",
+        "role": "PASSIVE",
+        "liquidity": "1000000000000000000",
+        "tickLower": -60,
+        "tickUpper": 60
+      },
+      {
+        "id": "lp1",
+        "role": "JIT",
+        "liquidity": "9000000000000000000",
+        "tickLower": -60,
+        "tickUpper": 60
+      }
+    ],
+    "actions": [
+      {
+        "type": "MINT",
+        "block": 1,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "SWAP",
+        "block": 10,
+        "amount": "500000",
+        "zeroForOne": true
+      },
+      {
+        "type": "ROLL",
+        "block": 49
+      },
+      {
+        "type": "MINT",
+        "block": 49,
+        "agentId": "lp1",
+        "liquidity": "9000000000000000000"
+      },
+      {
+        "type": "SWAP",
+        "block": 50,
+        "amount": "500000",
+        "zeroForOne": true
+      },
+      {
+        "type": "ROLL",
+        "block": 51
+      },
+      {
+        "type": "BURN",
+        "block": 51,
+        "agentId": "lp1",
+        "liquidity": "9000000000000000000"
+      },
+      {
+        "type": "SWAP",
+        "block": 80,
+        "amount": "500000",
+        "zeroForOne": true
+      },
+      {
+        "type": "ROLL",
+        "block": 100
+      },
+      {
+        "type": "BURN",
+        "block": 100,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      }
+    ]
+  },
+  "expected": {
+    "accumulatedSum": "0x67b4b325f5dd0a087b4b325f5dd0a087",
+    "indexA": "0xa2f00e41c230bae3fc4f50667207cd88",
+    "thetaSum": "0x8295fad40a57eb50295fad40a57eb502",
+    "removedPosCount": 2,
+    "atNull": "0x5b6b5996809899d6584bba8da4e702d0",
+    "deltaPlus": "0x4784b4ab4198210da40395d8cd20cab8"
+  },
+  "removals": [
+    {
+      "agentId": "lp1",
+      "liquidity": "9000000000000000000",
+      "blockLifetime": 2,
+      "xK": "0xe6666666666666666666666666666666",
+      "xKSquared": "0xcf5c28f5c28f5c28f5c28f5c28f5c28e",
+      "thetaK": "0x80000000000000000000000000000000",
+      "term": "0x67ae147ae147ae147ae147ae147ae147"
+    },
+    {
+      "agentId": "lp0",
+      "liquidity": "1000000000000000000",
+      "blockLifetime": 99,
+      "xK": "0x19999999999999999999999999999999",
+      "xKSquared": "0x28f5c28f5c28f5c28f5c28f5c28f5c2",
+      "thetaK": "0x295fad40a57eb50295fad40a57eb502",
+      "term": "0x69eab14955bf40069eab14955bf40"
+    }
+  ]
+}

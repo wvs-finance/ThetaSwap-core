@@ -1,0 +1,86 @@
+{
+  "scenario": {
+    "name": "two_homogeneous_lps_one_swap",
+    "description": "2 equal LPs, 1 swap, both burn same block. deltaPlus=0 (competitive null).",
+    "agents": [
+      {
+        "id": "lp0",
+        "role": "PASSIVE",
+        "liquidity": "1000000000000000000",
+        "tickLower": -60,
+        "tickUpper": 60
+      },
+      {
+        "id": "lp1",
+        "role": "PASSIVE",
+        "liquidity": "1000000000000000000",
+        "tickLower": -60,
+        "tickUpper": 60
+      }
+    ],
+    "actions": [
+      {
+        "type": "MINT",
+        "block": 1,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "MINT",
+        "block": 1,
+        "agentId": "lp1",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "SWAP",
+        "block": 5,
+        "amount": "500000",
+        "zeroForOne": true
+      },
+      {
+        "type": "ROLL",
+        "block": 10
+      },
+      {
+        "type": "BURN",
+        "block": 10,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "BURN",
+        "block": 10,
+        "agentId": "lp1",
+        "liquidity": "1000000000000000000"
+      }
+    ]
+  },
+  "expected": {
+    "accumulatedSum": "0xe38e38e38e38e38e38e38e38e38e38e",
+    "indexA": "0x3c56fbbbfdf4cc2c1dd4833bd1c394df",
+    "thetaSum": "0x38e38e38e38e38e38e38e38e38e38e38",
+    "removedPosCount": 2,
+    "atNull": "0x3c56fbbbfdf4cc2c1dd4833bd1c394df",
+    "deltaPlus": "0x0"
+  },
+  "removals": [
+    {
+      "agentId": "lp0",
+      "liquidity": "1000000000000000000",
+      "blockLifetime": 9,
+      "xK": "0x80000000000000000000000000000000",
+      "xKSquared": "0x40000000000000000000000000000000",
+      "thetaK": "0x1c71c71c71c71c71c71c71c71c71c71c",
+      "term": "0x71c71c71c71c71c71c71c71c71c71c7"
+    },
+    {
+      "agentId": "lp1",
+      "liquidity": "1000000000000000000",
+      "blockLifetime": 9,
+      "xK": "0x80000000000000000000000000000000",
+      "xKSquared": "0x40000000000000000000000000000000",
+      "thetaK": "0x1c71c71c71c71c71c71c71c71c71c71c",
+      "term": "0x71c71c71c71c71c71c71c71c71c71c7"
+    }
+  ]
+}

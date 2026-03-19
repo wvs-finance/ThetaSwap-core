@@ -1,8 +1,47 @@
 {
+  "lib/2025-12-panoptic": {
+    "rev": "fe557748210a529ae414d7c487b6514be0d9e220"
+  },
+  "lib/angstrom": {
+    "rev": "ce6f14240079d280c48d569b8496f10314744c8f"
+  },
+  "lib/bunni-v2": {
+    "tag": {
+      "name": "v1.2.1",
+      "rev": "000f79a38bdd3fb2b314dc8c108b2a3d1ca1d440"
+    }
+  },
   "lib/forge-std": {
     "tag": {
       "name": "v1.15.0",
       "rev": "0844d7e1fc5e60d77b68e469bff60265f236c398"
+    }
+  },
+  "lib/kontrol-cheatcodes": {
+    "rev": "187b89ad863226afe494caa9f58320997a543bff"
+  },
+  "lib/solady": {
+    "tag": {
+      "name": "v0.1.26",
+      "rev": "acd959aa4bd04720d640bf4e6a5c71037510cc4b"
+    }
+  },
+  "lib/uniswap-hooks": {
+    "tag": {
+      "name": "v1.2.1",
+      "rev": "acbd604c409a827f7f98c9517236da860c4fca1a"
+    }
+  },
+  "lib/v3-core": {
+    "tag": {
+      "name": "v1.0.0",
+      "rev": "e3589b192d0be27e100cd0daaf6c97204fdb1899"
+    }
+  },
+  "lib/v3-periphery": {
+    "tag": {
+      "name": "v1.3.0",
+      "rev": "80f26c86c57b8a5e4b913f42844d4c8bd274d058"
     }
   },
   "lib/v4-core": {
@@ -10,5 +49,8 @@
       "name": "v4.0.0",
       "rev": "e50237c43811bd9b526eff40f26772152a42daba"
     }
+  },
+  "lib/v4-periphery": {
+    "rev": "ad04c9f24a170accf5ea1b2836bbafd514537ca6"
   }
 }

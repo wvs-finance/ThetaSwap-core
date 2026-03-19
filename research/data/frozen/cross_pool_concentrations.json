@@ -1,0 +1,116 @@
+{
+  "metadata": {
+    "source": "dune",
+    "query_id": 6784588,
+    "parameters": {
+      "pools": [
+        "0x3416cf6c708da44db2624d63ea0aaef7113527c6",
+        "0x7858e59e0c01ea06df3af3d20ac7b0003275d4bf",
+        "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+        "0x8ad599c3a0ff1de082011efddc58f1908eb6e6d8",
+        "0x4e68ccd3e89f51c3074ca5072bbac773960dfa36",
+        "0x99ac8ca7087fa4a2a1fb6357269965a2014abc35",
+        "0xcbcdf9626bc03e24f779434178a73a0b4bad62ed",
+        "0x4585fe77225b41b697c938b018e2ac67ac5a20c0",
+        "0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8",
+        "0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801"
+      ],
+      "window_days": 90
+    },
+    "executed_at": "2026-03-05",
+    "row_count": 10,
+    "sha256": "231d243cd656108fe7c06ab141c3131f993624724b29214d08cd52b6ee10d8b5"
+  },
+  "data": [
+    {
+      "pool_address": "0x3416cf6c708da44db2624d63ea0aaef7113527c6",
+      "a_t": 0.00062,
+      "a_t_null": 0.002347,
+      "delta_plus": 0.0,
+      "n_positions": 3267,
+      "n_removals": 3267,
+      "window_days": 90
+    },
+    {
+      "pool_address": "0x7858e59e0c01ea06df3af3d20ac7b0003275d4bf",
+      "a_t": 8.5e-05,
+      "a_t_null": 0.007143,
+      "delta_plus": 0.0,
+      "n_positions": 198,
+      "n_removals": 198,
+      "window_days": 90
+    },
+    {
+      "pool_address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+      "a_t": 0.004155,
+      "a_t_null": 0.003326,
+      "delta_plus": 0.00083,
+      "n_positions": 6747,
+      "n_removals": 6748,
+      "window_days": 90
+    },
+    {
+      "pool_address": "0x8ad599c3a0ff1de082011efddc58f1908eb6e6d8",
+      "a_t": 0.002084,
+      "a_t_null": 0.007999,
+      "delta_plus": 0.0,
+      "n_positions": 2788,
+      "n_removals": 2788,
+      "window_days": 90
+    },
+    {
+      "pool_address": "0x4e68ccd3e89f51c3074ca5072bbac773960dfa36",
+      "a_t": 0.000654,
+      "a_t_null": 0.000916,
+      "delta_plus": 0.0,
+      "n_positions": 13798,
+      "n_removals": 13798,
+      "window_days": 90
+    },
+    {
+      "pool_address": "0x99ac8ca7087fa4a2a1fb6357269965a2014abc35",
+      "a_t": 0.039633,
+      "a_t_null": 0.005472,
+      "delta_plus": 0.034161,
+      "n_positions": 1563,
+      "n_removals": 1563,
+      "window_days": 90
+    },
+    {
+      "pool_address": "0xcbcdf9626bc03e24f779434178a73a0b4bad62ed",
+      "a_t": 0.012085,
+      "a_t_null": 0.007583,
+      "delta_plus": 0.004502,
+      "n_positions": 1204,
+      "n_removals": 1204,
+      "window_days": 90
+    },
+    {
+      "pool_address": "0x4585fe77225b41b697c938b018e2ac67ac5a20c0",
+      "a_t": 0.003166,
+      "a_t_null": 0.006512,
+      "delta_plus": 0.0,
+      "n_positions": 1380,
+      "n_removals": 1380,
+      "window_days": 90
+    },
+    {
+      "pool_address": "0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8",
+      "a_t": 0.00435,
+      "a_t_null": 0.005888,
+      "delta_plus": 0.0,
+      "n_positions": 1342,
+      "n_removals": 1342,
+      "window_days": 90
+    },
+    {
+      "pool_address": "0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801",
+      "a_t": 0.042434,
+      "a_t_null": 0.030027,
+      "delta_plus": 0.012407,
+      "n_positions": 300,
+      "n_removals": 300,
+      "window_days": 90
+    }
+  ]
+}

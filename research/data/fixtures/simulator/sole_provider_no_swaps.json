@@ -1,0 +1,52 @@
+{
+  "scenario": {
+    "name": "sole_provider_no_swaps",
+    "description": "1 LP mints and burns with no swaps. All FCI quantities must be zero.",
+    "agents": [
+      {
+        "id": "lp0",
+        "role": "PASSIVE",
+        "liquidity": "1000000000000000000",
+        "tickLower": -60,
+        "tickUpper": 60
+      }
+    ],
+    "actions": [
+      {
+        "type": "MINT",
+        "block": 1,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "ROLL",
+        "block": 10
+      },
+      {
+        "type": "BURN",
+        "block": 10,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      }
+    ]
+  },
+  "expected": {
+    "accumulatedSum": "0x0",
+    "indexA": "0x0",
+    "thetaSum": "0x0",
+    "removedPosCount": 0,
+    "atNull": "0x0",
+    "deltaPlus": "0x0"
+  },
+  "removals": [
+    {
+      "agentId": "lp0",
+      "liquidity": "1000000000000000000",
+      "blockLifetime": 9,
+      "xK": "0xffffffffffffffffffffffffffffffff",
+      "xKSquared": "0xfffffffffffffffffffffffffffffffe",
+      "thetaK": "0x1c71c71c71c71c71c71c71c71c71c71c",
+      "term": "0x1c71c71c71c71c71c71c71c71c71c71c"
+    }
+  ]
+}

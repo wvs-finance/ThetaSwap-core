@@ -7,11 +7,116 @@ out/
 /broadcast/*/31337/
 /broadcast/**/dry-run/
 
-# Docs
-docs/
+# AI utilities and generated content
+aiUtils/
+!aiUtils/foundryAssistant/out/
+
+# Python files
+*.py
+*.pyc
+*.pyo
+!research/**/*.py
+!conftest.py
+!scripts/ffi/**/*.py
+*.pyd
+__pycache__/
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Reference files (PDFs)
+refs/
+*.pdf
+!research/**/*.pdf
+pdf_analysis/
+pdf_env/
+documents/
+
+# Issue files
+ISSUE.md
 
 # Dotenv file
 .env
 
-# Spec notes (drafts)
-spec/notes/**
+# Notes
+notes.md
+
+# Spec drafts
+spec/
+
+# Presentation
+presentation/
+ts-cli/
+
+# Broadcast logs (keep structure, ignore artifacts)
+broadcast/
+
+# Emacs temp/lock files
+\#*\#
+.\#*
+*~
+
+# Playwright MCP
+.playwright-mcp/
+
+# Superpowers brainstorm
+.superpowers/
+
+# Tmp research/analysis artifacts
+tmp/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.nav
+*.snm
+out-sol/
+
+# Personal scratch
+notes/
+
+# LaTeX .vrb artifacts
+*.vrb
+
+# Stray venvs
+list/

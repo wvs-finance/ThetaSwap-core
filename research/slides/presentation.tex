@@ -1,0 +1,554 @@
+% presentation.tex — ThetaSwap Beamer Slide Deck
+% Adverse Competition Oracle: Problem, Evidence, Solution, Demo, Roadmap
+% Frames 1-6 (Title + Problem + Evidence) — Plan 04-01
+% Frames 7-10 (Solution + Demo + Roadmap) — Plan 04-02
+
+\documentclass[aspectratio=169]{beamer}
+
+% ── Theme and Colors ─────────────────────────────────────────────────────────
+\usetheme{Madrid}
+\definecolor{thetablue}{RGB}{20,40,80}
+
+% Override beamer colors for dark blue + white
+\setbeamercolor{structure}{fg=thetablue}
+\setbeamercolor{palette primary}{bg=thetablue,fg=white}
+\setbeamercolor{palette secondary}{bg=thetablue!80,fg=white}
+\setbeamercolor{palette tertiary}{bg=thetablue!60,fg=white}
+\setbeamercolor{palette quaternary}{bg=thetablue,fg=white}
+\setbeamercolor{frametitle}{bg=thetablue,fg=white}
+\setbeamercolor{title}{fg=white,bg=thetablue}
+\setbeamercolor{subtitle}{fg=white}
+\setbeamercolor{author}{fg=white}
+\setbeamercolor{date}{fg=white}
+\setbeamercolor{institute}{fg=white}
+\setbeamercolor{block title}{bg=thetablue,fg=white}
+\setbeamercolor{block body}{bg=thetablue!5,fg=black}
+\setbeamercolor{item}{fg=thetablue}
+\setbeamercolor{normal text}{fg=black,bg=white}
+
+% Remove navigation symbols and section navigation bar
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+
+% ── Packages ─────────────────────────────────────────────────────────────────
+\usepackage{amsmath,amssymb}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{natbib}
+% Algorithm pseudocode via manual formatting (algorithm2e/algorithmic not installed)
+\bibliographystyle{abbrvnat}
+
+% ── Macros (from preamble.tex — standalone, no \input) ──────────────────────
+\newcommand{\AT}{A_T}
+\newcommand{\ThetaSum}{\Theta}
+\newcommand{\PosCount}{N}
+\newcommand{\ATnull}{A_T^{1/\PosCount}}
+\newcommand{\DeltaPlus}{\Delta^{+}}
+\newcommand{\DeltaStar}{\Delta^{*}}
+\newcommand{\thetapos}{\theta}
+\newcommand{\blocklife}{\ell}
+
+% ── Title Metadata ───────────────────────────────────────────────────────────
+\title{ThetaSwap: Adverse Competition Oracle}
+\author{ThetaSwap}
+\date{\today}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\begin{document}
+
+% ── Frame 1: Title ───────────────────────────────────────────────────────────
+\begin{frame}[plain]
+\titlepage
+\end{frame}
+
+% ── Frame 2: Problem — The Risk Nobody Hedges ────────────────────────────────
+\begin{frame}{The Risk Nobody Hedges}
+
+\textbf{Claim:} Even if impermanent loss is zero, passive LPs carry residual
+risk from the \emph{competition structure} of fee revenue
+\citep{capponi2024jit, aquilina2024dealers}.
+
+\bigskip
+
+\begin{center}
+$\Pi_{\text{LP}} = \dfrac{\text{Fee Revenue}}{1 + \text{LVC}} - \text{LVR}$
+\end{center}
+
+\medskip
+
+{\small
+\textbf{LVR} = Loss Versus Rebalancing (adverse selection) \quad
+\textbf{LVC} = Loss Versus Competition (adverse competition, $\approx \DeltaPlus$;
+isomorphic to FLAIR \citep{milionis2024flair})
+}
+
+\bigskip
+
+\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{@{}lcp{6.5cm}@{}}
+\toprule
+\textbf{Risk factor} & & \textbf{Hedging instrument} \\
+\midrule
+IL / LVR & $\longrightarrow$ & Variance perpetuals (long volatility)
+  \citep{fukasawa2023weighted}; deployed by Panoptic
+  \citep{kristensen2024perpetual} \\
+LVC & $\longrightarrow$ & \textcolor{red}{\textbf{??}} \\
+\bottomrule
+\end{tabular}
+
+
+%note: This goes centered on the next slide
+\bigskip
+
+If passive LPs are economically \emph{short} fee concentration, then an
+on-chain index that tracks concentration in real time enables instruments
+whose payoff is tied to it --- letting LPs hedge or insure against adverse
+competition.
+
+\end{frame}
+
+% ── Frame 3: Research Question ────────────────────────────────────────────────
+\begin{frame}{Research Question}
+
+\textbf{Is there empirical demand for a hedging instrument against adverse
+competition? If so, how much are LPs willing to pay?}
+
+\bigskip
+
+%note: Include the dates we analyzed
+\begin{block}{Data}
+ETH/USDC 30bps pool (Uniswap V3 mainnet) \\
+41 days $\cdot$ 600 positions $\cdot$ 3,365 position-day observations $\cdot$ 597 exits
+\end{block}
+
+\bigskip
+
+\textbf{Treatment variable --- concentration deviation:}
+\begin{center}
+\boxed{
+  \DeltaPlus = \max\!\bigl(0,\; \AT - \ATnull\bigr)
+}
+\end{center}
+
+\begin{itemize}
+  \item $\AT = \bigl(\sum_k \thetapos_k \cdot x_k^2\bigr)^{1/2}$ \quad
+    fee concentration index ($x_k$ = fee share, $\thetapos_k = 1/\text{blocklife}$)
+  \item $\ATnull = \sqrt{\ThetaSum / \PosCount^2}$ \quad
+    Ma--Crapis competitive null (equal shares $x_k = 1/\PosCount$)
+  \item $\DeltaPlus > 0$: fees more concentrated than the symmetric equilibrium
+\end{itemize}
+
+\end{frame}
+
+% ── Frame 4: Model — The Shelter Component ───────────────────────────────────
+\begin{frame}{Model: The Shelter Component}
+
+\begin{center}
+$P(\text{exit}_{i,t}) = \sigma\!\bigl(
+  \beta_0
+  + \beta_1 \,\textcolor{red}{\boxed{\Delta_{t-\ell}}}
+  + \beta_2 \,\Delta_{t-\ell}^2
+  + \beta_3 \,\text{IL}_t
+  + \beta_4 \log(\text{age}_{i,t})
+\bigr)$
+\end{center}
+
+\bigskip
+
+\textbf{We expect $\beta_1 < 0$} (shelter effect):
+
+\begin{itemize}
+  \item Mild fee concentration correlates with \emph{high trading volume}
+    --- the pool is active, all LPs benefit from elevated fee revenue
+
+  \item At low $\Delta$, more concentration means more volume,
+    which \emph{lowers} exit probability
+
+  \item This is \textbf{healthy competition}: sophisticated LPs attract flow
+    that benefits everyone \citep{capponi2024jit}
+
+  \item A linear-only model would conclude concentration is \emph{protective}
+    --- missing the adverse regime entirely
+\end{itemize}
+
+\end{frame}
+
+% ── Frame 5: Model — The Adverse Competition Component ──────────────────────
+\begin{frame}{Model: The Adverse Competition Component}
+
+\begin{center}
+$P(\text{exit}_{i,t}) = \sigma\!\bigl(
+  \beta_0
+  + \beta_1 \,\Delta_{t-\ell}
+  + \beta_2 \,\textcolor{green!50!black}{\boxed{\Delta_{t-\ell}^2}}
+  + \beta_3 \,\text{IL}_t
+  + \beta_4 \log(\text{age}_{i,t})
+\bigr)$
+\end{center}
+
+\bigskip
+
+\textbf{We expect $\beta_2 > 0$} (adverse competition):
+
+\begin{itemize}
+  \item Beyond a threshold, concentration no longer signals volume ---
+    it signals \emph{fee extraction} by sophisticated actors
+
+  \item The quadratic term $\Delta^2$ captures this \textbf{nonlinear regime shift}:
+    the marginal effect of concentration \emph{flips sign} at the turning point
+
+  \item Together: $\beta_1 < 0$ + $\beta_2 > 0$ $=$ \textbf{inverted-U} with
+    turning point $\DeltaStar = -\beta_1 / (2\beta_2)$
+\end{itemize}
+
+\end{frame}
+
+% ── Frame 5: Evidence — Empirical Results ────────────────────────────────────
+\begin{frame}{Empirical Results}
+
+\begin{center}
+\begin{tabular}{@{}cccccl@{}}
+\toprule
+Lag & $\hat{\beta}_1$ (linear) & $p$ & $\hat{\beta}_2$ (quadratic) & $p$ & Turning point \\
+\midrule
+\textbf{1} & $\mathbf{-23.18}$ & $\mathbf{0.012}$ & $\mathbf{+129.20}$ & $\mathbf{0.030}$ & $\mathbf{0.090}$ \\
+\textit{2} & \textit{$-43.42$} & \textit{0.016} & \textit{$+226.92$} & \textit{0.065} & \textit{0.096} \\
+\textbf{3} & $\mathbf{-32.44}$ & $\mathbf{0.001}$ & $\mathbf{+205.34}$ & $\mathbf{0.004}$ & $\mathbf{0.079}$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+
+{\footnotesize For detailed data curation, specification tests, and robustness
+checks, see \texttt{research/model/main.pdf}.}
+
+\end{frame}
+
+% ── Frame 7: Evidence — What the Data Says ───────────────────────────────────
+\begin{frame}{What the Data Says}
+
+\textit{Passive LPs respond to concentration shocks within one to three days.
+When fee dispersion exceeds
+${\sim}9\%$ above the competitive equilibrium
+{\footnotesize ($\DeltaStar = -\beta_1/2\beta_2 = 23.18/(2 \times 129.20) = 0.090$)},
+the shelter effect reverses: each additional percentage point of concentration
+raises exit probability by approximately 2.3 percentage points
+{\footnotesize ($(\beta_1 + 2\beta_2 \cdot 0.15)\,\bar{P}(1{-}\bar{P}) = 15.58 \times 0.146 = 2.27$)}.
+At a fee dispersion level of 15\% above equilibrium, LPs in this pool are
+willing to pay approximately \textbf{10\% above the average hourly pool fee
+revenue} for protection
+{\footnotesize ($2.3\text{pp} \times 48\text{h avg remaining} \approx 1.1\text{h of fees}$, or ${\sim}10\%$ of hourly revenue)}.}
+
+\bigskip
+
+This establishes both the \textbf{existence of demand} (the inverted-U with
+a statistically significant adverse regime) and a \textbf{concrete price}
+(the marginal effect translated to an insurance premium).
+
+\end{frame}
+
+% ── Frame 8: Evidence — Answers ──────────────────────────────────────────────
+\begin{frame}{Answers}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.8}
+\begin{tabular}{@{}>{\bfseries}p{4.5cm} p{8cm}@{}}
+\toprule
+Question & Finding \\
+\midrule
+Is there demand for hedging adverse competition?
+  & \textbf{Yes.} LPs react to concentration shocks within days. Below
+    a threshold, concentration is protective; above it, adverse competition
+    drives exits with high statistical significance. \\
+
+What is the price?
+  & LPs are willing to pay approximately \textbf{10\% above the average
+    hourly pool fee revenue} for protection --- derived from the exit
+    hazard marginal effect at 15\% fee dispersion above equilibrium. \\
+
+\bottomrule
+\end{tabular}
+\end{center}
+
+\end{frame}
+
+% ── Frame: Backtest — Does Hedging Improve Outcomes? ─────────────────────────
+\begin{frame}{Does Hedging Improve Outcomes?}
+
+Historical replay of 600 real positions through a power-squared exit payoff
+($\alpha = 2$) with \$200K underwriter seed capital:
+
+\bigskip
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Metric & Result \\
+\midrule
+Positions better off hedged & \textbf{18.8\%} \\
+Mean hedge value & \textbf{+\$23.21} per position \\
+Payout / Premium ratio & 121.1\% (payouts exceed premiums) \\
+Optimal tail exponent & $\alpha = 2$ (dominates $\alpha = 1, 1.5, 3$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+
+The power-squared payoff rewards LPs who \emph{stay in the pool} during
+concentration spikes --- no moral hazard.
+
+\end{frame}
+
+% ── Frame: Backtest — Reserve Dynamics ───────────────────────────────────────
+\begin{frame}{Backtest: Reserve Dynamics}
+
+\begin{center}
+\includegraphics[width=0.85\textwidth]{../figures/reserve-dynamics.png}
+\end{center}
+
+\medskip
+
+At $R_0 = \$200$K seed capital, the reserve absorbs the concentration spike
+and delivers positive hedge value.
+
+\medskip
+
+{\footnotesize See \texttt{notebooks/eth-usdc-backtest.ipynb} and
+\texttt{model/main.pdf} \S3 for full methodology.}
+
+\end{frame}
+
+\begin{frame}{Tail Risk Confirmation}
+
+\begin{center}
+\includegraphics[width=0.85\textwidth]{../figures/trigger-days.png}
+\end{center}
+
+\medskip
+
+Only \textbf{1 day in 41} exceeds the turning point $\DeltaStar$.
+On that day, $\DeltaPlus$ jumped from near-zero to \textbf{0.158}.
+\textbf{Rare but severe} --- a classic insurable tail event.
+
+\medskip
+
+{\footnotesize See \texttt{notebooks/eth-usdc-backtest.ipynb} and
+\texttt{model/main.pdf} \S5.1 for daily deviation analysis.}
+
+\end{frame}
+
+% ── Frame: Solution — FCI Algorithm (Tracking) ──────────────────────────────
+\begin{frame}{FCI Algorithm: Position Tracking}
+
+\begin{block}{\textsc{AfterAddLiquidity}$(sender, key, params)$}
+\ttfamily\small
+1: $posKey \gets$ Facet.positionKey$(sender, params)$ \\
+2: Facet.addPositionInRange$(posKey, snapshot)$ \\
+3: $baseline_k \gets$ Facet.poolRangeFeeGrowthInside$(poolId, tick, range)$ \\
+4: Facet.setFeeGrowthBaseline$(poolId, posKey, baseline_k)$ \\
+5: $\PosCount \gets \PosCount + 1$
+\end{block}
+
+\begin{block}{\textsc{BeforeSwap / AfterSwap}$(key)$}
+\ttfamily\small
+1: $tick_{\text{before}} \gets$ Facet.currentTick$(poolId)$ \\
+2: Facet.tstoreTick$(tick_{\text{before}})$ \hfill\textrm{\itshape\% transient storage} \\
+3: $tick_{\text{after}} \gets$ Facet.currentTick$(poolId)$ \hfill\textrm{\itshape\% after swap} \\
+4: Facet.incrementOverlappingRanges$(poolId, tick_{\min}, tick_{\max})$
+\end{block}
+
+\medskip
+
+{\footnotesize All calls are \texttt{delegatecall} to the registered protocol facet.
+Protocols implement \texttt{IFCIProtocolFacet} --- same algorithm, any AMM.}
+
+\end{frame}
+
+% ── Frame: Solution — FCI Algorithm (Accumulation) ──────────────────────────
+\begin{frame}{FCI Algorithm: Index Accumulation}
+
+\begin{block}{\textsc{BeforeRemoveLiquidity}$(sender, key, params)$}
+\ttfamily\small
+1: $(posLiq, feeLast_k) \gets$ Facet.latestFeeGrowth$(poolId, posKey)$ \\
+2: $rangeFee \gets$ Facet.poolRangeFeeGrowthInside$(poolId, tick, range)$ \\
+3: Facet.tstoreRemovalData$(feeLast_k, posLiq, rangeFee)$
+\end{block}
+
+\begin{block}{\textsc{AfterRemoveLiquidity}$(sender, key, params)$}
+\ttfamily\small
+1: \textbf{if} partial remove \textbf{then return} \hfill\textrm{\itshape\% skip accumulation} \\
+2: $(swapLife, blockLife, totalLiq) \gets$ Facet.removePosition$(posKey)$ \\
+3: \textbf{if} $swapLife > 0$ \textbf{then}: \\
+\quad 4: $x_k \gets$ fromFeeGrowthDelta$(rangeFee, feeLast_k, baseline_k, posLiq, totalLiq)$ \\
+\quad 5: $\thetapos_k \gets 1 / blockLife$ \\
+\quad 6: $\AT^2 \mathrel{+}= \thetapos_k \cdot x_k^2$ \hfill\textrm{\itshape\% state accumulation} \\
+7: $\PosCount \gets \PosCount - 1$
+\end{block}
+
+\medskip
+
+{\footnotesize Source: \texttt{FeeConcentrationIndexV2.sol}.
+Query: $\DeltaPlus = \max(0, \sqrt{\AT^2} - \ATnull)$ via \texttt{getDeltaPlus()}.}
+
+\end{frame}
+
+% ── Frame: Solution — Architecture ───────────────────────────────────────────
+\begin{frame}{Architecture}
+
+\begin{center}
+\includegraphics[width=0.95\textwidth]{../../docs/diagrams/context-diagram.png}
+\end{center}
+
+\medskip
+
+\begin{itemize}\small
+  \item \textbf{FCI Algorithm} warehouses the logic; facets adapt protocol data
+    via \texttt{delegatecall}
+  \item Facet maps: \texttt{poolRpc} $\to$ \texttt{poolId/PoolKey},
+    \texttt{protocolEventData} $\to$ \texttt{hookCalldata}
+  \item Reactive Network connects pools \textbf{on demand} --- not limited to
+    V4-native {\footnotesize (ref: \texttt{protocols/uniswap-v3/})}
+\end{itemize}
+
+\end{frame}
+
+% ── Frame: Solution — Pool Listening Flow ─────────────────────────────────────
+\begin{frame}{Pool Listening Flow}
+
+\begin{center}
+\includegraphics[height=0.70\textheight]{../../docs/diagrams/sequence-diagram.png}
+\end{center}
+
+\medskip
+
+\texttt{listenPool()} $\to$ position entry $\to$ swaps tracked $\to$
+exit accumulates $\AT$ $\to$ query $\DeltaPlus$.
+
+\end{frame}
+
+% ── Frame: Solution — Metrics Interface ──────────────────────────────────────
+\begin{frame}[fragile]{Metrics Interface}
+
+What an LP or indexer can query via \texttt{FeeConcentrationIndexV2}:
+
+\medskip
+
+{\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Function} & \textbf{Returns} \\
+\midrule
+\texttt{getIndex(key, flags)} & $\AT$, $\ThetaSum$, removed position count \\
+\texttt{getDeltaPlus(key, flags)} & $\DeltaPlus = \max(0, \sqrt{\AT^2} - \ATnull)$ \\
+\texttt{getAtNull(key, flags)} & $\ATnull = \sqrt{\ThetaSum / \PosCount^2}$ \\
+\texttt{getThetaSum(key, flags)} & $\ThetaSum = \sum_k \thetapos_k$ \\
+\texttt{getDeltaPlusEpoch(key, flags)} & $\DeltaPlus$ for current epoch window \\
+\midrule
+\texttt{getRegistryActiveRanges(key, flags)} & all tracked tick ranges \\
+\texttt{getRegistryAllSnapshots(key, flags)} & range-level snapshots (liq, swaps, fees) \\
+\texttt{getRegistryPositionBaseline(key, flags, posKey)} & fee growth baseline at entry \\
+\bottomrule
+\end{tabular}
+}
+
+\bigskip
+
+{\footnotesize
+\textbf{Note:} Epochs are essential --- the cumulative $\AT$ has infinite memory
+and grows monotonically. Without epoch windowing, the index reflects the entire
+pool history rather than recent concentration. \texttt{getDeltaPlusEpoch()}
+provides the time-bounded metric.
+
+\medskip
+
+Interface: \texttt{interfaces/IFCIProtocolFacet.sol} \\
+Reference implementation: \texttt{protocols/uniswap-v4/NativeUniswapV4Facet.sol}}
+
+\end{frame}
+
+% ── Frame: Demo — Live Demo ──────────────────────────────────────────────────
+\begin{frame}[fragile]{Live Demo}
+
+\begin{block}{See it by yourself}
+\ttfamily\small
+make sol-test-demo
+\end{block}
+
+\medskip
+
+This is a \textbf{differential test}: scenarios are generated in Python, expected
+metric values are computed off-chain, then contrasted against the implied pool
+state on a Sepolia fork via \texttt{forge test}.
+
+\medskip
+
+\textbf{What to observe:}
+\begin{enumerate}\small
+  \item \textbf{Equilibrium scenario} --- symmetric LPs, equal fee shares
+    $\Rightarrow$ $\DeltaPlus \approx 0$
+  \item \textbf{Crowding-out scenario} --- JIT-style position captures
+    disproportionate fees $\Rightarrow$ $\DeltaPlus$ spikes above $\DeltaStar$
+  \item \textbf{Mixed scenario} --- combination of passive and sophisticated LPs
+    $\Rightarrow$ shelter regime vs adverse regime in the same pool
+  \item All metrics computed on-chain, verified against Python-generated
+    expected values
+\end{enumerate}
+
+\medskip
+
+{\footnotesize
+\textbf{Note:} NativeV4 coverage runs on Sepolia fork. 2 tests currently fail
+due to fixed-point precision cosmetics (rounding in $x_k^2$ accumulation) ---
+to be resolved.}
+
+\end{frame}
+
+% ── Frame 10: Roadmap — What's Next ──────────────────────────────────────────
+\begin{frame}{What's Next}
+
+\begin{columns}[T]
+
+\begin{column}{0.48\textwidth}
+\textbf{Built}
+
+\begin{itemize}
+  \item FCI oracle live on Uniswap V4
+  \item Reactive adapter bridging V3 events cross-chain
+  \item Backtest validation: 18.8\% of positions better off hedged,
+    +\$23 mean hedge value
+\end{itemize}
+\end{column}
+
+\begin{column}{0.48\textwidth}
+\textbf{Next}
+
+\begin{itemize}
+  \item Linearized power-squared CFMM (trading function complete in spec)
+  \item Vault settlement mechanism
+\end{itemize}
+\end{column}
+
+\end{columns}
+
+\bigskip
+
+\begin{center}
+\textit{The mathematical specification is complete, the oracle tracks metrics
+across protocols, and the next milestone delivers the full insurance product.}
+\end{center}
+
+\end{frame}
+
+% ── References ────────────────────────────────────────────────────────────────
+\begin{frame}[allowframebreaks]{References}
+\footnotesize
+\bibliography{../model/references}
+\end{frame}
+
+% ══════════════════════════════════════════════════════════════════════════════
+\end{document}

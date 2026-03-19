@@ -1,0 +1,24 @@
+# Pool Discovery — Uniswap V3 Subgraph
+#
+# Source: econometrics/cross_pool/subgraph.py
+# Endpoint: https://gateway.thegraph.com/api/{key}/subgraphs/id/5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV
+#
+# Purpose: Fetch top 100 V3 pools by TVL (volume > $1M) for cross-pool
+#          concentration severity analysis. Results stratified 2-4-4
+#          (stable/stable, stable/token, token/token) following
+#          Aquilina et al. (2024) top-by-TVL methodology.
+#
+# Used in: notebooks/cross-pool-concentration-severity.ipynb
+# Data frozen: 2026-03-05
+
+{
+  pools(first: 100, orderBy: totalValueLockedUSD, orderDirection: desc,
+        where: { volumeUSD_gt: "1000000" }) {
+    id
+    token0 { symbol }
+    token1 { symbol }
+    feeTier
+    totalValueLockedUSD
+    volumeUSD
+  }
+}

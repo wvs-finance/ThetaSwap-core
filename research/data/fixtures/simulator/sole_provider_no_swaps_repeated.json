@@ -1,0 +1,102 @@
+{
+  "scenario": {
+    "name": "sole_provider_no_swaps_repeated",
+    "description": "1 LP cycles 3 times with no swaps. All quantities stay zero.",
+    "agents": [
+      {
+        "id": "lp0",
+        "role": "PASSIVE",
+        "liquidity": "1000000000000000000",
+        "tickLower": -60,
+        "tickUpper": 60
+      }
+    ],
+    "actions": [
+      {
+        "type": "MINT",
+        "block": 1,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "ROLL",
+        "block": 6
+      },
+      {
+        "type": "BURN",
+        "block": 6,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "MINT",
+        "block": 11,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "ROLL",
+        "block": 16
+      },
+      {
+        "type": "BURN",
+        "block": 16,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "MINT",
+        "block": 21,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "ROLL",
+        "block": 26
+      },
+      {
+        "type": "BURN",
+        "block": 26,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      }
+    ]
+  },
+  "expected": {
+    "accumulatedSum": "0x0",
+    "indexA": "0x0",
+    "thetaSum": "0x0",
+    "removedPosCount": 0,
+    "atNull": "0x0",
+    "deltaPlus": "0x0"
+  },
+  "removals": [
+    {
+      "agentId": "lp0",
+      "liquidity": "1000000000000000000",
+      "blockLifetime": 5,
+      "xK": "0xffffffffffffffffffffffffffffffff",
+      "xKSquared": "0xfffffffffffffffffffffffffffffffe",
+      "thetaK": "0x33333333333333333333333333333333",
+      "term": "0x33333333333333333333333333333332"
+    },
+    {
+      "agentId": "lp0",
+      "liquidity": "1000000000000000000",
+      "blockLifetime": 10,
+      "xK": "0xffffffffffffffffffffffffffffffff",
+      "xKSquared": "0xfffffffffffffffffffffffffffffffe",
+      "thetaK": "0x19999999999999999999999999999999",
+      "term": "0x19999999999999999999999999999999"
+    },
+    {
+      "agentId": "lp0",
+      "liquidity": "1000000000000000000",
+      "blockLifetime": 10,
+      "xK": "0xffffffffffffffffffffffffffffffff",
+      "xKSquared": "0xfffffffffffffffffffffffffffffffe",
+      "thetaK": "0x19999999999999999999999999999999",
+      "term": "0x19999999999999999999999999999999"
+    }
+  ]
+}

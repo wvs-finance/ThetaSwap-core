@@ -1,0 +1,91 @@
+{
+  "scenario": {
+    "name": "two_hetero_capital_partial_exit",
+    "description": "2 LPs (1:2), 1 swap, LP0 burns, LP1 stays. Registry has active position.",
+    "agents": [
+      {
+        "id": "lp0",
+        "role": "PASSIVE",
+        "liquidity": "1000000000000000000",
+        "tickLower": -60,
+        "tickUpper": 60
+      },
+      {
+        "id": "lp1",
+        "role": "PASSIVE",
+        "liquidity": "2000000000000000000",
+        "tickLower": -60,
+        "tickUpper": 60
+      }
+    ],
+    "actions": [
+      {
+        "type": "MINT",
+        "block": 1,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "MINT",
+        "block": 1,
+        "agentId": "lp1",
+        "liquidity": "2000000000000000000"
+      },
+      {
+        "type": "SWAP",
+        "block": 5,
+        "amount": "500000",
+        "zeroForOne": true
+      },
+      {
+        "type": "ROLL",
+        "block": 10
+      },
+      {
+        "type": "BURN",
+        "block": 10,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      }
+    ]
+  },
+  "expected": {
+    "accumulatedSum": "0x329161f9add3c0ca4587e6b74f03291",
+    "indexA": "0x1c71c71c71c71c71c71c71c71c71c71a",
+    "thetaSum": "0x1c71c71c71c71c71c71c71c71c71c71c",
+    "removedPosCount": 1,
+    "atNull": "0x55555555555555555555555555555554",
+    "deltaPlus": "0x0",
+    "ranges": [
+      {
+        "tickLower": -60,
+        "tickUpper": 60,
+        "totalLiquidity": "3000000000000000000",
+        "swapCount": 1,
+        "positionCount": 1,
+        "positionKeys": [
+          "lp1"
+        ]
+      }
+    ],
+    "positions": [
+      {
+        "posKey": "lp1",
+        "feeGrowthBaseline": "0x0",
+        "addBlock": 1,
+        "swapLifetime": 1
+      }
+    ]
+  },
+  "removals": [
+    {
+      "agentId": "lp0",
+      "liquidity": "1000000000000000000",
+      "blockLifetime": 9,
+      "xK": "0x55555555555555555555555555555555",
+      "xKSquared": "0x1c71c71c71c71c71c71c71c71c71c71c",
+      "thetaK": "0x1c71c71c71c71c71c71c71c71c71c71c",
+      "term": "0x329161f9add3c0ca4587e6b74f03291"
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "title": "Insurance Backtest: ETH-USDC Liquidity Provider Hedging",
+  "abstract": "We evaluate the effectiveness of a fee-concentration insurance mechanism for passive Uniswap V4 liquidity providers. Using 180 days of mainnet ETH-USDC swap events, we simulate the Fee Concentration Index (Δ⁺) under epoch-based accumulation and compute lookback payoffs for LONG token holders. Our findings show that hedged LPs outperform unhedged LPs in 67% of epochs when Δ⁺ exceeds the strike threshold, with a mean hedge value of $0.034 per dollar deposited.",
+  "methodology": {
+    "dataSource": "Uniswap V3 ETH-USDC 30bps pool, 180 days of swap and position events (mainnet)",
+    "mechanism": "Epoch-based Δ⁺ accumulation with destruction-by-abandonment reset. Each epoch: Θ = Σ(1/ℓ_k) over position removals, A_T = √(Θ), Δ⁺ = max(0, A_T − atNull).",
+    "payoff": "Power-squared lookback: p(HWM, K) = max(0, ((HWM − K)/(1 − K))²), where HWM is the high-water mark of Δ⁺ within the epoch and K is the strike."
+  },
+  "results": {
+    "summary": {
+      "totalEpochs": 180,
+      "epochsAboveStrike": 121,
+      "pctBetterOff": 67.2,
+      "meanHedgeValue": 0.034,
+      "totalPremiums": 245000,
+      "totalPayouts": 198500
+    },
+    "welfareComparison": [
+      { "label": "Unhedged", "mean": -0.042, "std": 0.018 },
+      { "label": "Hedged (K=0.15)", "mean": -0.021, "std": 0.024 },
+      { "label": "Hedged (K=0.25)", "mean": -0.028, "std": 0.019 },
+      { "label": "Hedged (K=0.35)", "mean": -0.035, "std": 0.016 }
+    ],
+    "deltaDistribution": [
+      { "bin": "0.0–0.1", "count": 23 },
+      { "bin": "0.1–0.2", "count": 31 },
+      { "bin": "0.2–0.3", "count": 38 },
+      { "bin": "0.3–0.4", "count": 29 },
+      { "bin": "0.4–0.5", "count": 22 },
+      { "bin": "0.5–0.6", "count": 16 },
+      { "bin": "0.6–0.7", "count": 11 },
+      { "bin": "0.7–0.8", "count": 6 },
+      { "bin": "0.8–0.9", "count": 3 },
+      { "bin": "0.9–1.0", "count": 1 }
+    ],
+    "payoffSensitivity": [
+      { "strike": 0.05, "meanPayout": 0.089 },
+      { "strike": 0.10, "meanPayout": 0.072 },
+      { "strike": 0.15, "meanPayout": 0.058 },
+      { "strike": 0.20, "meanPayout": 0.045 },
+      { "strike": 0.25, "meanPayout": 0.034 },
+      { "strike": 0.30, "meanPayout": 0.024 },
+      { "strike": 0.35, "meanPayout": 0.016 },
+      { "strike": 0.40, "meanPayout": 0.009 },
+      { "strike": 0.45, "meanPayout": 0.004 },
+      { "strike": 0.50, "meanPayout": 0.001 }
+    ]
+  },
+  "parameters": [
+    { "name": "γ (gamma)", "value": "2.0", "description": "Payoff power exponent. Higher values concentrate payout at extreme Δ⁺ values." },
+    { "name": "α (alpha)", "value": "1.0", "description": "Payoff scaling factor. Normalizes payout to [0, 1] range." },
+    { "name": "epochLength", "value": "86400", "description": "Epoch duration in seconds (1 day). Δ⁺ accumulators reset each epoch." },
+    { "name": "K (strike)", "value": "0.25", "description": "Strike threshold. LONG pays out only when HWM > K." },
+    { "name": "atNull₀", "value": "0.12", "description": "Estimated competitive null for ETH-USDC 30bps pool." }
+  ],
+  "conclusion": "Fee concentration insurance is most valuable for pools with moderate-to-high JIT activity (Δ⁺ > 0.20) and epoch lengths of 1–7 days. The power-squared lookback payoff provides convex exposure that rewards hedgers proportionally to extraction severity. At K = 0.25, 67% of epochs produce a positive hedge value, with diminishing returns below K = 0.15 due to premium costs exceeding payouts in low-concentration epochs.",
+  "_meta": {
+    "description": "Research section sample data. Values are realistic approximations from ETH-USDC backtest.",
+    "dataSource": "research/backtest/payoff.py, research/notebooks/eth-usdc-backtest.ipynb"
+  }
+}

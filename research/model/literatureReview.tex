@@ -1,0 +1,58 @@
+% literatureReview.tex — Related Literature
+% Theoretical foundations for the fee concentration index and exit mechanism
+
+\section{Related Literature}\label{sec:related-literature}
+
+Six papers independently validate the components of $\AT$ and the exit
+mechanism that motivates insurance demand.
+
+\cite{capponi2024optimal} model the LP's exit as an optimal stopping problem
+with thresholds $p_U^*$ and $p_L^*$. The key comparative static
+$\partial p_U^* / \partial \phi > 0$ implies that a higher effective fee rate
+raises the exit threshold (LP stays longer). When $\AT$ rises, passive LP's
+effective fee rate $\hat{\phi}_i = x_i \cdot \phi_{\text{pool}}$ drops because
+$x_i < 1/\PosCount$, lowering $p_U^*$ and triggering earlier exit. This
+predicts $\beta_1 > 0$ for sufficiently high concentration.
+
+\cite{capponi2024jit} show that JIT liquidity creates fee share asymmetry: the
+passive LP's share is $d_P/(d_P + d_J)$ where $d_J$ is JIT depth---exactly
+the $x_k$ component of $\AT$. JIT entry mechanically raises $\AT$ by
+concentrating fees in short-lived positions. Our JIT control analysis (32 JIT
+positions, 5.3\% share) confirms JIT count has an independent positive effect
+on exits ($\beta_{\text{JIT}} = 0.177$, $p = 0.031$), but does not explain
+the $\AT$ effect, confirming that $\AT$ captures concentration beyond JIT.
+
+\cite{macrapis2024permissionless} derive the symmetric equilibrium with
+$\PosCount$ LPs in free entry, where each earns
+$\Pi_i = (1/\PosCount^2) f B_D$ and the equal-share outcome
+$x_k = 1/\PosCount$ is the null hypothesis of $\AT$. Our deviation
+$\Delta_t = A_T^{\text{real}} - A_T^{1/N}$ tests departure from this
+equilibrium directly. The deviation---not $\AT$ in levels---is the correct
+treatment variable, since levels confound pool health with concentration
+pressure.
+
+\cite{aquilina2024dealers} provide empirical validation: sophisticated LPs
+(7\% of addresses) provide 65--85\% of liquidity, use tick ranges
+$3.4\times$ tighter, hold positions $7.5\times$ shorter, and capture
+75--90\% of fees. This confirms that $x_k$ in $\AT$ is highly skewed. Their
+profitability decomposition
+$R_{\text{net}} = \text{FeeYield} + \text{IL} - \text{Gas}$ shows that
+passive LPs earn negative returns when sophisticated LPs dominate---precisely
+when $\Delta_t$ is large.
+
+\cite{bichuch2024flair} formulate a liquidity provider competitiveness metric
+(FLAIR) that quantifies the fee rate heterogeneity across positions in a
+pool. Their metric captures the same distributional asymmetry that $\AT$
+measures---the gap between what passive and sophisticated LPs earn per unit
+of liquidity. FLAIR independently confirms that fee share inequality is
+persistent and economically significant across Uniswap V3 pools.
+
+\cite{bichuch2024flair} also show that the LP value function is an optimal
+stopping problem with implied fee rate
+$F(p_x, p_y) = p_y \cdot \ell(p_x/p_y)$ where $\ell$ is instantaneous LVR.
+Their Theorem~4.2 establishes that a risk-neutral LP is indifferent across
+all stopping times, meaning any deterministic exit driver must come from fee
+rate heterogeneity across LPs---exactly what $\AT$ measures. Their
+fixed-for-floating fee swap (Corollary~5.5) is structurally identical to a
+fee concentration derivative: the LP exchanges volatile realized fees for a
+fixed premium.

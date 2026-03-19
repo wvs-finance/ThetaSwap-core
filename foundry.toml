@@ -1,14 +1,84 @@
 [profile.default]
 src = "src"
-out = "out"
+out = "out-sol"
 libs = ["lib"]
 evm_version = "cancun"
 solc_version = "0.8.26"
 via_ir = true
+ffi = true
+fs_permissions = [
+    { access = "read", path = "research/data/fixtures" },
+    { access = "read-write", path = "broadcast/" }
+]
+
+remappings = [
+    # Cross-submodule resolution (not expressible in remappings.txt)
+    "lib/reactive-hooks/:v4-core/=lib/uniswap-hooks/lib/v4-core/src/",
+    "lib/reactive-hooks/:typed-uniswap-v4/=lib/typed-uniswap-v4/src/",
+    "lib/reactive-hooks/:reactive-lib/=lib/reactive-lib/src/",
+    "lib/reactive-hooks/:@uniswap/v3-core/=lib/v3-core/",
+    "lib/typed-uniswap-v4/:v4-core/=lib/uniswap-hooks/lib/v4-core/",
+    # Direct mappings unique to foundry.toml
+    "v4-core/=lib/uniswap-hooks/lib/v4-core/",
+    "reactive-lib/=lib/reactive-lib/src/",
+    "typed-uniswap-v4/=lib/typed-uniswap-v4/src/",
+    "reactive-hooks/=lib/reactive-hooks/src/",
+    "foundational-hooks/=lib/typed-uniswap-v4/lib/foundational-hooks/",
+    # Internal src/ aliases
+    "@fci-token-vault/=src/fci-token-vault/",
+    "@fee-concentration-index/=src/fee-concentration-index/",
+    "@fee-concentration-index-v2/=src/fee-concentration-index-v2/",
+    "@reactive-integration/=src/reactive-integration/",
+    "@protocol-adapter/=src/protocol-adapter/",
+    "@theta-swap-insurance/=src/theta-swap-insurance/",
+    "@types/=src/types/",
+    "@libraries/=src/libraries/",
+    "@utils/=src/utils/",
+    "@foundry-script/=foundry-script/",
+]
+
+script = "foundry-script"
+threads = 6
+force = false
+ignored_error_codes = [2018, 2394, 5667, 6321]
+
+[profile.lite]
+skip = ["test/**", "foundry-script/**"]
+
+[profile.ci]
 ffi = false
+force = true
+
+[profile.debug]
+via_ir = false
+optimizer_runs = 200
+fuzz.runs = 50
+
+[lint]
+exclude_lints = [
+    "asm-keccak256",
+    "erc20-unchecked-transfer",
+    "mixed-case-function",
+    "mixed-case-variable",
+    "pascal-case-struct",
+    "screaming-snake-case-immutable",
+    "unsafe-typecast",
+    "unused-import",
+    "unwrapped-modifier-logic",
+]
 
 [rpc_endpoints]
-mainnet = "${ETH_RPC_URL}"
+mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+sepolia = "https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+unichain = "https://unichain-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+unichain_sepolia = "https://unichain-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+reactive = "${REACTIVE_RPC_URL}"
+
+[etherscan]
+mainnet = { key = "${ETHERSCAN_API_KEY}", chain = 1 }
+sepolia = { key = "${ETHERSCAN_API_KEY}", chain = 11155111 }
+unichain = { key = "${ETHERSCAN_API_KEY}", chain = 130, url = "https://unichain.blockscout.com/api" }
+unichain_sepolia = { key = "${ETHERSCAN_API_KEY}", chain = 1301, url = "https://unichain-sepolia.blockscout.com/api" }
 
 [fuzz]
 runs = 256
@@ -18,3 +88,9 @@ max_test_rejects = 65536
 runs = 64
 depth = 32
 fail_on_revert = false
+
+[profile.fuzz-heavy]
+ffi = true
+[profile.fuzz-heavy.fuzz]
+runs = 64
+max_test_rejects = 131072

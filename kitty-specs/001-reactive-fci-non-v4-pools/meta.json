@@ -1,0 +1,11 @@
+{
+  "feature_number": "001",
+  "slug": "001-reactive-fci-non-v4-pools",
+  "feature_slug": "001-reactive-fci-non-v4-pools",
+  "friendly_name": "Reactive FCI for Non-V4 Pools",
+  "mission": "software-dev",
+  "source_description": "003-reactive-integration: Track FeeConcentrationIndex on non-V4 pools via reactive smart contracts. PoolKeyExtLib maps PoolKey to IUniswapV3Pool and inverse. Hook wrapper pattern wraps V4 IHooks interface for consistency. Portable across Reactive Network and Somnia L1. Events monitored: Swap, Mint, Burn on V3 pools. Reactive contract subscribes to these events and triggers callbacks that flow through the same FCI hook pipeline as native V4 events.",
+  "target_branch": "001-fci-coprimary-diamond",
+  "created_at": "2026-03-06T12:35:05.594622+00:00",
+  "vcs": "git"
+}

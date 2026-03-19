@@ -1,0 +1,96 @@
+{
+  "scenario": {
+    "name": "equal_capital_hetero_duration",
+    "description": "2 equal-capital LPs, different durations, 2 swaps. deltaPlus\u22480.",
+    "agents": [
+      {
+        "id": "lp0",
+        "role": "PASSIVE",
+        "liquidity": "1000000000000000000",
+        "tickLower": -60,
+        "tickUpper": 60
+      },
+      {
+        "id": "lp1",
+        "role": "PASSIVE",
+        "liquidity": "1000000000000000000",
+        "tickLower": -60,
+        "tickUpper": 60
+      }
+    ],
+    "actions": [
+      {
+        "type": "MINT",
+        "block": 1,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "SWAP",
+        "block": 2,
+        "amount": "500000",
+        "zeroForOne": true
+      },
+      {
+        "type": "MINT",
+        "block": 3,
+        "agentId": "lp1",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "SWAP",
+        "block": 4,
+        "amount": "500000",
+        "zeroForOne": true
+      },
+      {
+        "type": "ROLL",
+        "block": 5
+      },
+      {
+        "type": "BURN",
+        "block": 5,
+        "agentId": "lp0",
+        "liquidity": "1000000000000000000"
+      },
+      {
+        "type": "ROLL",
+        "block": 9
+      },
+      {
+        "type": "BURN",
+        "block": 9,
+        "agentId": "lp1",
+        "liquidity": "1000000000000000000"
+      }
+    ]
+  },
+  "expected": {
+    "accumulatedSum": "0x18000000000000000000000000000000",
+    "indexA": "0x4e6238502484b9f40c86450c8695591c",
+    "thetaSum": "0x60000000000000000000000000000000",
+    "removedPosCount": 2,
+    "atNull": "0x4e6238502484b9f40c86450c8695591c",
+    "deltaPlus": "0x0"
+  },
+  "removals": [
+    {
+      "agentId": "lp0",
+      "liquidity": "1000000000000000000",
+      "blockLifetime": 4,
+      "xK": "0x80000000000000000000000000000000",
+      "xKSquared": "0x40000000000000000000000000000000",
+      "thetaK": "0x40000000000000000000000000000000",
+      "term": "0x10000000000000000000000000000000"
+    },
+    {
+      "agentId": "lp1",
+      "liquidity": "1000000000000000000",
+      "blockLifetime": 8,
+      "xK": "0x80000000000000000000000000000000",
+      "xKSquared": "0x40000000000000000000000000000000",
+      "thetaK": "0x20000000000000000000000000000000",
+      "term": "0x8000000000000000000000000000000"
+    }
+  ]
+}

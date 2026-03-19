@@ -216,6 +216,14 @@ Each Kontrol proof gets its own review cycle. Write one, build, prove, show resu
 | Implement | `src/*.sol` | Each file user reviewed |
 | Verify | All proofs + fuzz + static analysis pass | Full coverage of invariants |
 
+## CFMM Submodule
+
+If the feature being built is a CFMM or touches CFMM state (reserves, fees, ticks, liquidity, prices, swap logic, LP operations), the cfmm-specification submodule activates. See `cfmm-specification.md` in this directory. This adds:
+
+- **Phase 1**: TLA+ module extending a base model (user selects which)
+- **Phase 2**: 19 mandatory invariants as floor (CFMM-01 through CFMM-19)
+- **Phase 3**: 8 mandatory dimensional UDVTs (`ReserveX`, `ReserveY`, `Liquidity`, `SqrtPriceX96`, `TickIndex`, `FeeRate`, `FeeAccumX`, `FeeAccumY`)
+
 ## References
 
 - Edwin Brady, *Type-Driven Development with Idris* — core philosophy

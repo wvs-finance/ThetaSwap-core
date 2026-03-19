@@ -1,0 +1,102 @@
+{
+  "metadata": {
+    "source": "subgraph",
+    "query_file": "data/queries/subgraph/pool-discovery.graphql",
+    "selection": "top 100 by TVL (volume > $1M), 2-4-4 stratification",
+    "executed_at": "2026-03-05",
+    "row_count": 10,
+    "sha256": "44947207d34578ca0938a61414cc79a622bb7dfb7a59357bf3de13343f46c4c0"
+  },
+  "data": [
+    {
+      "address": "0x3416cf6c708da44db2624d63ea0aaef7113527c6",
+      "token0_symbol": "USDC",
+      "token1_symbol": "USDT",
+      "fee_tier": 100,
+      "tvl_usd": 32300000.0,
+      "volume_usd_24h": 105630000000.0,
+      "pair_category": "stable_stable"
+    },
+    {
+      "address": "0x7858e59e0c01ea06df3af3d20ac7b0003275d4bf",
+      "token0_symbol": "USDC",
+      "token1_symbol": "USDT",
+      "fee_tier": 500,
+      "tvl_usd": 8700000.0,
+      "volume_usd_24h": 16320000000.0,
+      "pair_category": "stable_stable"
+    },
+    {
+      "address": "0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640",
+      "token0_symbol": "USDC",
+      "token1_symbol": "WETH",
+      "fee_tier": 500,
+      "tvl_usd": 372400000.0,
+      "volume_usd_24h": 586880000000.0,
+      "pair_category": "stable_token"
+    },
+    {
+      "address": "0x8ad599c3a0ff1de082011efddc58f1908eb6e6d8",
+      "token0_symbol": "USDC",
+      "token1_symbol": "WETH",
+      "fee_tier": 3000,
+      "tvl_usd": 269400000.0,
+      "volume_usd_24h": 88560000000.0,
+      "pair_category": "stable_token"
+    },
+    {
+      "address": "0x4e68ccd3e89f51c3074ca5072bbac773960dfa36",
+      "token0_symbol": "WETH",
+      "token1_symbol": "USDT",
+      "fee_tier": 3000,
+      "tvl_usd": 214200000.0,
+      "volume_usd_24h": 59460000000.0,
+      "pair_category": "stable_token"
+    },
+    {
+      "address": "0x99ac8ca7087fa4a2a1fb6357269965a2014abc35",
+      "token0_symbol": "WBTC",
+      "token1_symbol": "USDC",
+      "fee_tier": 3000,
+      "tvl_usd": 134500000.0,
+      "volume_usd_24h": 29290000000.0,
+      "pair_category": "stable_token"
+    },
+    {
+      "address": "0xcbcdf9626bc03e24f779434178a73a0b4bad62ed",
+      "token0_symbol": "WBTC",
+      "token1_symbol": "WETH",
+      "fee_tier": 3000,
+      "tvl_usd": 191900000.0,
+      "volume_usd_24h": 34000000000.0,
+      "pair_category": "token_token"
+    },
+    {
+      "address": "0x4585fe77225b41b697c938b018e2ac67ac5a20c0",
+      "token0_symbol": "WBTC",
+      "token1_symbol": "WETH",
+      "fee_tier": 500,
+      "tvl_usd": 112800000.0,
+      "volume_usd_24h": 94320000000.0,
+      "pair_category": "token_token"
+    },
+    {
+      "address": "0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8",
+      "token0_symbol": "LINK",
+      "token1_symbol": "WETH",
+      "fee_tier": 3000,
+      "tvl_usd": 52100000.0,
+      "volume_usd_24h": 15250000000.0,
+      "pair_category": "token_token"
+    },
+    {
+      "address": "0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801",
+      "token0_symbol": "UNI",
+      "token1_symbol": "WETH",
+      "fee_tier": 3000,
+      "tvl_usd": 34500000.0,
+      "volume_usd_24h": 9860000000.0,
+      "pair_category": "token_token"
+    }
+  ]
+}
