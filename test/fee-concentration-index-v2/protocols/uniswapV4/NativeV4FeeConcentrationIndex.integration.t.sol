@@ -177,6 +177,7 @@ contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
 
             if (typeHash == keccak256("ROLL")) {
                 vm.roll(blockNum);
+                console2.log("  >> Roll to block", blockNum);
 
             } else if (typeHash == keccak256("MINT")) {
                 string memory agentId = vm.parseJsonString(json, string.concat(prefix, ".agentId"));
@@ -192,11 +193,13 @@ contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
 
                 uint256 tokenId = _mintPosition(lp, tickLower, tickUpper, liquidity);
                 tokenIds[agentId] = tokenId;
+                console2.log("  >> MINT:", agentId, "deposits liquidity", liquidity);
 
             } else if (typeHash == keccak256("SWAP")) {
                 vm.roll(blockNum);
                 // Swap amount from fixture (raw fee amount — simplified swap)
                 _swap(true, -100);
+                console2.log("  >> SWAP: trade executes, tick ranges overlap tracked");
 
             } else if (typeHash == keccak256("BURN")) {
                 string memory agentId = vm.parseJsonString(json, string.concat(prefix, ".agentId"));
@@ -208,6 +211,7 @@ contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
                 int24 tickUpper = 60;
 
                 _burnPosition(lp, tokenIds[agentId], tickLower, tickUpper, liquidity);
+                console2.log("  >> BURN:", agentId, "exits position. FCI accumulates xk, theta_k -> A_T");
             }
         }
 
@@ -257,6 +261,11 @@ contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
 
         // Facet registration
         assertEq(actualFacet, address(facet), "getRegisteredProtocolFacet() mismatch");
+
+        // ── Storytelling output ──
+        console2.log("  == RESULT: DeltaPlus =", uint256(actualDeltaPlus));
+        console2.log("  == RESULT: IndexA =", uint256(actualIndexA), "AtNull =", uint256(actualAtNull));
+        console2.log("  == RESULT: ThetaSum =", actualThetaSum, "RemovedPosCount =", actualRemovedPosCount);
 
         // ── Cross-getter consistency ──
         // getDeltaPlus() == max(0, indexA - atNull)
@@ -330,34 +339,42 @@ contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
     // ══════════════════════════════════════════════════════════════
 
     function test_integrationNativeV4_unit_soleProvider_noSwaps_allDerivedQuantitiesZero() public {
+        console2.log("--- EQUILIBRIUM: Single LP, no swaps. All metrics must be zero ---");
         _runFixture("sole_provider_no_swaps");
     }
 
     function test_integrationNativeV4_unit_soleProvider_noSwaps_repeatedCycles_allStayZero() public {
+        console2.log("--- EQUILIBRIUM: Single LP, repeated mint/burn cycles. Metrics stay zero ---");
         _runFixture("sole_provider_no_swaps_repeated");
     }
 
     function test_integrationNativeV4_unit_soleProvider_oneSwap_deltaPlusMustBeZero() public {
+        console2.log("--- EQUILIBRIUM: Single LP captures all fees. DeltaPlus = 0 (no competition) ---");
         _runFixture("sole_provider_one_swap");
     }
 
     function test_integrationNativeV4_unit_twoHomogeneousLps_oneSwap_deltaPlusMustBeZero() public {
+        console2.log("--- EQUILIBRIUM: Two identical LPs, equal capital. DeltaPlus = 0 ---");
         _runFixture("two_homogeneous_lps_one_swap");
     }
 
     function test_integrationNativeV4_unit_twoDifferentOnlyCapitalHeterogenousLps_oneSwap_deltaPlusGtZero() public {
+        console2.log("--- CROWDING-OUT: Two LPs, unequal capital. Larger LP captures more fees -> DeltaPlus > 0 ---");
         _runFixture("two_hetero_capital_one_swap");
     }
 
     function test_integrationNativeV4_unit_twoHeteroCapitalPartialExit_registryHasActivePosition() public {
+        console2.log("--- PARTIAL EXIT: Two LPs, partial remove. FCI skips accumulation, registry retains position ---");
         _runFixture("two_hetero_capital_partial_exit");
     }
 
     function test_integrationNativeV4_unit_equalCapitalDurationHeterogeneousLps_twoSwaps_deltaPlusMustBeZero() public {
+        console2.log("--- MIXED: Equal capital but different durations. Theta-weighting drives DeltaPlus ---");
         _runFixture("equal_capital_hetero_duration");
     }
 
     function test_integrationNativeV4_unit_twoDifferentHeterogenousLps_threeSwaps_deltaPlusCapturesCrowdOut() public {
+        console2.log("--- CROWDING-OUT: JIT-style short-lived position crowds out passive LP across 3 swaps ---");
         _runFixture("jit_crowdout_three_swaps");
     }
 }
