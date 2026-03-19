@@ -410,7 +410,47 @@ exit accumulates $\AT$ $\to$ query $\DeltaPlus$.
 
 \end{frame}
 
-% ── Frame 9: Demo — Live Demo ────────────────────────────────────────────────
+% ── Frame: Solution — Metrics Interface ──────────────────────────────────────
+\begin{frame}[fragile]{Metrics Interface}
+
+What an LP or indexer can query via \texttt{FeeConcentrationIndexV2}:
+
+\medskip
+
+{\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+\textbf{Function} & \textbf{Returns} \\
+\midrule
+\texttt{getIndex(key, flags)} & $\AT$, $\ThetaSum$, removed position count \\
+\texttt{getDeltaPlus(key, flags)} & $\DeltaPlus = \max(0, \sqrt{\AT^2} - \ATnull)$ \\
+\texttt{getAtNull(key, flags)} & $\ATnull = \sqrt{\ThetaSum / \PosCount^2}$ \\
+\texttt{getThetaSum(key, flags)} & $\ThetaSum = \sum_k \thetapos_k$ \\
+\texttt{getDeltaPlusEpoch(key, flags)} & $\DeltaPlus$ for current epoch window \\
+\midrule
+\texttt{getRegistryActiveRanges(key, flags)} & all tracked tick ranges \\
+\texttt{getRegistryAllSnapshots(key, flags)} & range-level snapshots (liq, swaps, fees) \\
+\texttt{getRegistryPositionBaseline(key, flags, posKey)} & fee growth baseline at entry \\
+\bottomrule
+\end{tabular}
+}
+
+\bigskip
+
+{\footnotesize
+\textbf{Note:} Epochs are essential --- the cumulative $\AT$ has infinite memory
+and grows monotonically. Without epoch windowing, the index reflects the entire
+pool history rather than recent concentration. \texttt{getDeltaPlusEpoch()}
+provides the time-bounded metric.
+
+\medskip
+
+Interface: \texttt{interfaces/IFCIProtocolFacet.sol} \\
+Reference implementation: \texttt{protocols/uniswap-v4/NativeUniswapV4Facet.sol}}
+
+\end{frame}
+
+% ── Frame: Demo — Live Demo ──────────────────────────────────────────────────
 \begin{frame}{Live Demo}
 
 \begin{block}{Run the integration test}
