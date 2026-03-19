@@ -396,19 +396,17 @@ Query: $\DeltaPlus = \max(0, \sqrt{\AT^2} - \ATnull)$ via \texttt{getDeltaPlus()
 
 \end{frame}
 
-% ── Frame 8: Solution — Cross-Protocol Modularity ────────────────────────────
-\begin{frame}{Cross-Protocol Modularity}
+% ── Frame: Solution — Pool Listening Flow ─────────────────────────────────────
+\begin{frame}{Pool Listening Flow}
 
 \begin{center}
-\includegraphics[height=0.75\textheight]{../../docs/diagrams/sequence-diagram.png}
+\includegraphics[height=0.70\textheight]{../../docs/diagrams/sequence-diagram.png}
 \end{center}
 
 \medskip
 
-\texttt{listenPool()} $\to$ swap/mint/burn events $\to$ metric update $\to$
-$\DeltaPlus$ derivation. \\
-Same FCI oracle, multiple protocol adapters, reactive network bridges events
-cross-chain.
+\texttt{listenPool()} $\to$ position entry $\to$ swaps tracked $\to$
+exit accumulates $\AT$ $\to$ query $\DeltaPlus$.
 
 \end{frame}
 
