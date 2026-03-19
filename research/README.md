@@ -114,6 +114,8 @@ Cached Dune query results, frozen fixtures for reproducible fork tests, and orac
 | [data/econometrics/](./data/econometrics/) | Serialized estimation results (duration, lagged regression JSONs) |
 | [data/frozen/](./data/frozen/) | Frozen intermediate artifacts |
 
+**Data provenance:** All empirical data was extracted and verified using the [Dune MCP](https://github.com/duneanalytics/dune-mcp-server) integration. The SQL queries in [data/queries/dune/](./data/queries/dune/) are executable on Dune Analytics and reproduce the datasets used throughout this research. See [data/queries/README.md](./data/queries/README.md) for query IDs, reproduction costs, and the full data flow diagram.
+
 ---
 
 ## Figures
