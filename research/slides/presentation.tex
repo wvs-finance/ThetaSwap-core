@@ -303,36 +303,20 @@ and delivers positive hedge value.
 
 \begin{frame}{Tail Risk Confirmation}
 
-\begin{columns}[T]
-
- %note: Same pattern as above bigi center of the scereen image small   \item \textbf{Only 1 day in 41} exceeds the turning point $\DeltaStar  \item On that day, $\DeltaPlus$ jumped from near-zero to \textbf{0.158} prosed \textbf{Rare but severe} --- the adverse regime is a tail event.
-% A small, predictable premium protects against low-probability,
-% high-impact concentration spikes. adn reference pointers to the SEE more
-
-
-\begin{column}{0.50\textwidth}
-Daily concentration deviation over 41 days:
-
-\begin{itemize}
-  \item 63\% of days have $\DeltaPlus > 0$ (some concentration)
-  \item \textbf{Only 1 day in 41} exceeds the turning point $\DeltaStar$
-  \item On that day, $\DeltaPlus$ jumped from near-zero to \textbf{0.158}
-\end{itemize}
+\begin{center}
+\includegraphics[width=0.85\textwidth]{../figures/trigger-days.png}
+\end{center}
 
 \medskip
 
-\textbf{Rare but severe} --- the adverse regime is a tail event.
-A small, predictable premium protects against low-probability,
-high-impact concentration spikes.
-\end{column}
+Only \textbf{1 day in 41} exceeds the turning point $\DeltaStar$.
+On that day, $\DeltaPlus$ jumped from near-zero to \textbf{0.158}.
+\textbf{Rare but severe} --- a classic insurable tail event.
 
-\begin{column}{0.45\textwidth}
-\begin{center}
-\includegraphics[width=\textwidth]{../figures/trigger-days.png}
-\end{center}
-\end{column}
+\medskip
 
-\end{columns}
+{\footnotesize See \texttt{notebooks/eth-usdc-backtest.ipynb} and
+\texttt{model/main.pdf} \S5.1 for daily deviation analysis.}
 
 \end{frame}
 
