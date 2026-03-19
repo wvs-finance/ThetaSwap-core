@@ -12,23 +12,20 @@ fs_permissions = [
 ]
 
 remappings = [
+    # Cross-submodule resolution (not expressible in remappings.txt)
     "lib/reactive-hooks/:v4-core/=lib/uniswap-hooks/lib/v4-core/src/",
-    "v4-core/=lib/uniswap-hooks/lib/v4-core/",
-    "reactive-lib/=lib/reactive-lib/src/",
-    "@uniswap/v4-core/=lib/uniswap-hooks/lib/v4-core/",
-    "@uniswap/v3-core/=lib/v3-core/",
-    "permit2/=lib/uniswap-hooks/lib/v4-periphery/lib/permit2/",
-    "solmate/=lib/uniswap-hooks/lib/v4-core/lib/solmate/",
-    "typed-uniswap-v4/=lib/typed-uniswap-v4/src/",
-    "reactive-hooks/=lib/reactive-hooks/src/",
     "lib/reactive-hooks/:typed-uniswap-v4/=lib/typed-uniswap-v4/src/",
     "lib/reactive-hooks/:reactive-lib/=lib/reactive-lib/src/",
     "lib/reactive-hooks/:@uniswap/v3-core/=lib/v3-core/",
     "lib/typed-uniswap-v4/:v4-core/=lib/uniswap-hooks/lib/v4-core/",
+    # Direct mappings unique to foundry.toml
+    "v4-core/=lib/uniswap-hooks/lib/v4-core/",
+    "reactive-lib/=lib/reactive-lib/src/",
+    "typed-uniswap-v4/=lib/typed-uniswap-v4/src/",
+    "reactive-hooks/=lib/reactive-hooks/src/",
     "foundational-hooks/=lib/typed-uniswap-v4/lib/foundational-hooks/",
+    # Internal src/ aliases
     "@fci-token-vault/=src/fci-token-vault/",
-    "solady/=lib/solady/src/",
-    "@openzeppelin/contracts/=lib/uniswap-hooks/lib/openzeppelin-contracts/contracts/",
     "@fee-concentration-index/=src/fee-concentration-index/",
     "@fee-concentration-index-v2/=src/fee-concentration-index-v2/",
     "@reactive-integration/=src/reactive-integration/",
