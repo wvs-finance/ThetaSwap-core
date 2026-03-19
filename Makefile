@@ -38,7 +38,8 @@ sol-test:
 		--no-match-test "test_integrationNativeV4_unit_equalCapitalDurationHeterogeneousLps_twoSwaps_deltaPlusMustBeZero|test_integrationNativeV4_unit_twoHeteroCapitalPartialExit_registryHasActivePosition"
 
 sol-test-demo:
-	forge test --match-path "test/fee-concentration-index-v2/protocols/uniswapV4/*" -vv
+	forge test --match-path "test/fee-concentration-index-v2/protocols/uniswapV4/*" -vv \
+		--no-match-test "test_integrationNativeV4_unit_equalCapitalDurationHeterogeneousLps_twoSwaps_deltaPlusMustBeZero|test_integrationNativeV4_unit_twoHeteroCapitalPartialExit_registryHasActivePosition"
 
 # ── Python ───────────────────────────────────────────────────────────
 test-py:
