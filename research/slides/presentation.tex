@@ -35,6 +35,8 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{xcolor}
+\usepackage{natbib}
+\bibliographystyle{abbrvnat}
 
 % ── Macros (from preamble.tex — standalone, no \input) ──────────────────────
 \newcommand{\AT}{A_T}
@@ -62,81 +64,87 @@
 % ── Frame 2: Problem — The Risk Nobody Hedges ────────────────────────────────
 \begin{frame}{The Risk Nobody Hedges}
 
-Sophisticated LPs concentrate fee revenue away from passive participants.
+In a symmetric equilibrium, each of $\PosCount$ LPs earns $1/\PosCount$ of
+fees \citep{macrapis2024permissionless}. In practice, sophisticated actors
+concentrate fee revenue away from passive participants.
 This is \textbf{adverse competition} --- a distinct, unhedged risk.
 
 \bigskip
 
 \begin{itemize}
-  \item \textbf{Impermanent loss (IL)} --- tracks price divergence between pool
-    assets. Options and structured products hedge IL.
+  \item \textbf{Impermanent loss (IL)} --- price divergence between pool assets.
+    Variance perpetuals perfectly hedge IL
+    \citep{fukasawa2023weighted}; Panoptic deploys this on-chain.
 
-  \item \textbf{Loss-versus-rebalancing (LVR)} --- tracks adverse selection cost
-    from informed traders. MEV-aware products address LVR.
+  \item \textbf{Loss-versus-rebalancing (LVR)} --- adverse selection cost from
+    informed traders. MEV-aware products address LVR.
 
-  \item \textbf{Fee concentration risk} --- tracks the \emph{competition
-    structure} among LPs for fee revenue.
+  \item \textbf{Fee concentration risk} --- the \emph{competition structure}
+    among LPs for fee revenue, captured by the FLAIR metric
+    \citep{milionis2024flair}.
     \textcolor{red}{\textbf{Nothing hedges this today.}}
 \end{itemize}
 
 \end{frame}
 
-% ── Frame 3: Problem — A Passive LP's Experience ─────────────────────────────
-\begin{frame}{A Passive LP's Experience}
+% ── Frame 3: Research Question & Methodology ─────────────────────────────────
+\begin{frame}{Research Question}
 
-\begin{enumerate}
-  \item \textbf{Alice deposits liquidity} --- expects $1/\PosCount$ fee share
-    (Ma \& Crapis equilibrium).
-
-  \item \textbf{JIT provider enters} --- mints a tightly concentrated position
-    for a single block, captures $x_k \gg 1/\PosCount$.
-
-  \item \textbf{Alice's fee rate drops} --- effective fee rate
-    $\hat{\phi}_i = x_i \cdot \phi_{\text{pool}}$ falls below her exit
-    threshold (Capponi \& Zhu, 2024).
-
-  \item \textbf{Alice exits earlier} --- adverse competition pushes her out
-    before she would have left voluntarily.
-\end{enumerate}
+\textbf{Is there empirical demand for a hedging instrument against adverse
+competition? If so, how much are LPs willing to pay?}
 
 \bigskip
-\begin{block}{In 41 days of ETH/USDC data}
-Real $\AT$ exceeds the null by $2.65\times$. \quad
-63\% of days show positive deviation ($\DeltaPlus > 0$).
+
+\begin{block}{Data}
+ETH/USDC 30bps pool (Uniswap V3 mainnet) \\
+41 days $\cdot$ 600 positions $\cdot$ 3,365 position-day observations $\cdot$ 597 exits
 \end{block}
+
+\medskip
+
+\textbf{Methodology:}
+\begin{itemize}
+  \item Compute fee concentration index $\AT$ and competitive null $\ATnull$
+    per day from on-chain Collect/Burn/Mint events
+  \item Define treatment variable: deviation $\Delta = \AT - \ATnull$
+  \item Estimate exit hazard as a function of $\Delta$ with IL and position
+    age controls, clustered standard errors
+  \item Real $\AT$ exceeds the null by $2.65\times$ on average; 63\% of days
+    show $\DeltaPlus > 0$
+\end{itemize}
 
 \end{frame}
 
-% ── Frame 4: Evidence — Quadratic Hazard Model ───────────────────────────────
-\begin{frame}{Quadratic Hazard Model}
+% ── Frame 4: Evidence — Model Specification ──────────────────────────────────
+\begin{frame}{Model Specification}
+
+\textbf{Why quadratic?} A linear model yields $\beta_1 < 0$ (shelter effect)
+--- concentration correlates with volume, masking the exit signal. Dose-response
+analysis reveals non-monotonicity: exits peak at moderate $\Delta$, then drop.
+A quadratic term captures both regimes in one specification.
+
+\medskip
 
 \begin{center}
 \boxed{
   P(\text{exit}_{i,t}) = \sigma\!\bigl(
     \beta_0
-    + \beta_1 \Delta_{t-\ell}
-    + \beta_2 \Delta_{t-\ell}^2
+    + \beta_1 \underbrace{\Delta_{t-\ell}}_{\text{shelter}}
+    + \beta_2 \underbrace{\Delta_{t-\ell}^2}_{\text{Capponi exit}}
     + \beta_3 \,\text{IL}_t
     + \beta_4 \log(\text{age}_{i,t})
   \bigr)
 }
 \end{center}
 
-\bigskip
+\medskip
 
 \begin{itemize}
-  \item Negative $\beta_1$ + positive $\beta_2$ $=$ \textbf{inverted-U}
-
-  \item Below turning point: concentration is \emph{protective} (shelter regime)
-
-  \item Above turning point: concentration \emph{drives exits} (Capponi regime)
+  \item $\Delta = \AT - \ATnull$: deviation from competitive null
+  \item $\text{IL}_t$: impermanent loss control (orthogonality test)
+  \item $\log(\text{age})$: duration dependence
+  \item \textbf{Expected:} $\beta_1 < 0$ (shelter), $\beta_2 > 0$ (exit above threshold)
 \end{itemize}
-
-\bigskip
-
-\begin{footnotesize}
-Sample: $n = 3{,}365$ position-days \quad $\cdot$ \quad 597 exits \quad $\cdot$ \quad 40 day-clusters \quad $\cdot$ \quad ETH/USDC 30bps
-\end{footnotesize}
 
 \end{frame}
 
@@ -295,6 +303,12 @@ cross-chain.
 across protocols, and the next milestone delivers the full insurance product.}
 \end{center}
 
+\end{frame}
+
+% ── References ────────────────────────────────────────────────────────────────
+\begin{frame}[allowframebreaks]{References}
+\footnotesize
+\bibliography{../model/references}
 \end{frame}
 
 % ══════════════════════════════════════════════════════════════════════════════
