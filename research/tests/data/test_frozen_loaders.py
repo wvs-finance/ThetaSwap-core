@@ -4,9 +4,7 @@ import json
 from pathlib import Path
 
 FROZEN_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "frozen"
-BASELINE = json.loads(
-    (Path(__file__).resolve().parent.parent.parent.parent / "tmp" / "baseline-hashes.json").read_text()
-)
+BASELINE = json.loads((FROZEN_DIR / "baseline-hashes.json").read_text())
 
 def _sha(obj) -> str:
     return hashlib.sha256(

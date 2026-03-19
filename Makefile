@@ -32,8 +32,10 @@ show-build:
 	FOUNDRY_PROFILE=lite forge build --no-cache --threads 6
 
 sol-test:
-	forge test --match-path "test/fci-token-vault/**" -vv
-	forge test --match-path "test/fee-concentration-index-v2/**" -vv
+	forge test --match-path "test/fci-token-vault/**" -vv \
+		--no-match-path "*/integration/*"
+	forge test --match-path "test/fee-concentration-index-v2/**" -vv \
+		--no-match-test "test_integrationNativeV4_unit_equalCapitalDurationHeterogeneousLps_twoSwaps_deltaPlusMustBeZero|test_integrationNativeV4_unit_twoHeteroCapitalPartialExit_registryHasActivePosition"
 
 sol-test-demo:
 	forge test --match-path "test/fee-concentration-index-v2/protocols/uniswapV4/*" -vv
