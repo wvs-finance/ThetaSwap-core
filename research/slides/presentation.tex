@@ -88,6 +88,7 @@ isomorphic to FLAIR \citep{milionis2024flair})
 
 \renewcommand{\arraystretch}{1.6}
 \begin{tabular}{@{}lcp{6.5cm}@{}}
+
 \toprule
 \textbf{Risk factor} & & \textbf{Hedging instrument} \\
 \midrule
@@ -99,14 +100,19 @@ LVC & $\longrightarrow$ & \textcolor{red}{\textbf{??}} \\
 \end{tabular}
 
 
-%note: This goes centered on the next slide
-\bigskip
+\end{frame}
 
+% ── Frame 2b: Thesis ─────────────────────────────────────────────────────────
+\begin{frame}{}
+\vfill
+\begin{center}
+\large
 If passive LPs are economically \emph{short} fee concentration, then an
 on-chain index that tracks concentration in real time enables instruments
 whose payoff is tied to it --- letting LPs hedge or insure against adverse
 competition.
-
+\end{center}
+\vfill
 \end{frame}
 
 % ── Frame 3: Research Question ────────────────────────────────────────────────
@@ -117,9 +123,8 @@ competition? If so, how much are LPs willing to pay?}
 
 \bigskip
 
-%note: Include the dates we analyzed
 \begin{block}{Data}
-ETH/USDC 30bps pool (Uniswap V3 mainnet) \\
+ETH/USDC 30bps pool (Uniswap V3 mainnet), Dec 5 2025 -- Jan 14 2026 \\
 41 days $\cdot$ 600 positions $\cdot$ 3,365 position-day observations $\cdot$ 597 exits
 \end{block}
 
@@ -275,125 +280,62 @@ What is the price?
 
 \end{frame}
 
-% ── Frame: Backtest — Does Hedging Improve Outcomes? ─────────────────────────
-\begin{frame}{Does Hedging Improve Outcomes?}
-
-Historical replay of 600 real positions through a power-squared exit payoff
-($\alpha = 2$) with \$200K underwriter seed capital:
-
-\bigskip
-
-\begin{center}
-\renewcommand{\arraystretch}{1.5}
-\begin{tabular}{@{}ll@{}}
-\toprule
-Metric & Result \\
-\midrule
-Positions better off hedged & \textbf{18.8\%} \\
-Mean hedge value & \textbf{+\$23.21} per position \\
-Payout / Premium ratio & 121.1\% (payouts exceed premiums) \\
-Optimal tail exponent & $\alpha = 2$ (dominates $\alpha = 1, 1.5, 3$) \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\bigskip
-
-The power-squared payoff rewards LPs who \emph{stay in the pool} during
-concentration spikes --- no moral hazard.
-
-\end{frame}
-
-% ── Frame: Backtest — Reserve Dynamics ───────────────────────────────────────
-\begin{frame}{Backtest: Reserve Dynamics}
-
-\begin{center}
-\includegraphics[width=0.85\textwidth]{../figures/reserve-dynamics.png}
-\end{center}
-
-\medskip
-
-At $R_0 = \$200$K seed capital, the reserve absorbs the concentration spike
-and delivers positive hedge value.
-
-\medskip
-
-{\footnotesize See \texttt{notebooks/eth-usdc-backtest.ipynb} and
-\texttt{model/main.pdf} \S3 for full methodology.}
-
-\end{frame}
-
-\begin{frame}{Tail Risk Confirmation}
-
-\begin{center}
-\includegraphics[width=0.85\textwidth]{../figures/trigger-days.png}
-\end{center}
-
-\medskip
-
-Only \textbf{1 day in 41} exceeds the turning point $\DeltaStar$.
-On that day, $\DeltaPlus$ jumped from near-zero to \textbf{0.158}.
-\textbf{Rare but severe} --- a classic insurable tail event.
-
-\medskip
-
-{\footnotesize See \texttt{notebooks/eth-usdc-backtest.ipynb} and
-\texttt{model/main.pdf} \S5.1 for daily deviation analysis.}
-
-\end{frame}
-
 % ── Frame: Solution — FCI Algorithm (Tracking) ──────────────────────────────
 \begin{frame}{FCI Algorithm: Position Tracking}
 
 \begin{block}{\textsc{AfterAddLiquidity}$(sender, key, params)$}
-\ttfamily\small
-1: $posKey \gets$ Facet.positionKey$(sender, params)$ \\
-2: Facet.addPositionInRange$(posKey, snapshot)$ \\
-3: $baseline_k \gets$ Facet.poolRangeFeeGrowthInside$(poolId, tick, range)$ \\
-4: Facet.setFeeGrowthBaseline$(poolId, posKey, baseline_k)$ \\
-5: $\PosCount \gets \PosCount + 1$
+\small
+Register position $k$ with tick range $[a_k, b_k]$. \\[2pt]
+Snapshot cumulative fee growth at entry as baseline $F_k(0)$. \\[2pt]
+$\PosCount \gets \PosCount + 1$
 \end{block}
 
 \begin{block}{\textsc{BeforeSwap / AfterSwap}$(key)$}
-\ttfamily\small
-1: $tick_{\text{before}} \gets$ Facet.currentTick$(poolId)$ \\
-2: Facet.tstoreTick$(tick_{\text{before}})$ \hfill\textrm{\itshape\% transient storage} \\
-3: $tick_{\text{after}} \gets$ Facet.currentTick$(poolId)$ \hfill\textrm{\itshape\% after swap} \\
-4: Facet.incrementOverlappingRanges$(poolId, tick_{\min}, tick_{\max})$
+\small
+For every registered position $k$ with $[a_k, b_k] \cap [p_{\min}, p_{\max}] \neq \emptyset$: \\[2pt]
+\quad mark $k$ as \emph{active} (exposed to fee-generating volume).
 \end{block}
 
 \medskip
 
-{\footnotesize All calls are \texttt{delegatecall} to the registered protocol facet.
-Protocols implement \texttt{IFCIProtocolFacet} --- same algorithm, any AMM.}
+{\footnotesize
+The oracle observes two primitives --- \textbf{entry} and \textbf{trading activity} ---
+and maintains a registry of which positions were exposed to fee-generating swaps.
+A thin protocol adapter translates pool events into these primitives for any AMM.}
 
 \end{frame}
 
 % ── Frame: Solution — FCI Algorithm (Accumulation) ──────────────────────────
 \begin{frame}{FCI Algorithm: Index Accumulation}
 
-\begin{block}{\textsc{BeforeRemoveLiquidity}$(sender, key, params)$}
-\ttfamily\small
-1: $(posLiq, feeLast_k) \gets$ Facet.latestFeeGrowth$(poolId, posKey)$ \\
-2: $rangeFee \gets$ Facet.poolRangeFeeGrowthInside$(poolId, tick, range)$ \\
-3: Facet.tstoreRemovalData$(feeLast_k, posLiq, rangeFee)$
+\begin{block}{\textsc{BeforeRemoveLiquidity / AfterRemoveLiquidity}$(sender, key, params)$}
+\small
+Skip if partial withdrawal (position still active). \\[4pt]
+Compute: \\[4pt]
+\quad \emph{Fee share (proxy):} \quad
+  $x_k = \dfrac{L_k}{\sum_j L_j}$
+  \hfill {\itshape liquidity share $\approx$ fee share} \\[6pt]
+\quad \emph{Turnover:} \quad
+  $\thetapos_k = \dfrac{1}{\blocklife_k}$
+  \hfill {\itshape how fast the position turned over} \\[6pt]
+\quad \emph{Accumulate:} \quad
+  $\AT^2 \mathrel{+}= \thetapos_k \cdot x_k^2$
+  \hfill {\itshape one storage slot} \\[4pt]
+$\PosCount \gets \PosCount - 1$
 \end{block}
 
-\begin{block}{\textsc{AfterRemoveLiquidity}$(sender, key, params)$}
-\ttfamily\small
-1: \textbf{if} partial remove \textbf{then return} \hfill\textrm{\itshape\% skip accumulation} \\
-2: $(swapLife, blockLife, totalLiq) \gets$ Facet.removePosition$(posKey)$ \\
-3: \textbf{if} $swapLife > 0$ \textbf{then}: \\
-\quad 4: $x_k \gets$ fromFeeGrowthDelta$(rangeFee, feeLast_k, baseline_k, posLiq, totalLiq)$ \\
-\quad 5: $\thetapos_k \gets 1 / blockLife$ \\
-\quad 6: $\AT^2 \mathrel{+}= \thetapos_k \cdot x_k^2$ \hfill\textrm{\itshape\% state accumulation} \\
-7: $\PosCount \gets \PosCount - 1$
-\end{block}
+\bigskip
+
+\begin{center}
+\textbf{Query:} \quad $\DeltaPlus = \max\!\bigl(0,\; \sqrt{\AT^2} - \ATnull\bigr)$
+\end{center}
 
 \medskip
 
-{\footnotesize Source: \texttt{FeeConcentrationIndexV2.sol}.
-Query: $\DeltaPlus = \max(0, \sqrt{\AT^2} - \ATnull)$ via \texttt{getDeltaPlus()}.}
+{\footnotesize
+High $\AT$: a few short-lived positions captured most fee revenue.
+$\DeltaPlus > 0$: concentration exceeds the competitive equilibrium.
+The index updates on every exit --- the state is a single accumulated scalar.}
 
 \end{frame}
 
@@ -508,6 +450,74 @@ to be resolved.}
 
 \end{frame}
 
+% ── Frame: Backtest — Tail Risk Confirmation ─────────────────────────────────
+\begin{frame}{Tail Risk Confirmation}
+
+\begin{center}
+\includegraphics[width=0.85\textwidth]{../figures/trigger-days.png}
+\end{center}
+
+\medskip
+
+Only \textbf{1 day in 41} exceeds the turning point $\DeltaStar$.
+On that day, $\DeltaPlus$ jumped from near-zero to \textbf{0.158}.
+\textbf{Rare but severe} --- a classic insurable tail event.
+
+\medskip
+
+{\footnotesize See \texttt{notebooks/eth-usdc-backtest.ipynb} and
+\texttt{model/main.pdf} \S5.1 for daily deviation analysis.}
+
+\end{frame}
+
+% ── Frame: Backtest — Reserve Dynamics ───────────────────────────────────────
+\begin{frame}{Backtest: Reserve Dynamics}
+
+\begin{center}
+\includegraphics[width=0.85\textwidth]{../figures/reserve-dynamics.png}
+\end{center}
+
+\medskip
+
+At $R_0 = \$200$K seed capital, the reserve absorbs the concentration spike
+and delivers positive hedge value.
+
+\medskip
+
+{\footnotesize See \texttt{notebooks/eth-usdc-backtest.ipynb} and
+\texttt{model/main.pdf} \S3 for full methodology.}
+
+\end{frame}
+
+% ── Frame: Backtest — Does Hedging Improve Outcomes? ─────────────────────────
+\begin{frame}{Does Hedging Improve Outcomes?}
+
+Historical replay of 600 real positions through a power-squared exit payoff
+($\alpha = 2$) with \$200K underwriter seed capital:
+
+\bigskip
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Metric & Result \\
+\midrule
+Positions better off hedged & \textbf{18.8\%} \\
+Mean hedge value & \textbf{+\$23.21} per position \\
+Payout / Premium ratio & 121.1\% (payouts exceed premiums) \\
+Optimal tail exponent & $\alpha = 2$ (dominates $\alpha = 1, 1.5, 3$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+
+The power-squared payoff rewards LPs who \emph{stay in the pool} during
+concentration spikes --- no moral hazard.
+
+\end{frame}
+
 % ── Frame 10: Roadmap — What's Next ──────────────────────────────────────────
 \begin{frame}{What's Next}
 
@@ -516,19 +526,25 @@ to be resolved.}
 \begin{column}{0.48\textwidth}
 \textbf{Built}
 
-\begin{itemize}
-  \item FCI oracle live on Uniswap V4
+\begin{itemize}\small
+  \item FCI oracle live on native Uniswap V4 pools
   \item Reactive adapter bridging V3 events cross-chain
   \item Backtest validation: 18.8\% of positions better off hedged,
     +\$23 mean hedge value
+  \item Vault prototype
 \end{itemize}
 \end{column}
 
 \begin{column}{0.48\textwidth}
 \textbf{Next}
 
-\begin{itemize}
-  \item Linearized power-squared CFMM (trading function complete in spec)
+\begin{itemize}\small
+  \item Rigorous test coverage on V3 reactive integration
+  \item Extend oracle to additional protocols
+  \item Widen research to more pools and determine optimal
+    sample size to strengthen the insurance hypothesis
+  \item Optimized power-squared CFMM for insurance market making
+    (trading function complete in spec)
   \item Vault settlement mechanism
 \end{itemize}
 \end{column}
@@ -538,8 +554,8 @@ to be resolved.}
 \bigskip
 
 \begin{center}
-\textit{The mathematical specification is complete, the oracle tracks metrics
-across protocols, and the next milestone delivers the full insurance product.}
+{\small\textit{The oracle tracks metrics across protocols, the backtest validates
+the insurance economics, and the next milestone delivers the full product.}}
 \end{center}
 
 \end{frame}

@@ -20,11 +20,23 @@
   "lib/kontrol-cheatcodes": {
     "rev": "187b89ad863226afe494caa9f58320997a543bff"
   },
+  "lib/reactive-hooks": {
+    "branch": {
+      "name": "feat/subscription-lib-replace-mod",
+      "rev": "01d05f3b5a032b8862f06be513b051515c9cead7"
+    }
+  },
+  "lib/reactive-lib": {
+    "rev": "f6990ce3526928d039fec78855b2004ff8d65c9f"
+  },
   "lib/solady": {
     "tag": {
       "name": "v0.1.26",
       "rev": "acd959aa4bd04720d640bf4e6a5c71037510cc4b"
     }
+  },
+  "lib/typed-uniswap-v4": {
+    "rev": "29861775432b95afa407d6306b0929b3c02539cf"
   },
   "lib/uniswap-hooks": {
     "tag": {
