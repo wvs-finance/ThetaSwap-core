@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <a href="#quick-start">Quick Start</a> · <a href="#overview">Overview</a> · <a href="#architecture">Architecture</a> · <a href="#repository-structure">Directory</a>
+  <a href="https://www.loom.com/share/5327969fef1348b88b1847778eebed96">Demo Video</a> · <a href="#quick-start">Quick Start</a> · <a href="#overview">Overview</a> · <a href="#architecture">Architecture</a> · <a href="#repository-structure">Directory</a>
 </p>
 
 ---
