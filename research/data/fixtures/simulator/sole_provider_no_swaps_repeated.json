@@ -68,7 +68,13 @@
     "thetaSum": "0x0",
     "removedPosCount": 0,
     "atNull": "0x0",
-    "deltaPlus": "0x0"
+    "deltaPlus": "0x0",
+    "readable": {
+      "deltaPlus": "0.000000",
+      "indexA": "0.000000",
+      "atNull": "0.000000",
+      "thetaSum": "0.000000"
+    }
   },
   "removals": [
     {

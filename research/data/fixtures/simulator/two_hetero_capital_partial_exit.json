@@ -56,6 +56,12 @@
     "removedPosCount": 1,
     "atNull": "0x55555555555555555555555555555554",
     "deltaPlus": "0x0",
+    "readable": {
+      "deltaPlus": "0.000000",
+      "indexA": "0.111111",
+      "atNull": "0.333333",
+      "thetaSum": "0.111111"
+    },
     "ranges": [
       {
         "tickLower": -60,

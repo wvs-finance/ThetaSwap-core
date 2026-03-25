@@ -48,6 +48,12 @@ def _agent_to_dict(agent: Agent) -> dict[str, Any]:
     }
 
 
+def _q128_to_readable(val: int) -> str:
+    """Convert Q128 fixed-point to human-readable decimal string."""
+    Q128 = 1 << 128
+    return f"{val / Q128:.6f}"
+
+
 def _metrics_to_dict(m: FCIMetrics) -> dict[str, Any]:
     """Serialize metrics as hex strings (Q128 values) for Solidity parsing."""
     d: dict[str, Any] = {
@@ -57,6 +63,12 @@ def _metrics_to_dict(m: FCIMetrics) -> dict[str, Any]:
         "removedPosCount": m.removed_pos_count,
         "atNull": hex(m.at_null),
         "deltaPlus": hex(m.delta_plus),
+        "readable": {
+            "deltaPlus": _q128_to_readable(m.delta_plus),
+            "indexA": _q128_to_readable(m.index_a),
+            "atNull": _q128_to_readable(m.at_null),
+            "thetaSum": _q128_to_readable(m.theta_sum),
+        },
     }
     if m.epochs:
         d["epochs"] = [
