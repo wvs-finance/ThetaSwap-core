@@ -262,10 +262,20 @@ contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
         // Facet registration
         assertEq(actualFacet, address(facet), "getRegisteredProtocolFacet() mismatch");
 
-        // ── Storytelling output ──
+        // ── Storytelling output: raw Q128 + human-readable from Python simulator ──
+        string memory readableDeltaPlus = vm.parseJsonString(json, ".expected.readable.deltaPlus");
+        string memory readableIndexA = vm.parseJsonString(json, ".expected.readable.indexA");
+        string memory readableAtNull = vm.parseJsonString(json, ".expected.readable.atNull");
+        string memory readableThetaSum = vm.parseJsonString(json, ".expected.readable.thetaSum");
+
         console2.log("  == RESULT: DeltaPlus =", uint256(actualDeltaPlus));
-        console2.log("  == RESULT: IndexA =", uint256(actualIndexA), "AtNull =", uint256(actualAtNull));
+        console2.log("     -> DeltaPlus (decimal):", readableDeltaPlus);
+        console2.log("  == RESULT: IndexA =", uint256(actualIndexA));
+        console2.log("     -> IndexA (decimal):", readableIndexA);
+        console2.log("  == RESULT: AtNull =", uint256(actualAtNull));
+        console2.log("     -> AtNull (decimal):", readableAtNull);
         console2.log("  == RESULT: ThetaSum =", actualThetaSum, "RemovedPosCount =", actualRemovedPosCount);
+        console2.log("     -> ThetaSum (decimal):", readableThetaSum);
         console2.log("  == RESULT: DeltaPlusEpoch =", uint256(actualDeltaPlusEpoch), "(must match DeltaPlus within same epoch)");
 
         // ── Cross-getter consistency ──
@@ -355,13 +365,35 @@ contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
     }
 
     function test_integrationNativeV4_unit_twoHomogeneousLps_oneSwap_deltaPlusMustBeZero() public {
-        console2.log("--- EQUILIBRIUM: Two identical LPs, equal capital. DeltaPlus = 0 ---");
+        console2.log("=======================================================================");
+        console2.log("  EQUILIBRIUM: Two identical LPs, equal capital");
+        console2.log("=======================================================================");
+        console2.log("  Setup: 2 LPs each deposit 1e18 liquidity on the same tick range [-60,60]");
+        console2.log("  1 swap executes. Both LPs capture 50% of fees (xK = 0.5 each)");
+        console2.log("  Both exit at the same block -> identical duration (9 blocks, thetaK = 0.1111)");
+        console2.log("  Since fee shares are equal, no LP is crowded out");
+        console2.log("  Expected: IndexA = AtNull = 0.2357 -> DeltaPlus = 0");
+        console2.log("-----------------------------------------------------------------------");
         _runFixture("two_homogeneous_lps_one_swap");
+        console2.log("-----------------------------------------------------------------------");
+        console2.log("  Conclusion: FCI correctly returns zero concentration for symmetric competition");
+        console2.log("=======================================================================");
     }
 
     function test_integrationNativeV4_unit_twoDifferentOnlyCapitalHeterogenousLps_oneSwap_deltaPlusGtZero() public {
-        console2.log("--- CROWDING-OUT: Two LPs, unequal capital. Larger LP captures more fees -> DeltaPlus > 0 ---");
+        console2.log("=======================================================================");
+        console2.log("  MILD CROWDING-OUT: Two LPs, unequal capital (1:2 ratio)");
+        console2.log("=======================================================================");
+        console2.log("  Setup: lp0 deposits 1e18, lp1 deposits 2e18 on the same range [-60,60]");
+        console2.log("  1 swap executes. lp0 captures 33% of fees (xK=0.33), lp1 captures 67% (xK=0.67)");
+        console2.log("  Both exit at the same block -> identical duration (9 blocks)");
+        console2.log("  The larger LP takes a disproportionate fee share, mild asymmetry");
+        console2.log("  Expected: IndexA = 0.2485, AtNull = 0.2357 -> DeltaPlus = 0.0128");
+        console2.log("-----------------------------------------------------------------------");
         _runFixture("two_hetero_capital_one_swap");
+        console2.log("-----------------------------------------------------------------------");
+        console2.log("  Conclusion: DeltaPlus > 0 but small. Capital asymmetry alone produces mild concentration");
+        console2.log("=======================================================================");
     }
 
     function test_integrationNativeV4_unit_twoHeteroCapitalPartialExit_registryHasActivePosition() public {
@@ -375,7 +407,19 @@ contract NativeV4FeeConcentrationIndex_IntegrationTest is PosmTestSetup {
     }
 
     function test_integrationNativeV4_unit_twoDifferentHeterogenousLps_threeSwaps_deltaPlusCapturesCrowdOut() public {
-        console2.log("--- CROWDING-OUT: JIT-style short-lived position crowds out passive LP across 3 swaps ---");
+        console2.log("=======================================================================");
+        console2.log("  CROWDING-OUT: JIT sniper vs passive LP (1:9 capital, 99 vs 2 blocks)");
+        console2.log("=======================================================================");
+        console2.log("  Setup: lp0 (passive) deposits 1e18, stays 99 blocks");
+        console2.log("  lp1 (JIT) deposits 9e18 just before swap 2, exits after 2 blocks");
+        console2.log("  During overlap: JIT captures 90% of fees (xK=0.9), passive only 10% (xK=0.1)");
+        console2.log("  JIT's theta-weight is high (thetaK=0.5 for 2 blocks) vs passive (thetaK=0.01 for 99 blocks)");
+        console2.log("  3 swaps total: 1 before JIT, 1 during JIT overlap, 1 after JIT exits");
+        console2.log("  Expected: IndexA = 0.6365, AtNull = 0.3571 -> DeltaPlus = 0.2794");
+        console2.log("-----------------------------------------------------------------------");
         _runFixture("jit_crowdout_three_swaps");
+        console2.log("-----------------------------------------------------------------------");
+        console2.log("  Conclusion: DeltaPlus = 0.2794 - heavy concentration. FCI captures the JIT crowd-out");
+        console2.log("=======================================================================");
     }
 }

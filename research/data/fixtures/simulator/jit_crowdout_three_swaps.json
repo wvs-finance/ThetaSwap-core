@@ -81,7 +81,13 @@
     "thetaSum": "0x8295fad40a57eb50295fad40a57eb502",
     "removedPosCount": 2,
     "atNull": "0x5b6b5996809899d6584bba8da4e702d0",
-    "deltaPlus": "0x4784b4ab4198210da40395d8cd20cab8"
+    "deltaPlus": "0x4784b4ab4198210da40395d8cd20cab8",
+    "readable": {
+      "deltaPlus": "0.279369",
+      "indexA": "0.636475",
+      "atNull": "0.357107",
+      "thetaSum": "0.510101"
+    }
   },
   "removals": [
     {

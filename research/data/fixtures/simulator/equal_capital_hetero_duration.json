@@ -71,7 +71,13 @@
     "thetaSum": "0x60000000000000000000000000000000",
     "removedPosCount": 2,
     "atNull": "0x4e6238502484b9f40c86450c8695591c",
-    "deltaPlus": "0x0"
+    "deltaPlus": "0x0",
+    "readable": {
+      "deltaPlus": "0.000000",
+      "indexA": "0.306186",
+      "atNull": "0.306186",
+      "thetaSum": "0.375000"
+    }
   },
   "removals": [
     {
