@@ -27,3 +27,9 @@
 	path = lib/reactive-lib
 	url = https://github.com/Reactive-Network/reactive-lib.git
 	shallow = true
+[submodule "lib/integral-team-plugins"]
+	path = lib/integral-team-plugins
+	url = https://github.com/cryptoalgebra/integral-team-plugins
+[submodule "lib/Algebra"]
+	path = lib/Algebra
+	url = https://github.com/cryptoalgebra/Algebra
