@@ -2,6 +2,12 @@
   "lib/2025-12-panoptic": {
     "rev": "fe557748210a529ae414d7c487b6514be0d9e220"
   },
+  "lib/Algebra": {
+    "tag": {
+      "name": "v1.1.0",
+      "rev": "11fff534a351d92b816f81953d0ad70de4ef35e9"
+    }
+  },
   "lib/angstrom": {
     "rev": "ce6f14240079d280c48d569b8496f10314744c8f"
   },
@@ -16,6 +22,9 @@
       "name": "v1.15.0",
       "rev": "0844d7e1fc5e60d77b68e469bff60265f236c398"
     }
+  },
+  "lib/integral-team-plugins": {
+    "rev": "ae0d545a7d75125f2dfd688720bdce31f5694ac8"
   },
   "lib/kontrol-cheatcodes": {
     "rev": "187b89ad863226afe494caa9f58320997a543bff"

@@ -3,7 +3,7 @@ src = "src"
 out = "out-sol"
 libs = ["lib"]
 evm_version = "cancun"
-solc_version = "0.8.26"
+auto_detect_solc = true
 via_ir = true
 ffi = true
 fs_permissions = [
@@ -35,6 +35,8 @@ remappings = [
     "@libraries/=src/libraries/",
     "@utils/=src/utils/",
     "@foundry-script/=foundry-script/",
+    "@cryptoalgebra/integral-base-plugin/=lib/integral-team-plugins/src/plugin/stub/",
+    "@cryptoalgebra/integral-core/=lib/Algebra/src/core/"
 ]
 
 script = "foundry-script"
