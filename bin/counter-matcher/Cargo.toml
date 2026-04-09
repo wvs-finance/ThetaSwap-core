@@ -1,0 +1,40 @@
+[package]
+name = "counter-matcher"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+exclude.workspace = true
+
+[dependencies]
+alloy.workspace = true
+alloy-primitives.workspace = true
+alloy-rpc-types.workspace = true
+angstrom-rpc.workspace = true
+angstrom-types.workspace = true
+clap.workspace = true
+eyre.workspace = true
+futures.workspace = true
+itertools.workspace = true
+jsonrpsee.workspace = true
+reth.workspace = true
+secp256k1 = { workspace = true, features = ["serde"] }
+sepolia-bundle-lander = { path = "../sepolia-bundle-lander" }
+serde_json.workspace = true
+testing-tools = { workspace = true }
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+tikv-jemallocator = { version = "0.6.0", optional = true }
+
+[[bin]]
+name = "counter-matcher"
+path = "src/main.rs"
+
+[features]
+default = ["jemalloc"]
+jemalloc = ["dep:tikv-jemallocator"]

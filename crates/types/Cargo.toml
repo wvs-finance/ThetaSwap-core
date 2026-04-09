@@ -1,0 +1,49 @@
+[package]
+name = "angstrom-types"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+alloy = { workspace = true, features = ["rpc-types-mev"] }
+alloy-primitives = { workspace = true, features = ["rand"] }
+angstrom-types-primitives.workspace = true
+auto_impl.workspace = true
+base64.workspace = true
+bytes.workspace = true
+dashmap.workspace = true
+eyre.workspace = true
+futures.workspace = true
+itertools.workspace = true
+malachite.workspace = true
+pade.workspace = true
+reqwest = { version = "0.12.5", features = ["json"] }
+reth.workspace = true
+reth-chainspec.workspace = true
+reth-ethereum-primitives.workspace = true
+reth-primitives.workspace = true
+reth-primitives-traits.workspace = true
+reth-provider.workspace = true
+reth-storage-api.workspace = true
+reth-trie.workspace = true
+revm.workspace = true
+revm-bytecode.workspace = true
+revm-database.workspace = true
+revm-primitives.workspace = true
+serde = { workspace = true, default-features = false, features = ["derive"] }
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tower = "0.5.2"
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uniswap_v3_math.workspace = true
+
+[dev-dependencies]
+angstrom-types.workspace = true
+rand.workspace = true
+testing-tools.workspace = true
+tokio.workspace = true
+
+[features]
+default = []
+anvil = ["angstrom-types-primitives/anvil"]

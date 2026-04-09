@@ -1,0 +1,107 @@
+
+
+# GOALS
+
+We want to leverage an integration between Arnstrong and Panoptic:
+
+- Arnstron allow us to dfine pools where MEV = 0
+- Panoptic is a settlement layer which allows to realize any continous payoff as a custom combination of option legs
+
+
+
+# DESIGN SPACE
+
+Vault V( A = 0) (lpCummulative) --> asset0
+Vault V_{B =1} (lpRewardTotal) --> asset1
+
+
+s
+## RATIONALE
+
+Note that Vault inherits or use ERC20 functionality, Thus the integration is simpler since we need to create a custom variant of [_createPool](~/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/test/Angstrom.t.sol:: L257) that replaces  [PoolKey testPoolKey = _createPool( di, phi, L_0, \phi*);](~/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/test/PanopticPlayground.t.sol::L234)
+
+and what changes on `test__PanopticAngstrom__ShortPutNoMEVBlockNumberTimeFrequency` and further is the interpretability
+
+
+## VAULT :: V_{B =1}
+
+
+
+- Note that arnstron enforces to quote alwasy on asset1. Thus asset1 is the measure which MUST be a unit of account (e.g unit of value) NOT a security, 
+
+d is a single deposit, D is totalDeposits() and S is totalShares which (correct me if I am wrong) is euqal to the totalSupply() of the ERC20 the user gets on vaults as shares
+
+Given some poolId of pair A/B we have the oracle that tracks lpRewardCumm on a Angstrom pair A/B, we must now concern of on:
+
+```
+V_{B =1}{
+      d_B -> s_B (d_B,  S ; globalGrowth) -> UNIT_ACCOUNT -> asset1
+
++------------------+------+  
+|  Accumulator Source     |               
+|  (global reader)        |  
++-----------+-------------+  
+            |                                
+            v  [L1: Oracle] 
++-----------+-------------+  
+|  V_B Vault              |  
+|  [L4] IRateProvider +   |  
+|        ERC-4626         |      
+|  [L3] Safety bounds     |   
+|  [L2] Pluggable T_B     |  
+|                         |  
+|  Accepts: asset1        |  
+|  Mints: V_B_shares      |  
++-----------+-------------+
+```
+
+
+### [AngstromAccumulatorReader](~/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/src/_adapters/LpRevenueAngstromOracleAdapter.sol)
+
+
+We have a reader for [`globalGrowth`](https://app.angstrom.xyz/whitepaper-v1.pdf) denominated as $\mathcal{G}$ per block $b_i$:
+
+$$
+	\mathcal{G}_{b_i} =  \int_{b_0}^{b_i} g(b) db
+$$
+
+Where:
+
+$$
+	g(b) = \frac{S_b^{\star} - \sum_{j} \gamma_j(p_b^{\star})}{L_A (b)}
+$$
+
+
+#### **1. EPCH INTEGRATION**
+
+Ethereum {
+   1 period -> 30 min
+   
+}
+
+This means that for 
+
+ G*(t) = G(t)- G(t -W) for the denommncator becomes what ?
+ 
+```
+Layer 1: BlockNumberAwareGrowthObserverLib 
+Bridge:  GrowthToTickLib                   
+Layer 2: EMAGrowthTransformationLib        
+Type:    GrowthObservation V2              
+```
+
+AngstromAccumulatorOracleAdapter
+         |
+          ----[globalGrowth(poolId)]  --> GrowthObservation  ----
+		                                                         |
+	                                                             |
+                                                                 v
+                                              BlockNumberAwareGrowthObserverLib    
+                                                                /
+							    ---- [GrowthToTickLib]----------	
+								|
+                                | 
+								v
+	                EMAGrowthTransformationLib			   
+
+

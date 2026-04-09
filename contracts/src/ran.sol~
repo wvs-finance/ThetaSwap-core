@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import {SlotDerivation} from "openzeppelin-contracts/utils/SlotDerivation.sol";
+import {IAngstromAuth} from  "core/src/interfaces/IAngstromAuth.sol";
+
+
+
+struct AngstromRanAdapterStorage{
+    IAngstromAuth angstrom;
+}
+
+//@dev: namespace :: keccak256('ran.angstrom');
+
+bytes32 constant ANGSTROM_RAN_ADAPTER_SLOT = 0x41f0ac93d5971e08e81486ad07fc41da43de0ad4f9e675ce7e33ff47f6b165d1;
+
+function getAngstromRanAdapterStorage() pure returns(AngstromRanAdapterStorage storage $){
+    bytes32 pos = ANGSTROM_RAN_ADAPTER_SLOT;
+    assembly("memory-safe"){
+	$.slot := pos
+    }
+}
+
+function setAngstrom(IAngstromAuth _angstrom){
+    AngstromRanAdapterStorage storage $ = getAngstromRanAdapterStorage();
+    $.angstrom =  _angstrom;
+}
+
+function getAngstrom(IAngstromAuth _angstrom) view returns(IAngstromAuth angstrom){
+    AngstromRanAdapterStorage storage $ = getAngstromRanAdapterStorage();
+    angstrom =  $.angstrom;
+}
+
+
+
+contract AngstromRANAdapter{
+    uint256 private constant POOL_REWARDS_SLOT = 7;
+    uint256 private constant REWARD_GROWTH_SIZE = 16777216;
+    uint256 private constant POOLS_SLOT = 6;
+
+    constructor(IAngstromAuth _angstrom){
+	setAngstrom(_angstrom);
+    }
+
+
+}

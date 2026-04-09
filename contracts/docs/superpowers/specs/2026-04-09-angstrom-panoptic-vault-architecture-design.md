@@ -1,0 +1,532 @@
+# Angstrom x Panoptic Vault Architecture
+
+Date: 2026-04-09
+Status: Draft (Rev 7 -- T malfunction risks, four-layer vault architecture, mean reversion, Euler/Balancer hybrid)
+Branch: thetaswap-patches (ranFromAngstrom worktree)
+
+---
+
+## 1. Goals
+
+Leverage an integration between Angstrom and Panoptic where:
+
+- Angstrom provides pools where MEV is recaptured and redistributed to LPs via a Top-of-Block auction mechanism (the LP reward)
+
+- Panoptic is a settlement layer that realizes any continuous payoff as a custom combination of option legs with streaming, path-dependent premium accrual
+
+The integration produces a **Range Accrual Note (RAN)** -- a structured product that tokenizes the fee/reward income (theta) from concentrated liquidity positions, expressible as a constrained subset of Panoptic's ERC-1155 option space.
+
+---
+
+## 2. Design Decisions (Settled)
+
+### 2.1 Two-Vault Architecture
+
+Two standalone ERC-4626 vaults form the pair for a custom Panoptic pool:
+
+- **V_B** -- The unit-of-account vault. Accepts **asset1** deposits and mints V_B_shares. The share price is a transformation of the pool-wide cumulative reward accumulator (globalGrowth), measured in asset1 terms. ONE instance per Angstrom pool.
+
+- **V_A** -- The concentration-exposure vault. Accepts **asset0** deposits and mints V_A_shares. The share price is a transformation of the cumulative reward captured by a specific tick range (growthInside). ONE instance per pool (proxy-upgradeable for range evolution).
+
+The **Uniswap V4 pool pair** is `V_A_shares / V_B_shares`. The Panoptic pool is deployed on this pair.
+
+### 2.2 Denomination and CT Mapping
+
+Both vaults produce independent ERC-20 share tokens. The Panoptic pool pair uses these share tokens directly:
+
+- ct0 holds **V_A_shares** -- near-vanilla CollateralTracker wrapping V_A's ERC-20 shares
+- ct1 holds **V_B_shares** -- near-vanilla CollateralTracker wrapping V_B's ERC-20 shares
+- Both CTs are symmetric: each wraps a vault's shares without custom yield logic
+- All custom yield/transformation logic lives in the vault layer (V_A and V_B), NOT in the CTs
+- No price oracle needed, no cross-denomination conversion
+
+### 2.3 Why This Split
+
+- **V_B is a singleton per pool.** Everyone who wants exposure to "total Angstrom pool yield" shares one vault. No range selection needed. This is the benchmark -- the "index" of rewards.
+- **V_A is where range selection lives.** The concentration/skill signal is entirely in the numerator. A sophisticated LP who picks a tight range that captures disproportionate growthInside relative to globalGrowth sees V_A_shares/V_B_shares appreciate.
+- **Both CTs are symmetric and near-vanilla.** All custom logic is in the vault layer. The CT layer just holds vault shares and provides Panoptic's margin/settlement interface.
+- **Separation of concerns:** V_B risk = pool-level (is the Angstrom pool generating rewards at all?). V_A risk = range-level (is this specific tick range capturing rewards?).
+
+**Important nuance on the price ratio:** The Uniswap pool price of V_A_shares/V_B_shares approximates the concentration ratio (growthInside/globalGrowth) but is not identical to it. The actual pool price is determined by arbitrage between the accumulator ratio and the market. The approximation holds best when both vaults are similarly capitalized and the transformation functions are consistent. Options struck at specific ratio levels will have pricing error proportional to any deposit imbalance.
+
+### 2.4 Share Pricing Paradigm
+
+Share-price appreciation (totalAssets grows, supply stays constant) -- NOT rebasing, NOT bonding curves. This is the standard ERC-4626 pattern used by Panoptic's CollateralTracker, Yearn V3, MetaMorpho, and every mature yield vault. Rebasing breaks DeFi composability; bonding curves model supply as the independent variable which is not our case.
+
+### 2.5 Four-Layer Vault Architecture
+
+Each vault follows a four-layer architecture derived from comparing Balancer, Euler EVK, Pendle SY, and other DeFi vault patterns:
+
+**Layer 4 (External Interface):** The vault exposes both the Balancer rate-provider pattern (a single-function rate oracle returning an 18-decimal scaling factor) and the standard ERC-4626 interface. These are immutable -- consumers (Balancer pools, Panoptic, aggregators) depend on these interfaces never changing. The critical invariant: the rate-provider output must equal the ERC-4626 share-to-asset conversion for one unit, to within 1 wei.
+
+**Layer 3 (Vault Core):** The ERC-4626 vault shell (based on Solady's gas-optimized implementation). Handles deposits, withdrawals, share accounting, and -- critically -- **safety bounds enforcement** on the transformation function's output. The vault core enforces all four invariants REGARDLESS of what the transformation function returns:
+- Monotonicity guard: rate can only increase or stay flat, never decrease
+- Floor guard: rate is always at least 1:1 (positive definiteness -- no principal loss from the transformation)
+- Continuity guard: rate increase per settlement is capped (no exploitable jumps)
+- Precision guard: Q128.128 to 18-decimal conversion uses full 512-bit intermediate precision
+
+This layer is immutable (or upgradeable only via the hybrid clone-proxy pattern).
+
+**Layer 2 (Pluggable Transformation):** A stateless external contract that computes the rate from observable inputs. Inspired by Euler EVK's Interest Rate Model (IRM) pattern -- a pure math module with no storage, no external calls, no state. The vault calls it, applies safety bounds on the result, and uses the bounded result for share pricing.
+
+Key properties of this layer:
+- **Governor-swappable:** The transformation contract address is a storage variable the vault admin can change. No vault redeployment needed to swap T.
+- **Stateless and pure:** T receives observable values as inputs and returns a rate. No side effects.
+- **Unconstrained internally:** T itself does not need to enforce monotonicity, bounds, or precision -- the vault (Layer 3) handles that. This means T can be any function, including non-linear, windowed, or experimental transformations. Safety is guaranteed by the vault, not by T.
+- **The linear base case** is the first T deployed: rate = 1e18 + mulDiv(accumulatorDelta, 1e18, 2^128). But rolling-window, exponential-decay, or other mean-reverting transformations can be deployed later by swapping T.
+
+**Layer 1 (Oracle):** The accumulator reader that fetches raw observable values from Angstrom's storage. This is the existing AngstromAccumulatorOracleAdapter. It reads globalGrowth (for V_B) and growthInside (for V_A) via direct storage reads. This layer is immutable -- the Angstrom storage layout is fixed.
+
+**Why this layering matters:**
+- T can be freely experimented with (the mean-reversion question from Section 2.5a) without risking vault solvency
+- The vault's safety bounds make the pluggability safe by construction
+- External consumers see a stable interface regardless of internal T changes
+- The oracle layer is shared between both vaults
+
+### 2.5a Mean Reversion and Transformation Design
+
+The cumulative concentration ratio (growthInside / globalGrowth) is NOT mean-reverting -- it converges to a constant as a ratio of cumulative accumulators (dampening, not mean reversion). This was validated via first-principles analysis (see research report: contracts/.scratch/mean-reversion-validation.md).
+
+However, the **flow concentration** -- the instantaneous or rolling-window share of new rewards -- IS mean-reverting for ranges near the current price, since price oscillates in and out of the range.
+
+This means the transformation function T should transform the raw cumulative observable into a rolling-window or delta-based metric for option-pricing purposes. The four-layer architecture supports this directly: swap the linear T (cumulative delta) for a rolling-window T (windowed delta) by changing the Layer 2 contract. The vault's safety bounds ensure solvency regardless of which T is active.
+
+Candidate transformations to evaluate:
+- Linear (base case): rate grows with cumulative accumulator delta
+- Rolling window: rate tracks the windowed delta over the last N blocks/epochs
+- Exponential decay: rate weights recent accrual more heavily than historical
+- Hybrid: linear for deposits/withdrawals, rolling-window for the rate-provider output
+
+The choice of T directly affects option pricing dynamics and is a first-class research workstream running in parallel with implementation.
+
+### 2.5b Transformation as Instrument Definition
+
+The transformation T is not just a technical choice -- it IS the instrument definition. Each transformation produces a different type of Range Accrual Note with different economic properties. This maps directly to the `extensionFlag` field in NoteId:
+
+| extensionFlag | Transformation on denominator | Economic meaning |
+|---|---|---|
+| VANILLA (0) | Raw delta: G(t) - G(t₀) | Entry-anchored accrual |
+| ACCRUAL_DECRUAL (1) | Rolling window: [G(t) - G(t-W)] / W | Time-weighted rate |
+| TARN (2) | Capped cumulative with target | Knock-out on accrual cap |
+| BARRIERS (3) | Windowed with barrier condition | Range-contingent accrual |
+| CALLABLE (4) | EMA-smoothed rate | Smoothed yield with early exit |
+
+Different notes on the SAME pool can use different transformations on the SAME observation buffer. The observation infrastructure (Layer 1) is shared; the transformation (Layer 2) is per-instrument.
+
+This means:
+- The observation library provides raw primitives only -- no embedded transformations
+- Each extensionFlag maps to a specific transformation contract or library
+- Minting a note with a different extensionFlag creates a structurally different instrument
+- The vault's pluggable T (Section 2.5) is selected based on the extensionFlag of the note being priced
+
+### 2.6 Linear Base Case
+
+For V_B: the linear transformation grows the rate with globalGrowth. The accumulators are in Q128.128 format (fixed-point with 128 fractional bits). Converting to token-denominated units requires multiplying by the position's liquidity and right-shifting by 128 -- the same arithmetic that Angstrom's own reward payout uses in its liquidity-removal hook and that the existing X128MathLib provides. Early depositors get more shares per unit of deposit (standard ERC-4626 behavior).
+
+For V_A: same linear relationship with growthInside for the configured range, same Q128.128 conversion.
+
+### 2.7 Hybrid Clone-Proxy Pattern
+
+Panoptic's CollateralTracker reads all its configuration (pool address, tokens, risk engine) from bytecode appended via the Clone pattern. Standard UUPS or diamond proxies are incompatible because the proxy's bytecode lacks these immutable args.
+
+The resolution: **hybrid clone-proxy.** The proxy is deployed WITH immutable args appended to its bytecode (satisfying Clone's configuration reads), but the business logic portion delegates to an upgradeable implementation. The immutable configuration (pool, tokens, risk engine) never needs to change. Only the custom yield logic (totalAssets computation, accumulator reads) evolves.
+
+This means Panoptic's code sees exactly what it expects from its configuration accessors, while the vault's yield function can be upgraded without redeploying the pool.
+
+### 2.8 SFPM Premium Accrual -- Phase 2 Design Challenge
+
+Panoptic's V4 SFPM derives streaming premium from two sources:
+1. **Fee growth estimation:** snapshots of fee-growth-per-unit-liquidity used to compute how much has accrued
+2. **Actual collected tokens:** the `feesAccrued` balance delta returned by V4's PoolManager after a liquidity modification
+
+For Angstrom-backed pools, both sources present a challenge:
+
+- **Fee growth estimation:** Uniswap's native fee growth accumulators will be near zero on the asset0/V_B_shares pool (minimal natural swap volume). The adapter must substitute Angstrom's accumulator source for these reads.
+
+- **Actual collected tokens:** V4's PoolManager computes `feesAccrued` from its internal fee growth accounting (native swap fees), not from hook-settled deltas. Angstrom's reward hook pays real asset0 tokens into the sender's overall delta balance via the PoolManager settlement system, but these tokens appear in the principal delta, not in `feesAccrued`. The SFPM reads only `feesAccrued` for premium accrual, so Angstrom rewards are invisible to the premium pipeline by default.
+
+**This means the SFPM adapter must handle both the estimation AND the collection paths for Angstrom pools.** The adapter scope is larger than a simple conditional read branch -- it must ensure the SFPM's premium accumulators advance by the correct amount even though the standard `feesAccrued` pathway delivers near-zero values.
+
+Possible resolution strategies (to be evaluated during Phase 2 implementation planning):
+- Intercept or augment the `feesAccrued` values before the SFPM processes them
+- Modify the SFPM's collection logic for Angstrom pools to read from the Angstrom accumulator source directly
+- Use the sender's delta balance (which includes hook-paid rewards) instead of `feesAccrued` for premium computation
+
+This is the primary technical challenge for Phase 2 and must be resolved during its implementation planning. It does not affect Phase 1, which does not involve the SFPM adapter.
+
+### 2.9 Rate Provider Pattern for V_B
+
+V_B's share pricing follows Balancer's rate-provider pattern -- a single-function oracle returning a scaling factor. This cleanly separates "how to read Angstrom" from "how to be a vault." The rate is monotonically non-decreasing (Angstrom only adds rewards).
+
+The existing accumulator adapter in the codebase reads accumulators via direct storage reads. The accrual manager already computes the delta-over-delta ratio. These form the read layer that the rate provider wraps.
+
+---
+
+## 3. System Architecture
+
+```
+Four-Layer Model (Section 2.5):
+  L4: External interface (IRateProvider + ERC-4626)
+  L3: Vault core (safety bounds enforcement)
+  L2: Pluggable transformation T (stateless, governor-swappable)
+  L1: Oracle (accumulator reader)
+
++-----------------------------------------------------------+
+|  Angstrom Layer (unmodified)                              |
+|                                                           |
+|  poolRewards[poolId].globalGrowth        (pool-wide)      |
+|  poolRewards[poolId].getGrowthInside(tL,tU) (per-range)  |
+|                                                           |
++------------------+--------------------+-------------------+
+                   |                    |
+                   v                    v
++------------------+------+  +----------+-------------------+
+|  Accumulator Source     |  |  Accumulator Source           |
+|  (global reader)        |  |  (range reader)               |
++-----------+-------------+  +---------------+--------------+
+            |                                |
+            v  [L1: Oracle]                  v  [L1: Oracle]
++-----------+-------------+  +---------------+--------------+
+|  V_B Vault              |  |  V_A Vault                    |
+|  [L4] IRateProvider +   |  |  [L4] IRateProvider +         |
+|        ERC-4626         |  |        ERC-4626               |
+|  [L3] Safety bounds     |  |  [L3] Safety bounds           |
+|  [L2] Pluggable T_B     |  |  [L2] Pluggable T_A           |
+|                         |  |                               |
+|  Accepts: asset1        |  |  Accepts: asset0              |
+|  Mints: V_B_shares      |  |  Mints: V_A_shares            |
++-----------+-------------+  +---------------+--------------+
+            |                                |
+            v (V_B_shares = token1)          v (V_A_shares = token0)
++-----------+-------------+  +---------------+--------------+
+|  ct1 (near-vanilla CT)  |  |  ct0 (near-vanilla CT)        |
+|  Holds: V_B_shares      |  |  Holds: V_A_shares             |
+|                         |  |                               |
+|  Standard CT behavior   |  |  Standard CT behavior          |
+|  No custom yield logic  |  |  No custom yield logic         |
++-----------+-------------+  +---------------+--------------+
+            |                                |
+            +---------------+----------------+
+                            |
+                            v
++-----------------------------------------------------------+
+|  PanopticPool (unmodified)                                |
+|                                                           |
+|  Pool pair: V_A_shares / V_B_shares                       |
+|  CT0 slot --> ct0 address (immutable)                     |
+|  CT1 slot --> ct1 address (immutable)                     |
+|                                                           |
+|  SFPM (modified: accumulator adapter for Angstrom pools)  |
+|  Options written via standard TokenId                     |
++-----------------------------------------------------------+
+|                                                           |
+|  Custom Factory                                           |
+|  Deploys: V_A vault, V_B vault, ct0, ct1,                |
+|           PanopticPool clone                              |
+|  Seeds: initial V_A_shares/V_B_shares pool liquidity      |
++-----------------------------------------------------------+
+```
+
+---
+
+## 4. Component Descriptions
+
+### 4.1 Accumulator Source
+
+An abstraction over Angstrom's reward accumulators. Provides two read operations:
+- Read the pool-wide cumulative reward growth (for V_B)
+- Read the cumulative reward growth within a specific tick range (for V_A / ct0)
+
+This adapter already exists in the codebase. It reads Angstrom's storage directly (~11-20k gas for a full read). The adapter can serve multiple protocols (V3, V4, Angstrom) through a common interface.
+
+Gas consideration: since the accumulator is read on every share-price computation, and share-price computations happen during deposits, withdrawals, and Panoptic settlement calls, transient storage caching (one read per transaction, cached for subsequent calls) should be evaluated during implementation to reduce gas overhead.
+
+### 4.1a Observation Ring Buffer
+
+The accumulator source provides current-state reads but no historical queries. To support epoch-windowed growth deltas (required for the rolling-window transformation T and for RAN settlement), a ring buffer of historical observations is maintained per pool.
+
+**Storage:** OpenZeppelin CircularBuffer (bytes32, fixed-size 256 slots) storing GrowthObservation V2 values (uint32 blockNumber + uint16 relativeTimeDelta + uint208 cumulativeGrowth packed into bytes32). One buffer per Angstrom pool. The relativeTimeDelta field enables time-aware queries (e.g., "find the observation 30 minutes ago") without depending on block-to-time mapping.
+
+**Minimum guaranteed observation period:** 30 minutes. Derived from: Ethereum produces at most 1 block per 12 seconds (5 blocks/minute, 300 blocks/hour). Angstrom executes at most one bundle per block. At theoretical maximum throughput (every block has a bundle), 256 slots covers 256 × 12 seconds = 51 minutes. This guarantees at least 30 minutes of history under any conditions.
+
+**Empirical bundle frequency (from Dune, last 30 days):** Angstrom executes ~2,000-4,300 bundles per day, landing on ~28-60% of Ethereum blocks. At typical activity (3,000 bundles/day = ~125/hour), 256 slots covers ~2 hours. On quiet days (~1,300 bundles/day), it covers ~4.7 hours.
+
+**Single-period RAN epoch:** 30 minutes. This is the minimum period guaranteed to fit within the buffer regardless of network activity. Multi-period RANs chain consecutive 30-minute epochs up to the buffer depth.
+
+**Recording pattern:** Active observer (Option A). A permissioned keeper calls a record function after each Angstrom bundle execution. The function reads current globalGrowth from Angstrom via extsload and writes a new observation to the ring buffer. Skips if the same block already has an observation. Angstrom contracts are NOT modified -- the observer reads from them externally.
+
+**Cost structure:**
+- Buffer setup: ~5.7M gas per pool (~$15-30), one-time, fits in a single transaction
+- Recording an observation: ~5,000 gas per bundle (~$0.01-0.03), paid by keeper
+- Reading a historical observation: ~16,800 gas for binary search (~$0.04-0.09), paid by querier
+- Per-position cost: zero additional setup -- all positions on a pool share the same buffer
+
+**Binary search:** Observations are pushed in monotonically increasing block-number order. Lookups by block number use binary search over the ring buffer (O(log₂ 256) = 8 SLOADs).
+
+**Transformation-agnostic design:** The observation buffer and library provide raw primitives only (record, point query by block, latest/oldest/count). No transformations (windowed delta, EMA, TWAP, median) are embedded in the library. Transformations consume the buffer's raw observations and are defined per-instrument via the extensionFlag in NoteId (see Section 2.5b). This means the same buffer serves all note types on a pool -- a VANILLA note and a CALLABLE note read the same observations but apply different transformations.
+
+### 4.2 V_B Vault (Standalone)
+
+**Role:** Pool-wide reward exposure. Unit of account for the Panoptic pool.
+
+**What it does:** Accepts asset1 deposits. Mints V_B_shares (an independent ERC-20 token). Share price is a pluggable transformation T_B of globalGrowth, measured in asset1 terms. In the linear base case, the Q128.128 accumulator values are converted to token units using the same arithmetic Angstrom uses for reward payouts (multiply by liquidity, right-shift 128).
+
+**Properties:**
+- Share price monotonically non-decreasing (globalGrowth only increases)
+- Solvency: total value of vault always covers all deposits plus accrued rewards
+- Independent of ct0 and ct1 state
+- V_B_shares are composable ERC-20 tokens usable as pool tokens, collateral, or standalone yield instruments
+
+**Risk:** If the Angstrom pool generates zero rewards for an extended period, V_B share price stagnates. Depositors earn nothing but do not lose capital.
+
+### 4.3 ct1 -- CollateralTracker for V_B_shares
+
+**Role:** Near-vanilla CollateralTracker holding V_B_shares as its underlying token.
+
+Since the globalGrowth yield logic lives in V_B itself (not in ct1), ct1 does not need a custom totalAssets override. It is a standard CollateralTracker whose underlying asset happens to be V_B_shares instead of a raw token.
+
+**Full settlement interface preserved:** ct1 must implement all methods that PanopticPool calls -- including settlement operations (for minting/burning options), delegation (for liquidation/force-exercise), and refund operations. These are all standard CT behavior operating on V_B_shares instead of a raw token.
+
+### 4.4 ct0 -- CollateralTracker for V_A_shares
+
+**Role:** Near-vanilla CollateralTracker holding V_A_shares as its underlying token. Like ct1, all custom yield logic lives in the V_A vault, not in ct0.
+
+**Full settlement interface preserved:** ct0 implements all PanopticPool-facing settlement methods operating on V_A_shares. Standard CT behavior.
+
+### 4.4a V_A Vault (Standalone, Proxy-Upgradeable)
+
+**Role:** Concentration-exposure vault. Accepts asset0 deposits, mints V_A_shares. Share price is a pluggable transformation T_A of the cumulative reward captured by a specific tick range (growthInside).
+
+**Observable:** The cumulative reward accrued within a tick range, computed from the growth-outside accumulators.
+
+**Range-specificity evolution:**
+- Phase 1: V_A uses a single configured range with the linear transformation
+- Phase 2: V_A's transformation T_A can be upgraded via proxy to incorporate more sophisticated logic
+- Phase 3: V_A uses diamond pattern with facets per range, dispatching based on configuration
+
+**Range configuration lifecycle:** The range is set by the vault admin at configuration time. Changing the range affects future accrual but does not retroactively change existing depositors' positions -- their entry snapshots remain valid. The implications of range changes on existing positions must be analyzed during implementation.
+
+**Withdrawal solvency:** Withdrawal limits are bound by actual token balances held by the vault, not by totalAssets. A depositor cannot withdraw more real tokens than the vault holds, even if totalAssets (including transformation-sourced value) is higher.
+
+**Relationship to existing code:** The accrual manager already checkpoints growthInside per note and computes accrued rewards. The note snapshot stores entry accumulator values per tokenId. The accrued-ratio computation produces the n/N concentration metric. These map directly to what ct0 needs.
+
+### 4.5 SFPM Accumulator Adapter
+
+**Role:** Enables Panoptic's streaming premium pipeline to advance from Angstrom reward accrual rather than native Uniswap swap fees.
+
+**The challenge:** The V4 SFPM computes premium from two inputs: fee-growth snapshots (estimation) and the `feesAccrued` balance delta returned by PoolManager (actual collection). For Angstrom pools, both inputs are near-zero because the asset0/V_B_shares pool has minimal native swap volume. Angstrom's hook-paid rewards land in the sender's principal delta, not in `feesAccrued`. The premium pipeline is blind to Angstrom rewards by default.
+
+**Scope of modification:** The adapter must handle BOTH the estimation path (substitute Angstrom accumulator reads for native fee growth reads) AND the collection path (ensure premium accumulators advance by the Angstrom reward amount even though `feesAccrued` reports near-zero). This is a more substantial SFPM modification than a simple conditional branch.
+
+**What stays unchanged in the SFPM:** Position accounting, premium accumulator data structures and math, settlement logic, and the TokenId/leg encoding all remain unmodified. The adapter changes WHERE fee/reward data comes from, not HOW premium is computed from that data.
+
+**Resolution strategies to evaluate during Phase 2 planning:**
+- Intercept or augment `feesAccrued` values before the SFPM processes them
+- Modify the SFPM's collection logic for Angstrom pools to read from the accumulator source directly
+- Route the hook-paid tokens through a path that the SFPM's premium pipeline can observe
+
+**Pool-type detection:** The adapter must identify whether a pool is Angstrom-backed to apply the conditional read. The mechanism (registry lookup, flag on pool key, factory mapping, or hook-address check) is an architectural decision to be resolved during Phase 2 implementation planning.
+
+**Reentrancy consideration:** The accumulator read uses direct storage reads, not callbacks. This avoids reentrancy risks during the PoolManager unlock callback path that Panoptic's settlement uses.
+
+### 4.6 Custom Factory
+
+Deploys the complete system:
+1. V_A vault (standalone ERC-4626, proxy-upgradeable, accepts asset0, mints V_A_shares)
+2. V_B vault (standalone ERC-4626, accepts asset1, mints V_B_shares)
+3. ct0 as CT clone, configured for V_A_shares as underlying
+4. ct1 as CT clone, configured for V_B_shares as underlying
+5. PanopticPool clone, wired to ct0 and ct1 addresses
+
+The factory ensures:
+- The underlying Uniswap V4 pool is the Angstrom-hooked pool (shared PoolManager)
+- Initial pool liquidity is seeded (see Section 4.7)
+
+**Factory misconfiguration risk:** Incorrect pool ID or wrong immutable args would produce a non-functional deployment. This is a deploy-time risk mitigated by deployment scripts with validation checks and fork-test verification before mainnet.
+
+### 4.7 Bootstrapping
+
+The V_A_shares/V_B_shares pool requires initial liquidity for Panoptic options to function. Natural swap volume on this pair is expected to be low (V_B_shares is a niche yield token). Liquidity providers in this pool earn Uniswap native fees (minimal) but their primary incentive is participation in the options market.
+
+**Bootstrapping strategy:** The protocol team seeds initial liquidity at deployment. This is a one-time cost. Subsequent liquidity comes from option writers who must deposit into ct0 and ct1 (and thus indirectly into the pool) to write options. The SFPM accumulator adapter (Section 4.5) ensures premium accrual is real regardless of pool swap volume, removing the dependency on native fee income.
+
+### 4.8 The Panoptic Pool
+
+Options on the V_A_shares/V_B_shares pair:
+
+| Option | Economic Meaning |
+|---|---|
+| Short put | "I bet this range's share of rewards stays above strike K" -- the RAN short (seller of theta) |
+| Long put | "I bet this range's share of rewards drops below strike K" -- hedge against range going inactive (first-passage risk) |
+| Short call | Writing premium against range over-performance -- economically uncommon, mainly for hedging long V_A exposure |
+| Long call | Leveraged bet on range outperforming pool average |
+
+**Note on short straddle:** A short straddle on this pair bets on stability of the concentration ratio. However, the concentration ratio is NOT mean-reverting -- if price permanently exits a range, the ratio declines monotonically toward zero. A short straddle would be persistently exposed on the put side. This differs from the standard LP-as-straddle analogy (Lambert) which assumes mean reversion.
+
+**RAN as constrained Panoptic position:**
+- RAN long = long put (buy protection against range going inactive)
+- RAN short = short put (sell theta on a range being actively managed)
+- Multi-period RAN = roll of single-period positions across epoch boundaries, achieved via accumulator snapshots (gas-efficient -- no actual mint/burn per period). The component responsible for epoch boundary management and roll logic must be defined during Phase 2 implementation.
+
+**What stays unmodified in Panoptic:**
+- PanopticPool -- option validation, force exercise, settlement
+- RiskEngine -- margin requirements, liquidation thresholds
+- TokenId encoding -- legs, strikes, widths, risk partners
+
+---
+
+## 5. Phased Rollout
+
+| Phase | What | Exit Criteria |
+|---|---|---|
+| **0 (current)** | Vanilla CTs, shared PoolManager. Playground test passing. | Test proves Angstrom + Panoptic coexist; short put lifecycle works end-to-end. |
+| **1** | V_B vault deployed. ct1 wraps V_B_shares. ct0 is vanilla hybrid-proxy (no custom yield yet). | V_B share price appreciates correctly with globalGrowth. Depositors can enter/exit. Pool pair V_A_shares/V_B_shares is live. |
+| **2** | SFPM accumulator adapter live. ct0 reads growthInside for a single configured range. | Options on V_A_shares/V_B_shares accrue streaming premium from Angstrom rewards. Short put on a range earns theta. Long put pays for protection. This is the minimum viable product for theta trading. |
+| **3** | ct0 diamond with multi-range facets. | Multiple ranges can be priced simultaneously. Different option legs can reference different concentration exposures. |
+
+Each phase gets its own implementation spec that defines the detailed task breakdown, test plan, and acceptance criteria.
+
+---
+
+## 6. Invariants
+
+### 6.1 Solvency
+Total value tracked by each vault is always greater than or equal to total deposits. Guaranteed by monotonicity of globalGrowth and growthInside (Angstrom only adds rewards, never removes).
+
+### 6.2 Withdrawal Solvency
+Real token balance held by each vault must cover all possible withdrawals at current share prices. Accumulator-sourced value that has not been converted to actual tokens is NOT withdrawable. This is distinct from Invariant 6.1 -- totalAssets may exceed withdrawable tokens.
+
+### 6.3 Share Price Monotonicity
+Share price of both V_B and ct0 can only increase or stay flat, never decrease. Follows from accumulator monotonicity.
+
+### 6.4 Panoptic Margin Compatibility
+Panoptic's collateral-check routine returns correct results for the custom CTs. Since share price only goes up, existing positions only become more collateralized over time (safe direction). The full settlement interface (mint settlement, burn settlement, liquidation settlement, delegation, revocation, and refund) must behave identically to vanilla CT from PanopticPool's perspective.
+
+### 6.5 Independence
+ct0 state changes do not affect ct1 or V_B state, and vice versa. The only coupling point is the PanopticPool, which reads both independently.
+
+### 6.6 Accumulator Consistency
+growthInside for any range is always less than or equal to globalGrowth. A range cannot capture more than the total. Guaranteed by the growth-outside accumulator math in Angstrom's pool rewards structure.
+
+### 6.7 Proxy Stability
+Proxy addresses baked into PanopticPool's immutable args never change. Immutable configuration (pool, tokens, risk engine) is carried in the proxy's bytecode. Only the yield-function implementation behind the proxy changes.
+
+### 6.8 Utilization Rate Consistency
+When accumulator-based rewards augment totalAssets, the pool utilization rate (assets deployed to AMM / totalAssets) decreases. This lowers borrowing interest rates for long option holders. This is intended behavior and must be documented as a known economic effect, not treated as a bug.
+
+### 6.9 Ratio Boundedness
+The V_A_shares/V_B_shares pool price approximates growthInside/globalGrowth, which is bounded to [0, 1]. When a range goes permanently inactive, the ratio asymptotes to zero. Options referencing that range settle accordingly. A frozen range creates a dead options market on that range but does not affect other ranges or the pool-wide V_B vault.
+
+---
+
+## 7. Risks and Mitigations
+
+| Risk | Consequence | Mitigation |
+|---|---|---|
+| Hybrid clone-proxy upgrade introduces bug in yield logic | Share price jump/drop, incorrect margin calculations | Timelock on upgrades + differential testing (fork test compares proxy vs reference implementation) |
+| Angstrom pool generates zero rewards for extended period | V_B share price stagnates, options lose premium accrual | Market risk, not protocol risk. Priced via lower implied vol. |
+| Accumulator reads return stale values (not yet settled this block) | Rate is one block behind | Acceptable -- monotonically correct, just slightly delayed. Same property as Balancer rate caching. |
+| Node manipulates growthInside allocation to benefit specific ranges | ct0 share price for a range inflated/deflated | Staking/slashing assumption from Angstrom. Not amplified by vault layer. |
+| ct0 range goes permanently out of range | V_A share price freezes, ratio drops to zero, options market for that range dies | First-passage-time risk. Priced into option spread. Vault remains solvent -- depositors redeem accrued value. |
+| Collateral shortfall in extreme vol | Premium owed exceeds collateral deposited | Panoptic's force-exercise liquidation mechanism operates natively on CT shares. |
+| Reentrancy via PoolManager unlock callback during settlement | Unexpected state mutation | Accumulator reads use direct storage reads (no callbacks). No reentrancy vector. |
+| Factory misconfiguration (wrong pool ID, wrong immutable args) | Non-functional deployment | Deployment scripts with validation checks + fork-test verification before mainnet. |
+| Accumulator gas overhead on frequent totalAssets calls | Settlement transactions become expensive | Evaluate transient storage caching during implementation (one read per tx, cached for subsequent calls). |
+| Phantom asset inflation (totalAssets > withdrawable tokens) | Depositors expect to withdraw more than vault holds | Invariant 6.2 enforces withdrawal solvency. maxWithdraw bounded by actual token balance, not totalAssets. |
+| V_A/V_B price deviates from accumulator ratio due to vault capitalization imbalance | Options struck at specific ratio levels have pricing error | Known approximation. Arbitrageurs maintain alignment. Document as known limitation. |
+| Frozen range creates dead options market | Illiquid options, potentially unexercisable in practice | Not a protocol failure -- economic reality. Options referencing dead ranges are worthless by design. |
+| T malfunction: ratchet inflation | A buggy T that oscillates gets clamped to its high-water mark by the monotonicity guard, permanently inflating totalAssets beyond real accrual | Add a staleness/liveness check: if T's raw output drops below the bounded rate for N consecutive calls, freeze the vault and alert governance. The continuity cap limits per-step inflation but does not prevent slow ratcheting. |
+| T malfunction: economic stall | A bounded-but-wrong T returns values below the last checkpoint, causing the monotonicity guard to clamp all output. Vault becomes zero-yield despite real accumulator growth. | Operational monitoring: alert if vault rate has not increased for M consecutive settlement periods while the underlying accumulator has grown. Governance can swap T via the Layer 2 mechanism. Timelock ensures no immediate damage from a hasty swap. |
+
+---
+
+## 8. Upgrade Governance
+
+Proxy upgrades (changing the yield-function implementation behind the hybrid clone-proxy) are the primary trust surface. Architectural decisions:
+
+- **Timelock:** All proxy upgrades go through a timelock. Duration to be determined during implementation (minimum 24h suggested).
+- **Upgrade key ownership:** Initially held by protocol multisig. Path to governance or eventual key burn to be defined per-phase.
+- **Scope of upgrades:** Only the yield-function logic is upgradeable. Immutable args (pool, tokens, risk engine) are in bytecode and cannot be changed.
+
+---
+
+## 9. Research References
+
+Supporting research reports produced during this design:
+
+| Report | Location | Focus |
+|---|---|---|
+| Aquilina LP Risk Taxonomy | .scratch/aquilina-risk-taxonomy.md | 10 quantified LP risks from BIS WP 1227 |
+| Angstrom Risk Mitigation Map | .scratch/angstrom-risk-mitigation-map.md | Which risks Angstrom mitigates vs introduces |
+| RAN Residual Risk Scenarios | .scratch/ran-residual-risk-scenarios.md | LP archetype scenarios, risk transformation, options analogy |
+| Vault Yield Function Research | .scratch/vault-yield-function-research.md | ERC-4626 patterns for observable-driven yield |
+| Balancer Rate Provider Deep Dive | .scratch/balancer-rate-provider-deep-dive.md | IRateProvider interface, Boosted Pool consumption |
+| Token Supply Mutation Research | .scratch/token-supply-mutation-research.md | Bonding curves, rebasing, supply function properties |
+| Mean Reversion Validation | contracts/.scratch/mean-reversion-validation.md | Cumulative ratio is NOT mean-reverting; flow concentration IS |
+| Vault Pattern Comparison (Euler/Balancer) | contracts/.scratch/vault-pattern-comparison-euler-balancer.md | Four-layer architecture derivation from 7 protocol patterns |
+| Balancer Concrete Imports | contracts/.scratch/balancer-concrete-imports.md | Exact interfaces, file paths, dependency chain for IRateProvider |
+
+---
+
+## 10. QA Review Log
+
+Three independent QA reviews were conducted on Rev 1 of this spec:
+
+| Reviewer | Focus | Critical Findings |
+|---|---|---|
+| Architectural consistency (code reviewer, Opus) | Panoptic contract compatibility | C1: Clone vs proxy incompatibility. I1: Full settlement interface obligation. |
+| Economic coherence (papa-bear, Opus) | Option payoff validity, solvency, denomination | C2: Both accumulators in asset0 vs ct1 expects token1. C3: Dry premium in Phases 1-3. |
+| Completeness and clarity (mama-bear, Sonnet) | Code leakage, missing sections, clarity | I7: Borderline code identifiers in prose. S3: Missing deployment/testing strategy. |
+
+All critical findings resolved in Rev 2:
+- C1 resolved via hybrid clone-proxy pattern (Section 2.7)
+- C2 resolved via V_B shares as token1 (Section 2.2)
+- C3 resolved by bringing SFPM adapter to Phase 2 (Section 2.8)
+
+Rev 2 QA (round 2) -- all three reviewers returned FLAG (no blockers):
+- Arch: F3 (SFPM collect() dependency) noted V4 uses modifyLiquidity not collect(). But feesAccrued pathway needs further investigation.
+- Econ: R2-F1 (dual-slot mapping) needs re-examination alongside feesAccrued question.
+- Completeness: k defined (Q128.128 conversion = multiply by liquidity, right-shift 128), file path corrected, pool-type detection scoped to Phase 2 implementation.
+
+Rev 3 QA (round 3):
+- Completeness: PASS. All prior blockers resolved.
+- Arch: FLAG. feesAccrued computed from Pool library internal fee growth, not hook-settled deltas. Adapter scope for Phase 2 is larger than Rev 3 claimed. Phase 1 unaffected.
+- Econ: BLOCK on Rev 3 claim that "premium works naturally." Same feesAccrued finding. Corrected in Rev 4: Sections 2.8 and 4.5 now honestly state the adapter must handle both estimation AND collection paths. Phase 2 design challenge explicitly scoped.
+
+Rev 4 resolves the BLOCK by correcting the factual claim. The architecture is unchanged -- only the description of the Phase 2 adapter scope is corrected. Phase 1 remains clear to proceed.
+
+Rev 5-6: User review corrections (V_B accepts asset1, ct0 holds V_A_shares, pluggable transformations). Four-layer vault architecture added (Balancer/Euler/Pendle hybrid). Mean reversion analysis integrated. Section numbering consolidated.
+
+Rev 7 QA (final round): T malfunction risks added (ratchet inflation, economic stall). All three reviewers: Arch FLAG (editorial -- fixed), Econ PASS, Completeness FLAG (QA log -- fixed). No structural or economic blockers remain. Spec approved for Phase 1 implementation planning.
+
+Full QA reports available at:
+- .scratch/spec-review-economic-coherence.md (Rev 1)
+- .scratch/spec-review-economic-coherence-rev2.md (Rev 2)
+- .scratch/spec-review-completeness.md (Rev 1)
+- .scratch/spec-review-completeness-rev2.md (Rev 2)
+- Architectural reviews returned inline (agent output, both rounds)
+
+---
+
+## 11. Existing Code Inventory
+
+Components that already exist and will be composed into this architecture:
+
+| Component | Location | Role in Architecture |
+|---|---|---|
+| AngstromAccumulatorOracleAdapter | contracts/src/_adapters/AngstromAccumulatorOracleAdapter.sol | Read layer for accumulators (globalGrowth, growthInside via extsload) |
+| GrowthObservation V2 | contracts/src/types/GrowthObservation.sol | Bit-packed (uint32 blockNumber, uint16 relativeTimeDelta, uint208 cumulativeGrowth) in bytes32. Accessors, comparators, derived views. Time-aware. |
+| OZ CircularBuffer | contracts/lib/openzeppelin-contracts/contracts/utils/structs/CircularBuffer.sol | Fixed-size bytes32 ring buffer. GrowthObservation slots directly into it. |
+| BlockNumberAwareGrowthObserverLib | contracts/src/libraries/BlockNumberAwareGrowthObserverLib.sol | Transformation-agnostic raw observation primitives: record, observeAt (binary search), latestObservation, oldestObservation, observationCount. No embedded transformations -- windowed delta, EMA, etc. belong in Layer 2 transformation contracts. |
+| GrowthToTickLib | contracts/src/libraries/GrowthToTickLib.sol | Q128.128 growth ratio → tick conversion bridge. 4-stage pipeline: FullMath.mulDiv → Solady sqrt → Q96 shift → TickMath. |
+| EMAGrowthTransformationLib | contracts/src/libraries/transformations/EMAGrowthTransformationLib.sol | Layer 2 transformation (extensionFlag CALLABLE). Composes observer + GrowthToTickLib + OraclePack into EMA-smoothed growth ticks. |
+| AccrualManagerMod | contracts/src/modules/AccrualManagerMod.sol | Checkpoint + settle logic, accrued-ratio computation |
+| NoteSnapshot | contracts/src/types/NoteSnapshot.sol | Per-note accumulator birth snapshots |
+| PoolRewards | contracts/src/types/PoolRewards.sol | globalGrowth + growthOutside structure |
+| X128MathLib | contracts/src/libraries/X128MathLib.sol | Q128.128 arithmetic for accumulator conversion |
+| PanopticPlayground test | contracts/test/PanopticPlayground.t.sol | Working Angstrom + Panoptic shared PoolManager proof |
+| OptionBuilderLibrary | contracts/test/PanopticPlayground.t.sol | TokenId construction helpers |
+| VolToWidthLib | contracts/test/PanopticPlayground.t.sol | Vol-to-tick-width conversion |
+| Panoptic CollateralTracker | contracts/lib/2025-12-panoptic/contracts/CollateralTracker.sol | Template for custom CT |
+| Panoptic SFPM | contracts/lib/2025-12-panoptic/contracts/SemiFungiblePositionManager.sol | Target for accumulator adapter |
+| Solady ERC-4626 | contracts/lib/solady/src/tokens/ERC4626.sol | Candidate base class for V_B vault |

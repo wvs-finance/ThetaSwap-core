@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.26;
+
+import {SlotDerivation} from "openzeppelin-contracts/utils/SlotDerivation.sol";
+import {IAngstromAuth} from  "core/src/interfaces/IAngstromAuth.sol";
+import {PoolId} from "v4-core/src/types/PoolId.sol";
+import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
+import {IUniV4} from "core/src/interfaces/IUniV4.sol";
+
+contract AngstromAccumulatorOracleAdapter {
+    uint256 private constant POOL_REWARDS_SLOT = 7;
+    uint256 private constant REWARD_GROWTH_SIZE = 16777216;
+    uint256 private constant POOLS_SLOT = 6;
+    IPoolManager immutable UNI_V4;
+    IAngstromAuth immutable ANGSTROM;
+
+
+
+    using SlotDerivation for bytes32;
+    using IUniV4 for IPoolManager;
+
+    constructor(IAngstromAuth _angstrom, IPoolManager _poolManager){
+	ANGSTROM = _angstrom;
+	UNI_V4 = _poolManager;
+    }
+
+
+    function globalGrowth(PoolId poolId) external view returns(uint256 _globalGrowth){
+        bytes32 base = bytes32(POOL_REWARDS_SLOT).deriveMapping(PoolId.unwrap(poolId));
+        _globalGrowth = ANGSTROM.extsload(uint256(base.offset(REWARD_GROWTH_SIZE)));
+    }
+
+    function growthInside(
+        PoolId poolId,
+        int24 tickLower,
+        int24 tickUpper
+    ) external view returns(uint256)
+    {
+        bytes32 base = bytes32(POOL_REWARDS_SLOT).deriveMapping(PoolId.unwrap(poolId));
+        int24 currentTick = UNI_V4.getSlot0(poolId).tick();
+
+        uint256 outsideBelow = ANGSTROM.extsload(uint256(base.offset(uint256(uint24(tickLower)))));
+        uint256 outsideAbove = ANGSTROM.extsload(uint256(base.offset(uint256(uint24(tickUpper)))));
+
+        unchecked {
+            if (currentTick < tickLower) {
+                return outsideBelow - outsideAbove;
+            } else if (currentTick >= tickUpper) {
+                return outsideAbove - outsideBelow;
+            } else {
+                uint256 global = ANGSTROM.extsload(uint256(base.offset(REWARD_GROWTH_SIZE)));
+                return global - outsideBelow - outsideAbove;
+            }
+        }
+    }
+
+}

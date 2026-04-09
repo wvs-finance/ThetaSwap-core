@@ -1,0 +1,43 @@
+[package]
+name = "matching-engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+exclude.workspace = true
+
+[[bench]]
+name = "delta_tps"
+harness = false
+
+[dependencies]
+alloy.workspace = true
+alloy-primitives.workspace = true
+angstrom-types.workspace = true
+base64.workspace = true
+criterion.workspace = true
+eyre.workspace = true
+futures.workspace = true
+futures-util.workspace = true
+itertools.workspace = true
+rand.workspace = true
+rand_distr.workspace = true
+reth-tasks.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uniswap-v4.workspace = true
+uniswap_v3_math.workspace = true
+validation.workspace = true
+
+[dev-dependencies]
+criterion = { version = "0.5.1", features = ['csv', 'csv_output'] }
+jsonrpsee.workspace = true
+pade.workspace = true
+pade-macro.workspace = true
+testing-tools.workspace = true

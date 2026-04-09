@@ -1,0 +1,40 @@
+name: docker-deploy
+
+on:
+  workflow_dispatch: {}
+
+env:
+  CARGO_TERM_COLOR: always
+  DOCKER_IMAGE_NAME: ghcr.io/sorellalabs/angstrom
+  DOCKER_USERNAME: ${{ github.actor }}
+  GIT_SHA: ${{ github.sha }}
+
+jobs:
+  build:
+    name: build and push
+    runs-on: ubuntu-24.04
+    permissions:
+      packages: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        build:
+          - name: 'Build and push the git-sha-tagged angstrom image x86'
+            command: 'docker buildx build --build-arg BUILD_PROFILE=maxperf --build-arg FEATURES="jemalloc" --file ./Dockerfile . --tag ${DOCKER_IMAGE_NAME}:${GIT_SHA} --tag ${DOCKER_IMAGE_NAME}:latest --push'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: rui314/setup-mold@v1
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+
+      - name: Log in to Docker
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io --username ${DOCKER_USERNAME} --password-stdin
+      - name: Build and push ${{ matrix.build.name }}
+        run: ${{ matrix.build.command }}
+

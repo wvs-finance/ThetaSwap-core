@@ -1,0 +1,82 @@
+[profile.default]
+bytecode_hash = "none"
+viaIR = false
+optimizer_runs = 21_000
+verbosity = 3
+fs_permissions = [
+  { access = "read-write", path = ".forge-snapshots/" },
+  { access = "read", path = "test/_fixtures/" }
+]
+ast = true
+evm_version = "cancun"
+libs = ["lib"]
+dynamic_test_linking = true
+
+ignored_error_codes = [
+  2394, # Transient storage warning
+  3860, # Initcode size too large
+  5574, # Contract size too large
+]
+
+remappings = [
+  "solady/src/=lib/solady/src/",
+  "v4-core/src/=lib/v4-periphery/lib/v4-core/src/",
+  "v4-periphery/src/=lib/v4-periphery/src/",
+  "forge-std/=lib/forge-std/src",
+  "solmate/=lib/solmate/",
+  "core/src/=src/",
+  "anstrong-test/=test/",
+  "openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/",
+  "compose/=lib/Compose/src/",
+  "panoptic-v2/src/=lib/2025-12-panoptic/contracts/",
+  "panoptic-v2/test/=lib/2025-12-panoptic/test/foundry/",
+  "panoptic-v2/v3-core/=lib/2025-12-panoptic/lib/v3-core/contracts/",
+  "panoptic-v2/v3-periphery/=lib/2025-12-panoptic/lib/v3-periphery/contracts/",
+
+  # Context-aware: panoptic's internal imports resolve against its own bundled libs
+  "lib/2025-12-panoptic/:v4-core/=lib/v4-periphery/lib/v4-core/src/",
+  "lib/2025-12-panoptic/:solady/=lib/2025-12-panoptic/lib/solady/src/",
+  "lib/2025-12-panoptic/:solmate/=lib/2025-12-panoptic/lib/solmate/",
+  "lib/2025-12-panoptic/:forge-std/=lib/forge-std/src/",
+  "lib/2025-12-panoptic/:@openzeppelin/=lib/2025-12-panoptic/lib/v4-core/lib/openzeppelin-contracts/",
+  "lib/2025-12-panoptic/:clones-with-immutable-args/=lib/2025-12-panoptic/lib/clones-with-immutable-args/src/",
+  "lib/2025-12-panoptic/:univ3-core/=lib/2025-12-panoptic/lib/v3-core/contracts/",
+  "lib/2025-12-panoptic/:univ3-periphery/=lib/2025-12-panoptic/lib/v3-periphery/contracts/",
+  "lib/2025-12-panoptic/:@contracts/=lib/2025-12-panoptic/contracts/",
+  "lib/2025-12-panoptic/:@libraries/=lib/2025-12-panoptic/contracts/libraries/",
+  "lib/2025-12-panoptic/:@base/=lib/2025-12-panoptic/contracts/base/",
+  "lib/2025-12-panoptic/:@types/=lib/2025-12-panoptic/contracts/types/",
+  "lib/2025-12-panoptic/:@tokens/=lib/2025-12-panoptic/contracts/tokens/",
+  "lib/2025-12-panoptic/:@test_periphery/=lib/2025-12-panoptic/test/foundry/test_periphery/",
+  "lib/2025-12-panoptic/:@scripts/=lib/2025-12-panoptic/scripts/",
+]
+
+[profile.default.fmt]
+line_length = 100
+
+[profile.default.invariant]
+fail_on_revert = true
+depth = 200
+runs = 256
+
+[profile.ci]
+show_progress = false
+
+[profile.ci.invariant]
+fail_on_revert = true
+depth = 50
+runs = 50
+
+[profile.light-fuzz.invariant]
+runs = 40
+depth = 100
+
+[profile.heavy-fuzz.invariant]
+runs = 200
+
+[profile.loaders]
+show_progress = false
+optimizer = true
+ast = true
+src = "../crates/uniswap-v4/src/uniswap/loaders"
+libs = ["lib"]

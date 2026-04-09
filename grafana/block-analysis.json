@@ -1,0 +1,280 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "angstrom-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "node_address"
+          }
+        ]
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "angstrom-postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  node_address,\n  state,\n  slot_offset_ms,\n  limit_orders,\n  searcher_orders,\n  updated_at\nFROM ang_block_state_metrics\nWHERE block_number = NULLIF('${block_number}', '')::BIGINT\nORDER BY node_address, state",
+          "refId": "A"
+        }
+      ],
+      "title": "State Timing Table",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "angstrom-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 10
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "angstrom-postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  node_address,\n  matching_input_limit_pre_quorum,\n  matching_input_searcher_pre_quorum,\n  matching_input_limit_post_quorum,\n  matching_input_searcher_post_quorum,\n  matching_pools_solved,\n  matching_orders_filled,\n  matching_orders_partial,\n  matching_orders_unfilled,\n  matching_orders_killed,\n  bundle_generated\nFROM ang_block_metrics\nWHERE block_number = NULLIF('${block_number}', '')::BIGINT\nORDER BY node_address",
+          "refId": "A"
+        }
+      ],
+      "title": "Matching Results Table",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "angstrom-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 3,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "angstrom-postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  node_address,\n  preproposal_limit_orders,\n  preproposal_searcher_orders,\n  preproposals_collected,\n  is_leader,\n  proposal_build_time_ms,\n  proposal_verification_time_ms,\n  consensus_completion_time_ms\nFROM ang_block_metrics\nWHERE block_number = NULLIF('${block_number}', '')::BIGINT\nORDER BY node_address",
+          "refId": "A"
+        }
+      ],
+      "title": "General Consensus Table",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "angstrom-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "id": 4,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "angstrom-postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  node_address,\n  submission_started_slot_offset_ms,\n  submission_completed_slot_offset_ms,\n  submission_latency_ms,\n  submission_success,\n  bundle_included\nFROM ang_block_metrics\nWHERE block_number = NULLIF('${block_number}', '')::BIGINT\nORDER BY node_address",
+          "refId": "A"
+        }
+      ],
+      "title": "Submission Overview",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "angstrom-postgres"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 5,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "enablePagination": true,
+          "fields": "",
+          "reducer": ["sum"],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "postgres",
+            "uid": "angstrom-postgres"
+          },
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  node_address,\n  submitter_type,\n  endpoint,\n  success,\n  latency_ms,\n  observed_at\nFROM ang_block_submission_endpoint_metrics\nWHERE block_number = NULLIF('${block_number}', '')::BIGINT\nORDER BY node_address, submitter_type, endpoint",
+          "refId": "A"
+        }
+      ],
+      "title": "Submission Endpoints Table",
+      "type": "table"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["angstrom", "consensus", "submission", "block-analysis"],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "",
+          "value": ""
+        },
+        "description": "Enter a block number to analyze",
+        "hide": 0,
+        "label": "Block Number",
+        "name": "block_number",
+        "options": [
+          {
+            "selected": true,
+            "text": "",
+            "value": ""
+          }
+        ],
+        "query": "",
+        "skipUrlSync": false,
+        "type": "textbox"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Angstrom Block Analysis",
+  "uid": "angstrom-block-analysis",
+  "version": 2,
+  "weekStart": ""
+}

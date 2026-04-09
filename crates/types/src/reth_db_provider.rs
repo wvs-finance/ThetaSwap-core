@@ -1,0 +1,200 @@
+use std::marker::PhantomData;
+
+use alloy::{
+    eips::BlockId,
+    network::Network,
+    primitives::{Address, Bytes, FixedBytes, StorageValue, U64, U256},
+    providers::{Provider, ProviderCall, ProviderLayer, RootProvider, RpcWithBlock},
+    rpc::client::NoParams,
+    transports::TransportErrorKind
+};
+use eyre::Result;
+use reth_provider::{
+    BlockNumReader, ProviderError, StateProvider, StateProviderBox, StateProviderFactory
+};
+
+pub struct RethDbLayer<DB, N>
+where
+    DB: StateProviderFactory + BlockNumReader + Clone,
+    N: Network
+{
+    db:       DB,
+    _phantom: PhantomData<N>
+}
+
+impl<DB, N> RethDbLayer<DB, N>
+where
+    DB: StateProviderFactory + BlockNumReader + Clone,
+    N: Network
+{
+    pub const fn new(db: DB) -> Self {
+        Self { db, _phantom: PhantomData }
+    }
+
+    pub(crate) fn db(&self) -> DB {
+        self.db.clone()
+    }
+}
+
+impl<P, N, DB> ProviderLayer<P, N> for RethDbLayer<DB, N>
+where
+    P: Provider<N>,
+    N: Network,
+    DB: StateProviderFactory + BlockNumReader + Clone + 'static
+{
+    type Provider = RethDbProvider<P, N, DB>;
+
+    fn layer(&self, inner: P) -> Self::Provider {
+        RethDbProvider::new(inner, self.db())
+    }
+}
+
+/// A provider that overrides the vanilla `Provider` trait to get results from
+/// the reth-db.
+///
+/// It holds the `reth_provider::ProviderFactory` that enables read-only access
+/// to the database tables and static files.
+#[derive(Clone)]
+pub struct RethDbProvider<P, N, DB>
+where
+    P: Provider<N>,
+    N: Network,
+    DB: StateProviderFactory + BlockNumReader + Clone
+{
+    inner:            P,
+    provider_factory: DbAccessor<DB>,
+    _phantom:         PhantomData<N>
+}
+
+impl<P, N, DB> RethDbProvider<P, N, DB>
+where
+    P: Provider<N>,
+    N: Network,
+    DB: StateProviderFactory + BlockNumReader + Clone
+{
+    /// Create a new `RethDbProvider` instance.
+    pub fn new(inner: P, db: DB) -> Self {
+        let db_accessor: DbAccessor<DB> = DbAccessor::new(db);
+        Self { inner, provider_factory: db_accessor, _phantom: PhantomData }
+    }
+
+    const fn factory(&self) -> &DbAccessor<DB> {
+        &self.provider_factory
+    }
+}
+
+/// Implement the `Provider` trait for the `RethDbProvider` struct.
+///
+/// This is where we override specific RPC methods to fetch from the reth-db.
+impl<P, N, DB> Provider<N> for RethDbProvider<P, N, DB>
+where
+    P: Provider<N>,
+    N: Network,
+    DB: StateProviderFactory + BlockNumReader + Clone + 'static
+{
+    fn root(&self) -> &RootProvider<N> {
+        self.inner.root()
+    }
+
+    /// Override the `get_block_number` method to fetch the latest block number
+    /// from the reth-db.
+    fn get_block_number(&self) -> ProviderCall<NoParams, U64, u64> {
+        let best = self
+            .factory()
+            .best_block_number()
+            .map_err(TransportErrorKind::custom);
+
+        ProviderCall::ready(best)
+    }
+
+    /// Override the `get_transaction_count` method to fetch the transaction
+    /// count of an address.
+    ///
+    /// `RpcWithBlock` uses `ProviderCall` under the hood.
+    fn get_transaction_count(&self, address: Address) -> RpcWithBlock<Address, U64, u64> {
+        let this = self.factory().clone();
+        RpcWithBlock::new_provider(move |block_id| {
+            let provider = this
+                .provider_at(block_id)
+                .map_err(TransportErrorKind::custom)
+                .unwrap();
+
+            let maybe_acc = provider
+                .basic_account(&address)
+                .map_err(TransportErrorKind::custom)
+                .unwrap();
+
+            let nonce = maybe_acc.map(|acc| acc.nonce).unwrap_or_default();
+
+            ProviderCall::ready(Ok(nonce))
+        })
+    }
+
+    fn get_storage_at(
+        &self,
+        address: Address,
+        key: U256
+    ) -> RpcWithBlock<(Address, U256), StorageValue> {
+        let this = self.factory().clone();
+
+        RpcWithBlock::new_provider(move |block_id| {
+            let provider = this
+                .provider_at(block_id)
+                .map_err(TransportErrorKind::custom)
+                .unwrap();
+
+            ProviderCall::ready(
+                provider
+                    .storage(address, FixedBytes::from(key))
+                    .map(|v| v.unwrap_or_default())
+                    .map_err(TransportErrorKind::custom)
+            )
+        })
+    }
+
+    fn get_code_at(&self, address: Address) -> RpcWithBlock<Address, Bytes> {
+        let this = self.factory().clone();
+
+        RpcWithBlock::new_provider(move |block_id| {
+            let provider = this
+                .provider_at(block_id)
+                .map_err(TransportErrorKind::custom)
+                .unwrap();
+
+            ProviderCall::ready(
+                provider
+                    .account_code(&address)
+                    .map(|f| f.unwrap_or_default().original_bytes())
+                    .map_err(TransportErrorKind::custom)
+            )
+        })
+    }
+
+    // TODO: eth_call, raw_call
+}
+
+/// A helper type to get the appropriate DB provider.
+#[derive(Clone)]
+struct DbAccessor<DB>
+where
+    DB: StateProviderFactory + BlockNumReader + Clone
+{
+    inner: DB
+}
+
+impl<DB> DbAccessor<DB>
+where
+    DB: StateProviderFactory + BlockNumReader + Clone
+{
+    const fn new(inner: DB) -> Self {
+        Self { inner }
+    }
+
+    fn best_block_number(&self) -> Result<u64, ProviderError> {
+        self.inner.best_block_number()
+    }
+
+    fn provider_at(&self, block_id: BlockId) -> Result<StateProviderBox, ProviderError> {
+        self.inner.state_by_block_id(block_id)
+    }
+}

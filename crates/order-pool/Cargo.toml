@@ -1,0 +1,47 @@
+[package]
+name = "order-pool"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+description = """
+Order pool implementation
+"""
+
+[dependencies]
+alloy.workspace = true
+angstrom-metrics.workspace = true
+angstrom-types.workspace = true
+angstrom-utils.workspace = true
+eyre.workspace = true
+futures-util.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+serde_with = "3.13.0"
+telemetry-recorder.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, default-features = false, features = ["sync"] }
+tokio-stream.workspace = true
+tracing.workspace = true
+validation.workspace = true
+
+[dev-dependencies]
+angstrom-network.workspace = true
+futures.workspace = true
+pade.workspace = true
+rand.workspace = true
+reth-discv4 = { workspace = true, features = ["test-utils"] }
+reth-metrics.workspace = true
+reth-network = { workspace = true, features = ["test-utils"] }
+reth-primitives = { workspace = true, features = ["test-utils"] }
+reth-provider = { workspace = true, features = ["test-utils"] }
+reth-tracing.workspace = true
+reth-transaction-pool = { workspace = true, features = ["test-utils"] }
+secp256k1.workspace = true
+testing-tools.workspace = true
+# misc
+serial_test.workspace = true
+tempfile.workspace = true
+tracing-subscriber.workspace = true

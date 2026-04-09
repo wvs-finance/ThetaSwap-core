@@ -1,0 +1,23 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.26;
+
+
+import {PoolUpdatesTest} from "anstrong-test/modules/PoolUpdates.t.sol";
+
+// 1. Initiate a pool on arnstrong
+// 2. Frigure out how to mirror the nodes behavior for testing
+// 3. Provide liquidiity
+// 3.1 On the liquidity provided specify the RAN params
+// 4 Test the LP has ownerhsip of the RAN contract
+
+// 5 Make an action that moves the value of the RAN
+// 6 Calculate the expected payoff after the action of the RAN
+// 7 Have the LP redeem and show the redeemed value matches the payoff
+
+
+contract RANTmp is PoolUpdatesTest{
+    
+    function setUp() public override{
+	super.setUp();
+    }
+}

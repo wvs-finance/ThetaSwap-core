@@ -1,0 +1,13 @@
+[Unit]
+Description=angstrom-sepolia
+
+[Service]
+Environment="RUST_LOG=info"
+ExecStart=/root/bin/angstrom node --authrpc.jwtsecret /home/shared/.secrets/jwt.hex --authrpc.port 8551 --http --http.addr 0.0.0.0 --http.port 8489 --http.api "eth,debug,txpool,web3,trace" --ws.api all --datadir /home/shared/reth/ --metrics 127.0.0.1:9111 --rpc-max-response-size 10000 --rpc-max-connections 20000 --ws --ws.addr 0.0.0.0 -vvvvv --chain sepolia --node --local-secret-key-location /path/to/key 
+ExecStartPost=/bin/sh -c 'sleep 3 && chmod a+rwX /tmp/reth.ipc'
+
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

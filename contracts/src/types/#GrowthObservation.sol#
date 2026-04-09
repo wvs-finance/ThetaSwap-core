@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.26;
+
+type GrowthObservation is bytes32;
+
+
+uint256 constant BLOCK_NUMBER_MASK = (1 << 48) - 1;
+uint256 constant CUMULATIVE_GROWTH_MASK = (1 << 208) - 1;
+
+
+error StaleObservation(uint48 observedBlock, uint48 currentBlock);
+
+function newGrowthObservation(uint48 _blockNumber, uint208 _cumulativeGrowth) pure returns (GrowthObservation) {
+    return GrowthObservation.wrap(
+        bytes32(uint256(_blockNumber) | (uint256(_cumulativeGrowth) << 48))
+    );
+}
+
+
+function blockNumber(GrowthObservation self) pure returns (uint48) {
+    unchecked {
+        return uint48(uint256(GrowthObservation.unwrap(self)) & BLOCK_NUMBER_MASK);
+    }
+}
+
+function cumulativeGrowth(GrowthObservation self) pure returns (uint208) {
+    unchecked {
+        return uint208((uint256(GrowthObservation.unwrap(self)) >> 48) & CUMULATIVE_GROWTH_MASK);
+    }
+}
+
+
+/// @notice Returns the growth delta between two observations.
+/// @dev Unchecked: assumes `later` was recorded after `earlier` (monotonic accumulator).
+function growthDelta(GrowthObservation earlier, GrowthObservation later) pure returns (uint208) {
+    unchecked {
+        return later.cumulativeGrowth() - earlier.cumulativeGrowth();
+    }
+}
+
+/// @notice Returns the elapsed blocks between two observations.
+function elapsedBlocks(GrowthObservation earlier, GrowthObservation later) pure returns (uint48) {
+    unchecked {
+        return later.blockNumber() - earlier.blockNumber();
+    }
+}
+
+/// @notice Returns true if the observation is uninitialized (zero).
+function isZero(GrowthObservation self) pure returns (bool) {
+    return GrowthObservation.unwrap(self) == bytes32(0);
+}
+
+using {
+    blockNumber,
+    cumulativeGrowth,
+    growthDelta,
+    elapsedBlocks,
+    isZero
+} for GrowthObservation global;

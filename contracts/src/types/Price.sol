@@ -1,0 +1,96 @@
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.26;
+
+import {RayMathLib} from "../libraries/RayMathLib.sol";
+
+type PriceAB is uint256;
+
+type AmountA is uint256;
+
+type AmountB is uint256;
+
+using PriceLib for PriceAB global;
+using PriceLib for AmountA global;
+using {addA as +, subA as -, gtA as >, ltA as <} for AmountA global;
+using PriceLib for AmountB global;
+using {addB as +, subB as -, gtB as >, ltB as <} for AmountB global;
+
+function addA(AmountA x, AmountA y) pure returns (AmountA) {
+    return AmountA.wrap(x.into() + y.into());
+}
+
+function subA(AmountA x, AmountA y) pure returns (AmountA) {
+    return AmountA.wrap(x.into() - y.into());
+}
+
+function gtA(AmountA x, AmountA y) pure returns (bool) {
+    return x.into() > y.into();
+}
+
+function ltA(AmountA x, AmountA y) pure returns (bool) {
+    return x.into() < y.into();
+}
+
+function addB(AmountB x, AmountB y) pure returns (AmountB) {
+    return AmountB.wrap(x.into() + y.into());
+}
+
+function subB(AmountB x, AmountB y) pure returns (AmountB) {
+    return AmountB.wrap(x.into() - y.into());
+}
+
+function gtB(AmountB x, AmountB y) pure returns (bool) {
+    return x.into() > y.into();
+}
+
+function ltB(AmountB x, AmountB y) pure returns (bool) {
+    return x.into() < y.into();
+}
+
+/// @author philogy <https://github.com/philogy>
+library PriceLib {
+    using RayMathLib for *;
+
+    uint256 internal constant ONE_E6 = 1e6;
+
+    function into(PriceAB price) internal pure returns (uint256) {
+        return PriceAB.unwrap(price);
+    }
+
+    function into(AmountA amount) internal pure returns (uint256) {
+        return AmountA.unwrap(amount);
+    }
+
+    function into(AmountB amount) internal pure returns (uint256) {
+        return AmountB.unwrap(amount);
+    }
+
+    /// @dev Convert an amount in `A` to `B` based on `priceAB`, rounding the result *down*.
+    function convertDown(PriceAB priceAB, AmountA amountA) internal pure returns (AmountB) {
+        return AmountB.wrap(amountA.into().divRayDown(priceAB.into()));
+    }
+
+    /// @dev Convert an amount in `A` to `B` based on `priceAB`, rounding the result *up*.
+    function convertUp(PriceAB priceAB, AmountA amountA) internal pure returns (AmountB) {
+        return AmountB.wrap(amountA.into().divRayUp(priceAB.into()));
+    }
+
+    /// @dev Convert an amount in `B` to `A` based on `priceAB`, rounding the result *down*.
+    function convertDown(PriceAB priceAB, AmountB amountB) internal pure returns (AmountA) {
+        return AmountA.wrap(amountB.into().mulRayDown(priceAB.into()));
+    }
+
+    /// @dev Convert an amount in `B` to `A` based on `priceAB`, rounding the result *up*.
+    function convertUp(PriceAB priceAB, AmountB amountB) internal pure returns (AmountA) {
+        return AmountA.wrap(amountB.into().mulRayUp(priceAB.into()));
+    }
+
+    /// @dev Scale `price` by `(1 - feeE6)` such that `feeE6/1e6` A is received for every B.
+    function reduceByFeeE6(PriceAB price, uint256 feeE6) internal pure returns (PriceAB) {
+        uint256 oneMinusFee;
+        unchecked {
+            oneMinusFee = ONE_E6 - feeE6;
+        }
+        return PriceAB.wrap(PriceAB.unwrap(price) * oneMinusFee / ONE_E6);
+    }
+}

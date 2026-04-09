@@ -1,0 +1,36 @@
+[package]
+name = "consensus"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+exclude.workspace = true
+
+[dependencies]
+alloy.workspace = true
+angstrom-metrics.workspace = true
+angstrom-network.workspace = true
+angstrom-types.workspace = true
+eyre.workspace = true
+futures.workspace = true
+matching-engine.workspace = true
+order-pool.workspace = true
+rand.workspace = true
+reth-metrics.workspace = true
+reth-provider.workspace = true
+reth-tasks.workspace = true
+serde.workspace = true
+telemetry-recorder.workspace = true
+tokio.workspace = true
+tokio-stream.workspace = true
+tracing.workspace = true
+uniswap-v4.workspace = true
+
+[dev-dependencies]
+dashmap.workspace = true
+testing-tools.workspace = true
+tracing.workspace = true
+tracing-appender.workspace = true
+tracing-subscriber.workspace = true

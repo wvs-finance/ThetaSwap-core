@@ -1,0 +1,53 @@
+[package]
+name = "uniswap-v4"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+exclude.workspace = true
+
+[dependencies]
+alloy.workspace = true
+alloy-primitives.workspace = true
+angstrom-eth.workspace = true
+angstrom-types.workspace = true
+arraydeque = "0"
+dashmap.workspace = true
+eyre.workspace = true
+futures.workspace = true
+futures-util.workspace = true
+hex = "0.4.3"
+itertools.workspace = true
+malachite.workspace = true
+rand.workspace = true
+rayon = "1"
+reth-provider.workspace = true
+serde.workspace = true
+telemetry-recorder.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+uniswap_v3_math.workspace = true
+
+[dev-dependencies]
+divan.workspace = true
+pade.workspace = true
+pade-macro.workspace = true
+revm.workspace = true
+revm-bytecode.workspace = true
+revm-database.workspace = true
+revm-primitives.workspace = true
+revm-state.workspace = true
+testing-tools.workspace = true
+tokio-stream.workspace = true
+validation.workspace = true
+[build-dependencies]
+convert_case.workspace = true
+itertools.workspace = true
+
+[features]
+default = []
+anvil = []
