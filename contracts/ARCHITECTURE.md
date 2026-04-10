@@ -103,3 +103,43 @@ AngstromAccumulatorOracleAdapter
                                 | 
 								v
 	                EMAGrowthTransformationLib			   
+--> To be tested
+-----
+
+TODAY
+
+- [What are the patterns from the vault architectures that best match ours ?](~/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/.scratch/vault-pattern-comparison-euler-balancer.md)
+
+
+PT - > ZCB 
+
+LONG (PT) < => SHORT Yield
+ 
+===> PT (B :: UnitOfAccount) {
+
+	price -> B/PT
+	balanceOf(agent, pt) == 1
+}
+
+If Actor C deposits 1 unit of unitOfAccount B (e.g USDC), he has
+   
+   
+   d(0) = 1
+       => Let d(0) = d 
+          d(0) = s(d(0),0)/G*(0), this is an identity (invariant)
+         
+	  =>  s(d(0), 0) = G*(0)*d(0)
+
+At inception (t=0) -> G*(0) = 1 -> ( G*(0) = WAD v  G*(0) = RAY )
+
+G*(1 ~ nextBlock after deposit captured by angstrom that generated reward)
+
+-> G*(1) =  G(1)/ G(0) = (G(0) + dg(1)) / G*(0) = G(0) + dg(1) > G*(0)
+
+
+- >  s(d, 1) = G(1)*d -> G(0) + dg(1)
+
+	 - How are we keeping track of G* ?
+- [Simulate hedge with calibrated parameters from Angstrom time series on `globalGrowth`]()
+  
+
