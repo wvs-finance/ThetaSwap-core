@@ -14,16 +14,22 @@ import json
 import os
 import subprocess
 import sys
+
 from typing import Any
 
+# NOTE: WE ARE ONLY DOING THE FETCH OF GLOBAL GROWTH NOT GLOBAL GRWTH INSIDE 
 # ── Constants ──
 ANGSTROM_HOOK = "0x0000000aa232009084bd71a5797d089aa4edfad4"
 POOL_MANAGER = "0x000000000004444c5dc75cB358380D2e3dE08A90"
+## note: There are two poolIds SEE test/_helpers/Ethereum.sol, Also name them approiately
 POOL_ID = "0xe500210c7ea6bfd9f69dce044b09ef384ec2b34832f132baec3b418208e3a657"
 POOL_REWARDS_SLOT = 7
 POOLS_SLOT = 6
 REWARD_GROWTH_SIZE = 16777216  # 2^24
 
+# note: THe lock number were activity start and We MUST start analysisng ios alreadfy wwriten adn identified SEE test/_helpers/Ethereum.sol
+
+## Note: This general purpose utils go ona different file
 
 def keccak_mapping_slot(key_hex: str, mapping_slot: int) -> int:
     """keccak256(abi.encode(key, slot)) — Solidity mapping slot derivation.
@@ -48,19 +54,11 @@ def to_hex256(val: int) -> str:
     return "0x" + val.to_bytes(32, "big").hex()
 
 
-def tick_to_uint24(tick: int) -> int:
-    """int24 → uint24 wrapping (two's complement). Critical for negative ticks.
-
-    Examples:
-      tick_to_uint24(-1200) == 16776016
-      tick_to_uint24(199890) == 199890
-      tick_to_uint24(0) == 0
-    """
-    return tick & 0xFFFFFF
-
 
 def read_storage_at(address: str, slot: int, block: int) -> int:
     """Read a storage slot via cast storage at a specific block."""
+    ## note: Have this follow the same pattern as the foundry.toml and only have it reference
+    ## the ALCHEMY_API_KEY, appendign it to a fixed string eth-mainnet ...,
     rpc = os.environ["ETH_RPC_URL"]
     slot_hex = hex(slot)
     result = subprocess.run(
@@ -70,48 +68,9 @@ def read_storage_at(address: str, slot: int, block: int) -> int:
     return int(result.stdout.strip(), 16)
 
 
-def read_current_tick(pool_id_hex: str, block: int) -> int:
-    """Read current tick from V4 PoolManager slot0 at a specific block.
-
-    V4 Slot0 layout (from v4-core/src/types/Slot0.sol):
-      24 bits empty | 24 bits lpFee | 12 bits protocolFee 1→0 |
-      12 bits protocolFee 0→1 | 24 bits tick | 160 bits sqrtPriceX96
-
-    tick is extracted via: signextend(2, shr(160, packed))
-    """
-    base = keccak_mapping_slot(pool_id_hex, POOLS_SLOT)
-    raw = read_storage_at(POOL_MANAGER, base, block)
-    # Extract tick from bits 160-183
-    tick_uint24 = (raw >> 160) & 0xFFFFFF
-    # Convert uint24 back to int24 (sign extend from bit 23)
-    if tick_uint24 >= (1 << 23):
-        return tick_uint24 - (1 << 24)
-    return tick_uint24
 
 
-def compute_growth_inside(
-    global_growth: int,
-    outside_below: int,
-    outside_above: int,
-    current_tick: int,
-    tick_lower: int,
-    tick_upper: int,
-) -> int:
-    """Three-branch growthInside computation (unchecked uint256 arithmetic).
-
-    Matches ran.sol growthInside():
-      currentTick < tickLower:  outsideBelow - outsideAbove
-      currentTick >= tickUpper: outsideAbove - outsideBelow
-      else (in range):          globalGrowth - outsideBelow - outsideAbove
-    """
-    MOD = 1 << 256
-    if current_tick < tick_lower:
-        return (outside_below - outside_above) % MOD
-    elif current_tick >= tick_upper:
-        return (outside_above - outside_below) % MOD
-    else:
-        return (global_growth - outside_below - outside_above) % MOD
-
+## NOTE: The FreeZee snapshot has a different purpoise now. At first run it gets and cold store ALL records from starting block to date today of the metric. Beforemdoing that We muts plan where to store it. How long is it taking on spacem and time and storage AND how to make it fully compatible so it can be read and queried by a python API using by foundry ffi clients. This suggests thinking stasrgting to define timeScale DB or other dat schemas. This needs to be brainstromed. ANother alternative is to check isf there are subgrpahs that laready expose querying fro globalc growth on the graph or other indexers soludtions
 
 def freeze_snapshot(block: int, tick_lower: int, tick_upper: int) -> dict[str, Any]:
     """Freeze all accumulator values at a specific block."""
