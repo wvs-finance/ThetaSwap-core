@@ -646,3 +646,413 @@ class TestCliEntrypoint:
         # Check stride is stored
         for row in rows:
             assert row[2] == 50
+
+
+# ── B-P10: Smart Resume — Skip Already-Fetched Blocks ──────────────────────
+
+
+class TestSmartResumeSkipExistingBlocks:
+    """Pipeline must not re-fetch blocks already present in DuckDB."""
+
+    def test_skip_existing_blocks(
+        self,
+        duckdb_file_conn: tuple[object, str],
+        mock_rpc_transport: object,
+        monkeypatch: pytest.MonkeyPatch,
+        mock_growth_data: dict[int, str],
+    ) -> None:
+        """Pre-populate 3 blocks, request range of 4 — only 1 RPC batch for the missing block."""
+        from scripts.ran_growth_pipeline import main
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+
+        conn, db_path = duckdb_file_conn
+
+        # Pre-populate with 3 of the 4 blocks in range
+        pre_existing: Final[list[int]] = [22_972_937, 22_972_987, 22_973_037]
+        for block in pre_existing:
+            conn.execute(  # type: ignore[union-attr]
+                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?)",
+                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], "2026-04-10 00:00:00", 50],
+            )
+        conn.commit()  # type: ignore[union-attr]
+        conn.close()  # type: ignore[union-attr]
+
+        # Track RPC calls via a counting transport wrapper
+        call_count: list[int] = [0]
+        real_transport_factory = mock_rpc_transport
+
+        class CountingTransport(httpx.BaseTransport):
+            def __init__(self, inner: httpx.BaseTransport) -> None:
+                self._inner = inner
+
+            def handle_request(self, request: httpx.Request) -> httpx.Response:
+                body = json.loads(request.content.decode())
+                if isinstance(body, list):
+                    # Count actual eth_getStorageAt calls, not eth_getBlockNumber
+                    storage_calls = [r for r in body if r.get("method") == "eth_getStorageAt"]
+                    call_count[0] += len(storage_calls)
+                elif isinstance(body, dict) and body.get("method") == "eth_getStorageAt":
+                    call_count[0] += 1
+                return self._inner.handle_request(request)
+
+        inner = real_transport_factory()  # type: ignore[operator]
+        counting = CountingTransport(inner)
+
+        monkeypatch.setenv("ALCHEMY_API_KEY", "test-key")
+
+        import scripts.ran_growth_pipeline as pipeline_mod
+
+        original_client = httpx.Client
+
+        def mock_client_factory(*args: object, **kwargs: object) -> httpx.Client:
+            return original_client(transport=counting, base_url="http://mock-rpc")
+
+        monkeypatch.setattr(pipeline_mod, "_make_http_client", mock_client_factory)
+
+        # Range 22972937..22973137 stride 50 = blocks [22972937, 22972987, 22973037, 22973087]
+        # Only 22973087 is missing
+        main([
+            "--pool", "usdc-weth",
+            "--from-block", "22972937",
+            "--to-block", "22973137",
+            "--stride", "50",
+            "--db", db_path,
+        ])
+
+        # Only 1 RPC call should have been made (for block 22973087)
+        assert call_count[0] == 1, f"Expected 1 RPC call, got {call_count[0]}"
+
+        # Verify the missing block is now stored
+        conn2 = duckdb.connect(db_path)
+        rows = conn2.execute(
+            "SELECT block_number FROM accumulator_samples "
+            "WHERE pool_id = ? ORDER BY block_number",
+            [USDC_WETH_POOL_ID],
+        ).fetchall()
+        conn2.close()
+        assert len(rows) == 4
+        assert [r[0] for r in rows] == [22_972_937, 22_972_987, 22_973_037, 22_973_087]
+
+    def test_all_blocks_present_skip_entirely(
+        self,
+        duckdb_file_conn: tuple[object, str],
+        mock_rpc_transport: object,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """When ALL blocks in range exist in DuckDB, ZERO RPC calls and clean exit."""
+        from scripts.ran_growth_pipeline import main
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+
+        conn, db_path = duckdb_file_conn
+
+        # Pre-populate ALL blocks that the range would generate
+        # Range 22972937..22973137 stride 50 = [22972937, 22972987, 22973037, 22973087]
+        all_blocks: Final[list[int]] = [22_972_937, 22_972_987, 22_973_037, 22_973_087]
+        for block in all_blocks:
+            conn.execute(  # type: ignore[union-attr]
+                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?)",
+                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], "2026-04-10 00:00:00", 50],
+            )
+        conn.commit()  # type: ignore[union-attr]
+        conn.close()  # type: ignore[union-attr]
+
+        # Track RPC calls
+        call_count: list[int] = [0]
+        real_transport_factory = mock_rpc_transport
+
+        class CountingTransport(httpx.BaseTransport):
+            def __init__(self, inner: httpx.BaseTransport) -> None:
+                self._inner = inner
+
+            def handle_request(self, request: httpx.Request) -> httpx.Response:
+                body = json.loads(request.content.decode())
+                if isinstance(body, list):
+                    storage_calls = [r for r in body if r.get("method") == "eth_getStorageAt"]
+                    call_count[0] += len(storage_calls)
+                elif isinstance(body, dict) and body.get("method") == "eth_getStorageAt":
+                    call_count[0] += 1
+                return self._inner.handle_request(request)
+
+        inner = real_transport_factory()  # type: ignore[operator]
+        counting = CountingTransport(inner)
+
+        monkeypatch.setenv("ALCHEMY_API_KEY", "test-key")
+
+        import scripts.ran_growth_pipeline as pipeline_mod
+
+        original_client = httpx.Client
+
+        def mock_client_factory(*args: object, **kwargs: object) -> httpx.Client:
+            return original_client(transport=counting, base_url="http://mock-rpc")
+
+        monkeypatch.setattr(pipeline_mod, "_make_http_client", mock_client_factory)
+
+        # This should complete cleanly with no RPC calls
+        main([
+            "--pool", "usdc-weth",
+            "--from-block", "22972937",
+            "--to-block", "22973137",
+            "--stride", "50",
+            "--db", db_path,
+        ])
+
+        assert call_count[0] == 0, f"Expected 0 RPC calls, got {call_count[0]}"
+
+    def test_append_mode_new_blocks_only(
+        self,
+        duckdb_file_conn: tuple[object, str],
+        mock_rpc_transport: object,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Pre-populate up to 22973037, run to 22973137 — only 22973087 and 22973137 fetched."""
+        from scripts.ran_growth_pipeline import main
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+
+        conn, db_path = duckdb_file_conn
+
+        # Pre-populate blocks up to 22973037
+        early_blocks: Final[list[int]] = [22_972_937, 22_972_987, 22_973_037]
+        for block in early_blocks:
+            conn.execute(  # type: ignore[union-attr]
+                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?)",
+                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], "2026-04-10 00:00:00", 50],
+            )
+        conn.commit()  # type: ignore[union-attr]
+        conn.close()  # type: ignore[union-attr]
+
+        # Track RPC calls
+        call_count: list[int] = [0]
+        fetched_blocks: list[int] = []
+        real_transport_factory = mock_rpc_transport
+
+        class CountingTransport(httpx.BaseTransport):
+            def __init__(self, inner: httpx.BaseTransport) -> None:
+                self._inner = inner
+
+            def handle_request(self, request: httpx.Request) -> httpx.Response:
+                body = json.loads(request.content.decode())
+                if isinstance(body, list):
+                    for r in body:
+                        if r.get("method") == "eth_getStorageAt":
+                            call_count[0] += 1
+                            block_hex = r["params"][2]
+                            fetched_blocks.append(int(block_hex, 16))
+                elif isinstance(body, dict) and body.get("method") == "eth_getStorageAt":
+                    call_count[0] += 1
+                    block_hex = body["params"][2]
+                    fetched_blocks.append(int(block_hex, 16))
+                return self._inner.handle_request(request)
+
+        inner = real_transport_factory()  # type: ignore[operator]
+        counting = CountingTransport(inner)
+
+        monkeypatch.setenv("ALCHEMY_API_KEY", "test-key")
+
+        import scripts.ran_growth_pipeline as pipeline_mod
+
+        original_client = httpx.Client
+
+        def mock_client_factory(*args: object, **kwargs: object) -> httpx.Client:
+            return original_client(transport=counting, base_url="http://mock-rpc")
+
+        monkeypatch.setattr(pipeline_mod, "_make_http_client", mock_client_factory)
+
+        # Range 22972937..22973187 stride 50 = [22972937, 22972987, 22973037, 22973087, 22973137]
+        # Missing: 22973087 and 22973137
+        main([
+            "--pool", "usdc-weth",
+            "--from-block", "22972937",
+            "--to-block", "22973187",
+            "--stride", "50",
+            "--db", db_path,
+        ])
+
+        assert call_count[0] == 2, f"Expected 2 RPC calls, got {call_count[0]}"
+        assert sorted(fetched_blocks) == [22_973_087, 22_973_137]
+
+
+class TestFilterMissingBlocksPure:
+    """Unit tests for the pure filter_missing_blocks function."""
+
+    def test_filter_returns_only_missing(self, duckdb_conn: object) -> None:
+        """Given some blocks in DB, filter_missing_blocks returns only those NOT stored."""
+        from scripts.ran_growth_pipeline import filter_missing_blocks
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+
+        # Insert 2 blocks
+        for block in [22_972_937, 22_972_987]:
+            duckdb_conn.execute(  # type: ignore[union-attr]
+                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?)",
+                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], "2026-04-10 00:00:00", 50],
+            )
+
+        requested: list[int] = [22_972_937, 22_972_987, 22_973_037, 22_973_087]
+        missing = filter_missing_blocks(
+            conn=duckdb_conn,  # type: ignore[arg-type]
+            pool_id=USDC_WETH_POOL_ID,
+            blocks=requested,
+        )
+        assert missing == [22_973_037, 22_973_087]
+
+    def test_filter_all_present_returns_empty(self, duckdb_conn: object) -> None:
+        """When all blocks exist, returns empty list."""
+        from scripts.ran_growth_pipeline import filter_missing_blocks
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+
+        blocks: list[int] = [22_972_937, 22_972_987]
+        for block in blocks:
+            duckdb_conn.execute(  # type: ignore[union-attr]
+                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?)",
+                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], "2026-04-10 00:00:00", 50],
+            )
+
+        missing = filter_missing_blocks(
+            conn=duckdb_conn,  # type: ignore[arg-type]
+            pool_id=USDC_WETH_POOL_ID,
+            blocks=blocks,
+        )
+        assert missing == []
+
+    def test_filter_none_present_returns_all(self, duckdb_conn: object) -> None:
+        """When no blocks exist, returns the full input list."""
+        from scripts.ran_growth_pipeline import filter_missing_blocks
+        from scripts.tests.conftest import USDC_WETH_POOL_ID
+
+        blocks: list[int] = [22_972_937, 22_972_987, 22_973_037]
+        missing = filter_missing_blocks(
+            conn=duckdb_conn,  # type: ignore[arg-type]
+            pool_id=USDC_WETH_POOL_ID,
+            blocks=blocks,
+        )
+        assert missing == blocks
+
+
+# ── Fix 1: RpcBatchError caught in main() ──────────────────────────────────
+
+
+class TestRpcBatchErrorCaughtInMain:
+    """main() catches RpcBatchError and exits with status 1 + stderr message."""
+
+    def test_rpc_batch_error_exits_with_message(
+        self,
+        mock_rpc_transport: object,
+        tmp_path: object,
+        monkeypatch: pytest.MonkeyPatch,
+        capfd: pytest.CaptureFixture[str],
+    ) -> None:
+        """When send_rpc_batch raises RpcBatchError, main() exits 1 with error on stderr."""
+        from scripts.ran_growth_pipeline import main
+
+        monkeypatch.setenv("ALCHEMY_API_KEY", "test-key")
+
+        db_path = str(tmp_path / "rpc_error_test.duckdb")  # type: ignore[operator]
+
+        # Patch send_rpc_batch to raise RpcBatchError
+        import scripts.ran_growth_pipeline as pipeline_mod
+        from scripts.ran_growth_pipeline import RpcBatchError
+
+        def _raise_rpc_error(**kwargs: object) -> None:
+            raise RpcBatchError("HTTP 401 (non-retryable)")
+
+        monkeypatch.setattr(pipeline_mod, "send_rpc_batch", _raise_rpc_error)
+
+        # Still need a working client for validate_block_range
+        transport = mock_rpc_transport(head_block=23_000_000)  # type: ignore[operator]
+        original_client = httpx.Client
+
+        def mock_client_factory(*args: object, **kwargs: object) -> httpx.Client:
+            return original_client(transport=transport, base_url="http://mock-rpc")
+
+        monkeypatch.setattr(pipeline_mod, "_make_http_client", mock_client_factory)
+
+        with pytest.raises(SystemExit) as exc_info:
+            main([
+                "--pool", "usdc-weth",
+                "--from-block", "22972937",
+                "--to-block", "23000000",
+                "--stride", "50",
+                "--db", db_path,
+            ])
+        assert exc_info.value.code == 1
+
+        captured = capfd.readouterr()
+        assert "HTTP 401 (non-retryable)" in captured.err
+
+
+# ── Fix 3: Stride validation ──────────────────────────────────────────────
+
+
+class TestStrideValidation:
+    """Pipeline rejects --stride 0 with a clear error message."""
+
+    def test_stride_zero_exits_with_message(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        capfd: pytest.CaptureFixture[str],
+    ) -> None:
+        """--stride 0 must exit with status 1 and stderr message about stride."""
+        from scripts.ran_growth_pipeline import main
+
+        monkeypatch.setenv("ALCHEMY_API_KEY", "test-key")
+
+        with pytest.raises(SystemExit) as exc_info:
+            main([
+                "--pool", "usdc-weth",
+                "--from-block", "22972937",
+                "--to-block", "23000000",
+                "--stride", "0",
+                "--db", "/tmp/stride_test.duckdb",
+            ])
+        assert exc_info.value.code == 1
+
+        captured = capfd.readouterr()
+        assert "stride" in captured.err.lower()
+
+
+# ── Fix 5: Auto-create data/ directory ──────────────────────────────────────
+
+
+class TestAutoCreateDataDirectory:
+    """Pipeline creates parent directory for --db path if it doesn't exist."""
+
+    def test_creates_parent_dir_for_db(
+        self,
+        mock_rpc_transport: object,
+        tmp_path: object,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """When --db points to a non-existent parent dir, pipeline creates it."""
+        from scripts.ran_growth_pipeline import main
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH
+
+        monkeypatch.setenv("ALCHEMY_API_KEY", "test-key")
+
+        # Use a nested path where parent does NOT exist
+        nested_db = str(tmp_path / "deeply" / "nested" / "dir" / "test.duckdb")  # type: ignore[operator]
+
+        transport = mock_rpc_transport(head_block=23_000_000)  # type: ignore[operator]
+
+        import scripts.ran_growth_pipeline as pipeline_mod
+
+        original_client = httpx.Client
+
+        def mock_client_factory(*args: object, **kwargs: object) -> httpx.Client:
+            return original_client(transport=transport, base_url="http://mock-rpc")
+
+        monkeypatch.setattr(pipeline_mod, "_make_http_client", mock_client_factory)
+
+        blocks = sorted(MOCK_BLOCKS_AND_GROWTH.keys())
+        from_block = blocks[0]
+        to_block = blocks[-1] + 1
+
+        # Should NOT raise FileNotFoundError
+        main([
+            "--pool", "usdc-weth",
+            "--from-block", str(from_block),
+            "--to-block", str(to_block),
+            "--stride", "50",
+            "--db", nested_db,
+        ])
+
+        import pathlib
+        assert pathlib.Path(nested_db).exists()

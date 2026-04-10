@@ -243,6 +243,32 @@ def validate_block_range(
     return from_block, resolved_to
 
 
+# ── B-P10: Smart Resume — Skip Already-Fetched Blocks ─────────────────────────
+
+
+def filter_missing_blocks(
+    *,
+    conn: duckdb.DuckDBPyConnection,
+    pool_id: str,
+    blocks: list[int],
+) -> list[int]:
+    """Return only those blocks NOT already stored in DuckDB for the given pool.
+
+    Pure query function — no mutations.  Preserves input ordering.
+    """
+    if not blocks:
+        return []
+
+    rows = conn.execute(
+        "SELECT block_number FROM accumulator_samples "
+        "WHERE pool_id = ? AND block_number IN (SELECT UNNEST(?))",
+        [pool_id, blocks],
+    ).fetchall()
+
+    existing: set[int] = {int(r[0]) for r in rows}
+    return [b for b in blocks if b not in existing]
+
+
 # ── CLI entrypoint ─────────────────────────────────────────────────────────────
 
 
@@ -263,6 +289,7 @@ def main(argv: list[str] | None = None) -> None:
     import argparse
     import os
     import sys
+    from pathlib import Path
 
     from scripts.ran_utils import POOL_REGISTRY
 
@@ -274,6 +301,11 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--db", type=str, default="data/ran_accumulator.duckdb")
 
     args = parser.parse_args(argv)
+
+    # ── Fix 3: Stride validation ──
+    if args.stride < 1:
+        print("stride must be >= 1", file=sys.stderr)
+        sys.exit(1)
 
     # ── Check API key ──
     api_key: str | None = os.environ.get("ALCHEMY_API_KEY")
@@ -304,11 +336,27 @@ def main(argv: list[str] | None = None) -> None:
     # ── Build block list ──
     blocks: list[int] = list(range(from_block, to_block, args.stride))
 
+    # ── Fix 5: Auto-create data/ directory ──
+    Path(args.db).parent.mkdir(parents=True, exist_ok=True)
+
     # ── Open DuckDB ──
     conn: duckdb.DuckDBPyConnection = duckdb.connect(args.db)
     conn.execute(CREATE_TABLE_DDL)
 
-    # ── Pipeline loop ──
+    # ── B-P10: Smart resume — skip already-fetched blocks ──
+    blocks = filter_missing_blocks(
+        conn=conn,
+        pool_id=pool_cfg.pool_id,  # type: ignore[union-attr]
+        blocks=blocks,
+    )
+
+    if not blocks:
+        print("all blocks already fetched — nothing to do", file=sys.stderr)
+        conn.close()
+        client.close()
+        return
+
+    # ── Pipeline loop (Fix 1: catch RpcBatchError, Fix 4: try/finally for cleanup) ──
     cu_per_call: Final[int] = 20
     cups_limit: Final[int] = 500
     total_blocks: Final[int] = len(blocks)
@@ -320,45 +368,49 @@ def main(argv: list[str] | None = None) -> None:
         batch_size=15,
     )
 
-    for batch in batches:
-        # Fetch with retry
-        responses = send_rpc_batch(client=client, batch=batch, max_retries=3, base_delay=0.01)
+    try:
+        for batch in batches:
+            # Fetch with retry
+            responses = send_rpc_batch(client=client, batch=batch, max_retries=3, base_delay=0.01)
 
-        # Correlate
-        block_to_value = correlate_batch_response(batch=batch, responses=responses)
+            # Correlate
+            block_to_value = correlate_batch_response(batch=batch, responses=responses)
 
-        # Write to DuckDB
-        for block_num, hex_value in block_to_value.items():
-            # Normalize: ensure padded 0x + 64 hex chars
-            normalized: str = encode_uint256(int(hex_value, 16))
-            insert_sample(
-                conn=conn,
-                pool_id=pool_cfg.pool_id,  # type: ignore[union-attr]
-                block_number=block_num,
-                global_growth=normalized,
-                stride=args.stride,
+            # Write to DuckDB
+            for block_num, hex_value in block_to_value.items():
+                # Normalize: ensure padded 0x + 64 hex chars
+                normalized: str = encode_uint256(int(hex_value, 16))
+                insert_sample(
+                    conn=conn,
+                    pool_id=pool_cfg.pool_id,  # type: ignore[union-attr]
+                    block_number=block_num,
+                    global_growth=normalized,
+                    stride=args.stride,
+                )
+
+            conn.commit()
+            fetched += len(batch)
+
+            # ── Progress on stderr ──
+            cu_used: int = fetched * cu_per_call
+            pct: float = (fetched / total_blocks * 100) if total_blocks > 0 else 100.0
+            delay: float = compute_inter_batch_delay(
+                batch_calls=len(batch), cu_per_call=cu_per_call, cups_limit=cups_limit,
+            )
+            print(
+                f"fetched {fetched}/{total_blocks} total | "
+                f"{cu_used} CU | {pct:.1f}% | delay {delay:.2f}s",
+                file=sys.stderr,
             )
 
-        conn.commit()
-        fetched += len(batch)
-
-        # ── Progress on stderr ──
-        cu_used: int = fetched * cu_per_call
-        pct: float = (fetched / total_blocks * 100) if total_blocks > 0 else 100.0
-        delay: float = compute_inter_batch_delay(
-            batch_calls=len(batch), cu_per_call=cu_per_call, cups_limit=cups_limit,
-        )
-        print(
-            f"fetched {fetched}/{total_blocks} total | "
-            f"{cu_used} CU | {pct:.1f}% | delay {delay:.2f}s",
-            file=sys.stderr,
-        )
-
-        # Rate limit (skip in tests — delay is near-zero with base_delay=0.01)
-        time.sleep(delay)
-
-    conn.close()
-    client.close()
+            # Rate limit (skip in tests — delay is near-zero with base_delay=0.01)
+            time.sleep(delay)
+    except RpcBatchError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+    finally:
+        conn.close()
+        client.close()
 
 
 if __name__ == "__main__":
