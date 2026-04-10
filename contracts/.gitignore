@@ -12,6 +12,13 @@
 /kompiled
 digest
 
+# Python / DuckDB
+data/*.duckdb
+data/*.parquet
+data/*.duckdb.wal
+__pycache__/
+.pytest_cache/
+
 # Emacs
 *~
 \#*\#
