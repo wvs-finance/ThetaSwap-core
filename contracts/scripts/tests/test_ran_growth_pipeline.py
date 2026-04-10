@@ -1,10 +1,11 @@
-"""Tests for RAN growth pipeline — Task 3: batch construction, correlation, rate limiting."""
+"""Tests for RAN growth pipeline — Tasks 3-4: batch construction, correlation, rate limiting, DuckDB, CLI."""
 from __future__ import annotations
 
 import json
 import random
 from typing import Final
 
+import duckdb
 import httpx
 import pytest
 
@@ -226,3 +227,422 @@ class TestRateLimiting:
 
         delay = compute_inter_batch_delay(batch_calls=15, cu_per_call=20, cups_limit=500)
         assert isinstance(delay, float)
+
+
+# ── B-P4: DuckDB writes are idempotent ────────────────────────────────────────
+
+
+class TestDuckDbIdempotentWrites:
+    """Insert same (pool_id, block_number) twice; original value preserved, no error."""
+
+    def test_insert_then_duplicate_preserves_original(
+        self, duckdb_conn: object,
+    ) -> None:
+        """Inserting the same PK twice keeps the first value and raises no error."""
+        from scripts.ran_growth_pipeline import insert_sample
+        from scripts.tests.conftest import USDC_WETH_POOL_ID
+
+        # Real globalGrowth from fixture snapshot index 0
+        original: Final[str] = (
+            "0x0000000000000000000000000000000000002d2c02eeae24bd7a65341761b9c3"
+        )
+        different: Final[str] = (
+            "0x0000000000000000000000000000000000002d2c20f39492940b8e1e976b5ad2"
+        )
+        block: Final[int] = 24_827_762
+
+        insert_sample(
+            conn=duckdb_conn,
+            pool_id=USDC_WETH_POOL_ID,
+            block_number=block,
+            global_growth=original,
+            stride=50,
+        )
+        # Second insert with different value — must not raise
+        insert_sample(
+            conn=duckdb_conn,
+            pool_id=USDC_WETH_POOL_ID,
+            block_number=block,
+            global_growth=different,
+            stride=50,
+        )
+
+        rows = duckdb_conn.execute(  # type: ignore[union-attr]
+            "SELECT global_growth FROM accumulator_samples "
+            "WHERE pool_id = ? AND block_number = ?",
+            [USDC_WETH_POOL_ID, block],
+        ).fetchall()
+        assert len(rows) == 1
+        assert rows[0][0] == original
+
+
+# ── B-P5: Commit granularity survives crash ───────────────────────────────────
+
+
+class TestCommitGranularitySurvesCrash:
+    """File-backed DuckDB: data committed per batch survives connection close."""
+
+    def test_five_batches_survive_crash_and_resume(
+        self,
+        duckdb_file_conn: tuple[object, str],
+    ) -> None:
+        """Insert 5 batches, commit each, close, reopen — all 5 present."""
+        from scripts.ran_growth_pipeline import insert_sample
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+
+        conn, db_path = duckdb_file_conn
+        blocks = sorted(MOCK_BLOCKS_AND_GROWTH.keys())[:5]
+        growth_values = [MOCK_BLOCKS_AND_GROWTH[b] for b in blocks]
+
+        # Insert 5 batches, commit after each
+        for block, growth in zip(blocks, growth_values):
+            insert_sample(
+                conn=conn,  # type: ignore[arg-type]
+                pool_id=USDC_WETH_POOL_ID,
+                block_number=block,
+                global_growth=growth,
+                stride=50,
+            )
+            conn.commit()  # type: ignore[union-attr]
+
+        # Simulate crash
+        conn.close()  # type: ignore[union-attr]
+
+        # Reopen and verify all 5 batches present
+        conn2 = duckdb.connect(db_path)
+        rows = conn2.execute(
+            "SELECT block_number, global_growth FROM accumulator_samples "
+            "WHERE pool_id = ? ORDER BY block_number",
+            [USDC_WETH_POOL_ID],
+        ).fetchall()
+        conn2.close()
+
+        assert len(rows) == 5
+        for i, (block_num, growth_hex) in enumerate(rows):
+            assert block_num == blocks[i]
+            assert growth_hex == growth_values[i]
+
+    def test_rerun_after_crash_is_idempotent(
+        self,
+        duckdb_file_conn: tuple[object, str],
+    ) -> None:
+        """After crash recovery, re-inserting the same rows changes nothing."""
+        from scripts.ran_growth_pipeline import insert_sample
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+
+        conn, db_path = duckdb_file_conn
+        blocks = sorted(MOCK_BLOCKS_AND_GROWTH.keys())[:3]
+
+        for block in blocks:
+            insert_sample(
+                conn=conn,  # type: ignore[arg-type]
+                pool_id=USDC_WETH_POOL_ID,
+                block_number=block,
+                global_growth=MOCK_BLOCKS_AND_GROWTH[block],
+                stride=50,
+            )
+            conn.commit()  # type: ignore[union-attr]
+
+        conn.close()  # type: ignore[union-attr]
+
+        # Reopen and re-insert same rows (simulating pipeline resume)
+        conn2 = duckdb.connect(db_path)
+        from scripts.ran_utils import CREATE_TABLE_DDL
+        conn2.execute(CREATE_TABLE_DDL)
+        for block in blocks:
+            insert_sample(
+                conn=conn2,
+                pool_id=USDC_WETH_POOL_ID,
+                block_number=block,
+                global_growth="0xdeadbeef" + "0" * 56,  # different value
+                stride=50,
+            )
+
+        rows = conn2.execute(
+            "SELECT block_number, global_growth FROM accumulator_samples "
+            "WHERE pool_id = ? ORDER BY block_number",
+            [USDC_WETH_POOL_ID],
+        ).fetchall()
+        conn2.close()
+
+        assert len(rows) == 3
+        # Original values preserved, not the "deadbeef" ones
+        for i, (block_num, growth_hex) in enumerate(rows):
+            assert growth_hex == MOCK_BLOCKS_AND_GROWTH[blocks[i]]
+
+
+# ── B-P6: Retry on transient RPC errors ──────────────────────────────────────
+
+
+class TestRetryOnTransientErrors:
+    """send_rpc_batch retries on 429, 5xx, and timeout; gives up after max retries."""
+
+    def test_a_success_after_two_429(self, mock_rpc_transport: object) -> None:
+        """Two 429s then success — result contains expected data."""
+        from scripts.ran_growth_pipeline import send_rpc_batch
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH
+
+        transport = mock_rpc_transport(fail_count=2, fail_status=429)  # type: ignore[operator]
+        client = httpx.Client(transport=transport, base_url="http://mock-rpc")
+
+        blocks = sorted(MOCK_BLOCKS_AND_GROWTH.keys())[:2]
+        from scripts.ran_growth_pipeline import build_rpc_batches
+        batch = build_rpc_batches(slot=1, blocks=blocks, batch_size=100)[0]
+
+        result = send_rpc_batch(client=client, batch=batch, max_retries=3)
+        # Must succeed and return all responses
+        assert len(result) == len(batch)
+
+    def test_b_exhausts_retries_on_429(self, mock_rpc_transport: object) -> None:
+        """Four consecutive 429s (initial + 3 retries) → RpcBatchError with status."""
+        from scripts.ran_growth_pipeline import RpcBatchError, build_rpc_batches, send_rpc_batch
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH
+
+        transport = mock_rpc_transport(fail_count=4, fail_status=429)  # type: ignore[operator]
+        client = httpx.Client(transport=transport, base_url="http://mock-rpc")
+
+        blocks = sorted(MOCK_BLOCKS_AND_GROWTH.keys())[:2]
+        batch = build_rpc_batches(slot=1, blocks=blocks, batch_size=100)[0]
+
+        with pytest.raises(RpcBatchError, match="429"):
+            send_rpc_batch(client=client, batch=batch, max_retries=3)
+
+    def test_c_success_after_two_500(self, mock_rpc_transport: object) -> None:
+        """Two 500s then success — 5xx triggers same retry logic."""
+        from scripts.ran_growth_pipeline import build_rpc_batches, send_rpc_batch
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH
+
+        transport = mock_rpc_transport(fail_count=2, fail_status=500)  # type: ignore[operator]
+        client = httpx.Client(transport=transport, base_url="http://mock-rpc")
+
+        blocks = sorted(MOCK_BLOCKS_AND_GROWTH.keys())[:2]
+        batch = build_rpc_batches(slot=1, blocks=blocks, batch_size=100)[0]
+
+        result = send_rpc_batch(client=client, batch=batch, max_retries=3)
+        assert len(result) == len(batch)
+
+    def test_d_success_after_two_timeouts(self, mock_rpc_transport: object) -> None:
+        """Two timeouts then success — timeout triggers retry."""
+        from scripts.ran_growth_pipeline import build_rpc_batches, send_rpc_batch
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH
+
+        transport = mock_rpc_transport(timeout_count=2)  # type: ignore[operator]
+        client = httpx.Client(transport=transport, base_url="http://mock-rpc")
+
+        blocks = sorted(MOCK_BLOCKS_AND_GROWTH.keys())[:2]
+        batch = build_rpc_batches(slot=1, blocks=blocks, batch_size=100)[0]
+
+        result = send_rpc_batch(client=client, batch=batch, max_retries=3)
+        assert len(result) == len(batch)
+
+
+# ── B-P7: Block range validation ─────────────────────────────────────────────
+
+
+class TestBlockRangeValidation:
+    """validate_block_range rejects invalid ranges and resolves 'latest'."""
+
+    def test_from_block_below_minimum_raises(self) -> None:
+        """--from-block 0 must fail mentioning minimum block 22,972,937."""
+        from scripts.ran_growth_pipeline import BlockRangeError, validate_block_range
+
+        with pytest.raises(BlockRangeError, match="22972937"):
+            validate_block_range(from_block=0, to_block=23_000_000, client=None)
+
+    def test_from_block_gte_to_block_raises(self) -> None:
+        """--from-block >= --to-block must fail."""
+        from scripts.ran_growth_pipeline import BlockRangeError, validate_block_range
+
+        with pytest.raises(BlockRangeError):
+            validate_block_range(
+                from_block=23_000_000, to_block=23_000_000, client=None,
+            )
+        with pytest.raises(BlockRangeError):
+            validate_block_range(
+                from_block=23_000_001, to_block=23_000_000, client=None,
+            )
+
+    def test_to_block_latest_resolves_via_rpc(
+        self, mock_rpc_transport: object,
+    ) -> None:
+        """--to-block latest resolves via eth_getBlockNumber."""
+        from scripts.ran_growth_pipeline import validate_block_range
+
+        transport = mock_rpc_transport(head_block=23_000_000)  # type: ignore[operator]
+        client = httpx.Client(transport=transport, base_url="http://mock-rpc")
+
+        from_block, to_block = validate_block_range(
+            from_block=22_972_937, to_block="latest", client=client,
+        )
+        assert from_block == 22_972_937
+        assert to_block == 23_000_000
+
+    def test_valid_range_passes(self) -> None:
+        """A valid numeric range returns both values unchanged."""
+        from scripts.ran_growth_pipeline import validate_block_range
+
+        from_block, to_block = validate_block_range(
+            from_block=22_972_937, to_block=23_000_000, client=None,
+        )
+        assert from_block == 22_972_937
+        assert to_block == 23_000_000
+
+
+# ── Error: ALCHEMY_API_KEY not set ───────────────────────────────────────────
+
+
+class TestAlchemyApiKeyRequired:
+    """Pipeline exits with status 1 when ALCHEMY_API_KEY is not set."""
+
+    def test_missing_api_key_exits(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Without ALCHEMY_API_KEY env var, main() exits with status 1."""
+        from scripts.ran_growth_pipeline import main
+
+        monkeypatch.delenv("ALCHEMY_API_KEY", raising=False)
+
+        with pytest.raises(SystemExit) as exc_info:
+            main(["--pool", "usdc-weth", "--from-block", "22972937", "--to-block", "23000000"])
+        assert exc_info.value.code == 1
+
+
+# ── B-P8: Zero-value storage ─────────────────────────────────────────────────
+
+
+class TestZeroValueStorage:
+    """0x0 response normalized and stored as 0x + 64 zeros."""
+
+    def test_zero_value_stored_as_padded_hex(self, duckdb_conn: object) -> None:
+        """encode_uint256(int('0x0', 16)) produces '0x' + '0'*64, stored without error."""
+        from scripts.ran_growth_pipeline import insert_sample
+        from scripts.ran_utils import encode_uint256
+        from scripts.tests.conftest import USDC_WETH_POOL_ID
+
+        zero_hex: Final[str] = encode_uint256(int("0x0", 16))
+        expected: Final[str] = "0x" + "0" * 64
+        assert zero_hex == expected
+
+        insert_sample(
+            conn=duckdb_conn,  # type: ignore[arg-type]
+            pool_id=USDC_WETH_POOL_ID,
+            block_number=22_972_937,
+            global_growth=zero_hex,
+            stride=50,
+        )
+
+        rows = duckdb_conn.execute(  # type: ignore[union-attr]
+            "SELECT global_growth FROM accumulator_samples "
+            "WHERE pool_id = ? AND block_number = ?",
+            [USDC_WETH_POOL_ID, 22_972_937],
+        ).fetchall()
+        assert len(rows) == 1
+        assert rows[0][0] == expected
+
+
+# ── B-P9: Progress reporting ─────────────────────────────────────────────────
+
+
+class TestProgressReporting:
+    """Pipeline output on stderr contains progress indicators."""
+
+    def test_progress_output_on_stderr(
+        self,
+        mock_rpc_transport: object,
+        tmp_path: object,
+        monkeypatch: pytest.MonkeyPatch,
+        capfd: pytest.CaptureFixture[str],
+    ) -> None:
+        """Pipeline stderr contains 'fetched', 'total', 'CU', '%'."""
+        from scripts.ran_growth_pipeline import main
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH
+
+        # Set up env
+        monkeypatch.setenv("ALCHEMY_API_KEY", "test-key")
+
+        # Create a mock transport and patch httpx.Client to use it
+        transport = mock_rpc_transport(head_block=23_000_000)  # type: ignore[operator]
+
+        db_path = str(tmp_path / "progress_test.duckdb")  # type: ignore[operator]
+
+        blocks = sorted(MOCK_BLOCKS_AND_GROWTH.keys())
+        from_block = blocks[0]
+        to_block = blocks[-1] + 1
+
+        # Patch httpx.Client to return our mock transport client
+        import scripts.ran_growth_pipeline as pipeline_mod
+
+        original_client = httpx.Client
+
+        def mock_client_factory(*args: object, **kwargs: object) -> httpx.Client:
+            return original_client(transport=transport, base_url="http://mock-rpc")
+
+        monkeypatch.setattr(pipeline_mod, "_make_http_client", mock_client_factory)
+
+        main([
+            "--pool", "usdc-weth",
+            "--from-block", str(from_block),
+            "--to-block", str(to_block),
+            "--stride", "50",
+            "--db", db_path,
+        ])
+
+        captured = capfd.readouterr()
+        stderr = captured.err
+        for keyword in ("fetched", "total", "CU", "%"):
+            assert keyword in stderr, f"Expected '{keyword}' in stderr, got: {stderr}"
+
+
+# ── CLI entrypoint ───────────────────────────────────────────────────────────
+
+
+class TestCliEntrypoint:
+    """main() parses args, composes pipeline, writes to DuckDB."""
+
+    def test_end_to_end_with_mock_transport(
+        self,
+        mock_rpc_transport: object,
+        tmp_path: object,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Full pipeline run: fetches data, writes to DuckDB, committed."""
+        from scripts.ran_growth_pipeline import main
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+
+        monkeypatch.setenv("ALCHEMY_API_KEY", "test-key")
+
+        transport = mock_rpc_transport()  # type: ignore[operator]
+        db_path = str(tmp_path / "cli_test.duckdb")  # type: ignore[operator]
+
+        blocks = sorted(MOCK_BLOCKS_AND_GROWTH.keys())
+        from_block = blocks[0]
+        to_block = blocks[-1] + 1
+
+        import scripts.ran_growth_pipeline as pipeline_mod
+
+        original_client = httpx.Client
+
+        def mock_client_factory(*args: object, **kwargs: object) -> httpx.Client:
+            return original_client(transport=transport, base_url="http://mock-rpc")
+
+        monkeypatch.setattr(pipeline_mod, "_make_http_client", mock_client_factory)
+
+        main([
+            "--pool", "usdc-weth",
+            "--from-block", str(from_block),
+            "--to-block", str(to_block),
+            "--stride", "50",
+            "--db", db_path,
+        ])
+
+        # Verify data was written
+        conn = duckdb.connect(db_path)
+        rows = conn.execute(
+            "SELECT block_number, global_growth, stride FROM accumulator_samples "
+            "WHERE pool_id = ? ORDER BY block_number",
+            [USDC_WETH_POOL_ID],
+        ).fetchall()
+        conn.close()
+
+        assert len(rows) >= 1
+        # Check stride is stored
+        for row in rows:
+            assert row[2] == 50

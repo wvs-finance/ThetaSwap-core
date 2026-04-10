@@ -1,9 +1,14 @@
-"""RAN growth pipeline — batch JSON-RPC, response correlation, rate limiting."""
+"""RAN growth pipeline — batch JSON-RPC, response correlation, rate limiting, DuckDB writes, CLI."""
 from __future__ import annotations
 
+import time
+from datetime import datetime, timezone
 from typing import Final
 
-from scripts.ran_utils import ANGSTROM_HOOK, encode_uint256
+import duckdb
+import httpx
+
+from scripts.ran_utils import ANGSTROM_HOOK, BLOCK_NUMBER_0, CREATE_TABLE_DDL, encode_uint256
 
 
 # ── B-P1: Batch JSON-RPC construction ───────────────────────────────────────
@@ -105,3 +110,256 @@ def compute_inter_batch_delay(
     """
     raw_delay: float = (batch_calls * cu_per_call) / cups_limit
     return max(raw_delay, SAFETY_FLOOR_SECONDS)
+
+
+# ── B-P4: DuckDB idempotent writes ────────────────────────────────────────────
+
+_UPSERT_SQL: Final[str] = (
+    "INSERT INTO accumulator_samples (block_number, pool_id, global_growth, sampled_at, stride) "
+    "VALUES (?, ?, ?, ?, ?) "
+    "ON CONFLICT (pool_id, block_number) DO NOTHING"
+)
+
+
+def insert_sample(
+    *,
+    conn: duckdb.DuckDBPyConnection,
+    pool_id: str,
+    block_number: int,
+    global_growth: str,
+    stride: int,
+) -> None:
+    """Insert a single accumulator sample, ignoring duplicate (pool_id, block_number).
+
+    Idempotent — re-inserting the same PK preserves the original value.
+    """
+    sampled_at: str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    conn.execute(_UPSERT_SQL, [block_number, pool_id, global_growth, sampled_at, stride])
+
+
+# ── B-P6: Retry on transient RPC errors ───────────────────────────────────────
+
+
+class RpcBatchError(Exception):
+    """Raised when an RPC batch request exhausts all retries."""
+
+
+def send_rpc_batch(
+    *,
+    client: httpx.Client,
+    batch: list[dict[str, object]],
+    max_retries: int = 3,
+    base_delay: float = 0.01,
+) -> list[dict[str, object]]:
+    """POST a JSON-RPC batch with exponential backoff retry on transient errors.
+
+    Retries on HTTP 429, 5xx, and httpx.TimeoutException.
+    Returns the parsed JSON response list on success.
+    Raises RpcBatchError after exhausting max_retries.
+    """
+    import json as _json
+
+    payload: bytes = _json.dumps(batch).encode()
+    attempts: int = 0
+    total_attempts: Final[int] = 1 + max_retries
+
+    while attempts < total_attempts:
+        try:
+            response: httpx.Response = client.post("/", content=payload)
+            if response.status_code == 200:
+                return response.json()  # type: ignore[no-any-return]
+            if response.status_code == 429 or response.status_code >= 500:
+                attempts += 1
+                if attempts < total_attempts:
+                    time.sleep(base_delay * (2 ** (attempts - 1)))
+                    continue
+                raise RpcBatchError(
+                    f"HTTP {response.status_code} after {total_attempts} attempts"
+                )
+            # Non-retryable HTTP error
+            raise RpcBatchError(f"HTTP {response.status_code} (non-retryable)")
+        except httpx.TimeoutException:
+            attempts += 1
+            if attempts < total_attempts:
+                time.sleep(base_delay * (2 ** (attempts - 1)))
+                continue
+            raise RpcBatchError(
+                f"Timeout after {total_attempts} attempts"
+            )
+
+
+# ── B-P7: Block range validation ──────────────────────────────────────────────
+
+
+class BlockRangeError(Exception):
+    """Raised when the requested block range is invalid."""
+
+
+def _resolve_latest_block(client: httpx.Client) -> int:
+    """Call eth_getBlockNumber to resolve the chain head."""
+    import json as _json
+
+    payload: bytes = _json.dumps(
+        {"jsonrpc": "2.0", "id": 1, "method": "eth_getBlockNumber", "params": []}
+    ).encode()
+    resp: httpx.Response = client.post("/", content=payload)
+    data: dict[str, object] = resp.json()
+    return int(str(data["result"]), 16)
+
+
+def validate_block_range(
+    *,
+    from_block: int,
+    to_block: int | str,
+    client: httpx.Client | None,
+) -> tuple[int, int]:
+    """Validate and resolve a block range for the pipeline.
+
+    - from_block must be >= BLOCK_NUMBER_0 (22,972,937)
+    - to_block can be an int or the string "latest" (resolved via RPC)
+    - from_block must be strictly less than to_block
+
+    Returns (from_block, to_block) as ints.
+    Raises BlockRangeError on invalid input.
+    """
+    if from_block < BLOCK_NUMBER_0:
+        raise BlockRangeError(
+            f"--from-block must be >= {BLOCK_NUMBER_0} (Angstrom deploy block)"
+        )
+
+    resolved_to: int
+    if isinstance(to_block, str) and to_block == "latest":
+        if client is None:
+            raise BlockRangeError("Cannot resolve 'latest' without an RPC client")
+        resolved_to = _resolve_latest_block(client)
+    else:
+        resolved_to = int(to_block)
+
+    if from_block >= resolved_to:
+        raise BlockRangeError(
+            f"--from-block ({from_block}) must be < --to-block ({resolved_to})"
+        )
+
+    return from_block, resolved_to
+
+
+# ── CLI entrypoint ─────────────────────────────────────────────────────────────
+
+
+def _make_http_client(rpc_url: str) -> httpx.Client:
+    """Create an httpx.Client for the given RPC URL.
+
+    Extracted as a module-level function so tests can monkeypatch it.
+    """
+    return httpx.Client(base_url=rpc_url, timeout=30.0)
+
+
+def main(argv: list[str] | None = None) -> None:
+    """CLI entrypoint for the RAN growth pipeline.
+
+    Parses arguments, validates block range, fetches storage data in batches,
+    and writes to DuckDB with per-batch commits.
+    """
+    import argparse
+    import os
+    import sys
+
+    from scripts.ran_utils import POOL_REGISTRY
+
+    parser = argparse.ArgumentParser(description="RAN accumulator growth pipeline")
+    parser.add_argument("--pool", required=True, choices=list(POOL_REGISTRY.keys()))
+    parser.add_argument("--from-block", required=True, type=int)
+    parser.add_argument("--to-block", required=True, type=str)
+    parser.add_argument("--stride", type=int, default=50)
+    parser.add_argument("--db", type=str, default="data/ran_accumulator.duckdb")
+
+    args = parser.parse_args(argv)
+
+    # ── Check API key ──
+    api_key: str | None = os.environ.get("ALCHEMY_API_KEY")
+    if not api_key:
+        print("ALCHEMY_API_KEY not set", file=sys.stderr)
+        sys.exit(1)
+
+    rpc_url: str = f"https://eth-mainnet.g.alchemy.com/v2/{api_key}"
+    pool_cfg: object = POOL_REGISTRY[args.pool]
+
+    client: httpx.Client = _make_http_client(rpc_url)
+
+    # ── Resolve block range ──
+    to_block_arg: int | str = args.to_block
+    if to_block_arg != "latest":
+        to_block_arg = int(to_block_arg)
+
+    try:
+        from_block, to_block = validate_block_range(
+            from_block=args.from_block,
+            to_block=to_block_arg,
+            client=client,
+        )
+    except BlockRangeError as exc:
+        print(str(exc), file=sys.stderr)
+        sys.exit(1)
+
+    # ── Build block list ──
+    blocks: list[int] = list(range(from_block, to_block, args.stride))
+
+    # ── Open DuckDB ──
+    conn: duckdb.DuckDBPyConnection = duckdb.connect(args.db)
+    conn.execute(CREATE_TABLE_DDL)
+
+    # ── Pipeline loop ──
+    cu_per_call: Final[int] = 20
+    cups_limit: Final[int] = 500
+    total_blocks: Final[int] = len(blocks)
+    fetched: int = 0
+
+    batches = build_rpc_batches(
+        slot=pool_cfg.pool_rewards_slot,  # type: ignore[union-attr]
+        blocks=blocks,
+        batch_size=15,
+    )
+
+    for batch in batches:
+        # Fetch with retry
+        responses = send_rpc_batch(client=client, batch=batch, max_retries=3, base_delay=0.01)
+
+        # Correlate
+        block_to_value = correlate_batch_response(batch=batch, responses=responses)
+
+        # Write to DuckDB
+        for block_num, hex_value in block_to_value.items():
+            # Normalize: ensure padded 0x + 64 hex chars
+            normalized: str = encode_uint256(int(hex_value, 16))
+            insert_sample(
+                conn=conn,
+                pool_id=pool_cfg.pool_id,  # type: ignore[union-attr]
+                block_number=block_num,
+                global_growth=normalized,
+                stride=args.stride,
+            )
+
+        conn.commit()
+        fetched += len(batch)
+
+        # ── Progress on stderr ──
+        cu_used: int = fetched * cu_per_call
+        pct: float = (fetched / total_blocks * 100) if total_blocks > 0 else 100.0
+        delay: float = compute_inter_batch_delay(
+            batch_calls=len(batch), cu_per_call=cu_per_call, cups_limit=cups_limit,
+        )
+        print(
+            f"fetched {fetched}/{total_blocks} total | "
+            f"{cu_used} CU | {pct:.1f}% | delay {delay:.2f}s",
+            file=sys.stderr,
+        )
+
+        # Rate limit (skip in tests — delay is near-zero with base_delay=0.01)
+        time.sleep(delay)
+
+    conn.close()
+    client.close()
+
+
+if __name__ == "__main__":
+    main()
