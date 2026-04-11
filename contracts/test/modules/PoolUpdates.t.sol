@@ -39,7 +39,7 @@ contract PoolUpdatesTest is HookDeployer, BaseTest {
 
     PoolRewardsHandler handler;
 
-    function setUp() public virtual{
+    function setUp() public virtual {
         (asset0, asset1) = deployTokensSorted();
 
         vm.prank(uniOwner);

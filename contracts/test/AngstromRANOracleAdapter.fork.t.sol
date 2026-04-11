@@ -49,17 +49,12 @@ contract AngstromRANOracleAdapterForkTest is Test {
         require(n >= 3, "Fixture must have at least 3 snapshots");
 
         // ── Fork at first block ──
-        uint256 forkId = vm.createFork(
-            vm.envString("ETH_RPC_URL"),
-            snapshots[0].blockNumber
-        );
+        uint256 forkId = vm.createFork(vm.envString("ETH_RPC_URL"), snapshots[0].blockNumber);
         vm.selectFork(forkId);
 
         // ── Deploy adapter on fork ──
-        adapter = new AngstromAccumulatorConsumer(
-            IAngstromAuth(angstromHook),
-            IPoolManager(poolManager)
-        );
+        adapter =
+            new AngstromAccumulatorConsumer(IAngstromAuth(angstromHook), IPoolManager(poolManager));
 
         uint256 prevGlobalGrowth = 0;
 
@@ -74,10 +69,7 @@ contract AngstromRANOracleAdapterForkTest is Test {
             assertEq(
                 adapterGG,
                 snap.globalGrowth,
-                string.concat(
-                    "globalGrowth mismatch at block ",
-                    vm.toString(snap.blockNumber)
-                )
+                string.concat("globalGrowth mismatch at block ", vm.toString(snap.blockNumber))
             );
 
             // ── Assert growthInside (exact) ──
@@ -85,10 +77,7 @@ contract AngstromRANOracleAdapterForkTest is Test {
             assertEq(
                 adapterGI,
                 snap.expectedGrowthInside,
-                string.concat(
-                    "growthInside mismatch at block ",
-                    vm.toString(snap.blockNumber)
-                )
+                string.concat("growthInside mismatch at block ", vm.toString(snap.blockNumber))
             );
 
             // ── Conservation cross-check (in-range snapshots) ──
@@ -101,10 +90,7 @@ contract AngstromRANOracleAdapterForkTest is Test {
                 assertEq(
                     snap.expectedGrowthInside,
                     conservationGI,
-                    string.concat(
-                        "Conservation violated at block ",
-                        vm.toString(snap.blockNumber)
-                    )
+                    string.concat("Conservation violated at block ", vm.toString(snap.blockNumber))
                 );
             }
 
@@ -113,10 +99,7 @@ contract AngstromRANOracleAdapterForkTest is Test {
                 assertGe(
                     adapterGG,
                     prevGlobalGrowth,
-                    string.concat(
-                        "globalGrowth decreased at block ",
-                        vm.toString(snap.blockNumber)
-                    )
+                    string.concat("globalGrowth decreased at block ", vm.toString(snap.blockNumber))
                 );
             }
             prevGlobalGrowth = adapterGG;

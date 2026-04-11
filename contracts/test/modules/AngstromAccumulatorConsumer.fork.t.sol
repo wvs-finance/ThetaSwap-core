@@ -6,22 +6,14 @@ import {AngstromAccumulatorConsumer} from "core/src/_adapters/AngstromAccumulato
 import {IAngstromAuth} from "core/src/interfaces/IAngstromAuth.sol";
 import "anstrong-test/_fork_references/Ethereum.sol" as EthereumForkData;
 
-
 contract AngstromAccumulatorConsumerForkTest is BaseForkTest {
     AngstromAccumulatorConsumer angstromAccumulatorConsumer;
 
     function setUp() public override {
-	super.setUp();
-	angstromAccumulatorConsumer = new AngstromAccumulatorConsumer(
-								      IAngstromAuth(
-										    EthereumForkData.AngstromAddresses.ANGSTROM
-										    
-								      ),
-								      POOL_MANAGER
-	);
+        super.setUp();
+        angstromAccumulatorConsumer = new AngstromAccumulatorConsumer(
+            IAngstromAuth(EthereumForkData.AngstromAddresses.ANGSTROM), POOL_MANAGER
+        );
     }
 }
-
-
-
 
