@@ -1446,3 +1446,70 @@ class TestCombinedPipelineIntegration:
             assert block_ts is not None, f"block_timestamp NULL for block {block_num}"
             assert block_ts == MOCK_BLOCK_TIMESTAMPS[block_num], f"Wrong timestamp for block {block_num}"
             assert growth_hex == MOCK_BLOCKS_AND_GROWTH[block_num], f"Wrong growth for block {block_num}"
+
+
+# ── Fix 2: Per-call JSON-RPC error handling in correlators ───────────────────
+
+
+class TestJsonRpcErrorInCorrelators:
+    """Correlators must skip responses with 'error' instead of 'result', not crash."""
+
+    def test_correlate_batch_skips_error_response(self) -> None:
+        """One response has 'error' instead of 'result' — it is skipped, others correlated."""
+        from scripts.ran_growth_pipeline import build_rpc_batches, correlate_batch_response
+
+        blocks: list[int] = [22_972_937, 22_972_987, 22_973_037]
+        batches = build_rpc_batches(slot=1, blocks=blocks, batch_size=100)
+        batch = batches[0]
+
+        # Build responses: first two OK, third has JSON-RPC error
+        responses: list[dict[str, object]] = [
+            {"jsonrpc": "2.0", "id": 1, "result": "0x" + "ab" * 32},
+            {"jsonrpc": "2.0", "id": 2, "result": "0x" + "cd" * 32},
+            {"jsonrpc": "2.0", "id": 3, "error": {"code": -32000, "message": "block not found"}},
+        ]
+
+        result = correlate_batch_response(batch=batch, responses=responses)
+
+        # Block 22_972_937 (id=1) and 22_972_987 (id=2) should be present
+        assert 22_972_937 in result
+        assert 22_972_987 in result
+        # Block 22_973_037 (id=3) should be skipped
+        assert 22_973_037 not in result
+
+    def test_correlate_combined_skips_error_response(self) -> None:
+        """Combined correlator skips error responses for both storage and block calls."""
+        from scripts.ran_growth_pipeline import (
+            build_combined_rpc_batches,
+            correlate_combined_batch_response,
+        )
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, MOCK_BLOCK_TIMESTAMPS
+
+        blocks: list[int] = sorted(MOCK_BLOCKS_AND_GROWTH.keys())[:3]
+        batches = build_combined_rpc_batches(slot=1, blocks=blocks, batch_size=15)
+        batch = batches[0]
+        n = len(blocks)
+
+        # Build responses: storage call for block[1] returns error
+        responses: list[dict[str, object]] = []
+        for i, blk in enumerate(blocks):
+            if i == 1:
+                responses.append({"jsonrpc": "2.0", "id": i + 1, "error": {"code": -32000, "message": "block not found"}})
+            else:
+                responses.append({"jsonrpc": "2.0", "id": i + 1, "result": MOCK_BLOCKS_AND_GROWTH[blk]})
+        for i, blk in enumerate(blocks):
+            responses.append({
+                "jsonrpc": "2.0",
+                "id": n + i + 1,
+                "result": {"timestamp": hex(MOCK_BLOCK_TIMESTAMPS[blk]), "number": hex(blk)},
+            })
+
+        result = correlate_combined_batch_response(batch=batch, responses=responses)
+
+        # blocks[1] should be absent (error on storage call → no growth data)
+        assert blocks[1] not in result
+        # Other blocks present with correct values
+        for blk in [blocks[0], blocks[2]]:
+            growth, ts = result[blk]
+            assert growth == MOCK_BLOCKS_AND_GROWTH[blk]
+            assert ts == MOCK_BLOCK_TIMESTAMPS[blk]

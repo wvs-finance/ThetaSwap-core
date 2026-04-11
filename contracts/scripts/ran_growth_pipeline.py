@@ -127,6 +127,8 @@ def correlate_batch_response(
     # Correlate by id, never by position
     result: dict[int, str] = {}
     for resp in responses:
+        if "error" in resp or "result" not in resp:
+            continue
         resp_id: object = resp["id"]
         block_num = id_to_block[resp_id]
         result[block_num] = str(resp["result"])
@@ -171,6 +173,8 @@ def correlate_combined_batch_response(
     timestamp_map: dict[int, int | None] = {}
 
     for resp in responses:
+        if "error" in resp or "result" not in resp:
+            continue
         resp_id: object = resp["id"]
         if resp_id in id_to_block_storage:
             block_num = id_to_block_storage[resp_id]
@@ -511,7 +515,7 @@ def main(argv: list[str] | None = None) -> None:
                 )
 
             conn.commit()
-            fetched += storage_count
+            fetched += len(block_to_pair)
 
             # ── Progress on stderr ──
             pct: float = (fetched / total_blocks * 100) if total_blocks > 0 else 100.0

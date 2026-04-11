@@ -49,7 +49,9 @@ def _cmd_len(args: argparse.Namespace) -> None:
     conn = _open_db(args.db)
     try:
         row = conn.execute(_LEN_SQL, [pool_id]).fetchone()
-        assert row is not None
+        if row is None:
+            print("unexpected: query returned no result", file=sys.stderr)
+            sys.exit(1)
         count: int = row[0]
         if count == 0:
             print("error: pool not found", file=sys.stderr)
@@ -68,7 +70,9 @@ def _cmd_row(args: argparse.Namespace) -> None:
     try:
         # Check pool exists and get count for bounds check
         count_row = conn.execute(_LEN_SQL, [pool_id]).fetchone()
-        assert count_row is not None
+        if count_row is None:
+            print("unexpected: query returned no result", file=sys.stderr)
+            sys.exit(1)
         count: int = count_row[0]
         if count == 0:
             print("error: pool not found", file=sys.stderr)
@@ -80,7 +84,9 @@ def _cmd_row(args: argparse.Namespace) -> None:
             )
             sys.exit(1)
         row = conn.execute(_ROW_SQL, [pool_id, idx]).fetchone()
-        assert row is not None
+        if row is None:
+            print("unexpected: query returned no result", file=sys.stderr)
+            sys.exit(1)
         block_number: int = row[0]
         block_timestamp = row[1]
         global_growth_hex: str = row[2]
