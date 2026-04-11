@@ -16,4 +16,4 @@ struct NoteSnapshot {
     /// @notice False until first mint for this NoteId
     bool initialized;
 }
-    
+

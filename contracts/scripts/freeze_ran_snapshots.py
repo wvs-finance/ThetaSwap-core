@@ -2,7 +2,7 @@
 """Freeze Angstrom accumulator snapshots for fork test validation.
 
 Usage:
-    ETH_RPC_URL=<archive_rpc> python3 scripts/freeze_ran_snapshots.py \
+    ALCHEMY_API_KEY=<key> python3 scripts/freeze_ran_snapshots.py \
         --blocks 24827762,24827780,24827794,24827806 \
         --tick-lower 199890 \
         --tick-upper 199910 \
@@ -14,7 +14,14 @@ import json
 import os
 import subprocess
 import sys
+
 from typing import Any
+
+from scripts.ran_utils import (
+    derive_pool_rewards_slot,
+    encode_uint256,
+    read_storage_at,
+)
 
 # ── Constants ──
 ANGSTROM_HOOK = "0x0000000aa232009084bd71a5797d089aa4edfad4"
@@ -24,69 +31,27 @@ POOL_REWARDS_SLOT = 7
 POOLS_SLOT = 6
 REWARD_GROWTH_SIZE = 16777216  # 2^24
 
-
-def keccak_mapping_slot(key_hex: str, mapping_slot: int) -> int:
-    """keccak256(abi.encode(key, slot)) — Solidity mapping slot derivation.
-
-    Matches OZ SlotDerivation.deriveMapping(bytes32 slot, bytes32 key):
-    memory layout is key || slot, then keccak256 over 64 bytes.
-    """
-    from eth_abi import encode
-    from eth_hash.auto import keccak
-
-    key_bytes = bytes.fromhex(key_hex.replace("0x", "").zfill(64))
-    encoded = encode(["bytes32", "uint256"], [key_bytes, mapping_slot])
-    return int.from_bytes(keccak(encoded), "big")
+ALCHEMY_BASE_URL = "https://eth-mainnet.g.alchemy.com/v2/"
 
 
-def to_hex256(val: int) -> str:
-    """Encode uint256 as 0x-prefixed 64-char hex (66 chars total).
-
-    Required for Forge's vm.parseJson — variable-length hex strings
-    are misinterpreted as left-aligned bytes, not right-aligned numbers.
-    """
-    return "0x" + val.to_bytes(32, "big").hex()
+# ── Tick function stubs (out of scope — globalGrowth time series only) ──
 
 
 def tick_to_uint24(tick: int) -> int:
-    """int24 → uint24 wrapping (two's complement). Critical for negative ticks.
+    """Convert a signed int24 tick to unsigned uint24.
 
-    Examples:
-      tick_to_uint24(-1200) == 16776016
-      tick_to_uint24(199890) == 199890
-      tick_to_uint24(0) == 0
+    OUT OF SCOPE — stub only. Will be implemented when tick-level
+    analysis is added to the pipeline.
     """
-    return tick & 0xFFFFFF
+    raise NotImplementedError("tick_to_uint24 is out of scope for globalGrowth time series")
 
 
-def read_storage_at(address: str, slot: int, block: int) -> int:
-    """Read a storage slot via cast storage at a specific block."""
-    rpc = os.environ["ETH_RPC_URL"]
-    slot_hex = hex(slot)
-    result = subprocess.run(
-        ["cast", "storage", address, slot_hex, "--block", str(block), "--rpc-url", rpc],
-        capture_output=True, text=True, check=True,
-    )
-    return int(result.stdout.strip(), 16)
+def read_current_tick(pool_id: str, block: int) -> int:
+    """Read the current tick for a pool at a given block.
 
-
-def read_current_tick(pool_id_hex: str, block: int) -> int:
-    """Read current tick from V4 PoolManager slot0 at a specific block.
-
-    V4 Slot0 layout (from v4-core/src/types/Slot0.sol):
-      24 bits empty | 24 bits lpFee | 12 bits protocolFee 1→0 |
-      12 bits protocolFee 0→1 | 24 bits tick | 160 bits sqrtPriceX96
-
-    tick is extracted via: signextend(2, shr(160, packed))
+    OUT OF SCOPE — stub only.
     """
-    base = keccak_mapping_slot(pool_id_hex, POOLS_SLOT)
-    raw = read_storage_at(POOL_MANAGER, base, block)
-    # Extract tick from bits 160-183
-    tick_uint24 = (raw >> 160) & 0xFFFFFF
-    # Convert uint24 back to int24 (sign extend from bit 23)
-    if tick_uint24 >= (1 << 23):
-        return tick_uint24 - (1 << 24)
-    return tick_uint24
+    raise NotImplementedError("read_current_tick is out of scope for globalGrowth time series")
 
 
 def compute_growth_inside(
@@ -97,39 +62,49 @@ def compute_growth_inside(
     tick_lower: int,
     tick_upper: int,
 ) -> int:
-    """Three-branch growthInside computation (unchecked uint256 arithmetic).
+    """Compute growthInside from global and outside accumulators.
 
-    Matches ran.sol growthInside():
-      currentTick < tickLower:  outsideBelow - outsideAbove
-      currentTick >= tickUpper: outsideAbove - outsideBelow
-      else (in range):          globalGrowth - outsideBelow - outsideAbove
+    OUT OF SCOPE — stub only.
     """
-    MOD = 1 << 256
-    if current_tick < tick_lower:
-        return (outside_below - outside_above) % MOD
-    elif current_tick >= tick_upper:
-        return (outside_above - outside_below) % MOD
-    else:
-        return (global_growth - outside_below - outside_above) % MOD
+    raise NotImplementedError("compute_growth_inside is out of scope for globalGrowth time series")
 
 
-def freeze_snapshot(block: int, tick_lower: int, tick_upper: int) -> dict[str, Any]:
+def _build_rpc_url() -> str:
+    """Build the Alchemy RPC URL from ALCHEMY_API_KEY env var."""
+    api_key = os.environ.get("ALCHEMY_API_KEY")
+    if not api_key:
+        print("ERROR: ALCHEMY_API_KEY not set. Need an archive RPC.", file=sys.stderr)
+        sys.exit(1)
+    return ALCHEMY_BASE_URL + api_key
+
+
+def freeze_snapshot(
+    block: int, tick_lower: int, tick_upper: int, rpc_url: str,
+) -> tuple[dict[str, Any], str]:
     """Freeze all accumulator values at a specific block."""
-    base = keccak_mapping_slot(POOL_ID, POOL_REWARDS_SLOT)
+    global_growth_slot = derive_pool_rewards_slot(POOL_ID, POOL_REWARDS_SLOT, REWARD_GROWTH_SIZE)
 
-    global_growth = read_storage_at(ANGSTROM_HOOK, base + REWARD_GROWTH_SIZE, block)
+    global_growth = read_storage_at(ANGSTROM_HOOK, global_growth_slot, block, rpc_url)
     outside_below = read_storage_at(
-        ANGSTROM_HOOK, base + tick_to_uint24(tick_lower), block
+        ANGSTROM_HOOK,
+        derive_pool_rewards_slot(POOL_ID, POOL_REWARDS_SLOT, 0) + tick_to_uint24(tick_lower),
+        block,
+        rpc_url,
     )
     outside_above = read_storage_at(
-        ANGSTROM_HOOK, base + tick_to_uint24(tick_upper), block
+        ANGSTROM_HOOK,
+        derive_pool_rewards_slot(POOL_ID, POOL_REWARDS_SLOT, 0) + tick_to_uint24(tick_upper),
+        block,
+        rpc_url,
     )
     current_tick = read_current_tick(POOL_ID, block)
 
-    # Validate non-zero — if archive RPC lacks this block, cast returns 0 silently
-    assert (
-        global_growth != 0
-    ), f"globalGrowth is zero at block {block} — archive RPC may not serve this block"
+    if global_growth == 0:
+        print(
+            f"WARNING: globalGrowth is zero at block {block} — "
+            f"archive RPC may not serve this block",
+            file=sys.stderr,
+        )
 
     expected_gi = compute_growth_inside(
         global_growth, outside_below, outside_above, current_tick, tick_lower, tick_upper
@@ -144,9 +119,8 @@ def freeze_snapshot(block: int, tick_lower: int, tick_upper: int) -> dict[str, A
         branch = "in-range"
 
     # Read block timestamp via cast
-    rpc = os.environ["ETH_RPC_URL"]
     result = subprocess.run(
-        ["cast", "block", str(block), "--field", "timestamp", "--rpc-url", rpc],
+        ["cast", "block", str(block), "--field", "timestamp", "--rpc-url", rpc_url],
         capture_output=True, text=True, check=True,
     )
     timestamp = int(result.stdout.strip())
@@ -157,14 +131,14 @@ def freeze_snapshot(block: int, tick_lower: int, tick_upper: int) -> dict[str, A
         "blockNumber": block,
         "blockTimestamp": timestamp,
         "currentTick": current_tick,
-        "expectedGrowthInside": to_hex256(expected_gi),
-        "globalGrowth": to_hex256(global_growth),
-        "outsideAbove": to_hex256(outside_above),
-        "outsideBelow": to_hex256(outside_below),
+        "expectedGrowthInside": encode_uint256(expected_gi),
+        "globalGrowth": encode_uint256(global_growth),
+        "outsideAbove": encode_uint256(outside_above),
+        "outsideBelow": encode_uint256(outside_below),
     }, branch
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description="Freeze Angstrom accumulator snapshots")
     parser.add_argument("--blocks", required=True, help="Comma-separated block numbers")
     parser.add_argument("--tick-lower", required=True, type=int, help="int24 tick lower")
@@ -172,9 +146,7 @@ def main():
     parser.add_argument("--output", required=True, help="Output JSON path")
     args = parser.parse_args()
 
-    if "ETH_RPC_URL" not in os.environ:
-        print("ERROR: ETH_RPC_URL not set. Need an archive RPC.", file=sys.stderr)
-        sys.exit(1)
+    rpc_url = _build_rpc_url()
 
     blocks = [int(b.strip()) for b in args.blocks.split(",")]
 
@@ -188,7 +160,7 @@ def main():
     snapshots = []
     for block in sorted(blocks):
         print(f"  Block {block}...", end=" ", flush=True)
-        snap, branch = freeze_snapshot(block, args.tick_lower, args.tick_upper)
+        snap, branch = freeze_snapshot(block, args.tick_lower, args.tick_upper, rpc_url)
         snapshots.append(snap)
         print(
             f"tick={snap['currentTick']}, branch={branch}, "

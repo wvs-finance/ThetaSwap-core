@@ -45,11 +45,11 @@ contract AngstromAccumulatorConsumer {
     }
 
     /// @notice Returns the cumulative reward growth inside a tick range.
-    function growthInside(
-        PoolId poolId,
-        int24 tickLower,
-        int24 tickUpper
-    ) external view returns (uint256) {
+    function growthInside(PoolId poolId, int24 tickLower, int24 tickUpper)
+        external
+        view
+        returns (uint256)
+    {
         bytes32 base = bytes32(POOL_REWARDS_SLOT).deriveMapping(PoolId.unwrap(poolId));
         int24 currentTick = UNI_V4.getSlot0(poolId).tick();
 
@@ -106,11 +106,11 @@ contract AngstromAccumulatorConsumer {
     /// @param token0 The lower-address token (caller must sort).
     /// @param token1 The higher-address token.
     /// @param index The config entry index to read.
-    function getPoolConfig(
-        address token0,
-        address token1,
-        uint256 index
-    ) external view returns (int24 tickSpacing, uint24 bundleFee) {
+    function getPoolConfig(address token0, address token1, uint256 index)
+        external
+        view
+        returns (int24 tickSpacing, uint24 bundleFee)
+    {
         StoreKey key = StoreKeyLib.keyFromAssetsUnchecked(token0, token1);
         return configStore().get(key, index);
     }

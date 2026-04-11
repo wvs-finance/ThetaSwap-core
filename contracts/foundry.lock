@@ -5,6 +5,9 @@
   "lib/Compose": {
     "rev": "2be9e7fe18f6fedf9314d1588b57505c810f5e4c"
   },
+  "lib/balancer-v3-monorepo": {
+    "rev": "ef0d3afec734955b6e0cc549c521594461ad6f3f"
+  },
   "lib/forge-std": {
     "rev": "999be66ec94c78090087f674bbf52ce1cca12b75"
   },

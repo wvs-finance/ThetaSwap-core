@@ -1,7 +1,7 @@
 # Angstrom x Panoptic Vault Architecture
 
 Date: 2026-04-09
-Status: Draft (Rev 7 -- T malfunction risks, four-layer vault architecture, mean reversion, Euler/Balancer hybrid)
+Status: Draft (Rev 8 -- implementation progress snapshot, V_B design settled, adapter architecture finalized)
 Branch: thetaswap-patches (ranFromAngstrom worktree)
 
 ---
@@ -508,25 +508,172 @@ Full QA reports available at:
 
 ---
 
-## 11. Existing Code Inventory
+## 11. Component Inventory and Implementation Status
 
-Components that already exist and will be composed into this architecture:
+### Implementation Status Key
+- IMPL = implemented and compiles
+- SPEC = BTT spec written, not yet implemented
+- PLAN = design settled, spec not yet written
+- DEPS = external dependency (not our code)
 
-| Component | Location | Role in Architecture |
+### Layer 0: Angstrom (read-only -- we do NOT modify these)
+
+| Component | Location | Status | Role |
+|---|---|---|---|
+| PoolRewards | contracts/src/types/PoolRewards.sol | DEPS | globalGrowth + growthOutside accumulator structure |
+| GrowthOutsideUpdater | contracts/src/modules/GrowthOutsideUpdater.sol | DEPS | Where globalGrowth increments per bundle |
+| PoolUpdates | contracts/src/modules/PoolUpdates.sol | DEPS | beforeAddLiquidity/beforeRemoveLiquidity hooks, reward payout |
+| AngstromView | contracts/src/periphery/AngstromView.sol | DEPS | Slot constants for extsload reads (controller, lastBlockUpdated, configStore) |
+| PoolConfigStore | contracts/src/libraries/PoolConfigStore.sol | DEPS | SSTORE2 pool config (totalEntries, get, StoreKey) |
+| X128MathLib | contracts/src/libraries/X128MathLib.sol | DEPS | Q128.128 arithmetic |
+
+### Layer 1: Observation Infrastructure
+
+| Component | Location | Status | BTT Spec | Role |
+|---|---|---|---|---|
+| GrowthObservation V2 | contracts/src/types/GrowthObservation.sol | IMPL | .scratch/growth-observation-v2-btt-spec.md | Bit-packed (uint32 blockNumber, uint16 relativeTimeDelta, uint208 cumulativeGrowth). Time-aware. |
+| OZ CircularBuffer | contracts/lib/openzeppelin-contracts/.../CircularBuffer.sol | DEPS | -- | Fixed-size bytes32 ring buffer. GrowthObservation slots directly in. |
+| BlockNumberAwareGrowthObserverLib | contracts/src/libraries/BlockNumberAwareGrowthObserverLib.sol | IMPL | .scratch/growth-observer-lib-btt-spec.md | Transformation-agnostic primitives: record, observeAt, latestObservation, oldestObservation, observationCount. |
+| GrowthObservationStorageMod | contracts/src/modules/GrowthObservationStorageMod.sol | SPEC | .scratch/growth-observation-storage-mod-btt-spec.md | Diamond storage: mapping(PoolId => CircularBuffer). Per-pool observation buffers. |
+
+### Bridge: Growth-to-Tick Conversion
+
+| Component | Location | Status | BTT Spec | Role |
+|---|---|---|---|---|
+| GrowthToTickLib | contracts/src/libraries/GrowthToTickLib.sol | IMPL | .scratch/growth-to-tick-lib-btt-spec.md | Q128.128 growth ratio → tick via FullMath.mulDiv → Solady sqrt → Q96 → TickMath. |
+
+### Layer 2: Transformations
+
+| Component | Location | Status | BTT Spec | Role |
+|---|---|---|---|---|
+| EMAGrowthTransformationLib | contracts/src/libraries/transformations/EMAGrowthTransformationLib.sol | IMPL | .scratch/ema-growth-transformation-lib-btt-spec.md | Stateless EMA logic. Composes observer + GrowthToTickLib + OraclePack. extensionFlag = CALLABLE (4). |
+| EMAGrowthTransformationStorageMod | contracts/src/modules/EMAGrowthTransformationStorageMod.sol | SPEC | .scratch/ema-growth-transformation-storage-mod-btt-spec.md | Diamond storage: mapping(PoolId => OraclePack). Per-pool EMA state. |
+
+### Adapter Layer: Angstrom Integration
+
+| Component | Location | Status | BTT Spec | Role |
+|---|---|---|---|---|
+| AngstromAccumulatorConsumer | contracts/src/_adapters/AngstromAccumulatorConsumer.sol | SPEC (rename + extend) | .scratch/angstrom-accumulator-consumer-btt-spec.md | Read-only Angstrom client. globalGrowth, growthInside, lastBlockUpdated, configStore, poolExists via extsload. |
+| AngstromPoolObserver | contracts/src/_adapters/AngstromPoolObserver.sol | SPEC | .scratch/angstrom-pool-observer-btt-spec.md | Composer/registry. Validates pools against Angstrom, coordinates observation recording + EMA updates. Keeper entry point. |
+
+### Vault Layer
+
+| Component | Location | Status | BTT Spec | Role |
+|---|---|---|---|---|
+| VaultB | contracts/src/vaults/VaultB.sol | SPEC | .scratch/v-b-vault-btt-spec.md | ERC-4626 vault (Solady base). Accepts asset1, mints V_B_shares. Pluggable T_B drives totalAssets. IRateProvider. |
+| ITransformationFunction | contracts/src/interfaces/ITransformationFunction.sol | PLAN | -- | Pluggable T_B interface. Stateless view: returns 18-decimal rate. |
+| IRateProvider | contracts/src/interfaces/IRateProvider.sol | PLAN | -- | Balancer rate oracle (7 lines). getRate() → uint256. |
+| VaultA | TBD | PLAN | -- | Concentration-exposure vault. Accepts asset0, mints V_A_shares. Pluggable T_A. |
+
+### Panoptic Integration (Phase 2+)
+
+| Component | Location | Status | Role |
+|---|---|---|---|
+| ct0 | TBD | PLAN | Near-vanilla CollateralTracker holding V_A_shares |
+| ct1 | TBD | PLAN | Near-vanilla CollateralTracker holding V_B_shares |
+| Custom Factory | TBD | PLAN | Deploys V_A, V_B, ct0, ct1, PanopticPool |
+| SFPM Accumulator Adapter | TBD | PLAN | Routes premium accrual reads for Angstrom pools (Phase 2 design challenge) |
+
+### Existing Components (pre-existing, reused)
+
+| Component | Location | Role |
 |---|---|---|
-| AngstromAccumulatorOracleAdapter | contracts/src/_adapters/AngstromAccumulatorOracleAdapter.sol | Read layer for accumulators (globalGrowth, growthInside via extsload) |
-| GrowthObservation V2 | contracts/src/types/GrowthObservation.sol | Bit-packed (uint32 blockNumber, uint16 relativeTimeDelta, uint208 cumulativeGrowth) in bytes32. Accessors, comparators, derived views. Time-aware. |
-| OZ CircularBuffer | contracts/lib/openzeppelin-contracts/contracts/utils/structs/CircularBuffer.sol | Fixed-size bytes32 ring buffer. GrowthObservation slots directly into it. |
-| BlockNumberAwareGrowthObserverLib | contracts/src/libraries/BlockNumberAwareGrowthObserverLib.sol | Transformation-agnostic raw observation primitives: record, observeAt (binary search), latestObservation, oldestObservation, observationCount. No embedded transformations -- windowed delta, EMA, etc. belong in Layer 2 transformation contracts. |
-| GrowthToTickLib | contracts/src/libraries/GrowthToTickLib.sol | Q128.128 growth ratio → tick conversion bridge. 4-stage pipeline: FullMath.mulDiv → Solady sqrt → Q96 shift → TickMath. |
-| EMAGrowthTransformationLib | contracts/src/libraries/transformations/EMAGrowthTransformationLib.sol | Layer 2 transformation (extensionFlag CALLABLE). Composes observer + GrowthToTickLib + OraclePack into EMA-smoothed growth ticks. |
 | AccrualManagerMod | contracts/src/modules/AccrualManagerMod.sol | Checkpoint + settle logic, accrued-ratio computation |
 | NoteSnapshot | contracts/src/types/NoteSnapshot.sol | Per-note accumulator birth snapshots |
-| PoolRewards | contracts/src/types/PoolRewards.sol | globalGrowth + growthOutside structure |
-| X128MathLib | contracts/src/libraries/X128MathLib.sol | Q128.128 arithmetic for accumulator conversion |
 | PanopticPlayground test | contracts/test/PanopticPlayground.t.sol | Working Angstrom + Panoptic shared PoolManager proof |
 | OptionBuilderLibrary | contracts/test/PanopticPlayground.t.sol | TokenId construction helpers |
 | VolToWidthLib | contracts/test/PanopticPlayground.t.sol | Vol-to-tick-width conversion |
 | Panoptic CollateralTracker | contracts/lib/2025-12-panoptic/contracts/CollateralTracker.sol | Template for custom CT |
-| Panoptic SFPM | contracts/lib/2025-12-panoptic/contracts/SemiFungiblePositionManager.sol | Target for accumulator adapter |
-| Solady ERC-4626 | contracts/lib/solady/src/tokens/ERC4626.sol | Candidate base class for V_B vault |
+| Panoptic SFPM V4 | contracts/lib/2025-12-panoptic/contracts/SemiFungiblePositionManagerV4.sol | Target for accumulator adapter |
+| Panoptic OraclePack | contracts/lib/2025-12-panoptic/contracts/types/OraclePack.sol | EMA + median oracle (reused by EMAGrowthTransformationLib, price oracle for V_B) |
+| Solady ERC-4626 | contracts/lib/solady/src/tokens/ERC4626.sol | Base class for V_B vault (527 lines, audited, MIT) |
+| Compose Framework | contracts/lib/Compose/ | Diamond pattern framework (used for storage modules, future facets) |
+
+---
+
+## 12. Design Decisions Log
+
+Decisions made during this design session, for continuity:
+
+| # | Decision | Rationale | Alternatives Rejected |
+|---|---|---|---|
+| D1 | V_B accepts asset1, V_A accepts asset0, pool pair = V_A_shares / V_B_shares | V_B is income claim agnostic to security volatility. Both CTs are symmetric near-vanilla. | Both vaults accept asset0 (denomination issue); V_B accepts asset0 (ties income to security price) |
+| D2 | Four-layer vault: L4 external, L3 bounds, L2 pluggable T, L1 oracle | Euler IRM + Balancer IRateProvider + Pendle SY hybrid. T is safe by construction. | Single-layer (hardcoded totalAssets); Two-layer (no bounds enforcement) |
+| D3 | Transformation = instrument definition via extensionFlag | Different notes on same pool use different T on same buffer. VANILLA, ACCRUAL_DECRUAL, TARN, BARRIERS, CALLABLE. | Single transformation per pool; Transformation at vault level only |
+| D4 | Observation library is transformation-agnostic | Raw primitives only (record, observeAt). Transformations are Layer 2 consumers. | observeGrowthDelta baked into library (removed) |
+| D5 | GrowthObservation V2: uint32 + uint16 + uint208 | relativeTimeDelta enables time-aware queries without block-to-time mapping. uint32 blockNumber safe for 1600 years. | uint48 blockNumber (too wide, no room for time); uint24 blockNumber (too narrow) |
+| D6 | 256-slot ring buffer, 30-min minimum epoch | At Ethereum max throughput (300 blocks/hour), 256 slots covers 51 min. Empirical: ~2h at typical activity. | Larger buffers (higher setup cost); OZ Checkpoints (unbounded growth) |
+| D7 | Growth ratio → tick via sqrtPriceX96 → OraclePack reuse | Reuses Panoptic's battle-tested EMA. Acceptable precision loss (1 bps per tick). Anchor = oldest in buffer. | Wider-type custom EMA (new code); Raw Q128 EMA (incompatible with OraclePack) |
+| D8 | V_B uses separate price oracle (Panoptic OraclePack on underlying pair) for asset0→asset1 conversion | T_B owns the conversion. Panoptic already tracks price EMAs. | No conversion (V_B accepts asset0); Chainlink oracle; TWAP oracle we build |
+| D9 | V_B inherits Solady ERC-4626 (Option C Hybrid) | 527 lines audited vs 800-1200 new lines for Compose facet. Minimal audit surface (~50 new lines). | Compose ERC-4626 facet (too much new code); OZ ERC-4626 (heavier) |
+| D10 | Storage modules use diamond storage with free functions | Matches existing codebase pattern (AccrualManagerMod). Per-module keccak256 slots. | Abstract contract inheritance; Library with storage struct parameter |
+| D11 | Adapter split: Consumer (read-only) + Observer (composer/registry) | Consumer is reusable by any contract. Observer adds pool management + keeper coordination. | Single adapter (mixes read and write concerns) |
+| D12 | Pool registration validates against Angstrom PoolConfigStore | Observer verifies pool exists, checks token sorting, derives PoolId from PoolKey with Angstrom as hook. | Trust admin input without verification |
+| D13 | Angstrom code is read-only | We integrate via extsload, never modify Angstrom contracts. Observation recording is Active Observer pattern (Option A). | Modify GrowthOutsideUpdater (breaks upstream compatibility) |
+| D14 | Keeper calls recordObservation, not automated | Active Observer pattern. lastBlockUpdated tells keeper when new data exists. | Lazy observer (first reader pays gas); Hook-based (requires Angstrom modification) |
+
+---
+
+## 13. BTT Specification Index
+
+All BTT specs produced during this design session:
+
+| Spec | Location | Covers |
+|---|---|---|
+| GrowthObservation V2 | .scratch/growth-observation-v2-btt-spec.md | 11 functions, 7 algebraic properties, V1→V2 migration |
+| BlockNumberAwareGrowthObserverLib | .scratch/growth-observer-lib-btt-spec.md | 5 functions, 7 algebraic properties, binary search analysis |
+| GrowthToTickLib | .scratch/growth-to-tick-lib-btt-spec.md | 1 function, 4 algebraic properties, conversion math pipeline |
+| EMAGrowthTransformationLib | .scratch/ema-growth-transformation-lib-btt-spec.md | 1 function, 4 algebraic properties, OraclePack integration |
+| GrowthObservationStorageMod | .scratch/growth-observation-storage-mod-btt-spec.md | 6 functions, 7 algebraic properties, diamond storage |
+| EMAGrowthTransformationStorageMod | .scratch/ema-growth-transformation-storage-mod-btt-spec.md | 4 functions, 5 algebraic properties, cross-module storage |
+| AngstromAccumulatorConsumer | .scratch/angstrom-accumulator-consumer-btt-spec.md | 6 functions (2 existing + 4 new), 5 algebraic properties |
+| AngstromPoolObserver | .scratch/angstrom-pool-observer-btt-spec.md | 5 functions, 6 algebraic properties, keeper flow |
+| VaultB | .scratch/v-b-vault-btt-spec.md | 10+ functions, 9 algebraic properties, Solady override analysis |
+
+---
+
+## 14. Research Reports Index
+
+All research produced during this design session:
+
+| Report | Location | Topic |
+|---|---|---|
+| Aquilina LP Risk Taxonomy | .scratch/aquilina-risk-taxonomy.md | 10 quantified LP risks from BIS WP 1227 |
+| Angstrom Risk Mitigation Map | .scratch/angstrom-risk-mitigation-map.md | Which risks Angstrom mitigates vs introduces |
+| RAN Residual Risk Scenarios | .scratch/ran-residual-risk-scenarios.md | LP archetype scenarios, risk transformation, options analogy |
+| Vault Yield Function Research | .scratch/vault-yield-function-research.md | 13 ERC-4626 patterns for observable-driven yield |
+| Balancer Rate Provider Deep Dive | .scratch/balancer-rate-provider-deep-dive.md | IRateProvider interface, Boosted Pool consumption |
+| Balancer Concrete Imports | .scratch/balancer-concrete-imports.md | Exact interfaces, file paths, dependency chain |
+| Token Supply Mutation Research | .scratch/token-supply-mutation-research.md | Bonding curves, rebasing, supply function properties |
+| Mean Reversion Validation | .scratch/mean-reversion-validation.md | Cumulative ratio NOT mean-reverting; flow concentration IS |
+| Time-Weighted Oracle Patterns | .scratch/time-weighted-oracle-patterns-research.md | 9 oracle patterns compared, ring buffer + EMA recommended |
+| Vault Pattern Comparison (Euler/Balancer) | .scratch/vault-pattern-comparison-euler-balancer.md | Four-layer architecture derivation from 7 protocols |
+| ERC-4626 Diamond/Facet Research | .scratch/erc4626-diamond-facet-research.md | No production diamond ERC-4626 exists |
+| Compose vs Solady Tradeoff | .scratch/compose-vs-solady-vault-tradeoff.md | Option C hybrid recommended: Solady for V_B, Compose for rest |
+| Gap Analysis: Oracle vs Spec | .scratch/gap-analysis-oracle-vs-spec.md | 6 gaps identified, 2 critical resolved |
+
+---
+
+## 15. Resume Point
+
+**Where we left off:** V_B vault BTT spec is complete. All observation infrastructure is specified and partially implemented. The next implementation steps in priority order:
+
+**Immediate (complete the observation pipeline):**
+1. Implement GrowthObservationStorageMod (spec ready)
+2. Implement EMAGrowthTransformationStorageMod (spec ready)
+3. Rename AngstromAccumulatorOracleAdapter → AngstromAccumulatorConsumer, add new read functions (spec ready)
+4. Implement AngstromPoolObserver (spec ready)
+
+**Then (V_B vault):**
+5. Create IRateProvider interface (7 lines from Balancer)
+6. Create ITransformationFunction interface
+7. Implement VaultB (spec ready, Solady ERC-4626 base)
+8. Implement first concrete T_B (EMA-based, using EMAGrowthTransformationStorageMod + Panoptic OraclePack for price)
+
+**Then (V_A + Panoptic integration -- Phase 2):**
+9. Specify and implement VaultA (concentration-exposure vault)
+10. ct0 and ct1 (CollateralTrackers wrapping vault shares)
+11. Custom Panoptic Factory
+12. SFPM accumulator adapter (Phase 2 design challenge -- feesAccrued pathway)
+
+**Tests:** No test files exist yet for any of the implemented components. Writing tests against the BTT specs should run in parallel with implementation.

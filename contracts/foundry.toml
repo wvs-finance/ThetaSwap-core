@@ -28,6 +28,7 @@ remappings = [
   "anstrong-test/=test/",
   "openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/",
   "compose/=lib/Compose/src/",
+  "pendle/=lib/pendle-core-v2-public/contracts/",
   "panoptic-v2/src/=lib/2025-12-panoptic/contracts/",
   "panoptic-v2/test/=lib/2025-12-panoptic/test/foundry/",
   "panoptic-v2/v3-core/=lib/2025-12-panoptic/lib/v3-core/contracts/",
@@ -73,6 +74,9 @@ depth = 100
 
 [profile.heavy-fuzz.invariant]
 runs = 200
+
+[rpc_endpoints]
+mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
 
 [profile.loaders]
 show_progress = false

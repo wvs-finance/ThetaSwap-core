@@ -23,7 +23,8 @@ import {FixedPoint128} from "v4-core/src/libraries/FixedPoint128.sol";
 /// @return tick The Uniswap V4 tick corresponding to the growth ratio
 function growthToTick(uint208 currentGrowth, uint208 anchorGrowth) pure returns (int24 tick) {
     // Stage 1: Q128.128 ratio
-    uint256 ratioQ128 = FullMath.mulDiv(uint256(currentGrowth), FixedPoint128.Q128, uint256(anchorGrowth));
+    uint256 ratioQ128 =
+        FullMath.mulDiv(uint256(currentGrowth), FixedPoint128.Q128, uint256(anchorGrowth));
 
     // Stage 2: sqrt(ratio * 2^128) = sqrt(ratio) * 2^64
     uint256 sqrtRatioX64 = FixedPointMathLib.sqrt(ratioQ128);

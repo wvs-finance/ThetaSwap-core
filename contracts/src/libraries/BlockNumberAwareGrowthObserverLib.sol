@@ -39,7 +39,9 @@ function record(
     }
     CircularBuffer.push(
         buffer,
-        GrowthObservation.unwrap(newGrowthObservation(_blockNumber, _relativeTimeDelta, _cumulativeGrowth))
+        GrowthObservation.unwrap(
+            newGrowthObservation(_blockNumber, _relativeTimeDelta, _cumulativeGrowth)
+        )
     );
 }
 
@@ -47,37 +49,40 @@ function record(
 
 /// @notice Returns the most recent observation in the buffer.
 /// @dev Reverts with `EmptyBuffer` if no observations have been recorded.
-function latestObservation(
-    CircularBuffer.Bytes32CircularBuffer storage buffer
-) view returns (GrowthObservation) {
+function latestObservation(CircularBuffer.Bytes32CircularBuffer storage buffer)
+    view
+    returns (GrowthObservation)
+{
     if (CircularBuffer.count(buffer) == 0) revert EmptyBuffer();
     return GrowthObservation.wrap(CircularBuffer.last(buffer, 0));
 }
 
 /// @notice Returns the oldest observation still in the buffer.
 /// @dev Reverts with `EmptyBuffer` if no observations have been recorded.
-function oldestObservation(
-    CircularBuffer.Bytes32CircularBuffer storage buffer
-) view returns (GrowthObservation) {
+function oldestObservation(CircularBuffer.Bytes32CircularBuffer storage buffer)
+    view
+    returns (GrowthObservation)
+{
     uint256 total = CircularBuffer.count(buffer);
     if (total == 0) revert EmptyBuffer();
     return GrowthObservation.wrap(CircularBuffer.last(buffer, total - 1));
 }
 
 /// @notice Returns the number of observations currently stored in the buffer.
-function observationCount(
-    CircularBuffer.Bytes32CircularBuffer storage buffer
-) view returns (uint256) {
+function observationCount(CircularBuffer.Bytes32CircularBuffer storage buffer)
+    view
+    returns (uint256)
+{
     return CircularBuffer.count(buffer);
 }
 
 /// @notice Returns the observation at or before `targetBlock`.
 /// @dev Binary search over the descending-block-number ring buffer.
 ///      Reverts if the buffer is empty or if targetBlock is older than the oldest observation.
-function observeAt(
-    CircularBuffer.Bytes32CircularBuffer storage buffer,
-    uint32 targetBlock
-) view returns (GrowthObservation) {
+function observeAt(CircularBuffer.Bytes32CircularBuffer storage buffer, uint32 targetBlock)
+    view
+    returns (GrowthObservation)
+{
     uint256 total = CircularBuffer.count(buffer);
     if (total == 0) revert EmptyBuffer();
 

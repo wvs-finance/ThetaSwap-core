@@ -63,7 +63,12 @@ function recordObservation(
     uint256 relativeTimeDelta,
     uint256 cumulativeGrowth
 ) {
-    _record(_growthObservationStorage().buffers[poolId], blockNumber, relativeTimeDelta, cumulativeGrowth);
+    _record(
+        _growthObservationStorage().buffers[poolId],
+        blockNumber,
+        relativeTimeDelta,
+        cumulativeGrowth
+    );
 }
 
 /// @notice Returns the observation at or before targetBlock for a pool.
