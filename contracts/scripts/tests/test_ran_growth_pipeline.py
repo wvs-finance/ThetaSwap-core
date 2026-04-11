@@ -663,7 +663,7 @@ class TestSmartResumeSkipExistingBlocks:
     ) -> None:
         """Pre-populate 3 blocks, request range of 4 — only 1 RPC batch for the missing block."""
         from scripts.ran_growth_pipeline import main
-        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, MOCK_BLOCK_TIMESTAMPS, USDC_WETH_POOL_ID
 
         conn, db_path = duckdb_file_conn
 
@@ -671,8 +671,8 @@ class TestSmartResumeSkipExistingBlocks:
         pre_existing: Final[list[int]] = [22_972_937, 22_972_987, 22_973_037]
         for block in pre_existing:
             conn.execute(  # type: ignore[union-attr]
-                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?)",
-                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], "2026-04-10 00:00:00", 50],
+                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?, ?)",
+                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], MOCK_BLOCK_TIMESTAMPS[block], "2026-04-10 00:00:00", 50],
             )
         conn.commit()  # type: ignore[union-attr]
         conn.close()  # type: ignore[union-attr]
@@ -741,7 +741,7 @@ class TestSmartResumeSkipExistingBlocks:
     ) -> None:
         """When ALL blocks in range exist in DuckDB, ZERO RPC calls and clean exit."""
         from scripts.ran_growth_pipeline import main
-        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, MOCK_BLOCK_TIMESTAMPS, USDC_WETH_POOL_ID
 
         conn, db_path = duckdb_file_conn
 
@@ -750,8 +750,8 @@ class TestSmartResumeSkipExistingBlocks:
         all_blocks: Final[list[int]] = [22_972_937, 22_972_987, 22_973_037, 22_973_087]
         for block in all_blocks:
             conn.execute(  # type: ignore[union-attr]
-                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?)",
-                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], "2026-04-10 00:00:00", 50],
+                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?, ?)",
+                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], MOCK_BLOCK_TIMESTAMPS[block], "2026-04-10 00:00:00", 50],
             )
         conn.commit()  # type: ignore[union-attr]
         conn.close()  # type: ignore[union-attr]
@@ -806,7 +806,7 @@ class TestSmartResumeSkipExistingBlocks:
     ) -> None:
         """Pre-populate up to 22973037, run to 22973137 — only 22973087 and 22973137 fetched."""
         from scripts.ran_growth_pipeline import main
-        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, MOCK_BLOCK_TIMESTAMPS, USDC_WETH_POOL_ID
 
         conn, db_path = duckdb_file_conn
 
@@ -814,8 +814,8 @@ class TestSmartResumeSkipExistingBlocks:
         early_blocks: Final[list[int]] = [22_972_937, 22_972_987, 22_973_037]
         for block in early_blocks:
             conn.execute(  # type: ignore[union-attr]
-                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?)",
-                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], "2026-04-10 00:00:00", 50],
+                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?, ?)",
+                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], MOCK_BLOCK_TIMESTAMPS[block], "2026-04-10 00:00:00", 50],
             )
         conn.commit()  # type: ignore[union-attr]
         conn.close()  # type: ignore[union-attr]
@@ -877,13 +877,13 @@ class TestFilterMissingBlocksPure:
     def test_filter_returns_only_missing(self, duckdb_conn: object) -> None:
         """Given some blocks in DB, filter_missing_blocks returns only those NOT stored."""
         from scripts.ran_growth_pipeline import filter_missing_blocks
-        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, MOCK_BLOCK_TIMESTAMPS, USDC_WETH_POOL_ID
 
         # Insert 2 blocks
         for block in [22_972_937, 22_972_987]:
             duckdb_conn.execute(  # type: ignore[union-attr]
-                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?)",
-                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], "2026-04-10 00:00:00", 50],
+                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?, ?)",
+                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], MOCK_BLOCK_TIMESTAMPS[block], "2026-04-10 00:00:00", 50],
             )
 
         requested: list[int] = [22_972_937, 22_972_987, 22_973_037, 22_973_087]
@@ -897,13 +897,13 @@ class TestFilterMissingBlocksPure:
     def test_filter_all_present_returns_empty(self, duckdb_conn: object) -> None:
         """When all blocks exist, returns empty list."""
         from scripts.ran_growth_pipeline import filter_missing_blocks
-        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, USDC_WETH_POOL_ID
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, MOCK_BLOCK_TIMESTAMPS, USDC_WETH_POOL_ID
 
         blocks: list[int] = [22_972_937, 22_972_987]
         for block in blocks:
             duckdb_conn.execute(  # type: ignore[union-attr]
-                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?)",
-                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], "2026-04-10 00:00:00", 50],
+                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?, ?)",
+                [block, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[block], MOCK_BLOCK_TIMESTAMPS[block], "2026-04-10 00:00:00", 50],
             )
 
         missing = filter_missing_blocks(

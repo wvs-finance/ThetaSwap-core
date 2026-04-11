@@ -84,6 +84,7 @@ CREATE_TABLE_DDL: Final[str] = (
     "block_number UBIGINT, "
     "pool_id VARCHAR, "
     "global_growth VARCHAR, "
+    "block_timestamp UBIGINT, "
     "sampled_at TIMESTAMP, "
     "stride USMALLINT, "
     "PRIMARY KEY (pool_id, block_number))"

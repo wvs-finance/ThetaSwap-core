@@ -115,8 +115,8 @@ def compute_inter_batch_delay(
 # ── B-P4: DuckDB idempotent writes ────────────────────────────────────────────
 
 _UPSERT_SQL: Final[str] = (
-    "INSERT INTO accumulator_samples (block_number, pool_id, global_growth, sampled_at, stride) "
-    "VALUES (?, ?, ?, ?, ?) "
+    "INSERT INTO accumulator_samples (block_number, pool_id, global_growth, block_timestamp, sampled_at, stride) "
+    "VALUES (?, ?, ?, ?, ?, ?) "
     "ON CONFLICT (pool_id, block_number) DO NOTHING"
 )
 
@@ -128,13 +128,14 @@ def insert_sample(
     block_number: int,
     global_growth: str,
     stride: int,
+    block_timestamp: int | None = None,
 ) -> None:
     """Insert a single accumulator sample, ignoring duplicate (pool_id, block_number).
 
     Idempotent — re-inserting the same PK preserves the original value.
     """
     sampled_at: str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
-    conn.execute(_UPSERT_SQL, [block_number, pool_id, global_growth, sampled_at, stride])
+    conn.execute(_UPSERT_SQL, [block_number, pool_id, global_growth, block_timestamp, sampled_at, stride])
 
 
 # ── B-P6: Retry on transient RPC errors ───────────────────────────────────────

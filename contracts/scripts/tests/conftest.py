@@ -29,6 +29,7 @@ CREATE_TABLE_DDL: Final[str] = (
     "block_number UBIGINT, "
     "pool_id VARCHAR, "
     "global_growth VARCHAR, "
+    "block_timestamp UBIGINT, "
     "sampled_at TIMESTAMP, "
     "stride USMALLINT, "
     "PRIMARY KEY (pool_id, block_number))"
@@ -45,6 +46,11 @@ MOCK_BLOCKS_AND_GROWTH: Final[dict[int, str]] = {
     22_973_187: "0x" + "0" * 64,  # zero value block
 }
 
+MOCK_BLOCK_TIMESTAMPS: Final[dict[int, int]] = {
+    block: 1_700_000_000 + (i * 600)
+    for i, block in enumerate(sorted(MOCK_BLOCKS_AND_GROWTH))
+}
+
 DEFAULT_HEAD_BLOCK: Final[int] = max(MOCK_BLOCKS_AND_GROWTH) + 1000
 
 
@@ -54,11 +60,16 @@ DEFAULT_HEAD_BLOCK: Final[int] = max(MOCK_BLOCKS_AND_GROWTH) + 1000
 class _MockTransportConfig:
     """Configuration for a mock httpx transport instance."""
     growth_data: dict[int, str]
+    block_timestamps: dict[int, int] = None  # type: ignore[assignment]
     shuffle: bool = False
     fail_count: int = 0
     fail_status: int = 429
     timeout_count: int = 0
     head_block: int = DEFAULT_HEAD_BLOCK
+
+    def __post_init__(self) -> None:
+        if self.block_timestamps is None:
+            object.__setattr__(self, "block_timestamps", MOCK_BLOCK_TIMESTAMPS)
 
 
 class MockRpcTransport(httpx.BaseTransport):
@@ -133,6 +144,20 @@ class MockRpcTransport(httpx.BaseTransport):
             )
             return {"jsonrpc": "2.0", "id": req_id, "result": value}
 
+        if method == "eth_getBlockByNumber":
+            params = rpc_req.get("params", [])
+            assert isinstance(params, list) and len(params) >= 1
+            block_hex = str(params[0])
+            block_num = int(block_hex, 16)
+            ts = self._config.block_timestamps.get(block_num)
+            if ts is None:
+                return {"jsonrpc": "2.0", "id": req_id, "result": None}
+            return {
+                "jsonrpc": "2.0",
+                "id": req_id,
+                "result": {"timestamp": hex(ts), "number": hex(block_num)},
+            }
+
         return {
             "jsonrpc": "2.0",
             "id": req_id,
@@ -185,9 +210,11 @@ def mock_rpc_transport(
         fail_status: int = 429,
         timeout_count: int = 0,
         head_block: int = DEFAULT_HEAD_BLOCK,
+        block_timestamps: dict[int, int] | None = None,
     ) -> MockRpcTransport:
         config = _MockTransportConfig(
             growth_data=mock_growth_data,
+            block_timestamps=block_timestamps if block_timestamps is not None else MOCK_BLOCK_TIMESTAMPS,
             shuffle=shuffle,
             fail_count=fail_count,
             fail_status=fail_status,
@@ -230,8 +257,8 @@ def populated_db_path(
     conn.execute(CREATE_TABLE_DDL)
     for block_num, growth_hex in mock_growth_data.items():
         conn.execute(
-            "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?)",
-            [block_num, USDC_WETH_POOL_ID, growth_hex, FIXED_TIMESTAMP, 50],
+            "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?, ?)",
+            [block_num, USDC_WETH_POOL_ID, growth_hex, MOCK_BLOCK_TIMESTAMPS[block_num], FIXED_TIMESTAMP, 50],
         )
     conn.commit()
     conn.close()
