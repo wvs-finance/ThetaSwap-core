@@ -18,9 +18,7 @@ function decodeRow(bytes memory raw) pure returns (AccumulatorRow memory row) {
     (uint256 blockNumber, uint256 blockTimestamp, bytes32 growthBytes) =
         abi.decode(raw, (uint256, uint256, bytes32));
     row = AccumulatorRow({
-        blockNumber: blockNumber,
-        blockTimestamp: blockTimestamp,
-        globalGrowth: uint256(growthBytes)
+        blockNumber: blockNumber, blockTimestamp: blockTimestamp, globalGrowth: uint256(growthBytes)
     });
 }
 
@@ -33,9 +31,7 @@ function decodeRange(bytes memory raw) pure returns (AccumulatorRow[] memory row
     ) = abi.decode(raw, (uint256, uint256[], uint256[], bytes32[]));
 
     require(
-        count == blockNumbers.length
-            && count == blockTimestamps.length
-            && count == growths.length,
+        count == blockNumbers.length && count == blockTimestamps.length && count == growths.length,
         "decodeRange: count mismatch"
     );
 
