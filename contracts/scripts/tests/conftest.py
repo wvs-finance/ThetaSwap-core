@@ -263,3 +263,38 @@ def populated_db_path(
     conn.commit()
     conn.close()
     return db_path
+
+
+@pytest.fixture
+def large_populated_db_path(tmp_path: object) -> str:
+    """File-backed DuckDB with 1,050 synthetic rows at stride 50.
+
+    Tests the 1,000-row range limit independently from bounds checking.
+    Blocks: 22_972_937 + (i * 50) for i in 0..1049
+    Timestamps: 1_700_000_000 + (i * 600) for deterministic progression
+    Growth: synthetic incrementing hex "0x" + hex(i+1)[2:].zfill(64)
+    Pool ID: USDC_WETH_POOL_ID
+    Stride: 50
+
+    Returns the file path as a string, connection CLOSED.
+    Uses raw SQL inserts — does NOT import from ran_growth_pipeline.
+    """
+    assert hasattr(tmp_path, "__truediv__")
+    db_path = str(tmp_path / "large_populated_accumulator.duckdb")  # type: ignore[operator]
+    conn = duckdb.connect(db_path)
+    conn.execute(CREATE_TABLE_DDL)
+
+    base_block = 22_972_937
+    base_timestamp = 1_700_000_000
+
+    for i in range(1050):
+        block_num = base_block + (i * 50)
+        growth_hex = "0x" + hex(i + 1)[2:].zfill(64)
+        block_timestamp = base_timestamp + (i * 600)
+        conn.execute(
+            "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?, ?)",
+            [block_num, USDC_WETH_POOL_ID, growth_hex, block_timestamp, FIXED_TIMESTAMP, 50],
+        )
+    conn.commit()
+    conn.close()
+    return db_path
