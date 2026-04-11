@@ -49,6 +49,55 @@ def build_rpc_batches(
     return batches
 
 
+def build_combined_rpc_batches(
+    *,
+    slot: int,
+    blocks: list[int],
+    batch_size: int = 15,
+) -> list[list[dict[str, object]]]:
+    """Build combined JSON-RPC 2.0 batch payloads with storage + block calls.
+
+    Each batch contains N ``eth_getStorageAt`` (IDs 1..N) followed by
+    N ``eth_getBlockByNumber`` (IDs N+1..2N).  IDs are batch-local.
+
+    ``batch_size`` caps the number of *blocks* per batch (producing 2N calls).
+    """
+    address: Final[str] = ANGSTROM_HOOK
+    slot_hex: Final[str] = encode_uint256(slot)
+
+    batches: list[list[dict[str, object]]] = []
+    for i in range(0, len(blocks), batch_size):
+        chunk: list[int] = blocks[i : i + batch_size]
+        n: int = len(chunk)
+        batch: list[dict[str, object]] = []
+
+        # Storage calls: IDs 1..N
+        for idx, block in enumerate(chunk):
+            batch.append(
+                {
+                    "jsonrpc": "2.0",
+                    "id": idx + 1,
+                    "method": "eth_getStorageAt",
+                    "params": [address, slot_hex, hex(block)],
+                }
+            )
+
+        # Block calls: IDs N+1..2N
+        for idx, block in enumerate(chunk):
+            batch.append(
+                {
+                    "jsonrpc": "2.0",
+                    "id": n + idx + 1,
+                    "method": "eth_getBlockByNumber",
+                    "params": [hex(block), False],
+                }
+            )
+
+        batches.append(batch)
+
+    return batches
+
+
 # ── B-P2: Response correlation by ID ────────────────────────────────────────
 
 
@@ -85,6 +134,66 @@ def correlate_batch_response(
     return result
 
 
+def correlate_combined_batch_response(
+    *,
+    batch: list[dict[str, object]],
+    responses: list[dict[str, object]],
+) -> dict[int, tuple[str, int]]:
+    """Correlate a combined batch (storage + block) to ``block_number -> (growth_hex, timestamp_int)``.
+
+    IDs 1..N are ``eth_getStorageAt`` (extract ``result`` as hex).
+    IDs N+1..2N are ``eth_getBlockByNumber`` (extract ``result["timestamp"]`` as int).
+    Responses may arrive in any order.
+    """
+    # Determine N from the batch: count storage calls
+    storage_reqs: list[dict[str, object]] = [
+        r for r in batch if r["method"] == "eth_getStorageAt"
+    ]
+    n: int = len(storage_reqs)
+
+    # Build id -> block_number for storage requests (IDs 1..N)
+    id_to_block_storage: dict[object, int] = {}
+    for req in storage_reqs:
+        block_hex = str(req["params"][2])  # type: ignore[index]
+        id_to_block_storage[req["id"]] = int(block_hex, 16)
+
+    # Build id -> block_number for block requests (IDs N+1..2N)
+    block_reqs: list[dict[str, object]] = [
+        r for r in batch if r["method"] == "eth_getBlockByNumber"
+    ]
+    id_to_block_blockinfo: dict[object, int] = {}
+    for req in block_reqs:
+        block_hex = str(req["params"][0])  # type: ignore[index]
+        id_to_block_blockinfo[req["id"]] = int(block_hex, 16)
+
+    # Collect storage results
+    growth_map: dict[int, str] = {}
+    timestamp_map: dict[int, int | None] = {}
+
+    for resp in responses:
+        resp_id: object = resp["id"]
+        if resp_id in id_to_block_storage:
+            block_num = id_to_block_storage[resp_id]
+            growth_map[block_num] = str(resp["result"])
+        elif resp_id in id_to_block_blockinfo:
+            block_num = id_to_block_blockinfo[resp_id]
+            block_result: object = resp["result"]
+            if block_result is None:
+                timestamp_map[block_num] = None
+            else:
+                ts_hex: str = block_result["timestamp"]  # type: ignore[index]
+                timestamp_map[block_num] = int(ts_hex, 16)
+
+    # Join: only include blocks where both storage and timestamp are available
+    result: dict[int, tuple[str, int]] = {}
+    for block_num, growth_hex in growth_map.items():
+        ts: int | None = timestamp_map.get(block_num)
+        if ts is not None:
+            result[block_num] = (growth_hex, ts)
+
+    return result
+
+
 # ── B-P3: Rate limiting ─────────────────────────────────────────────────────
 
 SAFETY_FLOOR_SECONDS: Final[float] = 1.0
@@ -92,23 +201,23 @@ SAFETY_FLOOR_SECONDS: Final[float] = 1.0
 
 def compute_inter_batch_delay(
     *,
-    batch_calls: int,
-    cu_per_call: int,
+    batch_calls: int = 0,
+    cu_per_call: int = 0,
     cups_limit: int,
+    batch_cu_total: int | None = None,
 ) -> float:
     """Compute the minimum inter-batch delay in seconds.
 
-    ``batch_calls`` is the number of RPC calls in a single batch.
-    ``cu_per_call`` is the compute-unit cost of each call.
-    ``cups_limit`` is the provider's compute-units-per-second cap.
+    When ``batch_cu_total`` is provided, the raw delay is ``batch_cu_total / cups_limit``.
+    Otherwise falls back to ``(batch_calls * cu_per_call) / cups_limit``.
 
-    The raw delay is ``(batch_calls * cu_per_call) / cups_limit``.
     A mandatory safety floor of 1.0 second is enforced regardless of
     raw computation.
 
     Pure function — no sleeping, no side effects.
     """
-    raw_delay: float = (batch_calls * cu_per_call) / cups_limit
+    total_cu: float = float(batch_cu_total) if batch_cu_total is not None else float(batch_calls * cu_per_call)
+    raw_delay: float = total_cu / cups_limit
     return max(raw_delay, SAFETY_FLOOR_SECONDS)
 
 
@@ -117,7 +226,9 @@ def compute_inter_batch_delay(
 _UPSERT_SQL: Final[str] = (
     "INSERT INTO accumulator_samples (block_number, pool_id, global_growth, block_timestamp, sampled_at, stride) "
     "VALUES (?, ?, ?, ?, ?, ?) "
-    "ON CONFLICT (pool_id, block_number) DO NOTHING"
+    "ON CONFLICT (pool_id, block_number) "
+    "DO UPDATE SET block_timestamp = excluded.block_timestamp "
+    "WHERE accumulator_samples.block_timestamp IS NULL"
 )
 
 
@@ -259,7 +370,8 @@ def filter_missing_blocks(
 
     rows = conn.execute(
         "SELECT block_number FROM accumulator_samples "
-        "WHERE pool_id = ? AND block_number IN (SELECT UNNEST(?))",
+        "WHERE pool_id = ? AND block_number IN (SELECT UNNEST(?)) "
+        "AND block_timestamp IS NOT NULL",
         [pool_id, blocks],
     ).fetchall()
 
@@ -354,13 +466,13 @@ def main(argv: list[str] | None = None) -> None:
         client.close()
         return
 
-    # ── Pipeline loop (Fix 1: catch RpcBatchError, Fix 4: try/finally for cleanup) ──
-    cu_per_call: Final[int] = 20
+    # ── Pipeline loop — combined batches (storage + block) ──
+    batch_cu_total: Final[int] = 540  # 15*20 (storage) + 15*16 (block)
     cups_limit: Final[int] = 500
     total_blocks: Final[int] = len(blocks)
     fetched: int = 0
 
-    batches = build_rpc_batches(
+    batches = build_combined_rpc_batches(
         slot=pool_cfg.pool_rewards_slot,  # type: ignore[union-attr]
         blocks=blocks,
         batch_size=15,
@@ -371,11 +483,14 @@ def main(argv: list[str] | None = None) -> None:
             # Fetch with retry
             responses = send_rpc_batch(client=client, batch=batch, max_retries=3, base_delay=0.01)
 
-            # Correlate
-            block_to_value = correlate_batch_response(batch=batch, responses=responses)
+            # Correlate combined responses
+            block_to_pair = correlate_combined_batch_response(batch=batch, responses=responses)
+
+            # Count storage calls in this batch for progress tracking
+            storage_count: int = sum(1 for r in batch if r["method"] == "eth_getStorageAt")
 
             # Write to DuckDB
-            for block_num, hex_value in block_to_value.items():
+            for block_num, (hex_value, block_ts) in block_to_pair.items():
                 # Normalize: ensure padded 0x + 64 hex chars
                 normalized: str = encode_uint256(int(hex_value, 16))
                 insert_sample(
@@ -384,24 +499,33 @@ def main(argv: list[str] | None = None) -> None:
                     block_number=block_num,
                     global_growth=normalized,
                     stride=args.stride,
+                    block_timestamp=block_ts,
+                )
+
+            # Log skipped blocks (null block results)
+            skipped: int = storage_count - len(block_to_pair)
+            if skipped > 0:
+                print(
+                    f"warning: {skipped} block(s) skipped (null eth_getBlockByNumber result)",
+                    file=sys.stderr,
                 )
 
             conn.commit()
-            fetched += len(batch)
+            fetched += storage_count
 
             # ── Progress on stderr ──
-            cu_used: int = fetched * cu_per_call
             pct: float = (fetched / total_blocks * 100) if total_blocks > 0 else 100.0
             delay: float = compute_inter_batch_delay(
-                batch_calls=len(batch), cu_per_call=cu_per_call, cups_limit=cups_limit,
+                batch_cu_total=batch_cu_total,
+                cups_limit=cups_limit,
             )
             print(
                 f"fetched {fetched}/{total_blocks} total | "
-                f"{cu_used} CU | {pct:.1f}% | delay {delay:.2f}s",
+                f"{batch_cu_total} CU | {pct:.1f}% | delay {delay:.2f}s",
                 file=sys.stderr,
             )
 
-            # Rate limit (skip in tests — delay is near-zero with base_delay=0.01)
+            # Rate limit
             time.sleep(delay)
     except RpcBatchError as exc:
         print(str(exc), file=sys.stderr)

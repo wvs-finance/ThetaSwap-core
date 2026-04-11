@@ -1,8 +1,9 @@
-"""Tests for RAN growth pipeline — Tasks 3-4: batch construction, correlation, rate limiting, DuckDB, CLI."""
+"""Tests for RAN growth pipeline — Tasks 3-4 + Task 2: batch construction, correlation, rate limiting, DuckDB, CLI."""
 from __future__ import annotations
 
 import json
 import random
+import sys
 from typing import Final
 
 import duckdb
@@ -1056,3 +1057,392 @@ class TestAutoCreateDataDirectory:
 
         import pathlib
         assert pathlib.Path(nested_db).exists()
+
+
+# ── Task 2: UPSERT migration — DO NOTHING → DO UPDATE SET ─────────────────
+
+
+class TestUpsertTimestampBackfill:
+    """UPSERT fills NULL block_timestamp without overwriting globalGrowth."""
+
+    def test_upsert_fills_null_timestamp(self, duckdb_conn: object) -> None:
+        """Insert with NULL timestamp, then re-insert with timestamp — timestamp gets filled,
+        globalGrowth preserved. Third insert with different timestamp must NOT overwrite."""
+        from scripts.ran_growth_pipeline import insert_sample
+        from scripts.tests.conftest import USDC_WETH_POOL_ID
+
+        original_growth: Final[str] = (
+            "0x0000000000000000000000000000000000002d2c02eeae24bd7a65341761b9c3"
+        )
+        block: Final[int] = 22_972_937
+        timestamp_1: Final[int] = 1_700_000_000
+        timestamp_2: Final[int] = 1_700_999_999
+
+        # 1) Insert with NULL timestamp
+        insert_sample(
+            conn=duckdb_conn,  # type: ignore[arg-type]
+            pool_id=USDC_WETH_POOL_ID,
+            block_number=block,
+            global_growth=original_growth,
+            stride=50,
+            block_timestamp=None,
+        )
+        row = duckdb_conn.execute(  # type: ignore[union-attr]
+            "SELECT global_growth, block_timestamp FROM accumulator_samples "
+            "WHERE pool_id = ? AND block_number = ?",
+            [USDC_WETH_POOL_ID, block],
+        ).fetchone()
+        assert row[0] == original_growth
+        assert row[1] is None
+
+        # 2) Re-insert with timestamp — timestamp should be filled
+        insert_sample(
+            conn=duckdb_conn,  # type: ignore[arg-type]
+            pool_id=USDC_WETH_POOL_ID,
+            block_number=block,
+            global_growth="0xdeadbeef" + "0" * 56,  # different growth — must NOT overwrite
+            stride=50,
+            block_timestamp=timestamp_1,
+        )
+        row = duckdb_conn.execute(  # type: ignore[union-attr]
+            "SELECT global_growth, block_timestamp FROM accumulator_samples "
+            "WHERE pool_id = ? AND block_number = ?",
+            [USDC_WETH_POOL_ID, block],
+        ).fetchone()
+        assert row[0] == original_growth, "globalGrowth must be preserved"
+        assert row[1] == timestamp_1, "NULL timestamp must be filled"
+
+        # 3) Third insert with different timestamp — must NOT overwrite non-NULL timestamp
+        insert_sample(
+            conn=duckdb_conn,  # type: ignore[arg-type]
+            pool_id=USDC_WETH_POOL_ID,
+            block_number=block,
+            global_growth="0xdeadbeef" + "0" * 56,
+            stride=50,
+            block_timestamp=timestamp_2,
+        )
+        row = duckdb_conn.execute(  # type: ignore[union-attr]
+            "SELECT global_growth, block_timestamp FROM accumulator_samples "
+            "WHERE pool_id = ? AND block_number = ?",
+            [USDC_WETH_POOL_ID, block],
+        ).fetchone()
+        assert row[0] == original_growth, "globalGrowth must still be preserved"
+        assert row[1] == timestamp_1, "Non-NULL timestamp must NOT be overwritten"
+
+
+# ── Task 2: Combined batch construction ────────────────────────────────────
+
+
+class TestCombinedBatchConstruction:
+    """build_combined_rpc_batches produces N storage + N block calls per batch."""
+
+    def test_combined_batch_three_blocks(self) -> None:
+        """3 blocks → 1 batch with 6 calls: 3 storage (IDs 1-3) + 3 block (IDs 4-6)."""
+        from scripts.ran_growth_pipeline import build_combined_rpc_batches
+
+        blocks: Final[list[int]] = [22_972_937, 22_972_987, 22_973_037]
+        batches = build_combined_rpc_batches(slot=1, blocks=blocks, batch_size=15)
+
+        assert len(batches) == 1
+        batch = batches[0]
+        assert len(batch) == 6
+
+        # First 3: eth_getStorageAt with IDs 1, 2, 3
+        for i in range(3):
+            assert batch[i]["method"] == "eth_getStorageAt"
+            assert batch[i]["id"] == i + 1
+
+        # Last 3: eth_getBlockByNumber with IDs 4, 5, 6
+        for i in range(3):
+            req = batch[3 + i]
+            assert req["method"] == "eth_getBlockByNumber"
+            assert req["id"] == 4 + i
+            params = req["params"]
+            assert isinstance(params, list) and len(params) == 2
+            assert params[0] == hex(blocks[i])
+            assert params[1] is False
+
+    def test_combined_batch_splitting(self) -> None:
+        """20 blocks with batch_size=15 → 2 batches (15+15 calls, then 5+5 calls)."""
+        from scripts.ran_growth_pipeline import build_combined_rpc_batches
+
+        blocks = list(range(22_972_937, 22_972_937 + 20 * 50, 50))
+        batches = build_combined_rpc_batches(slot=1, blocks=blocks, batch_size=15)
+
+        assert len(batches) == 2
+        # First batch: 15 blocks → 30 calls (15 storage + 15 block)
+        assert len(batches[0]) == 30
+        # Second batch: 5 blocks → 10 calls (5 storage + 5 block)
+        assert len(batches[1]) == 10
+
+    def test_combined_batch_ids_are_batch_local(self) -> None:
+        """IDs reset to 1 in each batch, not globally sequential."""
+        from scripts.ran_growth_pipeline import build_combined_rpc_batches
+
+        blocks = list(range(22_972_937, 22_972_937 + 20 * 50, 50))
+        batches = build_combined_rpc_batches(slot=1, blocks=blocks, batch_size=15)
+
+        # First batch: IDs 1..15 (storage) + 16..30 (block)
+        assert batches[0][0]["id"] == 1
+        assert batches[0][14]["id"] == 15
+        assert batches[0][15]["id"] == 16
+        assert batches[0][29]["id"] == 30
+
+        # Second batch: IDs 1..5 (storage) + 6..10 (block)
+        assert batches[1][0]["id"] == 1
+        assert batches[1][4]["id"] == 5
+        assert batches[1][5]["id"] == 6
+        assert batches[1][9]["id"] == 10
+
+
+# ── Task 2: Mixed response correlation ─────────────────────────────────────
+
+
+class TestMixedResponseCorrelation:
+    """correlate_combined_batch_response maps block → (growth, timestamp) from mixed responses."""
+
+    def test_correlate_ordered_combined(self) -> None:
+        """Ordered combined responses produce correct (growth_hex, timestamp_int) per block."""
+        from scripts.ran_growth_pipeline import (
+            build_combined_rpc_batches,
+            correlate_combined_batch_response,
+        )
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, MOCK_BLOCK_TIMESTAMPS
+
+        blocks: Final[list[int]] = sorted(MOCK_BLOCKS_AND_GROWTH.keys())[:3]
+        batches = build_combined_rpc_batches(slot=1, blocks=blocks, batch_size=15)
+        batch = batches[0]
+        n = len(blocks)
+
+        # Build ordered responses
+        responses: list[dict[str, object]] = []
+        for i, blk in enumerate(blocks):
+            responses.append({"jsonrpc": "2.0", "id": i + 1, "result": MOCK_BLOCKS_AND_GROWTH[blk]})
+        for i, blk in enumerate(blocks):
+            responses.append({
+                "jsonrpc": "2.0",
+                "id": n + i + 1,
+                "result": {"timestamp": hex(MOCK_BLOCK_TIMESTAMPS[blk]), "number": hex(blk)},
+            })
+
+        result = correlate_combined_batch_response(batch=batch, responses=responses)
+        for blk in blocks:
+            growth, ts = result[blk]
+            assert growth == MOCK_BLOCKS_AND_GROWTH[blk]
+            assert ts == MOCK_BLOCK_TIMESTAMPS[blk]
+
+    def test_correlate_shuffled_combined(self) -> None:
+        """Shuffled combined responses still produce correct mapping."""
+        from scripts.ran_growth_pipeline import (
+            build_combined_rpc_batches,
+            correlate_combined_batch_response,
+        )
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, MOCK_BLOCK_TIMESTAMPS
+
+        blocks: Final[list[int]] = sorted(MOCK_BLOCKS_AND_GROWTH.keys())[:3]
+        batches = build_combined_rpc_batches(slot=1, blocks=blocks, batch_size=15)
+        batch = batches[0]
+        n = len(blocks)
+
+        responses: list[dict[str, object]] = []
+        for i, blk in enumerate(blocks):
+            responses.append({"jsonrpc": "2.0", "id": i + 1, "result": MOCK_BLOCKS_AND_GROWTH[blk]})
+        for i, blk in enumerate(blocks):
+            responses.append({
+                "jsonrpc": "2.0",
+                "id": n + i + 1,
+                "result": {"timestamp": hex(MOCK_BLOCK_TIMESTAMPS[blk]), "number": hex(blk)},
+            })
+
+        random.seed(99)
+        random.shuffle(responses)
+
+        result = correlate_combined_batch_response(batch=batch, responses=responses)
+        for blk in blocks:
+            growth, ts = result[blk]
+            assert growth == MOCK_BLOCKS_AND_GROWTH[blk]
+            assert ts == MOCK_BLOCK_TIMESTAMPS[blk]
+
+    def test_correlate_with_mock_transport_combined(self, mock_rpc_transport: object) -> None:
+        """Integration: combined batch via mock transport with shuffle=True."""
+        from scripts.ran_growth_pipeline import (
+            build_combined_rpc_batches,
+            correlate_combined_batch_response,
+        )
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, MOCK_BLOCK_TIMESTAMPS
+
+        blocks: Final[list[int]] = sorted(MOCK_BLOCKS_AND_GROWTH.keys())[:3]
+        batches = build_combined_rpc_batches(slot=1, blocks=blocks, batch_size=15)
+        batch = batches[0]
+
+        transport = mock_rpc_transport(shuffle=True)  # type: ignore[operator]
+        client = httpx.Client(transport=transport, base_url="http://mock-rpc")
+        response = client.post("/", content=json.dumps(batch).encode())
+        responses = response.json()
+
+        result = correlate_combined_batch_response(batch=batch, responses=responses)
+        for blk in blocks:
+            growth, ts = result[blk]
+            assert growth == MOCK_BLOCKS_AND_GROWTH[blk]
+            assert ts == MOCK_BLOCK_TIMESTAMPS[blk]
+
+
+# ── Task 2: Null block result handling ──────────────────────────────────────
+
+
+class TestNullBlockResult:
+    """eth_getBlockByNumber returning null -> skip that block, don't crash."""
+
+    def test_null_block_skipped_others_succeed(self, mock_rpc_transport: object) -> None:
+        """One block's eth_getBlockByNumber returns null — that block is skipped,
+        others in the batch produce valid (growth, timestamp) pairs."""
+        from scripts.ran_growth_pipeline import (
+            build_combined_rpc_batches,
+            correlate_combined_batch_response,
+        )
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, MOCK_BLOCK_TIMESTAMPS
+
+        blocks: Final[list[int]] = sorted(MOCK_BLOCKS_AND_GROWTH.keys())[:3]
+        # Remove the middle block from timestamps so transport returns null
+        partial_timestamps = {k: v for k, v in MOCK_BLOCK_TIMESTAMPS.items() if k != blocks[1]}
+
+        transport = mock_rpc_transport(block_timestamps=partial_timestamps)  # type: ignore[operator]
+        client = httpx.Client(transport=transport, base_url="http://mock-rpc")
+
+        batches = build_combined_rpc_batches(slot=1, blocks=blocks, batch_size=15)
+        batch = batches[0]
+        response = client.post("/", content=json.dumps(batch).encode())
+        responses = response.json()
+
+        result = correlate_combined_batch_response(batch=batch, responses=responses)
+
+        # Middle block should be absent (null timestamp -> skipped)
+        assert blocks[1] not in result
+        # Other blocks present with correct values
+        for blk in [blocks[0], blocks[2]]:
+            growth, ts = result[blk]
+            assert growth == MOCK_BLOCKS_AND_GROWTH[blk]
+            assert ts == MOCK_BLOCK_TIMESTAMPS[blk]
+
+
+# ── Task 2: Rate limiter update — total batch CU ───────────────────────────
+
+
+class TestRateLimiterBatchCu:
+    """Rate limiter accepts total batch CU (540) directly."""
+
+    def test_540_cu_batch_delay_at_least_1_08s(self) -> None:
+        """Combined batch: 15*20 + 15*16 = 540 CU at 500 CUPS => 1.08s delay."""
+        from scripts.ran_growth_pipeline import compute_inter_batch_delay
+
+        delay = compute_inter_batch_delay(
+            batch_cu_total=540,
+            cups_limit=500,
+        )
+        assert delay >= 1.08
+        assert delay == pytest.approx(1.08)
+
+    def test_batch_cu_total_overrides_per_call_params(self) -> None:
+        """When batch_cu_total is passed, batch_calls and cu_per_call are ignored."""
+        from scripts.ran_growth_pipeline import compute_inter_batch_delay
+
+        # batch_cu_total=540 should dominate regardless of batch_calls/cu_per_call
+        delay = compute_inter_batch_delay(
+            batch_cu_total=540,
+            cups_limit=500,
+        )
+        assert delay == pytest.approx(1.08)
+
+
+# ── Task 2: Smart resume NULL-timestamp detection ──────────────────────────
+
+
+class TestSmartResumeNullTimestamp:
+    """Blocks with NULL block_timestamp are treated as 'missing' by filter_missing_blocks."""
+
+    def test_null_timestamp_blocks_are_missing(
+        self, duckdb_file_conn: tuple[object, str],
+    ) -> None:
+        """Rows with globalGrowth but NULL block_timestamp → returned as 'missing'."""
+        from scripts.ran_growth_pipeline import filter_missing_blocks
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, MOCK_BLOCK_TIMESTAMPS, USDC_WETH_POOL_ID
+
+        conn, db_path = duckdb_file_conn
+        blocks = sorted(MOCK_BLOCKS_AND_GROWTH.keys())[:3]
+
+        # Insert block 0 with timestamp, blocks 1 and 2 with NULL timestamp
+        conn.execute(  # type: ignore[union-attr]
+            "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?, ?)",
+            [blocks[0], USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[blocks[0]], MOCK_BLOCK_TIMESTAMPS[blocks[0]], "2026-04-10 00:00:00", 50],
+        )
+        for blk in blocks[1:]:
+            conn.execute(  # type: ignore[union-attr]
+                "INSERT INTO accumulator_samples VALUES (?, ?, ?, ?, ?, ?)",
+                [blk, USDC_WETH_POOL_ID, MOCK_BLOCKS_AND_GROWTH[blk], None, "2026-04-10 00:00:00", 50],
+            )
+
+        # blocks[1] and blocks[2] have NULL timestamp → should be "missing"
+        missing = filter_missing_blocks(
+            conn=conn,  # type: ignore[arg-type]
+            pool_id=USDC_WETH_POOL_ID,
+            blocks=blocks,
+        )
+        assert missing == blocks[1:]
+
+
+# ── Task 2: CLI main() integration — combined batches with timestamps ──────
+
+
+class TestCombinedPipelineIntegration:
+    """End-to-end: combined batches write both globalGrowth and block_timestamp to DuckDB."""
+
+    def test_main_writes_growth_and_timestamp(
+        self,
+        mock_rpc_transport: object,
+        tmp_path: object,
+        monkeypatch: pytest.MonkeyPatch,
+    ) -> None:
+        """Pipeline run produces rows with non-NULL block_timestamp and correct globalGrowth."""
+        from scripts.ran_growth_pipeline import main
+        from scripts.tests.conftest import MOCK_BLOCKS_AND_GROWTH, MOCK_BLOCK_TIMESTAMPS, USDC_WETH_POOL_ID
+
+        monkeypatch.setenv("ALCHEMY_API_KEY", "test-key")
+
+        transport = mock_rpc_transport()  # type: ignore[operator]
+        db_path = str(tmp_path / "combined_test.duckdb")  # type: ignore[operator]
+
+        blocks = sorted(MOCK_BLOCKS_AND_GROWTH.keys())
+        from_block = blocks[0]
+        to_block = blocks[-1] + 1
+
+        import scripts.ran_growth_pipeline as pipeline_mod
+
+        original_client = httpx.Client
+
+        def mock_client_factory(*args: object, **kwargs: object) -> httpx.Client:
+            return original_client(transport=transport, base_url="http://mock-rpc")
+
+        monkeypatch.setattr(pipeline_mod, "_make_http_client", mock_client_factory)
+
+        main([
+            "--pool", "usdc-weth",
+            "--from-block", str(from_block),
+            "--to-block", str(to_block),
+            "--stride", "50",
+            "--db", db_path,
+        ])
+
+        # Verify rows have both globalGrowth and block_timestamp
+        conn = duckdb.connect(db_path)
+        rows = conn.execute(
+            "SELECT block_number, global_growth, block_timestamp FROM accumulator_samples "
+            "WHERE pool_id = ? ORDER BY block_number",
+            [USDC_WETH_POOL_ID],
+        ).fetchall()
+        conn.close()
+
+        assert len(rows) >= 1
+        for block_num, growth_hex, block_ts in rows:
+            assert block_ts is not None, f"block_timestamp NULL for block {block_num}"
+            assert block_ts == MOCK_BLOCK_TIMESTAMPS[block_num], f"Wrong timestamp for block {block_num}"
+            assert growth_hex == MOCK_BLOCKS_AND_GROWTH[block_num], f"Wrong growth for block {block_num}"
