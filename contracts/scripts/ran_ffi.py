@@ -1,9 +1,13 @@
 """RAN FFI query script for Solidity fork tests.
 
 Outputs ABI-encoded hex to stdout for consumption by Forge vm.ffi().
-Two subcommands:
-  len  — row count as abi.encode(uint256)
-  row  — single row as abi.encode(uint256, uint256, bytes32)
+Subcommands:
+  len       — row count as abi.encode(uint256)
+  row       — single row as abi.encode(uint256, uint256, bytes32)
+  row-by-ts — single row by timestamp as abi.encode(uint256, uint256, bytes32)
+  range     — row slice as abi.encode(uint256, uint256[], uint256[], bytes32[])
+  min       — minimum block row as abi.encode(uint256, uint256, bytes32)
+  max       — maximum block row as abi.encode(uint256, uint256, bytes32)
 
 Zero network dependency — reads only from local DuckDB.
 """
@@ -11,19 +15,19 @@ from __future__ import annotations
 
 import argparse
 import sys
-from typing import Final
 
 import duckdb
 import eth_abi
 
-_LEN_SQL: Final[str] = (
-    "SELECT count(*) FROM accumulator_samples WHERE pool_id = ?"
-)
-
-_ROW_SQL: Final[str] = (
-    "SELECT block_number, block_timestamp, global_growth "
-    "FROM accumulator_samples WHERE pool_id = ? "
-    "ORDER BY block_number LIMIT 1 OFFSET ?"
+from scripts.ran_data_api import (
+    QueryError,
+    Row,
+    dataset_len,
+    get_by_timestamp,
+    get_max,
+    get_min,
+    get_range,
+    get_row,
 )
 
 
@@ -43,16 +47,22 @@ def _open_db(path: str) -> duckdb.DuckDBPyConnection:
         sys.exit(1)
 
 
+def _encode_row(row: Row) -> str:
+    """ABI-encode a single Row as (uint256, uint256, bytes32), returning 0x hex."""
+    growth_bytes: bytes = bytes.fromhex(row.global_growth[2:])
+    encoded = eth_abi.encode(
+        ["uint256", "uint256", "bytes32"],
+        [row.block_number, row.block_timestamp, growth_bytes],
+    )
+    return "0x" + encoded.hex()
+
+
 def _cmd_len(args: argparse.Namespace) -> None:
     """Handle the 'len' subcommand."""
     pool_id = _normalize_pool_id(args.pool)
     conn = _open_db(args.db)
     try:
-        row = conn.execute(_LEN_SQL, [pool_id]).fetchone()
-        if row is None:
-            print("unexpected: query returned no result", file=sys.stderr)
-            sys.exit(1)
-        count: int = row[0]
+        count: int = dataset_len(conn, pool_id)
         if count == 0:
             print("error: pool not found", file=sys.stderr)
             sys.exit(1)
@@ -68,12 +78,8 @@ def _cmd_row(args: argparse.Namespace) -> None:
     idx: int = args.idx
     conn = _open_db(args.db)
     try:
-        # Check pool exists and get count for bounds check
-        count_row = conn.execute(_LEN_SQL, [pool_id]).fetchone()
-        if count_row is None:
-            print("unexpected: query returned no result", file=sys.stderr)
-            sys.exit(1)
-        count: int = count_row[0]
+        # Preserve backward-compatible error messages
+        count: int = dataset_len(conn, pool_id)
         if count == 0:
             print("error: pool not found", file=sys.stderr)
             sys.exit(1)
@@ -83,25 +89,86 @@ def _cmd_row(args: argparse.Namespace) -> None:
                 file=sys.stderr,
             )
             sys.exit(1)
-        row = conn.execute(_ROW_SQL, [pool_id, idx]).fetchone()
-        if row is None:
-            print("unexpected: query returned no result", file=sys.stderr)
+        try:
+            row = get_row(conn, pool_id, idx)
+        except QueryError as exc:
+            print(f"error: {exc}", file=sys.stderr)
             sys.exit(1)
-        block_number: int = row[0]
-        block_timestamp = row[1]
-        global_growth_hex: str = row[2]
-        if block_timestamp is None:
-            print(
-                "error: run pipeline to backfill timestamps",
-                file=sys.stderr,
-            )
+        print(_encode_row(row))
+    finally:
+        conn.close()
+
+
+def _cmd_row_by_ts(args: argparse.Namespace) -> None:
+    """Handle the 'row-by-ts' subcommand."""
+    pool_id = _normalize_pool_id(args.pool)
+    ts: int = args.ts
+    exact: bool = not args.nearest
+    conn = _open_db(args.db)
+    try:
+        try:
+            row = get_by_timestamp(conn, pool_id, ts, exact=exact)
+        except QueryError as exc:
+            print(f"error: {exc}", file=sys.stderr)
             sys.exit(1)
-        growth_bytes: bytes = bytes.fromhex(global_growth_hex[2:])
+        print(_encode_row(row))
+    finally:
+        conn.close()
+
+
+def _cmd_range(args: argparse.Namespace) -> None:
+    """Handle the 'range' subcommand."""
+    pool_id = _normalize_pool_id(args.pool)
+    from_idx: int = args.from_idx
+    to_idx: int = args.to
+    conn = _open_db(args.db)
+    try:
+        try:
+            rows = get_range(conn, pool_id, from_idx, to_idx)
+        except QueryError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            sys.exit(1)
+        growth_bytes_list = [bytes.fromhex(r.global_growth[2:]) for r in rows]
         encoded = eth_abi.encode(
-            ["uint256", "uint256", "bytes32"],
-            [block_number, int(block_timestamp), growth_bytes],
+            ["uint256", "uint256[]", "uint256[]", "bytes32[]"],
+            [
+                len(rows),
+                [r.block_number for r in rows],
+                [r.block_timestamp for r in rows],
+                growth_bytes_list,
+            ],
         )
         print("0x" + encoded.hex())
+    finally:
+        conn.close()
+
+
+def _cmd_min(args: argparse.Namespace) -> None:
+    """Handle the 'min' subcommand."""
+    pool_id = _normalize_pool_id(args.pool)
+    conn = _open_db(args.db)
+    try:
+        try:
+            row = get_min(conn, pool_id)
+        except QueryError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            sys.exit(1)
+        print(_encode_row(row))
+    finally:
+        conn.close()
+
+
+def _cmd_max(args: argparse.Namespace) -> None:
+    """Handle the 'max' subcommand."""
+    pool_id = _normalize_pool_id(args.pool)
+    conn = _open_db(args.db)
+    try:
+        try:
+            row = get_max(conn, pool_id)
+        except QueryError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            sys.exit(1)
+        print(_encode_row(row))
     finally:
         conn.close()
 
@@ -124,11 +191,53 @@ def main() -> None:
     row_parser.add_argument("--idx", required=True, type=int, help="Row index")
     row_parser.add_argument("--db", required=True, help="DuckDB file path")
 
+    # row-by-ts subcommand
+    row_by_ts_parser = subparsers.add_parser(
+        "row-by-ts", help="Single row by block_timestamp"
+    )
+    row_by_ts_parser.add_argument("--pool", required=True, help="Pool ID (hex)")
+    row_by_ts_parser.add_argument(
+        "--ts", required=True, type=int, help="Block timestamp (unix seconds)"
+    )
+    row_by_ts_parser.add_argument(
+        "--nearest",
+        action="store_true",
+        default=False,
+        help="Return nearest-lower row instead of requiring exact match",
+    )
+    row_by_ts_parser.add_argument("--db", required=True, help="DuckDB file path")
+
+    # range subcommand
+    range_parser = subparsers.add_parser("range", help="Row slice [from, to)")
+    range_parser.add_argument("--pool", required=True, help="Pool ID (hex)")
+    range_parser.add_argument(
+        "--from", dest="from_idx", required=True, type=int, help="Start index (inclusive)"
+    )
+    range_parser.add_argument(
+        "--to", required=True, type=int, help="End index (exclusive)"
+    )
+    range_parser.add_argument("--db", required=True, help="DuckDB file path")
+
+    # min subcommand
+    min_parser = subparsers.add_parser("min", help="Row with smallest block_number")
+    min_parser.add_argument("--pool", required=True, help="Pool ID (hex)")
+    min_parser.add_argument("--db", required=True, help="DuckDB file path")
+
+    # max subcommand
+    max_parser = subparsers.add_parser("max", help="Row with largest block_number")
+    max_parser.add_argument("--pool", required=True, help="Pool ID (hex)")
+    max_parser.add_argument("--db", required=True, help="DuckDB file path")
+
     args = parser.parse_args()
-    if args.command == "len":
-        _cmd_len(args)
-    elif args.command == "row":
-        _cmd_row(args)
+    dispatch = {
+        "len": _cmd_len,
+        "row": _cmd_row,
+        "row-by-ts": _cmd_row_by_ts,
+        "range": _cmd_range,
+        "min": _cmd_min,
+        "max": _cmd_max,
+    }
+    dispatch[args.command](args)
 
 
 if __name__ == "__main__":

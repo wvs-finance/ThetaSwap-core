@@ -12,11 +12,17 @@ from typing import Final
 import eth_abi
 import pytest
 
+import duckdb
+
+from scripts.ran_data_api import dataset_len, get_min, get_max
 from scripts.tests.conftest import (
     MOCK_BLOCKS_AND_GROWTH,
     MOCK_BLOCK_TIMESTAMPS,
     USDC_WETH_POOL_ID,
+    FIXED_TIMESTAMP,
 )
+
+SORTED_BLOCKS: Final[list[int]] = sorted(MOCK_BLOCKS_AND_GROWTH.keys())
 
 SCRIPTS_DIR: Final[str] = "scripts"
 MODULE: Final[str] = "scripts.ran_ffi"
@@ -250,3 +256,176 @@ class TestPoolIdNormalization:
         result_prefixed = _run_ffi("len", "--pool", USDC_WETH_POOL_ID, db=populated_db_path)
         assert result_bare.returncode == 0, f"stderr: {result_bare.stderr}"
         assert result_bare.stdout.strip() == result_prefixed.stdout.strip()
+
+
+# ── Behavior 11: row-by-ts subcommand ──
+
+
+class TestRowByTsSubcommand:
+    """row-by-ts returns ABI-encoded (uint256, uint256, bytes32) by timestamp."""
+
+    def test_row_by_ts_exact_match(self, populated_db_path: str) -> None:
+        """Exact timestamp lookup returns the expected row."""
+        earliest_block = SORTED_BLOCKS[0]
+        exact_ts = MOCK_BLOCK_TIMESTAMPS[earliest_block]
+        result = _run_ffi(
+            "row-by-ts", "--pool", USDC_WETH_POOL_ID,
+            "--ts", str(exact_ts),
+            db=populated_db_path,
+        )
+        assert result.returncode == 0, f"stderr: {result.stderr}"
+        output = result.stdout.strip()
+        assert output.startswith("0x")
+        block_num, block_ts, growth_bytes = eth_abi.decode(
+            ["uint256", "uint256", "bytes32"],
+            bytes.fromhex(output[2:]),
+        )
+        assert block_num == earliest_block
+        assert block_ts == exact_ts
+        expected_growth = bytes.fromhex(MOCK_BLOCKS_AND_GROWTH[earliest_block][2:])
+        assert growth_bytes == expected_growth
+
+    def test_row_by_ts_nearest_lower(self, populated_db_path: str) -> None:
+        """--nearest flag returns nearest-lower row when ts falls between two rows."""
+        # Use a timestamp between blocks[0] and blocks[1]
+        block_0 = SORTED_BLOCKS[0]
+        block_1 = SORTED_BLOCKS[1]
+        ts_0 = MOCK_BLOCK_TIMESTAMPS[block_0]
+        ts_1 = MOCK_BLOCK_TIMESTAMPS[block_1]
+        between_ts = ts_0 + (ts_1 - ts_0) // 2  # midpoint
+        result = _run_ffi(
+            "row-by-ts", "--pool", USDC_WETH_POOL_ID,
+            "--ts", str(between_ts),
+            "--nearest",
+            db=populated_db_path,
+        )
+        assert result.returncode == 0, f"stderr: {result.stderr}"
+        output = result.stdout.strip()
+        block_num, block_ts, growth_bytes = eth_abi.decode(
+            ["uint256", "uint256", "bytes32"],
+            bytes.fromhex(output[2:]),
+        )
+        # Nearest-lower: should return block_0 (highest block <= between_ts)
+        assert block_num == block_0
+        assert block_ts == ts_0
+
+    def test_row_by_ts_exact_miss_exits_1(self, populated_db_path: str) -> None:
+        """Without --nearest, a timestamp that misses exactly exits 1."""
+        block_0 = SORTED_BLOCKS[0]
+        block_1 = SORTED_BLOCKS[1]
+        ts_0 = MOCK_BLOCK_TIMESTAMPS[block_0]
+        ts_1 = MOCK_BLOCK_TIMESTAMPS[block_1]
+        miss_ts = ts_0 + 1  # not an exact timestamp in the DB
+        result = _run_ffi(
+            "row-by-ts", "--pool", USDC_WETH_POOL_ID,
+            "--ts", str(miss_ts),
+            db=populated_db_path,
+        )
+        assert result.returncode == 1
+        assert result.stderr.strip() != ""
+
+
+# ── Behavior 12: range subcommand ──
+
+
+class TestRangeSubcommand:
+    """range returns ABI-encoded (uint256, uint256[], uint256[], bytes32[])."""
+
+    def test_range_0_to_3_returns_first_three_rows(
+        self, populated_db_path: str
+    ) -> None:
+        """range [0,3) returns count=3, arrays matching first 3 fixture blocks."""
+        result = _run_ffi(
+            "range", "--pool", USDC_WETH_POOL_ID,
+            "--from", "0", "--to", "3",
+            db=populated_db_path,
+        )
+        assert result.returncode == 0, f"stderr: {result.stderr}"
+        output = result.stdout.strip()
+        assert output.startswith("0x")
+        count, block_numbers, block_timestamps, growth_list = eth_abi.decode(
+            ["uint256", "uint256[]", "uint256[]", "bytes32[]"],
+            bytes.fromhex(output[2:]),
+        )
+        assert count == 3
+        assert len(block_numbers) == 3
+        assert len(block_timestamps) == 3
+        assert len(growth_list) == 3
+        expected_blocks = SORTED_BLOCKS[:3]
+        for i, blk in enumerate(expected_blocks):
+            assert block_numbers[i] == blk
+            assert block_timestamps[i] == MOCK_BLOCK_TIMESTAMPS[blk]
+            assert growth_list[i] == bytes.fromhex(MOCK_BLOCKS_AND_GROWTH[blk][2:])
+
+    def test_range_exceeds_1000_exits_1(
+        self, large_populated_db_path: str
+    ) -> None:
+        """range [0, 1001) exceeds 1000-row limit and exits 1."""
+        result = _run_ffi(
+            "range", "--pool", USDC_WETH_POOL_ID,
+            "--from", "0", "--to", "1001",
+            db=large_populated_db_path,
+        )
+        assert result.returncode == 1
+        assert result.stderr.strip() != ""
+
+
+# ── Behavior 13: min subcommand ──
+
+
+class TestMinSubcommand:
+    """min returns ABI-encoded row with smallest block_number."""
+
+    def test_min_abi_round_trip(self, populated_db_path: str) -> None:
+        """ABI-decoded output matches get_min result."""
+        # Get expected via direct API call
+        import duckdb as _duckdb
+        conn = _duckdb.connect(populated_db_path, read_only=True)
+        from scripts.ran_data_api import get_min as _get_min
+        expected = _get_min(conn, USDC_WETH_POOL_ID)
+        conn.close()
+
+        result = _run_ffi(
+            "min", "--pool", USDC_WETH_POOL_ID,
+            db=populated_db_path,
+        )
+        assert result.returncode == 0, f"stderr: {result.stderr}"
+        output = result.stdout.strip()
+        assert output.startswith("0x")
+        block_num, block_ts, growth_bytes = eth_abi.decode(
+            ["uint256", "uint256", "bytes32"],
+            bytes.fromhex(output[2:]),
+        )
+        assert block_num == expected.block_number
+        assert block_ts == expected.block_timestamp
+        assert growth_bytes == bytes.fromhex(expected.global_growth[2:])
+
+
+# ── Behavior 14: max subcommand ──
+
+
+class TestMaxSubcommand:
+    """max returns ABI-encoded row with largest block_number."""
+
+    def test_max_abi_round_trip(self, populated_db_path: str) -> None:
+        """ABI-decoded output matches get_max result."""
+        import duckdb as _duckdb
+        conn = _duckdb.connect(populated_db_path, read_only=True)
+        from scripts.ran_data_api import get_max as _get_max
+        expected = _get_max(conn, USDC_WETH_POOL_ID)
+        conn.close()
+
+        result = _run_ffi(
+            "max", "--pool", USDC_WETH_POOL_ID,
+            db=populated_db_path,
+        )
+        assert result.returncode == 0, f"stderr: {result.stderr}"
+        output = result.stdout.strip()
+        assert output.startswith("0x")
+        block_num, block_ts, growth_bytes = eth_abi.decode(
+            ["uint256", "uint256", "bytes32"],
+            bytes.fromhex(output[2:]),
+        )
+        assert block_num == expected.block_number
+        assert block_ts == expected.block_timestamp
+        assert growth_bytes == bytes.fromhex(expected.global_growth[2:])
