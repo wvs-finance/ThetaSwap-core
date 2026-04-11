@@ -3903,8 +3903,8 @@ contract PanopticPoolTest is PositionUtils {
         int256 amount1s;
 
         {
-            int256 netSurplus0 =
-                $amount0Moveds[1] - PanopticMath.convert1to0($amount1Moveds[2], currentSqrtPriceX96);
+            int256 netSurplus0 = $amount0Moveds[1]
+                - PanopticMath.convert1to0($amount1Moveds[2], currentSqrtPriceX96);
 
             vm.startPrank(address(sfpm));
             (amount0s, amount1s) = this.simulateSwapLong(
@@ -6599,9 +6599,8 @@ contract PanopticPoolTest is PositionUtils {
                 abi.encode(_poolKey), tokenId, positionSize, TickMath.MIN_TICK, TickMath.MAX_TICK
             );
             console2.log("");
-            intrinsic0 =
-                totalMoved.rightSlot() - longAmountsAlice.rightSlot()
-                    + shortAmountsAlice.rightSlot();
+            intrinsic0 = totalMoved.rightSlot() - longAmountsAlice.rightSlot()
+                + shortAmountsAlice.rightSlot();
             intrinsic1 =
                 totalMoved.leftSlot() - longAmountsAlice.leftSlot() + shortAmountsAlice.leftSlot();
             console2.log("int0", intrinsic0);
