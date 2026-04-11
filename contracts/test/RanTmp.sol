@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.26;
 
-
 import {PoolUpdatesTest} from "anstrong-test/modules/PoolUpdates.t.sol";
 
 // 1. Initiate a pool on arnstrong
@@ -14,10 +13,8 @@ import {PoolUpdatesTest} from "anstrong-test/modules/PoolUpdates.t.sol";
 // 6 Calculate the expected payoff after the action of the RAN
 // 7 Have the LP redeem and show the redeemed value matches the payoff
 
-
-contract RANTmp is PoolUpdatesTest{
-    
-    function setUp() public override{
-	super.setUp();
+contract RANTmp is PoolUpdatesTest {
+    function setUp() public override {
+        super.setUp();
     }
 }

@@ -8,7 +8,6 @@ import {X128MathLib} from "../libraries/X128MathLib.sol";
 import {FixedPointMathLib} from "solady/src/utils/FixedPointMathLib.sol";
 import {AngstromAccumulatorConsumer} from "core/src/_adapters/AngstromAccumulatorConsumer.sol";
 
-
 uint256 constant Q128 = 1 << 128;
 
 struct AccrualManagerStorage {
@@ -26,38 +25,30 @@ struct AccrualManagerStorage {
 bytes32 constant ACCRUAL_MANAGER_SLOT =
     0xe6f92ab924f4caafb6cbf13d069f296c17d7b6698effcf0636a7ee1eca05fa83;
 
-function getAccrualManagerStorage()
-    pure
-    returns (AccrualManagerStorage storage $)
-{
+function getAccrualManagerStorage() pure returns (AccrualManagerStorage storage $) {
     bytes32 pos = ACCRUAL_MANAGER_SLOT;
     assembly ("memory-safe") {
         $.slot := pos
     }
 }
 
-    // ── Task 3.5: Birth concentration view ──
+// ── Task 3.5: Birth concentration view ──
 
-    /// @notice Returns r₀ = entryGrowthInside / entryGlobalGrowth as Q128 fixed-point.
-    /// @dev Fee-weighted approximation of Pap (2022) Eq. 2.1 n/N at mint time.
-    ///      Zero storage cost — computed on read via 512-bit intermediate (Solady fullMulDiv).
-    ///      X128MathLib.flatDivX128 only takes uint128 numerator; accumulators are uint256,
-    ///      so FixedPointMathLib.mulDiv is used for the full-range case.
-    function entryRatioQ128(NoteId id) view returns (uint256) {
-        NoteSnapshot storage snap = getAccrualManagerStorage().snapshots[id];
-        if (!snap.initialized || snap.entryGlobalGrowth == 0) return 0;
-        return FixedPointMathLib.mulDiv(
-            snap.entryGrowthInside,
-            Q128,
-            snap.entryGlobalGrowth
-        );
-    }
+/// @notice Returns r₀ = entryGrowthInside / entryGlobalGrowth as Q128 fixed-point.
+/// @dev Fee-weighted approximation of Pap (2022) Eq. 2.1 n/N at mint time.
+///      Zero storage cost — computed on read via 512-bit intermediate (Solady fullMulDiv).
+///      X128MathLib.flatDivX128 only takes uint128 numerator; accumulators are uint256,
+///      so FixedPointMathLib.mulDiv is used for the full-range case.
+function entryRatioQ128(NoteId id) view returns (uint256) {
+    NoteSnapshot storage snap = getAccrualManagerStorage().snapshots[id];
+    if (!snap.initialized || snap.entryGlobalGrowth == 0) return 0;
+    return FixedPointMathLib.mulDiv(snap.entryGrowthInside, Q128, snap.entryGlobalGrowth);
+}
 
 // ── Free functions ──
 
 error ZeroLiquidity();
 error NoteNotInitialized();
-
 
 /// @notice Snapshots accumulators on first mint for a NoteId, checkpoints per-holder state.
 /// @dev Pure state update on AccrualManagerStorage. Does NOT mint ERC-1155 tokens —
@@ -101,12 +92,9 @@ function updateSnapshotAndCheckpoint(
 ///      holderBalance is injected by composing contract from ERC1155Storage.
 ///      V1a: single accumulator, no VEGOID spread. V1b adds premiumOwed/premiumGross split.
 /// @return reward Accrued reward amount (Q128.128 → token units via fullMulX128)
-function settleAndCheckpoint(
-    NoteId id,
-    PoolId poolId,
-    address holder,
-    uint256 holderBalance
-) returns (uint256 reward) {
+function settleAndCheckpoint(NoteId id, PoolId poolId, address holder, uint256 holderBalance)
+    returns (uint256 reward)
+{
     AccrualManagerStorage storage $ = getAccrualManagerStorage();
     NoteSnapshot storage snap = $.snapshots[id];
     if (!snap.initialized) revert NoteNotInitialized();
@@ -136,10 +124,7 @@ function settleAndCheckpoint(
 /// @dev Panoptic equivalent: getAccountPremium (external view, ~line 1280).
 ///      Delta-over-delta: (currentGI - entryGI) / (currentGG - entryGG).
 ///      Read-only — no state changes.
-function viewAccruedRatio(
-    NoteId id,
-    PoolId poolId
-) view returns (uint256 ratioQ128) {
+function viewAccruedRatio(NoteId id, PoolId poolId) view returns (uint256 ratioQ128) {
     AccrualManagerStorage storage $ = getAccrualManagerStorage();
     NoteSnapshot storage snap = $.snapshots[id];
     if (!snap.initialized) return 0;

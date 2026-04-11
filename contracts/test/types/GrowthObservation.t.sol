@@ -6,9 +6,5 @@ import {AngstromAccumulatorConsumer} from "core/src/_adapters/AngstromAccumulato
 import {IAngstromAuth} from "core/src/interfaces/IAngstromAuth.sol";
 import {IPoolManager} from "v4-core/src/interfaces/IPoolManager.sol";
 
-
-
-contract GrowthObservationTest is BaseForkTest {
-
-}
+contract GrowthObservationTest is BaseForkTest {}
 

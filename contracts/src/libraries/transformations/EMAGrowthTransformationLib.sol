@@ -67,5 +67,8 @@ function updateGrowthEMA(
     }
 
     // ── Step 7: Feed into OraclePack ──
-    return currentOraclePack.insertObservation(clampedTick, uint256(currentEpoch), timeDelta, EMAperiods);
+    return
+        currentOraclePack.insertObservation(
+            clampedTick, uint256(currentEpoch), timeDelta, EMAperiods
+        );
 }

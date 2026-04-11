@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.26;
 
-
 /*
  * Scenario
  *
@@ -13,6 +12,4 @@ pragma solidity >=0.8.26;
  *
  *     V_{block} ---(bidPrice) --> Agg(lpReward) ---(distribution)--> Revenue (L_{block})
  */
-
-
 
