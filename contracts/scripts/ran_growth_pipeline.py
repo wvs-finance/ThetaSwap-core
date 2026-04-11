@@ -157,15 +157,12 @@ def send_rpc_batch(
     Returns the parsed JSON response list on success.
     Raises RpcBatchError after exhausting max_retries.
     """
-    import json as _json
-
-    payload: bytes = _json.dumps(batch).encode()
     attempts: int = 0
     total_attempts: Final[int] = 1 + max_retries
 
     while attempts < total_attempts:
         try:
-            response: httpx.Response = client.post("/", content=payload)
+            response: httpx.Response = client.post("/", json=batch)
             if response.status_code == 200:
                 return response.json()  # type: ignore[no-any-return]
             if response.status_code == 429 or response.status_code >= 500:
@@ -196,14 +193,14 @@ class BlockRangeError(Exception):
 
 
 def _resolve_latest_block(client: httpx.Client) -> int:
-    """Call eth_getBlockNumber to resolve the chain head."""
-    import json as _json
-
-    payload: bytes = _json.dumps(
-        {"jsonrpc": "2.0", "id": 1, "method": "eth_getBlockNumber", "params": []}
-    ).encode()
-    resp: httpx.Response = client.post("/", content=payload)
+    """Call eth_blockNumber to resolve the chain head."""
+    resp: httpx.Response = client.post(
+        "/",
+        json={"jsonrpc": "2.0", "id": 1, "method": "eth_blockNumber", "params": []},
+    )
     data: dict[str, object] = resp.json()
+    if "error" in data:
+        raise RpcBatchError(f"eth_blockNumber failed: {data['error']}")
     return int(str(data["result"]), 16)
 
 

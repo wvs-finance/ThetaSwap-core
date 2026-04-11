@@ -115,7 +115,7 @@ class MockRpcTransport(httpx.BaseTransport):
         method = rpc_req.get("method", "")
         req_id = rpc_req.get("id", 0)
 
-        if method == "eth_getBlockNumber":
+        if method in ("eth_getBlockNumber", "eth_blockNumber"):
             return {
                 "jsonrpc": "2.0",
                 "id": req_id,
