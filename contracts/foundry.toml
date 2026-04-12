@@ -7,6 +7,7 @@ fs_permissions = [
   { access = "read-write", path = ".forge-snapshots/" },
   { access = "read", path = "test/_fixtures/" }
 ]
+ffi = true
 ast = true
 evm_version = "cancun"
 libs = ["lib"]
@@ -74,6 +75,18 @@ depth = 100
 
 [profile.heavy-fuzz.invariant]
 runs = 200
+
+[profile.diff]
+ffi = true
+match_path = "test/**/*.diff.t.sol"
+no_match_path = "lib/*"
+verbosity = 2
+
+[profile.diff.fuzz]
+runs = 5
+
+[profile.diff.invariant]
+runs = 0
 
 [rpc_endpoints]
 mainnet = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
