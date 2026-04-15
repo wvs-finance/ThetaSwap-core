@@ -75,11 +75,42 @@ Per task note: for C_rem the counterparty rows may include remittance corridors 
 
 ## 7. Global roll-up
 
-`<GLOBAL LABEL>` — `<payload>` — `<rationale>`
+`PIVOT_TO_TIER_1B` — payload: `candidate_channel=pi rationale=Tier-C_BIS_462_adjR²_unverifiable_from_abstract;_in-house_regression_can_recover_CPI-specific_coefficient_from_replication_files` — **Rationale (spec §9 global roll-up rules):**
+
+1. `PROCEED`? Requires at least one channel to emit `CONFIRMED`. Channel π = `PARTIAL_SUPPORT`, Channel C_rem = `PARTIAL_SUPPORT`. **No channel CONFIRMED → PROCEED does not fire.**
+2. `PIVOT_TO_TIER_1B`? Requires all channels to emit `NO_LITERATURE_SUPPORT` or `PARTIAL_SUPPORT` only. Both channels emit `PARTIAL_SUPPORT`. **Fires.**
+3. `RETIRE_THESIS`? Requires all channels to emit `DISCONFIRMED`. No DISCONFIRMED verdicts. Does not fire.
+4. `MIXED`? Reserved for heterogeneous verdicts not covered above. Not applicable.
+
+**Candidate channel selection for Tier 1b:** Channel π is the stronger candidate for Tier 1b because (i) it has the higher-tier qualifying citation (Tier C vs Tier D on C_rem), (ii) the BIS WP 462 / BanRep borra849 replication files are identifiable and reachable in principle — a CPI-specific coefficient recoverable from the Fuentes et al. 2014 panel would directly meet or refute τ_lit=0.10 for channel π, (iii) channel π has a Colombia-native adjacent-asset Tier D (Rincón-Torres 2023 TES yields) providing a ceiling bound of R²<10% daily / 34% quarterly, which disciplines the Tier 1b specification choice. Channel C_rem's only qualifying citation (Barsbai et al. 2022/23) is US-MP-surprise RHS rather than channel-native remittance-surprise, so Tier 1b on C_rem would require constructing a DANE-remittance-release-surprise series from BanRep balance-of-payments data — higher data-infrastructure cost than the channel-π replication path.
+
+**Downstream routing per spec §12:** Spawn a Tier 1b sibling spec scoped on **channel π** (Colombian CPI-surprise → realized COP/USD FX vol at weekly horizon) with the operational gate τ_op = 0.15 applied out-of-sample. Tier 1b reuses the 2026-04-02 data-pipeline conventions at `/home/jmsbpp/apps/liq-soldk-dev/notes/structural-econometrics/data/` and does NOT inherit the cCOP on-chain dependency (that is the separate infra-feasibility sibling spec). Channel C_rem is deferred — the 2026-04-02 in-house WIP already drafts a cCOP-transfer-volume-on-ΔTRM regression that can be run as a separate second-line experiment on the same data pipeline.
 
 ## 8. Gap analysis
 
-Unaddressed questions, close-enough-to-cite, missing.
+**Unaddressed questions — Channel π:**
+- No published paper isolates the Colombian-CPI-release-surprise coefficient on realized COP/USD FX vol at weekly frequency with the specified four-control set. The closest-methodology paper (Fuentes et al. 2014 / BIS WP 462 / borra849) pools CPI with other macro surprises in a panel basket, preventing CPI-specific β recovery from the abstract alone.
+- Rincón-Torres et al. 2023 adjacent-asset evidence (Colombian TES bond yields) suggests Colombian macro-surprise signal-to-noise on daily asset prices is < 10% R², rising to 34% at quarterly horizon. Whether weekly realized FX vol responds more or less than TES bonds is an open empirical question — a reasonable prior is that FX vol is noisier (wider coefficient CIs), pushing the out-of-sample τ_op=0.15 threshold toward borderline.
+- Hernán Rincón-Castro's 2021 time-varying pass-through paper estimates the direction-reversed coefficient (FX shock → π) at 0.01–0.05 per 1% FX; a symmetry-prior heuristic suggests the channel-π β (π-surprise → FX vol) is of similar order, again borderline at τ_lit=0.10.
+
+**Unaddressed questions — Channel C_remittance:**
+- No published paper constructs a Colombian-remittance-release-surprise series and regresses it on cCOP transfer-volume residual or any Colombian FX-vol LHS. BanRep balance-of-payments remittance releases (quarterly) exist but are not surprise-decomposed in the surveyed literature.
+- Barsbai et al. 2022/23 shows remittance flows respond to US-MP-surprise at −0.8%/SD in Colombia-in-panel quarterly LP — demonstrates flows are shock-responsive but with the direction reversed relative to channel C_rem.
+- The 2026-04-02 in-house WIP (cCOP residual on ΔTRM with quincena controls) targets the correct direction but is (a) not a publication, (b) has not been estimated, (c) has QA flags on campaign-filter survivorship bias and missing time trend.
+
+**Close-enough-to-cite:**
+- BIS WP 462 / borra849 (channel π Tier C, co-indexed) — the primary cite for any Tier 2 or Tier 1b framing of "Colombian macro surprises affect peso FX returns and volatility in an intraday event study." Downgrade from Tier B to C is honest about the abstract-level evidence and reversible if replication files can isolate CPI-specific coefficients.
+- Rincón-Torres 2023 — adjacent-asset ceiling. Cite when needing a published R²-magnitude bound on Colombian macro-surprise explanatory power at daily/quarterly frequencies.
+- Barsbai 2022/23 — remittance-flow shock-responsiveness bound. Cite when arguing remittance flows are economically-meaningful-but-upstream to channel C_rem.
+
+**Missing — things Tier 1b must build in-house:**
+- Colombian CPI-release-surprise series = DANE release − BanRep consensus survey (BanRep maintains the consensus; reconstructable from public data at weekly frequency with one-month latency).
+- BanRep policy-rate surprise = decision day minus OIS-implied consensus (Chilean OIS market exists; Colombian OIS is thinner — may need interpolation from IBR swaps).
+- US CPI surprise = BLS release − Bloomberg median (public, paywall on Bloomberg but FRED has AR(1) surprise-proxy option).
+- VIX = FRED `VIXCLS` (public).
+- Realized weekly FX vol = COP/USD daily closes (FRED `DEXCOUS`) aggregated to weekly sum of squared log returns.
+
+All Tier 1b inputs are reachable through free-tier FRED and public DANE/BanRep APIs — no paid data required.
 
 ## 9. Sources consulted
 
@@ -98,7 +129,19 @@ Unaddressed questions, close-enough-to-cite, missing.
 
 ## 10. Confidence level and unresolved leads
 
-Per-channel qualitative confidence (low/medium/high) and leads unresolved at hard-cap.
+**Channel π confidence: medium.** Rationale: (i) NBER, SSRN, BanRep, IMF, and Scholar all queried with the spec §6 patterns; (ii) the highest-prior source (BanRep) returned only the Fuentes et al. 2014 / borra849 co-index already known from BIS, suggesting Colombian-native work does not isolate CPI-specific FX-vol coefficients; (iii) three authors independently classified two candidates (Berganza-Broto, Clarida-Waldman) as NOT STUDIED under strict §7 reading, indicating tier discipline is converging; (iv) T6 Scholar pass was rate-limit-abbreviated and may have missed papers forward-citing BIS 462 that are not surfaced by 2 fwd-cite queries alone — low risk of a missed Tier-A/B but non-zero. Verdict PARTIAL_SUPPORT would only flip to CONFIRMED if the Fuentes et al. replication file yields a CPI-only coefficient meeting τ_lit=0.10; if replication file is unavailable, CONFIRMED is unreachable and Tier 1b is the correct next step.
+
+**Channel C_remittance confidence: medium-low.** Rationale: (i) Batched pass covered all 5 sources in one agent session but with fewer queries per source than Channel π; (ii) Orozco's canonical-author body is descriptive/policy-oriented and surfaces no qualifying regression, suggesting the channel is not a canonical publication target; (iii) Barsbai 2022/23 is the only threshold-above Tier-D hit, and its direction-reversed RHS (US-MP → remittance flow) means the channel-C_rem β is genuinely not estimated anywhere public; (iv) Tier 1b on channel C_rem would need to build both the remittance-surprise series and the flow-LHS series from scratch — higher data-infrastructure cost than channel π Tier 1b.
+
+**Unresolved leads (at hard-cap):**
+- Fuentes et al. 2014 replication files — if reachable via the BanRep or BIS data portals, could elevate channel π from PARTIAL_SUPPORT to CONFIRMED without running Tier 1b at all. Recommend a short data-access attempt before committing Tier 1b resources.
+- Rincón-Castro's 2021 time-varying paper has publicly shared code on GitHub / RePEc; the companion datasets include quarterly CPI and monthly TRM series. Could be repurposed as inputs to an in-house weekly-frequency regression without building the series from scratch.
+- Villamizar-Villegas & collaborators' BanRep event-study corpus uses intervention surprises (not CPI surprises) — same high-frequency methodology could be repurposed if a DANE CPI release-vs-consensus series is constructed.
+- The 2026-04-02 in-house WIP has a drafted-but-unrun Exercise 1 regression for channel C_rem direction (transfer volume on ΔTRM). Not literature, but relevant for Tier 1b rescoping.
+
+**Searcher identity at hard-cap:** Research subagents (4 dispatched subagents + controller inline passes), Claude Opus 4.6. Second reader identity (§11): JMSBPP (human, project owner) pending.
+
+**Search end date:** 2026-04-15 (Tier 1 execution ran over two calendar days 2026-04-14/15 due to rate-limit friction).
 
 ## 11. Second-reader sign-off
 
