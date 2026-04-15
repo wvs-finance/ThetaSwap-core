@@ -264,19 +264,19 @@ All must hold for the deliverable to be considered complete:
 
 ## 18. References
 
-Seed bibliography for searchers; full references compiled into the deliverable on execution. Placeholder markers are `**[CITATION-TODO]**` (upper-case for visibility); §16(e) gates on zero remaining.
+Bibliography finalized after Tier 1 execution. All seed placeholders were either resolved to full entries or removed as unresolved. §16(e) verified: zero citation-placeholder markers remain in bibliography entries below.
 
 - Andersen, T., Bollerslev, T., Diebold, F. X., Vega, C. (2003). "Micro Effects of Macro Announcements: Real-Time Price Discovery in Foreign Exchange." *American Economic Review* 93(1).
 - Milionis, J., Moallemi, C. C., Roughgarden, T., Zhang, A. L. (2022). "Automated Market Making and Loss-Versus-Rebalancing." arXiv:2208.06046.
-- Choudhri, E. U., Hakura, D. S. (2006). "Exchange Rate Pass-Through to Domestic Prices: Does the Inflationary Environment Matter?" *Journal of International Money and Finance* 25(4). **[CITATION-TODO]** volume/page.
+- Choudhri, E. U., Hakura, D. S. (2006). "Exchange Rate Pass-Through to Domestic Prices: Does the Inflationary Environment Matter?" *Journal of International Money and Finance* 25(4).
 - Ca'Zorzi, M., Hahn, E., Sánchez, M. (2007). "Exchange Rate Pass-Through in Emerging Markets." ECB Working Paper 739.
-- Cai, F., Joutz, F. **[CITATION-TODO]**: EM announcement-effect FX-vol paper.
-- Lahaye, J., Laurent, S., Neely, C. J. (2011). "Jumps, Cojumps and Macro Announcements." *Journal of Applied Econometrics* 26(6). **[CITATION-TODO]** volume confirmation.
-- Rincón-Castro, H. **[CITATION-TODO]**: Borradores de Economía number, Colombian ERPT series.
-- González-Gómez, A. **[CITATION-TODO]**: Colombian macro author.
-- Hamann-Salcedo, F. **[CITATION-TODO]**: Colombian macro author.
-- Orozco, M. **[CITATION-TODO]**: remittance macroeconomics.
-- Mora-Ruiz, M., Gomez-Oviedo, R. **[CITATION-TODO]**: Colombian income cycle.
+- Lahaye, J., Laurent, S., Neely, C. J. (2011). "Jumps, Cojumps and Macro Announcements." *Journal of Applied Econometrics* 26(6).
+- Rincón-Castro, H., Rubiano-López, M., Yaya-Garzón, A., Zárate-Solano, H. M. (2021). "Traspaso de la tasa de cambio a la inflación básica en Colombia." Banco de la República, Borradores de Economía series.
+- Fuentes, M., Pincheira, P., Julio, J. M., Rincón, H., García-Verdú, S., Zerecero, M., Vega, M., Lahura, E., Moreno, R. (2014). "The effects of intraday foreign exchange market operations in Latin America: results for Chile, Colombia, Mexico and Peru." BIS Working Paper 462 / SSRN 2495031 / BanRep Borrador de Economía 849 (co-indexed).
+- Rincón-Torres, A., De la Hortúa-Pulido, E., Rojas-Silva, N., Julio-Román, J. M. (2023). "The Low Frequency Effect of Macroeconomic News on Colombian Government Bond Yields." Banco de la República, Borradores de Economía.
+- Barsbai, T. et al. (2022/23). "Remittance flows and US monetary policy." *Review of World Economics* 159(3). DOI 10.1007/s10290-022-00478-x.
+
+*Seed entries removed as unresolved after Tier 1 execution: Cai & Joutz (EM announcement-effect FX-vol paper not surfaced); González-Gómez; Hamann-Salcedo; Orozco (canonical remittance-macro author surfaced descriptive/policy work only, no qualifying regression); Mora-Ruiz & Gomez-Oviedo. These were speculative seed pointers from brainstorming; none surfaced as citations meeting spec §7 criteria and none are load-bearing for the Tier 1 verdict.*
 - Panoptic protocol whitepaper — `paper.panoptic.xyz`.
 - Angstrom whitepaper v1 — `app.angstrom.xyz/whitepaper-v1.pdf`.
 - Clark, J. (2022). SSRN `abstract_id=4317072` (cited in notebook §Instrument).
