@@ -1,6 +1,7 @@
 /out
 /cache
 /broadcast
+/.branding/
 /target
 /lcov.info
 !requirements.txt
