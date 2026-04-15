@@ -103,8 +103,11 @@ process.stdin.on('end', () => {
 
   // Layer (b): per-subagent scope. Only enforced if subagent identity is known.
   if (subagent) {
-    const brandingRoot = path.resolve(cwd, 'contracts/.branding');
-    const scratchRoot = path.resolve(cwd, 'contracts/.scratch');
+    // cwd may be the worktree root OR the contracts/ subdir depending on session.
+    // Try both candidate roots and use whichever exists; fall back to worktree-root
+    // convention so we still emit a clear deny for wrong-tree writes.
+    const brandingRoot = resolveRoot(cwd, '.branding', 'contracts/.branding');
+    const scratchRoot = resolveRoot(cwd, '.scratch', 'contracts/.scratch');
 
     const isBrandAgent = /abrigo-brand-agent/i.test(subagent);
     const isReviewerSeat = /brand-guardian|executive-summary-generator|content-creator|proposal-strategist|cultural-intelligence-strategist|testing-reality-checker/i.test(
@@ -159,10 +162,22 @@ process.stdin.on('end', () => {
   process.exit(0);
 });
 
+function resolveRoot(cwd, shortRel, longRel) {
+  const short = path.resolve(cwd, shortRel);
+  const long = path.resolve(cwd, longRel);
+  if (fs.existsSync(short)) return short;
+  if (fs.existsSync(long)) return long;
+  // Neither exists yet — prefer short form (cwd is contracts/) since that's
+  // the convention; hook will correctly deny writes to either form's parent.
+  return short;
+}
+
 function log(cwd, entry) {
   try {
-    const logDir = path.join(cwd, 'contracts/.scratch');
-    if (!fs.existsSync(logDir)) return;
+    // cwd may be the worktree root OR contracts/ — pick whichever has .scratch.
+    const candidates = [path.join(cwd, '.scratch'), path.join(cwd, 'contracts/.scratch')];
+    const logDir = candidates.find(d => fs.existsSync(d));
+    if (!logDir) return;
     const logPath = path.join(logDir, 'abrigo-hook-decisions.log');
     const timestamp = new Date().toISOString();
     fs.appendFileSync(logPath, JSON.stringify({ timestamp, ...entry }) + '\n');
