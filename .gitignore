@@ -27,3 +27,15 @@ verify-contract.sh
 
 # Claude
 .claude/
+
+# Abrigo branding infrastructure — versioned under contracts/.claude/
+!contracts/.claude/
+contracts/.claude/*
+!contracts/.claude/settings.json
+!contracts/.claude/PERMISSIONS.md
+!contracts/.claude/hooks/
+!contracts/.claude/hooks/abrigo-*
+!contracts/.claude/agents/
+!contracts/.claude/agents/abrigo-*
+!contracts/.claude/agents/abrigo-orchestrator-prompts/
+!contracts/.claude/agents/abrigo-orchestrator-prompts/*.md

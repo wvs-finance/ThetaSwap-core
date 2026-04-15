@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "deny": [
+      "Write(//home/jmsbpp/apps/liq-soldk-dev/**)",
+      "Edit(//home/jmsbpp/apps/liq-soldk-dev/**)",
+      "MultiEdit(//home/jmsbpp/apps/liq-soldk-dev/**)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/abrigo-scope-guard.js\""
+          }
+        ]
+      }
+    ]
+  }
+}
