@@ -341,3 +341,60 @@ def test_get_release_calendar_aligned_ipc(conn: duckdb.DuckDBPyConnection) -> No
     assert len(df) > 250
     for col in ("release_date", "week_start", "actual_value"):
         assert col in df.columns, f"Missing column: {col}"
+
+
+# ── Batch 13: RV excluding release day ───────────────────────────────────────
+
+
+def test_get_rv_excluding_release_day(conn: duckdb.DuckDBPyConnection) -> None:
+    from scripts.econ_query_api import get_rv_excluding_release_day
+
+    df = get_rv_excluding_release_day(conn)
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) > 1000
+    for col in ("week_start", "rv_excl_release", "n_trading_days_excl"):
+        assert col in df.columns, f"Missing column: {col}"
+    assert "rv_excl_release_cuberoot" in df.columns
+
+
+# ── Batch 14: monthly panel ──────────────────────────────────────────────────
+
+
+def test_get_monthly_panel(conn: duckdb.DuckDBPyConnection) -> None:
+    from scripts.econ_query_api import get_monthly_panel
+
+    df = get_monthly_panel(conn)
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) > 260
+    for col in ("month_start", "rv_monthly", "rv_monthly_cuberoot"):
+        assert col in df.columns, f"Missing column: {col}"
+    # rv_monthly should be non-negative (sum of squared returns)
+    assert (df["rv_monthly"] >= 0).all()
+
+
+# ── Batch 15: standardized PPI change ────────────────────────────────────────
+
+
+def test_get_standardized_ppi_change(conn: duckdb.DuckDBPyConnection) -> None:
+    from scripts.econ_query_api import get_standardized_ppi_change
+
+    df = get_standardized_ppi_change(conn)
+    assert isinstance(df, pd.DataFrame)
+    assert "standardized_ipp_change" in df.columns
+    # Expanding-window standardization: mean should be near 0
+    valid = df["standardized_ipp_change"].dropna()
+    assert abs(valid.mean()) < 0.5
+    assert 0.5 < valid.std() < 2.0
+
+
+# ── Batch 16: intervention details ───────────────────────────────────────────
+
+
+def test_get_intervention_details(conn: duckdb.DuckDBPyConnection) -> None:
+    from scripts.econ_query_api import get_intervention_details
+
+    df = get_intervention_details(conn)
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) > 1000
+    for col in ("discretionary", "direct_purchase", "week_start"):
+        assert col in df.columns, f"Missing column: {col}"

@@ -488,3 +488,165 @@ def get_release_calendar_aligned(
 
     base += " ORDER BY rc.release_date"
     return conn.execute(base, params).fetchdf()
+
+
+# ── Task 4: RV exclusion, monthly panel, standardized PPI, intervention ────
+
+import numpy as _np
+
+
+def get_rv_excluding_release_day(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> pd.DataFrame:
+    """Weekly realised variance excluding CPI/PPI release days."""
+    _check_table(conn, "daily_panel")
+    where, params = _date_filter(start, end, col="week_start")
+    release_clause = (
+        "NOT is_cpi_release_day AND NOT is_ppi_release_day "
+        "AND cop_usd_return IS NOT NULL"
+    )
+    if where:
+        where += f" AND {release_clause}"
+    else:
+        where = f" WHERE {release_clause}"
+    sql = (
+        "SELECT week_start, "
+        "SUM(cop_usd_return * cop_usd_return) AS rv_excl_release, "
+        "POWER(SUM(cop_usd_return * cop_usd_return), 1.0/3.0) AS rv_excl_release_cuberoot, "
+        "COUNT(*) AS n_trading_days_excl "
+        f"FROM daily_panel{where} "
+        "GROUP BY week_start "
+        "ORDER BY week_start"
+    )
+    return conn.execute(sql, params).fetchdf()
+
+
+def get_monthly_panel(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> pd.DataFrame:
+    """Monthly aggregation: RV, VIX, oil, intervention, CPI, PPI."""
+    _check_table(conn, "daily_panel")
+    _check_table(conn, "fred_daily")
+    _check_table(conn, "banrep_intervention_daily")
+    _check_table(conn, "dane_ipc_monthly")
+    _check_table(conn, "dane_ipp_monthly")
+
+    where, params = _date_filter(start, end, col="mr.month_start")
+    sql = (
+        "WITH monthly_rv AS ( "
+        "  SELECT date_trunc('month', date)::DATE AS month_start, "
+        "         SUM(cop_usd_return * cop_usd_return) AS rv_monthly, "
+        "         CASE WHEN SUM(cop_usd_return * cop_usd_return) > 0 "
+        "              THEN POWER(SUM(cop_usd_return * cop_usd_return), 1.0/3.0) "
+        "              ELSE 0.0 END AS rv_monthly_cuberoot, "
+        "         CASE WHEN SUM(cop_usd_return * cop_usd_return) > 0 "
+        "              THEN LN(SUM(cop_usd_return * cop_usd_return)) "
+        "              ELSE NULL END AS rv_monthly_log, "
+        "         COUNT(*) AS n_trading_days "
+        "  FROM daily_panel "
+        "  WHERE cop_usd_return IS NOT NULL "
+        "  GROUP BY date_trunc('month', date)::DATE "
+        "), "
+        "monthly_vix AS ( "
+        "  SELECT date_trunc('month', date)::DATE AS month_start, "
+        "         AVG(value) AS vix_avg "
+        "  FROM fred_daily "
+        "  WHERE series_id = 'VIXCLS' AND value IS NOT NULL "
+        "  GROUP BY date_trunc('month', date)::DATE "
+        "), "
+        "monthly_oil AS ( "
+        "  SELECT date_trunc('month', date)::DATE AS month_start, "
+        "         CASE WHEN ARG_MIN(value, date) > 0 AND ARG_MAX(value, date) > 0 "
+        "              THEN LN(ARG_MAX(value, date) / ARG_MIN(value, date)) "
+        "              ELSE NULL END AS oil_return "
+        "  FROM fred_daily "
+        "  WHERE series_id = 'DCOILWTICO' AND value > 0 "
+        "  GROUP BY date_trunc('month', date)::DATE "
+        "), "
+        "monthly_intervention AS ( "
+        "  SELECT date_trunc('month', date)::DATE AS month_start, "
+        "         CASE WHEN SUM(ABS(discretionary)) > 0 THEN 1 ELSE 0 END AS intervention_dummy, "
+        "         SUM(discretionary) AS intervention_amount "
+        "  FROM banrep_intervention_daily "
+        "  GROUP BY date_trunc('month', date)::DATE "
+        ") "
+        "SELECT mr.month_start, mr.rv_monthly, mr.rv_monthly_cuberoot, "
+        "  mr.rv_monthly_log, mr.n_trading_days, "
+        "  ipc.ipc_pct_change AS dane_ipc_pct, "
+        "  ipp.ipp_pct_change AS dane_ipp_pct, "
+        "  mv.vix_avg, mo.oil_return, "
+        "  COALESCE(mi.intervention_dummy, 0) AS intervention_dummy, "
+        "  COALESCE(mi.intervention_amount, 0.0) AS intervention_amount "
+        "FROM monthly_rv mr "
+        "LEFT JOIN dane_ipc_monthly ipc ON ipc.date = mr.month_start "
+        "LEFT JOIN dane_ipp_monthly ipp ON ipp.date = mr.month_start "
+        "LEFT JOIN monthly_vix mv ON mv.month_start = mr.month_start "
+        "LEFT JOIN monthly_oil mo ON mo.month_start = mr.month_start "
+        f"LEFT JOIN monthly_intervention mi ON mi.month_start = mr.month_start"
+        f"{where} "
+        "ORDER BY mr.month_start"
+    )
+    return conn.execute(sql, params).fetchdf()
+
+
+def get_standardized_ppi_change(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> pd.DataFrame:
+    """IPP releases with expanding-window standardized surprise."""
+    _check_table(conn, "dane_release_calendar")
+    _check_table(conn, "dane_ipp_monthly")
+
+    base = (
+        "SELECT rc.release_date, "
+        "date_trunc('week', rc.release_date)::DATE AS week_start, "
+        "ipp.ipp_pct_change AS raw_ipp_pct "
+        "FROM dane_release_calendar rc "
+        "JOIN dane_ipp_monthly ipp "
+        "  ON ipp.date = make_date(rc.year, rc.month, 1) "
+        "WHERE rc.series = 'ipp'"
+    )
+    params: list[object] = []
+    if start is not None:
+        base += " AND rc.release_date >= ?"
+        params.append(start)
+    if end is not None:
+        base += " AND rc.release_date <= ?"
+        params.append(end)
+    base += " ORDER BY rc.release_date"
+    df = conn.execute(base, params).fetchdf()
+
+    # Expanding-window standardization in Python
+    raw = df["raw_ipp_pct"].values.astype(float)
+    standardized = _np.full(len(raw), _np.nan)
+    for i in range(2, len(raw)):  # need at least 2 obs for std
+        window = raw[:i]
+        mu = _np.nanmean(window)
+        sigma = _np.nanstd(window, ddof=1)
+        if sigma > 0:
+            standardized[i] = (raw[i] - mu) / sigma
+    df["standardized_ipp_change"] = standardized
+    return df
+
+
+def get_intervention_details(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> pd.DataFrame:
+    """Detailed BanRep intervention records with week_start."""
+    _check_table(conn, "banrep_intervention_daily")
+    where, params = _date_filter(start, end, col="date")
+    sql = (
+        "SELECT date, date_trunc('week', date)::DATE AS week_start, "
+        "discretionary, direct_purchase, put_volatility, call_volatility, "
+        "put_reserve_accum, call_reserve_decum, ndf, fx_swaps "
+        f"FROM banrep_intervention_daily{where} "
+        "ORDER BY date"
+    )
+    return conn.execute(sql, params).fetchdf()
