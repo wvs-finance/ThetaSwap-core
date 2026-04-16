@@ -287,3 +287,57 @@ def test_get_weekly_panel_release_split(conn: duckdb.DuckDBPyConnection) -> None
     for _, row in non_release.iterrows():
         assert not row["is_cpi_release_week"]
         assert not row["is_ppi_release_week"]
+
+
+# ── Batch 10: subsample split ─────────────────────────────────────────────
+
+
+def test_get_weekly_panel_subsample(conn: duckdb.DuckDBPyConnection) -> None:
+    from scripts.econ_query_api import get_weekly_panel_subsample
+
+    split = date(2015, 1, 5)
+    pre, post = get_weekly_panel_subsample(conn, split_date=split)
+    assert isinstance(pre, pd.DataFrame)
+    assert isinstance(post, pd.DataFrame)
+    assert len(pre) > 500
+    assert len(post) > 400
+    # pre max week_start < split_date
+    assert pre["week_start"].max() < pd.Timestamp(split)
+    # post min week_start >= split_date
+    assert post["week_start"].min() >= pd.Timestamp(split)
+
+
+# ── Batch 11: surprise series ─────────────────────────────────────────────
+
+
+def test_get_surprise_series_cpi(conn: duckdb.DuckDBPyConnection) -> None:
+    from scripts.econ_query_api import get_surprise_series
+
+    df = get_surprise_series(conn, series="cpi")
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) > 250
+    for col in ("release_date", "ar1_surprise", "raw_pct_change"):
+        assert col in df.columns, f"Missing column: {col}"
+    nonzero = (df["ar1_surprise"] != 0).sum()
+    assert nonzero > 200
+
+
+def test_get_surprise_series_us_cpi(conn: duckdb.DuckDBPyConnection) -> None:
+    from scripts.econ_query_api import get_surprise_series
+
+    df = get_surprise_series(conn, series="us_cpi")
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) > 250
+
+
+# ── Batch 12: release calendar aligned ────────────────────────────────────
+
+
+def test_get_release_calendar_aligned_ipc(conn: duckdb.DuckDBPyConnection) -> None:
+    from scripts.econ_query_api import get_release_calendar_aligned
+
+    df = get_release_calendar_aligned(conn, series="ipc")
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) > 250
+    for col in ("release_date", "week_start", "actual_value"):
+        assert col in df.columns, f"Missing column: {col}"

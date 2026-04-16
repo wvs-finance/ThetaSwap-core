@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
-from typing import Final
+from typing import Final, Literal
 
 import duckdb
 import pandas as pd
@@ -315,3 +315,176 @@ def get_weekly_panel_release_split(
     release_weeks = df[is_release].reset_index(drop=True)
     non_release_weeks = df[~is_release].reset_index(drop=True)
     return release_weeks, non_release_weeks
+
+
+# ── Task 3: subsamples, surprise series, calendar alignment ──────────────
+
+
+def get_weekly_panel_subsample(
+    conn: duckdb.DuckDBPyConnection,
+    split_date: date,
+    start: date | None = None,
+    end: date | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Split the weekly panel into (pre_split, post_split) at *split_date*.
+
+    pre  = week_start <  split_date
+    post = week_start >= split_date
+    """
+    _check_table(conn, "weekly_panel")
+    where, params = _date_filter(start, end, col="week_start")
+    sql = f"SELECT * FROM weekly_panel{where} ORDER BY week_start"
+    df = conn.execute(sql, params).fetchdf()
+    mask = df["week_start"] < pd.Timestamp(split_date)
+    pre = df[mask].reset_index(drop=True)
+    post = df[~mask].reset_index(drop=True)
+    return pre, post
+
+
+def get_surprise_series(
+    conn: duckdb.DuckDBPyConnection,
+    series: Literal["cpi", "us_cpi", "ppi"] = "cpi",
+    start: date | None = None,
+    end: date | None = None,
+) -> pd.DataFrame:
+    """Return release-aligned surprise series for CPI, US CPI, or PPI.
+
+    Columns: release_date, week_start, raw_pct_change, ar1_surprise, abs_surprise.
+    """
+    if series == "cpi":
+        _check_table(conn, "dane_release_calendar")
+        _check_table(conn, "dane_ipc_monthly")
+        _check_table(conn, "weekly_panel")
+        base = (
+            "SELECT rc.release_date, wp.week_start, "
+            "ipc.ipc_pct_change AS raw_pct_change, "
+            "wp.cpi_surprise_ar1 AS ar1_surprise, "
+            "ABS(wp.cpi_surprise_ar1) AS abs_surprise "
+            "FROM dane_release_calendar rc "
+            "JOIN dane_ipc_monthly ipc "
+            "  ON ipc.date = make_date(rc.year, rc.month, 1) "
+            "JOIN weekly_panel wp "
+            "  ON wp.week_start = date_trunc('week', rc.release_date)::DATE "
+            "WHERE rc.series = 'ipc'"
+        )
+        date_col = "wp.week_start"
+    elif series == "us_cpi":
+        _check_table(conn, "bls_release_calendar")
+        _check_table(conn, "fred_monthly")
+        _check_table(conn, "weekly_panel")
+        base = (
+            "SELECT rc.release_date, wp.week_start, "
+            "fm.value AS raw_pct_change, "
+            "wp.us_cpi_surprise AS ar1_surprise, "
+            "ABS(wp.us_cpi_surprise) AS abs_surprise "
+            "FROM bls_release_calendar rc "
+            "JOIN fred_monthly fm "
+            "  ON fm.date = make_date(rc.year, rc.month, 1) "
+            "  AND fm.series_id = 'CPIAUCSL' "
+            "JOIN weekly_panel wp "
+            "  ON wp.week_start = date_trunc('week', rc.release_date)::DATE "
+            "WHERE rc.release_date >= '2003-01-01'"
+        )
+        date_col = "wp.week_start"
+    elif series == "ppi":
+        _check_table(conn, "dane_release_calendar")
+        _check_table(conn, "dane_ipp_monthly")
+        _check_table(conn, "weekly_panel")
+        base = (
+            "SELECT rc.release_date, wp.week_start, "
+            "ipp.ipp_pct_change AS raw_pct_change, "
+            "wp.dane_ipp_pct AS ar1_surprise, "
+            "ABS(wp.dane_ipp_pct) AS abs_surprise "
+            "FROM dane_release_calendar rc "
+            "JOIN dane_ipp_monthly ipp "
+            "  ON ipp.date = make_date(rc.year, rc.month, 1) "
+            "JOIN weekly_panel wp "
+            "  ON wp.week_start = date_trunc('week', rc.release_date)::DATE "
+            "WHERE rc.series = 'ipp'"
+        )
+        date_col = "wp.week_start"
+    else:
+        raise QueryError(f"Unknown surprise series: {series!r}")
+
+    # Apply optional date filter on week_start
+    params: list[object] = []
+    if start is not None:
+        base += f" AND {date_col} >= ?"
+        params.append(start)
+    if end is not None:
+        base += f" AND {date_col} <= ?"
+        params.append(end)
+
+    base += " ORDER BY rc.release_date"
+    return conn.execute(base, params).fetchdf()
+
+
+def get_release_calendar_aligned(
+    conn: duckdb.DuckDBPyConnection,
+    series: Literal["ipc", "ipp", "bls"] = "ipc",
+    start: date | None = None,
+    end: date | None = None,
+) -> pd.DataFrame:
+    """Return release calendar joined with actual monthly values.
+
+    Columns: year, month, release_date, week_start, actual_value, pct_change, imputed.
+    """
+    if series == "ipc":
+        _check_table(conn, "dane_release_calendar")
+        _check_table(conn, "dane_ipc_monthly")
+        base = (
+            "SELECT rc.year, rc.month, rc.release_date, "
+            "date_trunc('week', rc.release_date)::DATE AS week_start, "
+            "ipc.ipc_index AS actual_value, "
+            "ipc.ipc_pct_change AS pct_change, "
+            "rc.imputed "
+            "FROM dane_release_calendar rc "
+            "JOIN dane_ipc_monthly ipc "
+            "  ON ipc.date = make_date(rc.year, rc.month, 1) "
+            "WHERE rc.series = 'ipc'"
+        )
+        date_col = "rc.release_date"
+    elif series == "ipp":
+        _check_table(conn, "dane_release_calendar")
+        _check_table(conn, "dane_ipp_monthly")
+        base = (
+            "SELECT rc.year, rc.month, rc.release_date, "
+            "date_trunc('week', rc.release_date)::DATE AS week_start, "
+            "ipp.ipp_index AS actual_value, "
+            "ipp.ipp_pct_change AS pct_change, "
+            "rc.imputed "
+            "FROM dane_release_calendar rc "
+            "JOIN dane_ipp_monthly ipp "
+            "  ON ipp.date = make_date(rc.year, rc.month, 1) "
+            "WHERE rc.series = 'ipp'"
+        )
+        date_col = "rc.release_date"
+    elif series == "bls":
+        _check_table(conn, "bls_release_calendar")
+        _check_table(conn, "fred_monthly")
+        base = (
+            "SELECT rc.year, rc.month, rc.release_date, "
+            "date_trunc('week', rc.release_date)::DATE AS week_start, "
+            "fm.value AS actual_value, "
+            "NULL::DOUBLE AS pct_change, "
+            "FALSE AS imputed "
+            "FROM bls_release_calendar rc "
+            "JOIN fred_monthly fm "
+            "  ON fm.date = make_date(rc.year, rc.month, 1) "
+            "  AND fm.series_id = 'CPIAUCSL'"
+        )
+        date_col = "rc.release_date"
+    else:
+        raise QueryError(f"Unknown calendar series: {series!r}")
+
+    # Apply optional date filter on release_date
+    params: list[object] = []
+    if start is not None:
+        base += f" AND {date_col} >= ?"
+        params.append(start)
+    if end is not None:
+        base += f" AND {date_col} <= ?"
+        params.append(end)
+
+    base += " ORDER BY rc.release_date"
+    return conn.execute(base, params).fetchdf()
