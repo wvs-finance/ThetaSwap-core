@@ -9,7 +9,8 @@
 
 ## 1. Hypotheses
 
-**Channel π (inflation):** Realized weekly vol of $\log P_{\text{cCOP}/X}$ responds to DANE Colombian CPI surprise with $\operatorname{adj-}R^2 \geq \tau_{\text{lit}} = 0.10$, in a regression with controls for US CPI surprise, BanRep policy-rate surprise, and VIX.
+**Channel π (inflation):** 
+Realized weekly vol of $\log P_{\text{cCOP}/X}$ responds to DANE Colombian CPI surprise with $\operatorname{adj-}R^2 \geq \tau_{\text{lit}} = 0.10$, in a regression with controls for US CPI surprise, BanRep policy-rate surprise, and VIX.
 
 **Channel C_remittance:** Channel's natural observable (transfer-volume residual or flow-based LHS) responds to remittance-flow or income-cycle surprise at $\operatorname{adj-}R^2 \geq \tau_{\text{lit}} = 0.10$.
 
@@ -27,6 +28,7 @@ $\tau_{\text{op}} = 0.15$ (out-of-sample operational). $\tau_{\text{lit}} = 0.10
 | Fuentes, Pincheira, Julio, Rincón, García, Zerecero, Vega, Lahura, Moreno 2014 (BanRep Borrador de Economía No. 849) | 2000 | 2012 | CL, CO, MX, PE (Colombia reported separately) | local/USD | intraday | FX returns + FX volatility | macro surprises (release vs consensus) + intervention event dummies [full-text-blocked] | intervention events, macro surprises basket [full-text-blocked] | not in abstract | C (co-index) | BanRep-native venue of the same study co-indexed as BIS WP 462 (same author team, same sample, same methodology, identical abstract language on macro surprises + intervention event-study) — do NOT double-count at T8 aggregation; treat as single citation with both BIS and BanRep handles | Native-venue discovery confirms the replication infrastructure lives at BanRep; same portability caveat as the BIS WP 462 row — CPI-only surprise coefficient must be recovered from replication files to isolate channel-π β |
 | Rincón-Torres, De la Hortúa-Pulido, Rojas-Silva, Julio-Román 2023 (BanRep Borrador de Economía, "The Low Frequency Effect of Macroeconomic News on Colombian Government Bond Yields") | not in abstract | not in abstract | Colombia | n/a (LHS is TES yields, not FX) | daily + monthly + quarterly | Colombian government (TES) bond spot rates | macro-announcement surprises including nominal-exchange-rate-depreciation surprise; two-step regression filtering high-frequency responses to isolate medium-to-long-term effect (Altavilla-Giannone-Modugno 2017 methodology) | international investor risk appetite | <10% at daily horizon; 34% at quarterly horizon (R² not adj-R²; per-surprise decomposition not in abstract) | D | Wrong-LHS under spec §7: LHS is TES bond yields rather than FX vol, so does not satisfy channel-π hypothesis directly. However, same surprise-RHS family, Colombia-specific, BanRep-native, and authors explicitly note Colombian macro surprises (excluding FX) show insignificant effect at daily but 34% quarterly — informs Colombian CPI-surprise signal strength as an adjacent-LHS bound. Tier D under §7 "adjacent LHS, same surprise-RHS family, correct country"; full-text-blocked downgrade would push to below-support but row kept for portability evidence | Strong portability for the surprise-construction pipeline (Colombian CPI release vs consensus, Altavilla et al. 2017 two-step filter). Bounds imply that Colombian CPI-surprise-driven daily-horizon explanatory power on adjacent Colombian asset prices is single-digit R² — directly informs τ_lit = 0.10 feasibility for daily FX vol; weekly aggregation may lift R² materially if their monthly/quarterly scaling extrapolates |
 | Rincón-Castro, Rubiano-López, Yaya-Garzón, Zárate-Solano 2021 ("Traspaso de la tasa de cambio a la inflación básica en Colombia", BanRep Borrador) | 2000 | 2020 | Colombia | COP/USD | quarterly | core inflation (inflación sin alimentos ni regulados) | exchange rate variation (level shock), not a CPI surprise | time-varying parameter model | pass-through coefficients 0.01–0.05 per 1% FX shock across four crisis episodes | NOT STUDIED | Direction reversal: FX→π pass-through, not π-surprise→FX-vol. Most-cited BanRep paper on the inflation/FX nexus but does not test channel π as specified (LHS and RHS are swapped). | Useful for calibrating the opposing mechanical channel magnitude — if pass-through is 0.01–0.05 and one-way, a CPI-surprise → FX-vol β of comparable magnitude would be surprising; weak negative prior on channel π magnitude |
+| Rincón-Torres, Rojas-Silva, Julio-Román 2021 ("The Interdependence of FX and Treasury Bonds Markets: The Case of Colombia", BanRep Borrador de Economía No. 1171) | 2015-01 | 2020-10 | Colombia | COP/USD (TRM) ↔ TES (Colombian gov bonds) | 5-minute intraday | FX returns (TRM) AND FX squared returns (volatility proxy) in a two-equation system; TES returns as cross-market variable | Andersen et al. 2003 standardized macro surprises: $D_{i,t} = (A_{it} - E_{it})/\hat{\sigma}_i$; Colombian variables: Trade Balance, Urban Jobless Rate, **CPI**, Monetary Policy Rate, Manufacturing Production, Retail Sales, GDP; US variables: 17 macro indicators. CPI is explicitly in the surprise basket but coefficient NOT separately reported in abstract. | Heteroskedasticity-identified VAR (Sentana-Fiorentini 2001, GARCH(1,1)); intraday seasonality via cubic splines; own lags + cross-market lags + macro-surprise leads/lags | Structural A-matrix: $a_{21}=-0.067$ (FX→TES, strong), $a_{12}=-0.001$ (TES→FX, negligible). Per-variable adj-R² not in abstract; key result is **transmission architecture** not regression fit. | C | **Transmission-architecture contribution, not a regression coefficient.** Same Tier-C issue as BIS 462/borra849: CPI is in the macro-surprise basket but CPI-specific $\alpha_{1,i}$ coefficient not isolable from abstract; §10 full-text-blocked downgrade from B to C applies. However, this paper's PRIMARY value is structural: it proves **FX is the efficient Colombian macro-shock aggregator** — FX→TES is strong ($a_{21}=-0.067$), TES→FX is negligible ($a_{12}=-0.001$). This collapses the notebook's 4-step transmission chain (shock → inflation → rates → FX) to 1 step (shock → FX directly). Also: "FX market more efficiently reflects the effect of shocks than the TES market" due to TES illiquidity. | **Highest portability of any paper found.** (i) Proves cCOP/USDC pool observes the RIGHT market — FX is where Colombian macro shocks land first and most efficiently; bonds follow. (ii) Same Andersen-2003 surprise construction as our Tier 1b specification — directly portable methodology. (iii) Same author team as the 2023 macro-news-on-TES paper (Rincón-Torres, Julio-Román); combined reading: macro news → FX (efficient, direct) → TES follows (delayed). (iv) CPI-specific coefficient exists in their replication files (CPI is listed in footnote 16 as one of the Colombian macro indicators); recovering it would elevate both this paper AND BIS 462 from Tier C to Tier B or potentially Tier A. (v) For the on-chain thesis: eliminates the need for an intermediate bond/rate channel — the pool directly observes the efficient-price venue. |
 | Ahmed, Akinci, Queralto 2023 ("Spillovers to Emerging Markets from US Economic News and Monetary Policy", IMF WP/23/107) | 2004 | 2022 | EM panel (Colombia is a panel member, not reported separately in the abstract) | local/USD (EM FX basket) | daily / high-frequency around US data releases | EM financial variables including local currency bond yields, USD-bond credit spreads, stock prices, exchange rates, and capital flows | US economic news surprises (8 series incl. nonfarm payroll, initial claims, retail sales, advance GDP, durable goods, **core CPI**, core PPI) + US monetary policy surprises | news-type fixed effects; risk-aversion channel controls [full-text-blocked on EM-country-specific breakdown] | not in abstract; headline finding "news about inflation has limited effects on average" on EM financials | NOT STUDIED | Wrong surprise origin: RHS is **US** CPI surprise, not **Colombian** CPI surprise as channel π requires. Per spec §6 this maps to the `US CPI surprise` control lemma — informative for the control set but does not estimate the channel-π β. Colombia is in the EM panel but not separably reported in the abstract, so cannot serve as Tier C either. | Strong portability for (i) the surprise-construction methodology (release vs Bloomberg consensus) and (ii) prior on the US-CPI-surprise control coefficient sign/magnitude when we estimate channel π with the full control set; "inflation news has limited effects" is a **weak prior** on the US CPI control — meaning if cCOP/X FX vol loads on Colombian CPI surprise after netting US CPI surprise, the marginal β is plausibly identifiable rather than swamped by the US channel |
 
 ## 3. Cross-currency signal-strength — Channel π
@@ -111,6 +113,55 @@ Per task note: for C_rem the counterparty rows may include remittance corridors 
 - Realized weekly FX vol = COP/USD daily closes (FRED `DEXCOUS`) aggregated to weekly sum of squared log returns.
 
 All Tier 1b inputs are reachable through free-tier FRED and public DANE/BanRep APIs — no paid data required.
+
+## 8b. On-chain connection: how these papers justify the synthetic-asset use case
+
+### The problem the derivative solves
+
+When macro shocks (GDP contractions, inflation spikes, commodity-price crashes, capital-flow reversals) erode the purchasing power of Colombian households and firms, hedging currently requires access to supervised financial intermediation: pension funds that rebalance into inflation-linked TES UVR bonds, banks that offer structured FX forwards, or offshore accounts denominated in USD. A portion of savings that individuals want to *directly control* — custom-hedging purchasing-power risk without intermediation or with minimal supervised intermediation — has no permissionless instrument available today. The RAN is designed to fill that gap.
+
+### What the literature proves about the transmission to FX
+
+**Rincón-Torres, Rojas-Silva, Julio-Román 2021 (be_1171)** — the single most important paper for the on-chain thesis — establishes that in Colombia, the FX market (COP/USD, TRM) is the **efficient price-discovery venue** for macro shocks. Structural VAR on 5-minute intraday data:
+
+- **FX → TES bonds**: strong ($a_{21} = -0.067$). 1% COP depreciation → 0.05–0.22% persistent bond-price drop.
+- **TES bonds → FX**: negligible ($a_{12} = -0.001$). 1% bond-price increase → 0.001–0.009% COP appreciation.
+- **FX vol shocks → bond liquidity** (not bond vol): FX vol spike causes TES bid/ask quote withdrawal, not TES vol increase.
+
+This means: *macro shocks do NOT flow through the interest-rate channel to reach FX. FX absorbs them directly.* The traditional intermediation path (shock → inflation → BanRep rate → TES yield → FX) is empirically backward for Colombia — FX leads, bonds follow.
+
+### Why the pool cCOP/USDC observes the right market
+
+If the FX rate is the efficient aggregator, then:
+
+$$P_{\text{cCOP/USDC}} = \text{COP/USD} = \text{TRM}$$
+
+is not a derivative of some other market's signal — it IS the primary signal. The Angstrom pool observable $g^{\text{pool}}$ on this pair captures FX vol directly as the integrated realized LVR series ($\Delta g \approx \phi^2 V(P)/(8L)$ per the notebook's §Models derivation). The derivative doesn't need an intermediate bond/rate channel because the underlying market doesn't use one either.
+
+### Why this is a synthetic asset (explicit conditions)
+
+The papers justify the transmission architecture but the instrument is **synthetic and aspirational** given current on-chain constraints:
+
+**Condition (a) — cCOP liquidity**: cCOP on Celo has ~$7K/day secondary volume (Uniswap V3 cCOP/USDT), ~$66–86K total market cap. The Mento vAMM is the primary venue (reserve-backed, no LP slippage — structurally different from the Angstrom CLAMM assumed in the notebook). $g^{\text{pool}}$ cannot be meaningfully computed at this scale. **Must deepen to ≥$50K/day on a concentrated-liquidity venue for the observable to be measurable.** Celo governance has a pending $3.3M liquidity-incentive proposal (July 2025).
+
+**Condition (b) — empirical magnitude**: No published paper isolates the Colombian-CPI-surprise → FX-vol coefficient at weekly frequency. Adjacent-asset evidence (Rincón-Torres 2023, TES yields) bounds the signal at <10% R² daily / 34% quarterly. Tier 1b (in-house regression) must confirm $\operatorname{adj-}R^2 \geq 0.15$ out-of-sample before the product can claim "inflation hedge" with econometric backing.
+
+**Condition (c) — Angstrom pool exists**: The notebook's §Models derivation of $g^{\text{pool}} \approx \phi^2 V(P)/(8L)$ requires an Angstrom-style auction (MEV-mitigating bid structure where $\phi$ is the effective cost bound). As of 2026-04, Angstrom is live on Ethereum L1 but no cCOP pool exists. A cCOP/USDC Angstrom pool requires cCOP on Ethereum (currently Celo-only) or Angstrom deployment on Celo.
+
+**If conditions (a)–(c) hold**, the RAN on cCOP/USDC:
+- Reads macro-shock FX vol from the efficient price-discovery venue (justified by be_1171)
+- Tokenizes it via the differential-form $U_{\text{RAN}}$ on Angstrom's observable stream
+- Settles the hedge via Panoptic perpetual options
+- Requires NO supervised intermediary — any wallet can buy/write the RAN
+- Provides a *permissionless, self-custodied* alternative to pension-fund rebalancing or bank-offered FX forwards for Colombian purchasing-power hedging
+
+### What TES bond yields do NOT provide (and why the derivative is not on bonds)
+
+The be_1171 finding that TES bonds are *followers* of FX, not leaders, means building the derivative on TES yields would observe the WRONG market:
+- TES market is illiquid (concentrated on long-maturity species, few market makers, extended periods without quotes)
+- TES responds TO FX shocks, not the other way — so TES yields are a delayed, attenuated, liquidity-distorted version of the same macro signal that FX prices directly
+- On-chain tokenization of TES yields would add another indirection layer (oracle → on-chain price feed → pool) on top of an already-delayed signal
+- FX (cCOP/USDC) eliminates all of this: the pool price IS the efficient signal, with no oracle dependency for the price itself
 
 ## 9. Sources consulted
 
