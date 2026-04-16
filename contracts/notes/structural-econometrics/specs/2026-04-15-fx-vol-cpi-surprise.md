@@ -1,8 +1,8 @@
 # Structural Econometric Specification: Colombian Price-Level Surprise → COP/USD FX Realized Volatility
 
-**Date:** 2026-04-15 (Rev 2: 2026-04-15 post three-reviewer pass)
+**Date:** 2026-04-15 (Rev 3: 2026-04-15 post verification round)
 **Skill:** structural-econometrics (Reiss & Wolak 2007 framework)
-**Status:** Rev 2. Addresses 3 consensus + 5 unique issues from Model QA + Reality Checker + Adversarial Referee.
+**Status:** Rev 3. **Phase 5 BLOCKED** pending verification of 3 data sources (BanRep consensus, IBR, SUAMECA). Specification complete; estimation cannot start until data verification passes.
 **Upstream:** Tier 1 literature deliverable (`contracts/notes/structural-econometrics/identification/2026-04-14-inflation-mirror-two-channel-literature.md`, verdict: `PIVOT_TO_TIER_1B`)
 **Downstream:** Layer 2 Angstrom pool parameterization (deferred until β estimated)
 
@@ -17,8 +17,8 @@
 **Unit of observation (Phase 0b):** Week (Monday–Friday). Daily COP/USD log-returns from FRED `DEXCOUS` aggregated to weekly realized vol. N ≈ 1,100 weekly observations (~2003–2025); ~260 release weeks, ~840 non-release weeks.
 
 **Outcome variable (Phase 0c):** Three co-primary LHS specifications (Rev 2: log(RV) demoted from sole primary after Model QA flagged ABDE 2001 normality requires high-frequency data, not n=5 daily returns):
+- $\text{RV}_t^{1/3}$ (cube-root) — Wilson-Hilferty (1931) variance-stabilizing transform for chi-squared-family data at small df. Valid at n=5 where Bartlett (1947) sqrt-transform has ~10% relative error. Rev 3 primary LHS.
 - $\log(\text{RV}_t)$ — exploratory (ABDE 2001 normality argument does not apply at n=5; treat as candidate, not theoretically justified)
-- $\sqrt{\text{RV}_t}$ — variance-stabilizing transform for chi-squared-family data at small n (Model QA recommendation)
 - $\text{RV}_t$ (raw) — direct $g^{\text{pool}}$ mapping for product pitch
 
 **Why this matters:** The RAN (Range Accrual Note) on a hypothetical cCOP/USDC Angstrom pool hedges purchasing-power erosion from macro shocks. The pool observable $g^{\text{pool}} \approx \phi^2 V(P)/(8L)$ (Milionis 2022) captures FX realized vol. β quantifies how much of that vol is driven by Colombian price-level news — the economic channel the hedge targets.
@@ -141,7 +141,16 @@ $$\varepsilon_t = \underbrace{\eta_t}_{\text{unobserved heterogeneity}} + \under
 
 $$f(\text{RV}_t) = \alpha + \beta \cdot s_t^{\text{CPI}} + \gamma_1 \cdot s_t^{\text{US CPI}} + \gamma_2 \cdot s_t^{\text{BanRep}} + \gamma_3 \cdot \text{VIX}_t + \gamma_4 \cdot I_t + \gamma_5 \cdot r_t^{\text{oil}} + \varepsilon_t$$
 
-where $f(\cdot) \in \{\log(\cdot),\, \sqrt{\cdot},\, \text{identity}\}$ (three co-primary LHS transforms per §1).
+where $f(\cdot) \in \{(\cdot)^{1/3},\, \log(\cdot),\, \text{identity}\}$ (Rev 3: cube-root primary per Wilson-Hilferty 1931; log exploratory; raw for g^pool mapping).
+
+**Co-primary estimation approach B: GARCH(1,1)-X** (Rev 3: promoted from A7 per all three reviewers — the Colombian FX-vol literature's workhorse model; OLS on transformed RV and GARCH-X are co-primary, not alternatives):
+
+$$r_t = \mu + \sqrt{h_t}\, z_t, \quad z_t \sim N(0,1)$$
+$$h_t = \omega + \alpha_1 \varepsilon_{t-1}^2 + \beta_1 h_{t-1} + \delta \cdot |s_t^{\text{CPI}}|$$
+
+where $|s_t^{\text{CPI}}|$ enters in ABSOLUTE VALUE (Rev 3 fix: $s_t$ in levels would push $h_t$ negative on negative surprises; Han & Kristensen 2014 JoE, Engle & Rangel 2008 require $|s_t|$ or $s_t^2$ in the variance equation). $\delta > 0$ = CPI surprise magnitude increases conditional FX variance. Estimated by MLE. Refs: Sentana & Fiorentini 2001 (identification); be_1171 §3 (Colombian implementation of heteroskedasticity-identified VAR with GARCH).
+
+For asymmetric effects: $\delta^+ \cdot s_t^{+} + \delta^- \cdot |s_t^{-}|$ where $s^+ = \max(s,0)$, $s^- = \min(s,0)$ (tests whether upside CPI surprises are more disruptive than downside under IT regime).
 
 $s_t^{\text{CPI}}$ = Colombian CPI surprise only (standardized: DANE release − BanRep consensus, divided by historical σ). PPI enters via co-primary decomposition below, NOT bundled.
 
@@ -151,7 +160,9 @@ $r_t^{\text{oil}}$ = weekly WTI/Brent log-return (Rev 2 addition: Colombia is an
 
 $$f(\text{RV}_t) = \alpha + \beta_1 \cdot s_t^{\text{CPI}} + \beta_2 \cdot \Delta\text{IPP}_t + \gamma_1 \cdot s_t^{\text{US CPI}} + \gamma_2 \cdot s_t^{\text{BanRep}} + \gamma_3 \cdot \text{VIX}_t + \gamma_4 \cdot I_t + \gamma_5 \cdot r_t^{\text{oil}} + \varepsilon_t$$
 
-where $\Delta\text{IPP}_t$ is raw month-on-month PPI change (no consensus available for PPI). If $\beta_1 \gg \beta_2$: CPI dominates → "inflation hedge" claim holds. If $\beta_2 \geq \beta_1$: producer-cost channel dominates → product is "price-level hedge" not "inflation hedge" specifically.
+where $\tilde{s}_t^{\text{PPI}} = (\Delta\text{IPP}_t - \overline{\Delta\text{IPP}}) / \hat{\sigma}_{\Delta\text{IPP}}$ is STANDARDIZED PPI change (Rev 3: mean-subtracted and σ-divided, same scale as $s_t^{\text{CPI}}$, so $\beta_1$ and $\beta_2$ both measure "vol response per 1-SD shock" and are directly comparable). If $\beta_1 \gg \beta_2$: CPI dominates → "inflation hedge" claim holds. If $\beta_2 \geq \beta_1$: producer-cost channel dominates → product is "price-level hedge" not "inflation hedge" specifically.
+
+**Fallback if BanRep consensus is unavailable (Rev 3: separate co-primary, not silent substitution per Adversarial Referee):** If the BanRep Encuesta de Expectativas is not machine-readable historically, replace $s_t^{\text{CPI}}$ with an AR(1) forecast residual: $\hat{s}_t^{\text{CPI}} = \Delta\text{IPC}_t - \hat{\mathbb{E}}_{t-1}[\Delta\text{IPC}_t]$ where $\hat{\mathbb{E}}$ is the AR(1) conditional mean. This is a DIFFERENT object than a survey surprise — it tests "does CPI deviate from its own recent trend predict FX vol?" rather than "does CPI deviate from market expectations predict FX vol?" The two are not substitutes; both should be reported if survey data is available, and the AR(1) version alone if not. Ref: Andersen et al. 2003 §II note that survey-based and time-series-based surprises produce quantitatively similar results for US data; verification needed for Colombian CPI.
 
 **Robustness:** Release-day exclusion (R2), Student-t (R3).
 
@@ -206,7 +217,15 @@ The hedge works only if CPI surprise raises vol DISPROPORTIONATELY in the tail t
 2. Under what liquidity conditions (LP placement patterns) does the surprise-induced flow concentrate in tails vs target.
 3. The functional relationship: $U_{\text{RAN}} = h(\beta, L_{\text{target}}, L_{\text{tail}}, \text{surprise magnitude})$ where $h$ is derived from the CLAMM + differential structure.
 
-**If the Layer 2 analysis shows uniform distribution:** β > 0 is necessary but not sufficient for the hedge. The product claim requires BOTH β > 0 (signal exists in total vol) AND concentration ≠ uniform (signal concentrates in the differential). Layer 1 settles the first condition; Layer 2 settles the second.
+**Gate structure (Rev 3: "necessary but not sufficient" per all three reviewers):**
+
+Layer 1 β > 0 is **necessary** — if CPI surprise doesn't increase total FX vol, the pool observable has no signal to read.
+
+Layer 1 β > 0 is **NOT sufficient** — the hedge additionally requires that CPI-surprise-induced vol concentrates disproportionately in tail ticks relative to target ticks.
+
+**Falsifiable closure condition (Rev 3):** The mapping gap closes IF Layer 2 simulation demonstrates that under the estimated β and realistic LP placement patterns, the ratio $g(i_S)/g(i_T)$ during CPI-surprise weeks DIFFERS from $g(i_S)/g(i_T)$ during non-surprise weeks by at least 10% (one-sided). If the ratio is indistinguishable → vol distributes uniformly across ticks → $U_{\text{RAN}} \approx 0$ despite β > 0 → **product thesis fails at the tick-concentration step**, not the macro-signal step.
+
+**If the gap is unfillable** (uniform distribution is the empirical reality for macro-driven vol on CLAMMs), then the RAN as specified cannot hedge inflation specifically — it can only hedge total FX vol without tick-range discrimination. This would require redesigning $U_{\text{RAN}}$ to depend on total $g^{\text{pool}}$ rather than the differential $g(i_S) - g(i_T)$.
 
 ---
 
@@ -216,7 +235,8 @@ The hedge works only if CPI surprise raises vol DISPROPORTIONATELY in the tail t
 |---|---|---|---|---|---|
 | T1 | Surprise unpredictable | Consensus rationality | $\mathbb{E}[s_t \mid s_{t-1}, \text{RV}_{t-1}, \text{VIX}_{t-1}] = 0$ | F-test on lagged predictors | Consensus biased → β biased |
 | T2 | Release weeks higher vol | Announcement channel exists | $\text{Var}(\text{RV} \mid \text{release}) > \text{Var}(\text{RV} \mid \text{non-release})$ | Levene test | No channel → β uninformative |
-| T3 | β ≠ 0 | Surprise moves vol (Rev 2: changed from one-sided β>0 to two-sided β≠0 per Adversarial Referee — β>0 is an information-arrival argument agnostic to the inflation channel; testing β≠0 and interpreting sign ex post is more honest) | $\beta \neq 0$ | Two-sided t-test; interpret sign ex post | β=0 → surprise doesn't move vol → hedge mechanism doesn't work regardless of direction |
+| T3a | β ≠ 0 (statistical) | Surprise moves vol | $\beta \neq 0$ | Two-sided t-test | β=0 → surprise doesn't move vol → no signal |
+| T3b | β > 0 (product gate, Rev 3) | Surprise INCREASES vol — required for g^pool to accrue more in shock weeks | $\hat{\beta} > 0$ | Sign check on point estimate (not a statistical test — an economic requirement) | β < 0 → surprise DECREASES vol → hedge mechanism reverses → product thesis fails. Report but do not ship. |
 | T4 | Residuals uncorrelated | Model captures dynamics | $\mathbb{E}[\varepsilon_t \varepsilon_{t-k}] = 0$, $k=1,...,8$ | Ljung-Box Q | Add lagged RV / ARMA |
 | T5 | Residuals normal | Log-transform works | $\varepsilon \sim N$ | Jarque-Bera | Switch to Student-t (R3) |
 | T6 | No structural break | β stable across regimes | $\beta_{\text{pre}} = \beta_{\text{post}}$ | Chow / Bai-Perron | Report sub-samples |
@@ -247,7 +267,8 @@ The hedge works only if CPI surprise raises vol DISPROPORTIONATELY in the tail t
 | A5 | Lagged RV control | Add $\log(\text{RV}_{t-1})$ as 6th regressor | Announcement effect above vol clustering |
 | A6 | Bivariate (no controls) | $f(\text{RV}_t) = \alpha + \beta \cdot s_t^{\text{CPI}} + \varepsilon$ | Benchmark: do controls matter? |
 | A7 | **GARCH(1,1)-X** (Rev 2 addition per Adversarial Referee) | $h_t = \omega + \alpha_1 \varepsilon_{t-1}^2 + \beta_1 h_{t-1} + \delta \cdot s_t^{\text{CPI}}$ where $h_t$ is conditional variance of daily COP/USD returns. $\delta > 0$ = CPI surprise enters the variance equation directly. MLE estimation. | Natural model for "does CPI surprise increase FX vol" — the entire Colombian FX-vol literature (be_1171, Berganza-Broto) uses GARCH. OLS on RV ignores vol persistence; GARCH-X models it explicitly. |
-| A8 | **Asymmetric effects** (Rev 2 addition per Adversarial Referee) | $f(\text{RV}_t) = \alpha + \beta^+ \cdot s_t^{+} + \beta^- \cdot s_t^{-} + \text{controls} + \varepsilon$ where $s^+ = \max(s,0)$, $s^- = \min(s,0)$ | Test whether upside CPI surprises (inflation > expected) generate more vol than downside (inflation < expected). Under IT regimes, upside may be more disruptive (BanRep tightening). |
+| A8 | **Oil level control** (Rev 3 per RC + MQA + Referee) | Add $\log(P_t^{\text{oil}})$ (oil price level) as 7th regressor alongside oil return. Colombia's fiscal revenue depends on oil LEVEL ($40 vs $120), not return. Weekly return captures terms-of-trade channel; log-level captures fiscal-revenue channel (Ecopetrol). | Test whether oil-level channel confounds β after controlling for oil return. |
+| A9 | **Asymmetric effects** (Rev 2 addition per Adversarial Referee) | $f(\text{RV}_t) = \alpha + \beta^+ \cdot s_t^{+} + \beta^- \cdot s_t^{-} + \text{controls} + \varepsilon$ where $s^+ = \max(s,0)$, $s^- = \min(s,0)$ | Test whether upside CPI surprises (inflation > expected) generate more vol than downside (inflation < expected). Under IT regimes, upside may be more disruptive (BanRep tightening). |
 
 ---
 
