@@ -230,3 +230,60 @@ def test_get_manifest(conn: duckdb.DuckDBPyConnection) -> None:
     eme = [r for r in rows if r.source == "banrep:eme"]
     assert len(eme) == 1
     assert eme[0].status == "unavailable"
+
+
+# ── Batch 9: release-week filters ──────────────────────────────────────────
+
+
+def test_get_weekly_panel_release_only(conn: duckdb.DuckDBPyConnection) -> None:
+    from scripts.econ_query_api import get_weekly_panel_release_only
+
+    df = get_weekly_panel_release_only(conn)
+    assert isinstance(df, pd.DataFrame)
+    assert 250 < len(df) < 400
+    # Every row must have at least one release flag True
+    for _, row in df.iterrows():
+        assert row["is_cpi_release_week"] or row["is_ppi_release_week"]
+
+
+def test_get_weekly_panel_by_release_type(conn: duckdb.DuckDBPyConnection) -> None:
+    from scripts.econ_query_api import get_weekly_panel_by_release_type
+
+    cpi_only, ppi_only, both = get_weekly_panel_by_release_type(conn)
+    assert isinstance(cpi_only, pd.DataFrame)
+    assert isinstance(ppi_only, pd.DataFrame)
+    assert isinstance(both, pd.DataFrame)
+    # Most releases are joint
+    assert len(both) > 200
+    # cpi_only rows: is_cpi=True AND is_ppi=False
+    for _, row in cpi_only.iterrows():
+        assert row["is_cpi_release_week"] is True or row["is_cpi_release_week"] == 1
+        assert row["is_ppi_release_week"] is False or row["is_ppi_release_week"] == 0
+
+
+def test_get_daily_panel_release_days(conn: duckdb.DuckDBPyConnection) -> None:
+    from scripts.econ_query_api import get_daily_panel_release_days
+
+    df = get_daily_panel_release_days(conn)
+    assert isinstance(df, pd.DataFrame)
+    assert len(df) > 200
+    # Every row must have at least one release-day flag True
+    for _, row in df.iterrows():
+        assert row["is_cpi_release_day"] or row["is_ppi_release_day"]
+
+
+def test_get_weekly_panel_release_split(conn: duckdb.DuckDBPyConnection) -> None:
+    from scripts.econ_query_api import get_weekly_panel_release_split
+
+    release, non_release = get_weekly_panel_release_split(conn)
+    assert isinstance(release, pd.DataFrame)
+    assert isinstance(non_release, pd.DataFrame)
+    # Together they cover the full panel
+    assert len(release) + len(non_release) > 1000
+    # Release rows all have at least one flag True
+    for _, row in release.iterrows():
+        assert row["is_cpi_release_week"] or row["is_ppi_release_week"]
+    # Non-release rows have both flags False
+    for _, row in non_release.iterrows():
+        assert not row["is_cpi_release_week"]
+        assert not row["is_ppi_release_week"]

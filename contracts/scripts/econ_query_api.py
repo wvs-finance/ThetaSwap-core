@@ -236,3 +236,82 @@ def get_panel_completeness(
                 "zero_count": int(row[1]) if row and row[1] is not None else 0,
             })
     return pd.DataFrame(records)
+
+
+# ── Task 2: release-week / release-day filters ─────────────────────────────
+
+
+def get_weekly_panel_release_only(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> pd.DataFrame:
+    """Weekly panel rows where CPI or PPI was released that week."""
+    _check_table(conn, "weekly_panel")
+    where, params = _date_filter(start, end, col="week_start")
+    release_clause = "(is_cpi_release_week OR is_ppi_release_week)"
+    if where:
+        where += f" AND {release_clause}"
+    else:
+        where = f" WHERE {release_clause}"
+    sql = f"SELECT * FROM weekly_panel{where} ORDER BY week_start"
+    return conn.execute(sql, params).fetchdf()
+
+
+def get_weekly_panel_by_release_type(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Split release weeks into (cpi_only, ppi_only, both).
+
+    cpi_only = is_cpi_release_week AND NOT is_ppi_release_week
+    ppi_only = NOT is_cpi_release_week AND is_ppi_release_week
+    both     = is_cpi_release_week AND is_ppi_release_week
+    """
+    _check_table(conn, "weekly_panel")
+    where, params = _date_filter(start, end, col="week_start")
+    base = f"SELECT * FROM weekly_panel{where} ORDER BY week_start"
+    df = conn.execute(base, params).fetchdf()
+    cpi_flag = df["is_cpi_release_week"].astype(bool)
+    ppi_flag = df["is_ppi_release_week"].astype(bool)
+    cpi_only = df[cpi_flag & ~ppi_flag].reset_index(drop=True)
+    ppi_only = df[~cpi_flag & ppi_flag].reset_index(drop=True)
+    both = df[cpi_flag & ppi_flag].reset_index(drop=True)
+    return cpi_only, ppi_only, both
+
+
+def get_daily_panel_release_days(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> pd.DataFrame:
+    """Daily panel rows where CPI or PPI was released that day."""
+    _check_table(conn, "daily_panel")
+    where, params = _date_filter(start, end, col="date")
+    release_clause = "(is_cpi_release_day OR is_ppi_release_day)"
+    if where:
+        where += f" AND {release_clause}"
+    else:
+        where = f" WHERE {release_clause}"
+    sql = f"SELECT * FROM daily_panel{where} ORDER BY date"
+    return conn.execute(sql, params).fetchdf()
+
+
+def get_weekly_panel_release_split(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Split weekly panel into (release_weeks, non_release_weeks) for Levene test."""
+    _check_table(conn, "weekly_panel")
+    where, params = _date_filter(start, end, col="week_start")
+    base = f"SELECT * FROM weekly_panel{where} ORDER BY week_start"
+    df = conn.execute(base, params).fetchdf()
+    is_release = (
+        df["is_cpi_release_week"].astype(bool)
+        | df["is_ppi_release_week"].astype(bool)
+    )
+    release_weeks = df[is_release].reset_index(drop=True)
+    non_release_weeks = df[~is_release].reset_index(drop=True)
+    return release_weeks, non_release_weeks
