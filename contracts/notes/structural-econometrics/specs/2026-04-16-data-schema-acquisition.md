@@ -1,8 +1,8 @@
 # Data Schema & Acquisition Strategy: Structural Econometrics Pipeline
 
-**Date:** 2026-04-16 (Rev 3: address 2 BLOCKs + 11 consensus FLAGs from Rev 2 3-way review)
+**Date:** 2026-04-16 (Rev 4: Priority 1b resolved — IBR verified, intervention extracted, EME unavailable → AR(1) confirmed primary)
 **Upstream spec:** `2026-04-15-fx-vol-cpi-surprise.md` (Rev 4)
-**Status:** Rev 3. Ready for implementation.
+**Status:** Rev 4. Ready for implementation.
 **Phase:** 5 Step A — data pipeline
 **Reviewers:** Data Engineer, Reality Checker, Model QA Specialist (2 rounds)
 
@@ -36,6 +36,15 @@
 - **DE-N1 (daily week_start):** Added `week_start` column to daily_panel for join convenience.
 - **DE-N2 (degenerate weeks):** Documented weeks with n_trading_days <= 1 retained; estimation module filters.
 
+**Rev 4 changelog (from Rev 3):**
+
+- **P1b-IBR (VERIFIED):** IBR overnight confirmed via BanRep SDMX REST API (`DF_IBR_DAILY_HIST`, SUBJECT `IRIBRM00`). Daily from 2008-01-02. No auth. New raw table `banrep_ibr_daily` (§3.10). `banrep_rate_surprise` moved from deferred to active in both panels.
+- **P1b-intervention (VERIFIED via Playwright):** FX intervention data extracted from SUAMECA Angular portal via Playwright. 1,674 daily records, 1999–2024, 8 intervention types. New raw table `banrep_intervention_daily` (§3.11). `intervention_dummy` moved from deferred to active in both panels. Raw data cached at `contracts/data/raw/banrep_fx_intervention.json`.
+- **P1b-EME (UNAVAILABLE):** BanRep EME survey results are NOT available as machine-readable data. SUAMECA lists EME as metadata only (name, periodicity). No download link, no API, no Excel. BanRep old portal URLs return 404. Not on Datos Abiertos. be_1171 used Bloomberg (§2.4 fn.16). AR(1) fallback activated → `cpi_surprise_ar1` confirmed as primary RHS variable (no longer labeled "fallback"). `cpi_surprise_survey` removed from deferred columns (indefinitely deferred — requires Bloomberg or manual PDF digitization of ~260 monthly EME reports).
+- **Priority 1b restructured:** Split into 1b (IBR + intervention, both verified) and 1c (EME, unavailable). Updated decision tree outcomes.
+- **§3.9 updated:** Conflict resolution now covers `banrep_ibr_daily` and `banrep_intervention_daily`.
+- **§5 pipeline flow updated:** Steps reflect IBR download via SDMX and intervention load from cached JSON.
+
 ---
 
 ## 1. Acquisition Priority Order (Risk-First)
@@ -56,22 +65,41 @@ BanRep's own website (`banrep.gov.co/es/estadisticas/trm`) returns 404 or bot pr
 
 **STOP condition retained as defensive coding:** If TRM is unavailable (endpoint changes, Datos Abiertos goes offline), no daily COP/USD = no RV = no model. Pipeline halts and escalates to user. No FRED fallback exists (DEXCOUS does not exist).
 
-### Priority 1b: BanRep unverified sources (EME, IBR, SUAMECA)
+### Priority 1b: BanRep IBR + FX intervention (VERIFIED — download immediately)
 
-These remain genuinely unverified. Their availability determines whether the model runs with survey-based surprises or AR(1) fallbacks.
+Both sources investigated and verified (2026-04-16).
 
-| Variable | Source | What must be verified | If unavailable |
-|---|---|---|---|
-| CPI survey consensus (s_t^CPI) | BanRep Encuesta de Expectativas Mensuales (EME) | Is the historical archive (2003–2025) downloadable as machine-readable data (CSV/Excel/API)? Or is it PDF-only / behind Bloomberg? | AR(1) CPI surprise from DANE IPC (different object, reported separately) |
-| BanRep policy-rate surprise (s_t^BanRep) | BanRep rate decisions + IBR overnight | Is the IBR overnight series available as a time series from BanRep or Datos Abiertos? Is overnight IBR sufficient? | Use overnight IBR lag as policy-rate proxy |
-| FX intervention dummy (I_t) | BanRep SUAMECA portal | Does SUAMECA publish a machine-readable intervention time series (dates + amounts)? Or is it PDF reports only? | Omit I_t with noted limitation |
+**IBR overnight rate** — confirmed via BanRep SDMX REST API:
 
-**Decision tree for each:**
-1. Attempt programmatic download (API, CSV, Excel link)
-2. If unavailable programmatically → attempt manual download from portal
-3. If no machine-readable format exists → document the failure in `download_manifest`, activate the fallback above
+- **Endpoint:** `https://totoro.banrep.gov.co/nsi-jax-ws/rest/data/ESTAT,DF_IBR_DAILY_HIST,1.0/all/ALL/?startPeriod=2008&endPeriod=2027&dimensionAtObservation=TIME_PERIOD&detail=full`
+- **Date range:** 2008-01-02 to present (live-tested: IBR overnight ER = 11.249% on 2026-04-16)
+- **Format:** SDMX-ML Generic Data v2.1 (XML). Filter for SUBJECT=`IRIBRM00` (overnight), UNIT_MEASURE=`ER` (effective rate).
+- **Authentication:** None required
+- **Caveat:** `endPeriod` is exclusive on year — set `endPeriod=2027` to get 2026 data.
+- **Documentation:** https://suameca.banrep.gov.co/archivos/webservices/documento_tecnico_ws_consumo_sdmx.pdf (38 pages, v3.0)
+- **Fallback:** Datos Abiertos Socrata dataset `b8fs-cx24` (shorter range: from 2012)
 
-**Outcome:** Each source gets a manifest entry with status before any pipeline code is written for it. If all three fail, the model still runs on confirmed sources — but the upstream spec must be amended to reflect reduced controls.
+**FX intervention data** — extracted via Playwright from SUAMECA Angular portal:
+
+- **Source page:** `https://suameca.banrep.gov.co/estadisticas-economicas/informacionSerie/3300/operaciones_mercado_cambiario_resumen`
+- **Records:** 1,674 daily intervention entries, 1999-12-01 to 2024-10-04
+- **Columns (8 intervention types):** Intervención discrecional (294 days), Compra directa (1,098 days), Opciones put/call para control volatilidad (41+34 days), Opciones put/call para acumulación/desacumulación reservas (122+8 days), NDF (78 days), FX Swaps (4 days)
+- **Format:** Extracted as JSON (`contracts/data/raw/banrep_fx_intervention.json`) and TSV (`contracts/data/raw/banrep_fx_intervention.tsv`)
+- **Access method:** Playwright JS evaluation (SUAMECA is Angular SPA; BanRep's own website has ShieldSquare bot protection). Table data rendered in DOM, extracted via `document.querySelectorAll('table')[1]`.
+- **Update cadence:** Quarterly manual re-extraction via Playwright, or scripted with headless browser.
+
+### Priority 1c: BanRep EME consensus (UNAVAILABLE — AR(1) confirmed primary)
+
+The BanRep Encuesta Mensual de Expectativas (EME) survey results are **not available as machine-readable data**:
+
+- SUAMECA lists EME under "Encuestas sobre expectativas económicas" as metadata only ("Periodicidad: Mensual, disponible desde: septiembre de 2003") — no download link, no data table, no API
+- BanRep old portal URLs (`banrep.gov.co/es/estadisticas/encuesta-mensual-*`) all redirect to 404 (migrated to SUAMECA)
+- Not on Datos Abiertos Colombia (searched via Socrata API — no results)
+- Not in the SDMX API (only 11 series exposed; EME is not among them)
+- be_1171 (the upstream paper) used Bloomberg for CPI expectations (§2.4 fn.16)
+- EME results are published as monthly PDF reports (medians/means/ranges of analyst CPI expectations). Constructing a historical time series would require manual digitization of ~260 PDFs (2003–2025).
+
+**Consequence:** The AR(1) CPI surprise (`cpi_surprise_ar1`) is the **confirmed primary** RHS variable, not a fallback. The upstream spec (Rev 4 §4.1) correctly documents AR(1) as a "different object" from the survey-based surprise — it tests "does CPI deviate from its own recent trend predict FX vol?" rather than "does CPI deviate from market expectations predict FX vol?" Both are valid but measure different things. The survey-based surprise column (`cpi_surprise_survey`) is indefinitely deferred — it would require Bloomberg access or manual PDF digitization.
 
 ### Priority 2: DANE (medium uncertainty)
 
@@ -245,13 +273,52 @@ A single source may have multiple manifest rows (e.g., one `verified`, then one 
 
 ### 3.9 Conflict Resolution (Idempotency)
 
-**Raw tables (banrep_trm_daily, fred_daily, fred_monthly, dane_ipc_monthly, dane_ipp_monthly):** `INSERT OR REPLACE` on conflict with the primary key. The upstream source is the authority — if a re-download produces different values for the same PK, the newer value wins. The `_ingested_at` column (where present) records when the overwrite occurred.
+**Raw tables (banrep_trm_daily, banrep_ibr_daily, banrep_intervention_daily, fred_daily, fred_monthly, dane_ipc_monthly, dane_ipp_monthly):** `INSERT OR REPLACE` on conflict with the primary key. The upstream source is the authority — if a re-download produces different values for the same PK, the newer value wins. The `_ingested_at` column (where present) records when the overwrite occurred.
 
 **Calendar tables (dane_release_calendar, bls_release_calendar):** `INSERT OR REPLACE` — same rationale. Calendar data is manually compiled or API-sourced; corrections overwrite.
 
 **download_manifest:** `INSERT` only (append). Never overwrites.
 
 **Derived tables (weekly_panel, daily_panel):** Recomputed via `CREATE OR REPLACE TABLE ... AS (SELECT ...)`. This is atomic in DuckDB — no partial states.
+
+### 3.10 banrep_ibr_daily
+
+Daily IBR overnight effective rate from BanRep SDMX REST API (`DF_IBR_DAILY_HIST`). Used to construct BanRep policy-rate surprises (change in IBR around BanRep announcement dates).
+
+| Column | Type | Constraint | Notes |
+|---|---|---|---|
+| date | DATE | PRIMARY KEY | Trading day. Parsed from SDMX TIME_PERIOD (format: YYYYMMDD). |
+| ibr_overnight_er | DOUBLE | NOT NULL | IBR overnight effective rate (%). SUBJECT=`IRIBRM00`, UNIT_MEASURE=`ER`. |
+| _ingested_at | TIMESTAMP | NOT NULL DEFAULT current_timestamp | Row-level audit |
+
+**Ingestion rule:** SDMX response is XML (SDMX-ML Generic Data v2.1). Parse `ObsValue` for the rate, `TIME_PERIOD` for the date. Filter dimensions: SUBJECT=`IRIBRM00`, UNIT_MEASURE=`ER`. Date range: 2008-01-02 to present.
+
+**Rate-surprise construction (estimation module):** The BanRep rate surprise is computed as the change in IBR overnight around BanRep board meetings (typically last Friday of each month). s_t^BanRep = IBR(meeting_day+1) - IBR(meeting_day-1). This requires a BanRep meeting calendar (analogous to `dane_release_calendar`). The meeting calendar is NOT defined in this spec — it is an estimation-module input. The pipeline provides the raw daily IBR series; the estimation module constructs the surprise.
+
+### 3.11 banrep_intervention_daily
+
+Daily FX intervention data from SUAMECA, extracted via Playwright. Records BanRep's USD purchases/sales across 8 intervention mechanisms.
+
+| Column | Type | Constraint | Notes |
+|---|---|---|---|
+| date | DATE | PRIMARY KEY | Intervention date (only dates with intervention activity appear) |
+| discretionary | DOUBLE | | Intervención discrecional (millions USD). NULL if no activity. |
+| direct_purchase | DOUBLE | | Compra directa (millions USD) |
+| put_volatility | DOUBLE | | Opciones put para control volatilidad (millions USD) |
+| call_volatility | DOUBLE | | Opciones call para control volatilidad (millions USD). Negative = BanRep selling USD. |
+| put_reserve_accum | DOUBLE | | Opciones put para acumulación de reservas (millions USD) |
+| call_reserve_decum | DOUBLE | | Opciones call para desacumulación de reservas (millions USD) |
+| ndf | DOUBLE | | NDF (Non delivery forward) sales (millions USD) |
+| fx_swaps | DOUBLE | | FX Swaps sales (millions USD) |
+| _ingested_at | TIMESTAMP | NOT NULL DEFAULT current_timestamp | Row-level audit |
+
+**Source:** Cached at `contracts/data/raw/banrep_fx_intervention.json` (extracted via Playwright from SUAMECA on 2026-04-16). 1,674 records, 1999-12-01 to 2024-10-04.
+
+**Ingestion rule:** Load JSON, parse date from `YYYY/MM/DD` format, cast amount strings to DOUBLE (empty string → NULL). Only dates with at least one non-empty intervention column appear in the source data.
+
+**Intervention dummy construction:** For the weekly/daily panels, `intervention_dummy = 1` if ANY intervention column is non-NULL on that date (or within that week for the weekly panel). The amounts are also available for continuous intervention controls if the estimation module wants to test intervention magnitude rather than a binary dummy.
+
+**Update cadence:** Quarterly manual re-extraction via Playwright script. The SUAMECA portal is an Angular SPA that requires a browser runtime — `curl`/`requests` cannot access the rendered table data.
 
 ---
 
@@ -273,16 +340,17 @@ The estimation-ready dataset for OLS primary and sensitivity specs. One row per 
 | oil_return | DOUBLE | Weekly WTI log-return: log(last_price_this_week / last_price_prior_week) |
 | oil_log_level | DOUBLE | log(WTI last available price this week) — sensitivity A8 |
 | us_cpi_surprise | DOUBLE | AR(1) residual of CPIAUCSL MoM % change; **0.0** on non-release weeks |
-| cpi_surprise_ar1 | DOUBLE | AR(1) residual of DANE IPC MoM % change; **0.0** on non-release weeks. Core column (likely primary path given EME uncertainty). |
+| cpi_surprise_ar1 | DOUBLE | AR(1) residual of DANE IPC MoM % change; **0.0** on non-release weeks. **Confirmed primary RHS variable** (EME survey data unavailable — see §1 Priority 1c). |
 | dane_ipc_pct | DOUBLE | IPC MoM % change on release week; **0.0** on non-release weeks |
 | dane_ipp_pct | DOUBLE | IPP MoM % change on release week; **0.0** on non-release weeks |
+| banrep_rate_surprise | DOUBLE | Change in IBR overnight around BanRep board meeting; **0.0** on non-meeting weeks. Constructed from `banrep_ibr_daily`. Available from 2008. |
+| intervention_dummy | SMALLINT | 1 if BanRep intervened in FX market this week (any type); 0 otherwise. From `banrep_intervention_daily`. |
+| intervention_amount | DOUBLE | Total net intervention amount (millions USD) this week; 0.0 on non-intervention weeks. Sum across all 8 types. |
 | is_cpi_release_week | BOOLEAN | TRUE if DANE CPI was published this week (per release calendar) |
 | is_ppi_release_week | BOOLEAN | TRUE if DANE PPI was published this week (per release calendar) |
 
-**Deferred columns (added after Priority 1b verification):**
-- `cpi_surprise_survey` — BanRep EME consensus-based surprise; 0.0 on non-release weeks
-- `banrep_rate_surprise` — IBR-implied rate surprise; 0.0 on non-release weeks
-- `intervention_dummy` — SUAMECA FX intervention indicator; 0 on non-intervention weeks
+**Indefinitely deferred (requires Bloomberg or manual PDF digitization):**
+- `cpi_surprise_survey` — BanRep EME consensus-based CPI surprise. EME data is not machine-readable (see §1 Priority 1c).
 
 **NULL vs 0 semantics:** Surprise and release-indicator columns store **0.0** on non-release weeks (no news = no surprise). This is the correct econometric value — OLS cannot operate on NULLs, and "no release occurred" is informative, not missing. NULL is reserved for genuinely missing/unknown data (e.g., a FRED series gap where the observation should exist but doesn't).
 
@@ -318,13 +386,13 @@ The estimation-ready dataset for GARCH(1,1)-X co-primary. One row per COP/USD tr
 | vix | DOUBLE | VIXCLS daily close (NULL if US holiday — Colombia/US calendar mismatch) |
 | oil_return | DOUBLE | Daily WTI log-return (NULL if no WTI observation) |
 | oil_log_level | DOUBLE | log(WTI daily price) — for GARCH-X sensitivity A8 (NULL if no WTI observation) |
+| banrep_rate_surprise | DOUBLE | Change in IBR overnight on BanRep board meeting day; 0.0 otherwise. From `banrep_ibr_daily`. |
+| intervention_dummy | SMALLINT | 1 if BanRep intervened on this date (any type); 0 otherwise. From `banrep_intervention_daily`. |
 | is_cpi_release_day | BOOLEAN | TRUE on exact DANE CPI release date |
 | is_ppi_release_day | BOOLEAN | TRUE on exact DANE PPI release date |
 
-**Deferred columns (added after Priority 1b verification):**
-- `abs_cpi_surprise_survey` — |survey-based surprise| on release day; 0.0 otherwise
-- `banrep_rate_surprise` — daily rate surprise; 0.0 on non-decision days
-- `intervention_dummy` — daily intervention indicator from SUAMECA
+**Indefinitely deferred:**
+- `abs_cpi_surprise_survey` — |survey-based surprise| on release day. Requires Bloomberg or PDF digitization.
 
 The GARCH(1,1)-X variance equation is: h_t = omega + alpha_1 * epsilon_{t-1}^2 + beta_1 * h_{t-1} + delta * abs_cpi_surprise. The surprise enters on the EXACT release date, not spread across the week. On non-release days, the exogenous term is 0 and the conditional variance evolves purely from its own autoregressive dynamics.
 
@@ -371,16 +439,21 @@ The weekly_panel provides both `vix_avg` (contemporaneous weekly average) and `v
 ```
 1. Download Priority 1a (BanRep TRM — verified)
    → fetch from Datos Abiertos Socrata API ($limit=50000)
-   → cast valor (string) → DOUBLE
-   → parse vigenciadesde → DATE
+   → cast valor (string) → DOUBLE, parse vigenciadesde → DATE
    → INSERT OR REPLACE into banrep_trm_daily
    → log manifest (success)
    → if endpoint fails → STOP (escalate to user)
 
-2. Verify Priority 1b sources (BanRep EME, IBR, SUAMECA)
-   → log manifest entries (verified/unavailable)
-   → amend upstream spec if any unavailable
-   → download verified sources into their tables
+2. Download Priority 1b (BanRep IBR + intervention — verified)
+   → IBR: fetch from SDMX REST API (DF_IBR_DAILY_HIST, IRIBRM00, ER)
+     → parse XML, extract date + rate
+     → INSERT OR REPLACE into banrep_ibr_daily
+     → log manifest
+   → Intervention: load from cached contracts/data/raw/banrep_fx_intervention.json
+     → parse dates (YYYY/MM/DD), cast amounts (empty → NULL)
+     → INSERT OR REPLACE into banrep_intervention_daily
+     → log manifest
+   → EME: log manifest (status=unavailable, notes="PDF-only, no API/download")
 
 3. Download Priority 2 (DANE IPC, IPP)
    → programmatic or manual CSV/Excel fallback
@@ -391,21 +464,26 @@ The weekly_panel provides both `vix_avg` (contemporaneous weekly average) and `v
 4. Download Priority 3 (FRED: VIXCLS, DCOILWTICO, DCOILBRENTEU, CPIAUCSL)
    → convert "." → NULL
    → INSERT OR REPLACE into fred_daily, fred_monthly
-   → fetch BLS release dates (release_id=10, file_type=json) → INSERT OR REPLACE into bls_release_calendar
+   → fetch BLS release dates (release_id=10, file_type=json)
+     → INSERT OR REPLACE into bls_release_calendar
    → log manifest
 
 5. Compute derived tables from raw (§4.5 sample window)
    → weekly_panel: RV from TRM, VIX avg + Friday close, oil return + level,
-     US CPI AR(1) surprise, Colombian CPI AR(1) surprise,
+     US CPI AR(1) surprise, Colombian CPI AR(1) surprise (confirmed primary),
+     BanRep rate surprise from IBR, intervention dummy + amount,
      DANE release mapping, release-week flags
    → daily_panel: daily returns, week_start, daily surprise placement,
-     daily VIX/oil/oil-level, release-day flags
+     daily VIX/oil/oil-level, daily IBR rate surprise, daily intervention,
+     release-day flags
 
 6. Validate derived tables
    → weekly_panel: row count ≈ 1,100; date range ~2003–2025; no duplicates;
-     RV > 0; n_trading_days in [1, 5]; 0.0 not NULL on non-release weeks
+     RV > 0; n_trading_days in [1, 5]; 0.0 not NULL on non-release weeks;
+     intervention_dummy in {0, 1}; banrep_rate_surprise = 0.0 on non-meeting weeks
    → daily_panel: row count ≈ 5,500; returns computable (first row NULL);
-     surprise only on release dates; week_start matches date
+     surprise only on release dates; intervention_dummy in {0, 1};
+     week_start matches date
 ```
 
 Each step is idempotent. Raw tables use `INSERT OR REPLACE` (except manifest: `INSERT`). Derived tables use `CREATE OR REPLACE TABLE AS (...)`. Re-running the pipeline produces the same result.
@@ -424,7 +502,8 @@ Scope constraint: pipeline work touches ONLY `scripts/`, `data/`, `.gitignore`. 
 
 - Estimation code (OLS, GARCH-X, specification tests) — separate spec after data pipeline is validated
 - Layer 2 pool parameterization — deferred until β estimated
-- BanRep/SUAMECA table schemas (EME, IBR, intervention) — designed only after Priority 1b verification confirms availability
+- BanRep EME survey-based CPI surprise — indefinitely deferred (PDF-only, no machine-readable data; see §1 Priority 1c)
+- BanRep meeting calendar for rate-surprise construction — estimation-module input, not defined in this spec
 - DANE release calendar compilation — the table schema is defined here; the actual data entry is a separate task
 - Sensitivity A4 (release-day exclusion) RV recomputation — the raw daily data supports this; the estimation module handles the exclusion logic
 - Sensitivity A1 (monthly horizon) panel — computable from raw tables; estimation module aggregates
@@ -442,3 +521,6 @@ The upstream spec must be amended to:
 1. Replace `DEXCOUS` with BanRep TRM (Datos Abiertos dataset `32sa-8pi3`) as the daily COP/USD source
 2. Change the free-tier status to ✓ VERIFIED — TRM is free, unauthenticated, machine-readable (Socrata JSON API, 8,250 rows, 1991–present)
 3. Revise §3.3 measurement error discussion: TRM is computed from actual SET FX interbank transactions. The "FRED noon rate vs SET FX close" measurement error source is **eliminated** (not merely mitigated) — TRM IS the SET FX benchmark. The remaining measurement error is TRM's single-daily-rate granularity vs continuous price discovery.
+4. Update §4.3 variable table: BanRep EME consensus status from "⚠️ UNVERIFIED" to "UNAVAILABLE (PDF-only)" — AR(1) is the confirmed primary, not fallback
+5. Update §4.3 variable table: IBR status from "⚠️ UNVERIFIED" to "✓ VERIFIED (SDMX API, from 2008)"
+6. Update §4.3 variable table: SUAMECA intervention status from "⚠️ UNVERIFIED" to "✓ VERIFIED (Playwright extraction, 1,674 records)"
