@@ -2,7 +2,7 @@
 
 **Date:** 2026-04-15 (Rev 3: 2026-04-15 post verification round)
 **Skill:** structural-econometrics (Reiss & Wolak 2007 framework)
-**Status:** Rev 3. **Phase 5 BLOCKED** pending verification of 3 data sources (BanRep consensus, IBR, SUAMECA). Specification complete; estimation cannot start until data verification passes.
+**Status:** Rev 3. **Phase 5 UNBLOCKED** — all 3 data sources verified free-tier (2026-04-15): BanRep EME consensus (banrep.gov.co historical tables), IBR (SUAMECA + Datos Abiertos Colombia), SUAMECA intervention (bulk download; series ID to confirm in catalog). No Bloomberg dependency.
 **Upstream:** Tier 1 literature deliverable (`contracts/notes/structural-econometrics/identification/2026-04-14-inflation-mirror-two-channel-literature.md`, verdict: `PIVOT_TO_TIER_1B`)
 **Downstream:** Layer 2 Angstrom pool parameterization (deferred until β estimated)
 
