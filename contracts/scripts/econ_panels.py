@@ -8,6 +8,7 @@ from datetime import date, timedelta as _timedelta
 from typing import Final
 
 import duckdb
+import numpy as np
 
 
 def build_weekly_panel(
@@ -124,20 +125,20 @@ def build_weekly_panel(
     SELECT
         r.week_start,
         r.rv,
-        POWER(r.rv, 1.0/3.0) AS rv_cuberoot,
-        LN(r.rv) AS rv_log,
+        CASE WHEN r.rv > 0 THEN POWER(r.rv, 1.0/3.0) ELSE 0.0 END AS rv_cuberoot,
+        CASE WHEN r.rv > 0 THEN LN(r.rv) ELSE NULL END AS rv_log,
         r.n_trading_days::SMALLINT AS n_trading_days,
         COALESCE(v.vix_avg, 0.0) AS vix_avg,
         v.vix_friday_close,
         COALESCE(o.oil_return, 0.0) AS oil_return,
         o.oil_log_level,
-        0.0 AS us_cpi_surprise,
-        0.0 AS cpi_surprise_ar1,
+        CAST(0.0 AS DOUBLE) AS us_cpi_surprise,
+        CAST(0.0 AS DOUBLE) AS cpi_surprise_ar1,
         COALESCE(dic.ipc_pct_change, 0.0) AS dane_ipc_pct,
         COALESCE(dip.ipp_pct_change, 0.0) AS dane_ipp_pct,
-        0.0 AS banrep_rate_surprise,
+        CAST(0.0 AS DOUBLE) AS banrep_rate_surprise,
         COALESCE(iw.intervention_dummy, 0)::SMALLINT AS intervention_dummy,
-        COALESCE(iw.intervention_amount, 0.0) AS intervention_amount,
+        COALESCE(iw.intervention_amount, 0.0)::DOUBLE AS intervention_amount,
         crw.week_start IS NOT NULL AS is_cpi_release_week,
         prw.week_start IS NOT NULL AS is_ppi_release_week
     FROM rv_agg r
@@ -193,9 +194,9 @@ def build_daily_panel(
         t.date,
         t.week_start,
         t.cop_usd_return,
-        0.0 AS abs_cpi_surprise,
-        0.0 AS cpi_surprise_ar1_daily,
-        0.0 AS banrep_rate_surprise,
+        CAST(0.0 AS DOUBLE) AS abs_cpi_surprise,
+        CAST(0.0 AS DOUBLE) AS cpi_surprise_ar1_daily,
+        CAST(0.0 AS DOUBLE) AS banrep_rate_surprise,
         CASE WHEN bi.date IS NOT NULL THEN 1 ELSE 0 END::SMALLINT AS intervention_dummy,
         v.value AS vix,
         o.oil_return,
@@ -211,3 +212,136 @@ def build_daily_panel(
     WHERE t.date >= ?
     ORDER BY t.date
     """, [lookback, sample_start])
+
+
+# ── AR(1) surprise construction ──────────────────────────────────────────────
+
+
+def _ar1_expanding_surprises(
+    pct_changes: list[float],
+    warmup: int,
+) -> list[float | None]:
+    """Compute expanding-window AR(1) surprises.
+
+    Returns a list parallel to pct_changes. Indices < warmup are None.
+    surprise[t] = actual[t] - (a + b * actual[t-1]) where a,b fit on [0..t-1].
+    """
+    result: list[float | None] = [None] * len(pct_changes)
+    for t in range(warmup, len(pct_changes)):
+        y = np.array(pct_changes[:t])
+        if len(y) < 2:
+            continue
+        y_lag = y[:-1]
+        y_curr = y[1:]
+        x_mat = np.column_stack([np.ones(len(y_lag)), y_lag])
+        try:
+            coeffs = np.linalg.lstsq(x_mat, y_curr, rcond=None)[0]
+        except np.linalg.LinAlgError:
+            continue
+        forecast = coeffs[0] + coeffs[1] * pct_changes[t - 1]
+        result[t] = pct_changes[t] - forecast
+    return result
+
+
+def compute_ar1_surprises(
+    conn: duckdb.DuckDBPyConnection,
+    warmup_months: int = 12,
+) -> None:
+    """Compute AR(1) CPI surprises and update weekly_panel + daily_panel.
+
+    Colombian CPI: expanding-window AR(1) on DANE IPC MoM % changes.
+    US CPI: same method on CPIAUCSL MoM % changes.
+    Mapped to release weeks/days via calendars.
+    banrep_rate_surprise deferred to estimation module (spec §3.10).
+    """
+    # Check which panels exist
+    existing_tables = {r[0] for r in conn.execute("SHOW TABLES").fetchall()}
+    has_weekly = "weekly_panel" in existing_tables
+    has_daily = "daily_panel" in existing_tables
+
+    # ── Colombian CPI AR(1) ──
+    ipc_rows = conn.execute(
+        "SELECT date, ipc_pct_change FROM dane_ipc_monthly ORDER BY date"
+    ).fetchall()
+
+    if len(ipc_rows) >= warmup_months + 1:
+        pct_changes = [float(r[1]) for r in ipc_rows]
+        ipc_dates = [r[0] for r in ipc_rows]
+        surprises = _ar1_expanding_surprises(pct_changes, warmup_months)
+
+        # Fetch IPC release calendar
+        release_map: dict[tuple[int, int], date] = {}
+        for yr, mo, rd in conn.execute(
+            "SELECT year, month, release_date FROM dane_release_calendar WHERE series = 'ipc'"
+        ).fetchall():
+            release_map[(yr, mo)] = rd
+
+        for t in range(warmup_months, len(pct_changes)):
+            s = surprises[t]
+            if s is None:
+                continue
+            ref_date = ipc_dates[t]
+            release_date = release_map.get((ref_date.year, ref_date.month))
+            if release_date is None:
+                continue
+
+            # Update weekly_panel
+            if has_weekly:
+                week_start = conn.execute(
+                    "SELECT date_trunc('week', ?::DATE)::DATE", [release_date]
+                ).fetchone()
+                if week_start is not None:
+                    conn.execute(
+                        "UPDATE weekly_panel SET cpi_surprise_ar1 = ? WHERE week_start = ?",
+                        [s, week_start[0]],
+                    )
+
+            # Update daily_panel
+            if has_daily:
+                conn.execute(
+                    "UPDATE daily_panel SET cpi_surprise_ar1_daily = ?, abs_cpi_surprise = ? WHERE date = ?",
+                    [s, abs(s), release_date],
+                )
+
+    # ── US CPI AR(1) ──
+    us_cpi_rows = conn.execute(
+        "SELECT date, value FROM fred_monthly WHERE series_id = 'CPIAUCSL' ORDER BY date"
+    ).fetchall()
+
+    if len(us_cpi_rows) >= 2:
+        us_values = [float(r[1]) for r in us_cpi_rows if r[1] is not None]
+        us_dates = [r[0] for r in us_cpi_rows if r[1] is not None]
+
+        # Compute MoM % changes
+        us_pct = [(us_values[i] / us_values[i - 1] - 1) * 100 for i in range(1, len(us_values))]
+        us_pct_dates = us_dates[1:]
+
+        if len(us_pct) >= warmup_months + 1:
+            us_surprises = _ar1_expanding_surprises(us_pct, warmup_months)
+
+            # BLS release calendar
+            bls_map: dict[tuple[int, int], date] = {}
+            for yr, mo, rd in conn.execute(
+                "SELECT year, month, release_date FROM bls_release_calendar"
+            ).fetchall():
+                bls_map[(yr, mo)] = rd
+
+            for t in range(warmup_months, len(us_pct)):
+                s = us_surprises[t]
+                if s is None:
+                    continue
+                ref_date = us_pct_dates[t]
+                ref_key = (ref_date.year, ref_date.month)
+                release_date = bls_map.get(ref_key)
+                if release_date is None:
+                    continue
+
+                if has_weekly:
+                    week_start = conn.execute(
+                        "SELECT date_trunc('week', ?::DATE)::DATE", [release_date]
+                    ).fetchone()
+                    if week_start is not None:
+                        conn.execute(
+                            "UPDATE weekly_panel SET us_cpi_surprise = ? WHERE week_start = ?",
+                            [s, week_start[0]],
+                        )
