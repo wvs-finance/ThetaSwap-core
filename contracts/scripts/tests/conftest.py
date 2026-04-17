@@ -1,14 +1,22 @@
-"""Shared test fixtures for the RAN growth pipeline.
+"""Shared test fixtures for the RAN growth pipeline + FX-vol notebooks.
 
-All fixtures are prerequisites for Tasks 2-6.
-This file must be self-contained — no imports from pipeline modules.
+Two responsibilities coexist here:
+  * RAN growth pipeline fixtures (mock RPC transport, populated DuckDBs,
+    pool configs) — prerequisites for Tasks 2-6 of the RAN pipeline.
+  * FX-vol structural econometrics `conn` fixture — a session-scoped,
+    read-only DuckDB connection to the real populated ``structural_econ.duckdb``
+    used by the notebook test suite (Task 1b onward of the econ-notebook plan).
+
+This file must stay self-contained — no imports from pipeline modules.
 """
 from __future__ import annotations
 
 import json
 import random
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import datetime
+from pathlib import Path
 from typing import Final
 
 import duckdb
@@ -298,3 +306,33 @@ def large_populated_db_path(tmp_path: object) -> str:
     conn.commit()
     conn.close()
     return db_path
+
+
+# ── FX-vol structural econometrics fixture ──
+
+# The DuckDB file is at <contracts>/data/structural_econ.duckdb.
+# This conftest lives at <contracts>/scripts/tests/conftest.py, so the
+# contracts/ root is parents[2] from here.
+_STRUCTURAL_ECON_DB: Final[Path] = (
+    Path(__file__).resolve().parents[2] / "data" / "structural_econ.duckdb"
+)
+
+
+@pytest.fixture(scope="session")
+def conn() -> Iterator[duckdb.DuckDBPyConnection]:
+    """Session-scoped read-only DuckDB connection to structural_econ.duckdb.
+
+    Opens the real populated database — no mocks. Yield-pattern cleanup
+    closes the connection at session teardown.
+
+    Tests requesting this fixture can run SQL directly, e.g.:
+        conn.execute("SELECT COUNT(*) FROM weekly_panel").fetchone()
+    """
+    assert _STRUCTURAL_ECON_DB.is_file(), (
+        f"structural_econ.duckdb missing at {_STRUCTURAL_ECON_DB}"
+    )
+    connection = duckdb.connect(str(_STRUCTURAL_ECON_DB), read_only=True)
+    try:
+        yield connection
+    finally:
+        connection.close()
