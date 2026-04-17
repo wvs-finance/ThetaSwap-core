@@ -32,13 +32,14 @@ _EXPECTED_KEYS: Final[frozenset[str]] = frozenset(
 def fingerprint(df: pd.DataFrame, date_column: str) -> dict[str, object]:
     """Return a deterministic 6-key fingerprint of a pandas DataFrame.
 
-    The hash is computed over the date-sorted CSV serialization, making the
-    result invariant to row order in the input.
+    The sha256 is invariant to both row order (sorted by date_column
+    internally) and column order (columns reordered alphabetically before
+    serialization). Data drift in any cell still flips the hash.
 
     Parameters
     ----------
     df : pd.DataFrame
-        Panel to fingerprint. Must contain ``date_column``.
+        Panel to fingerprint. Must contain ``date_column`` and at least one row.
     date_column : str
         Name of the column used for min/max extraction and stable sort.
 
@@ -51,8 +52,9 @@ def fingerprint(df: pd.DataFrame, date_column: str) -> dict[str, object]:
     Raises
     ------
     ValueError
-        If ``date_column`` is not a column of ``df``. The message names the
-        missing column and lists the actual columns of ``df``.
+        If ``date_column`` is not a column of ``df`` (message names the
+        missing column and lists the actual columns), if ``df`` is empty,
+        or if ``date_column`` contains only null values.
     """
     if date_column not in df.columns:
         raise ValueError(
@@ -60,16 +62,29 @@ def fingerprint(df: pd.DataFrame, date_column: str) -> dict[str, object]:
             f"Available columns: {list(df.columns)}"
         )
 
+    if len(df) == 0:
+        raise ValueError("Cannot fingerprint an empty DataFrame")
+    if df[date_column].isna().all():
+        raise ValueError(
+            f"Date column {date_column!r} contains only null values"
+        )
+
+    # reset_index is belt-and-braces; the real hash stability comes from
+    # index=False in the to_csv call below. If that flips, reset_index won't save us.
     sorted_df = df.sort_values(by=date_column).reset_index(drop=True)
 
     column_dtypes = {col: str(sorted_df[col].dtype) for col in sorted(sorted_df.columns)}
 
-    csv_bytes = sorted_df.to_csv(index=False).encode("utf-8")
+    # Reorder columns alphabetically so an upstream producer reordering
+    # columns (e.g. via merge/reindex) does not flip the hash.
+    csv_bytes = (
+        sorted_df[sorted(sorted_df.columns)].to_csv(index=False).encode("utf-8")
+    )
     sha256_hex = hashlib.sha256(csv_bytes).hexdigest()
 
     date_series = sorted_df[date_column]
 
-    return {
+    result: dict[str, object] = {
         "row_count": int(len(sorted_df)),
         "column_count": int(len(sorted_df.columns)),
         "column_dtypes": column_dtypes,
@@ -77,3 +92,8 @@ def fingerprint(df: pd.DataFrame, date_column: str) -> dict[str, object]:
         "date_max": pd.Timestamp(date_series.max()).isoformat(),
         "sha256": sha256_hex,
     }
+
+    # Module-internal self-check: catch schema drift during development.
+    assert set(result) == _EXPECTED_KEYS, f"schema drift: got {set(result)}"
+
+    return result
