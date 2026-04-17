@@ -64,6 +64,8 @@ GATE_VERDICT_PATH: Final[Path] = ESTIMATES_DIR / "gate_verdict.json"
 
 # ── Auto-rendered README ───────────────────────────────────────────────────
 
+# Named READMEPath (camelCase) to match the plan's Rule 11 literal spelling.
+# All other path constants are SCREAMING_SNAKE_CASE; this one is the exception.
 READMEPath: Final[Path] = _COLOMBIA_DIR / "README.md"
 
 # ── nbconvert execution timeout ────────────────────────────────────────────

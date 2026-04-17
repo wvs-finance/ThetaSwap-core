@@ -127,7 +127,12 @@ def test_artifact_file_paths_under_estimates_dir() -> None:
 
 
 def test_readme_path() -> None:
-    """READMEPath points at Colombia/README.md."""
+    """READMEPath points at Colombia/README.md.
+
+    Note: no .is_file() check — Task 1c creates the README via auto-render.
+    At Task 1b time the file does not yet exist, so asserting existence here
+    would be a false negative. Do not "fix" this by adding .is_file().
+    """
     env = _load_env()
     assert Path(env.READMEPath).resolve() == EXPECTED_README.resolve()
 
@@ -185,11 +190,20 @@ def test_required_packages_match_installed_major_minor() -> None:
         declared = env.REQUIRED_PACKAGES[key]
         if actual != declared:
             drift.append(f"{key}: declared {declared!r}, installed {actual!r}")
-    assert not drift, "Version drift detected:\n  " + "\n  ".join(drift)
+    assert not drift, (
+        "Version drift detected — update env.py REQUIRED_PACKAGES to match "
+        "the current venv (or downgrade the venv to match the pin):\n  "
+        + "\n  ".join(drift)
+    )
 
 
 # ── pin_seed tests (seed 42 draws are hard-coded) ──────────────────────────
 
+# Intentional cross-version pin; regenerate these values if Python or numpy
+# RNG implementation changes. They guard against an unexpected RNG swap but
+# are stricter than the actual contract (which is only same-process
+# reproducibility — see test_pin_seed_is_reproducible_across_calls below).
+#
 # Recomputed once via:
 #   import random, numpy as np
 #   random.seed(42); random.random()        -> 0.6394267984578837
@@ -199,17 +213,47 @@ SEED_42_NUMPY_RAND: Final[float] = 0.3745401188473625
 
 
 def test_pin_seed_makes_random_deterministic() -> None:
-    """After pin_seed(42), random.random() returns the known first draw."""
+    """After pin_seed(42), random.random() returns the known first draw.
+
+    Intentional cross-version pin; regenerate SEED_42_RANDOM_RANDOM if the
+    Python RNG implementation changes.
+    """
     env = _load_env()
     env.pin_seed(42)
     assert random.random() == SEED_42_RANDOM_RANDOM
 
 
 def test_pin_seed_makes_numpy_random_deterministic() -> None:
-    """After pin_seed(42), np.random.rand() returns the known first draw."""
+    """After pin_seed(42), np.random.rand() returns the known first draw.
+
+    Intentional cross-version pin; regenerate SEED_42_NUMPY_RAND if the numpy
+    RNG implementation changes.
+    """
     env = _load_env()
     env.pin_seed(42)
     assert np.random.rand() == SEED_42_NUMPY_RAND
+
+
+def test_pin_seed_is_reproducible_across_calls() -> None:
+    """Re-seeding with the same seed reproduces the exact same draws.
+
+    This is the actual contract: pin_seed must be deterministic within a
+    process. Unlike the hard-coded-value tests above, this survives Python
+    or numpy RNG implementation changes because it compares draws to draws,
+    not to a pinned literal.
+    """
+    env = _load_env()
+
+    env.pin_seed(42)
+    r1 = random.random()
+    n1 = np.random.rand()
+
+    env.pin_seed(42)
+    r2 = random.random()
+    n2 = np.random.rand()
+
+    assert r1 == r2
+    assert n1 == n2
 
 
 def test_pin_seed_sets_pythonhashseed_env_var() -> None:
