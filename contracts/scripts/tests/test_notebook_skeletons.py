@@ -13,29 +13,53 @@ Task 1c of the econ-notebook-implementation plan. Asserts that:
     "Task 30" (the Jinja2 auto-render task that overwrites this file).
 
 No mocks — reads the actual .ipynb files on disk via ``nbformat.read``.
+
+Paths are imported from env.py per Rule 11 of the implementation plan (no
+bare string paths in notebooks or tests). env.py is not on sys.path, so we
+load it by file location following the same pattern as test_env.py.
 """
 from __future__ import annotations
 
+import importlib.util
 from pathlib import Path
 from typing import Final
 
 import nbformat
 import pytest
 
-# ── Path resolution (mirrors test_env.py convention) ──────────────────────
+# ── Load env.py by file path (mirrors test_env.py) ────────────────────────
 
-# This test file lives at: contracts/scripts/tests/test_notebook_skeletons.py
-# Notebooks live at: contracts/notebooks/fx_vol_cpi_surprise/Colombia/*.ipynb
+# This test file lives at: contracts/scripts/tests/test_env.py sibling.
+# env.py lives at: contracts/notebooks/fx_vol_cpi_surprise/Colombia/env.py
 # contracts/ is parents[2] from here.
-CONTRACTS_DIR: Final[Path] = Path(__file__).resolve().parents[2]
-COLOMBIA_DIR: Final[Path] = (
-    CONTRACTS_DIR / "notebooks" / "fx_vol_cpi_surprise" / "Colombia"
+_ENV_PATH: Final[Path] = (
+    Path(__file__).resolve().parents[2]
+    / "notebooks"
+    / "fx_vol_cpi_surprise"
+    / "Colombia"
+    / "env.py"
 )
 
-NB1_PATH: Final[Path] = COLOMBIA_DIR / "01_data_eda.ipynb"
-NB2_PATH: Final[Path] = COLOMBIA_DIR / "02_estimation.ipynb"
-NB3_PATH: Final[Path] = COLOMBIA_DIR / "03_tests_and_sensitivity.ipynb"
-README_PATH: Final[Path] = COLOMBIA_DIR / "README.md"
+
+def _load_env():
+    """Load env.py as a module by file path (it is not on sys.path)."""
+    spec = importlib.util.spec_from_file_location("fx_vol_env", _ENV_PATH)
+    assert spec is not None and spec.loader is not None, (
+        f"Cannot build spec for {_ENV_PATH}"
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+_env = _load_env()
+
+# ── Path constants (sourced from env.py per Rule 11) ──────────────────────
+
+NB1_PATH: Final[Path] = _env.NB1_PATH
+NB2_PATH: Final[Path] = _env.NB2_PATH
+NB3_PATH: Final[Path] = _env.NB3_PATH
+README_PATH: Final[Path] = _env.READMEPath
 
 # Identifying title-substring tokens per notebook. The title cell must contain
 # the NB-N prefix; we intentionally do NOT pin the full title string so that

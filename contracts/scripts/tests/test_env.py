@@ -54,6 +54,27 @@ EXPECTED_PDF: Final[Path] = (
 EXPECTED_README: Final[Path] = (
     CONTRACTS_DIR / "notebooks" / "fx_vol_cpi_surprise" / "Colombia" / "README.md"
 )
+EXPECTED_NB1: Final[Path] = (
+    CONTRACTS_DIR
+    / "notebooks"
+    / "fx_vol_cpi_surprise"
+    / "Colombia"
+    / "01_data_eda.ipynb"
+)
+EXPECTED_NB2: Final[Path] = (
+    CONTRACTS_DIR
+    / "notebooks"
+    / "fx_vol_cpi_surprise"
+    / "Colombia"
+    / "02_estimation.ipynb"
+)
+EXPECTED_NB3: Final[Path] = (
+    CONTRACTS_DIR
+    / "notebooks"
+    / "fx_vol_cpi_surprise"
+    / "Colombia"
+    / "03_tests_and_sensitivity.ipynb"
+)
 
 
 def _load_env():
@@ -135,6 +156,36 @@ def test_readme_path() -> None:
     """
     env = _load_env()
     assert Path(env.READMEPath).resolve() == EXPECTED_README.resolve()
+
+
+def test_nb1_path_points_at_skeleton() -> None:
+    """NB1_PATH resolves to 01_data_eda.ipynb and the skeleton exists on disk."""
+    env = _load_env()
+    assert Path(env.NB1_PATH).resolve() == EXPECTED_NB1.resolve()
+    assert Path(env.NB1_PATH).suffix == ".ipynb"
+    assert Path(env.NB1_PATH).is_file(), (
+        f"NB1 skeleton missing at {env.NB1_PATH} (created by Task 1c)."
+    )
+
+
+def test_nb2_path_points_at_skeleton() -> None:
+    """NB2_PATH resolves to 02_estimation.ipynb and the skeleton exists on disk."""
+    env = _load_env()
+    assert Path(env.NB2_PATH).resolve() == EXPECTED_NB2.resolve()
+    assert Path(env.NB2_PATH).suffix == ".ipynb"
+    assert Path(env.NB2_PATH).is_file(), (
+        f"NB2 skeleton missing at {env.NB2_PATH} (created by Task 1c)."
+    )
+
+
+def test_nb3_path_points_at_skeleton() -> None:
+    """NB3_PATH resolves to 03_tests_and_sensitivity.ipynb and the skeleton exists on disk."""
+    env = _load_env()
+    assert Path(env.NB3_PATH).resolve() == EXPECTED_NB3.resolve()
+    assert Path(env.NB3_PATH).suffix == ".ipynb"
+    assert Path(env.NB3_PATH).is_file(), (
+        f"NB3 skeleton missing at {env.NB3_PATH} (created by Task 1c)."
+    )
 
 
 def test_nbconvert_timeout_is_1800() -> None:

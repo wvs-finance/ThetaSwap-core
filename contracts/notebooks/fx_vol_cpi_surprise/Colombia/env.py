@@ -68,6 +68,12 @@ GATE_VERDICT_PATH: Final[Path] = ESTIMATES_DIR / "gate_verdict.json"
 # All other path constants are SCREAMING_SNAKE_CASE; this one is the exception.
 READMEPath: Final[Path] = _COLOMBIA_DIR / "README.md"
 
+# ── Notebook skeletons (Task 1c) ───────────────────────────────────────────
+
+NB1_PATH: Final[Path] = _COLOMBIA_DIR / "01_data_eda.ipynb"
+NB2_PATH: Final[Path] = _COLOMBIA_DIR / "02_estimation.ipynb"
+NB3_PATH: Final[Path] = _COLOMBIA_DIR / "03_tests_and_sensitivity.ipynb"
+
 # ── nbconvert execution timeout ────────────────────────────────────────────
 
 # 1800 s = 30 min. Required because NB3 bootstrap + specification-curve fits
