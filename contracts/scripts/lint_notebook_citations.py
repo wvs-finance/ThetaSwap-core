@@ -36,6 +36,9 @@ Exit codes
 
         where ``<kind>`` is either ``missing-citation-header``,
         ``missing-citation-block``, or ``chasing-offline``.
+    2 : command misuse (no notebook paths supplied). Unix convention —
+        a silent exit 0 on empty argv could mask a misconfigured CI
+        invocation that forgets to pass files.
 
 Design
 ------
@@ -87,9 +90,11 @@ _GATED_SOURCE_PATTERNS: Final[tuple[re.Pattern[str], ...]] = (
 # A cell-level "Decision #N" marker counts as a gating trigger too. We
 # accept it in either the cell source (any language/cell type) OR as a
 # cell-level tag in ``cell.metadata.tags``. The regex is case-insensitive
-# on the "Decision" word per plan guidance.
+# on the "Decision" word per plan guidance. A leading ``\b`` word-boundary
+# prevents matches inside longer words ("indecision #3", "Undecision #1")
+# from triggering the gate.
 _DECISION_MARKER_RE: Final[re.Pattern[str]] = re.compile(
-    r"[Dd]ecision\s*#\s*\d+"
+    r"\b[Dd]ecision\s*#\s*\d+"
 )
 
 # How many preceding cells (of any type) the lint walks back through when
@@ -225,6 +230,20 @@ def _check_citation_blocks(
     return tuple(violations)
 
 
+def _normalize_apostrophes(text: str) -> str:
+    """Fold U+2019 (right single quotation mark) to ASCII apostrophe.
+
+    Jupyter / VS Code frequently auto-convert ``'`` to the Unicode curly
+    apostrophe U+2019 during markdown editing. Our FORBIDDEN_PHRASES list
+    is expressed with ASCII apostrophes, so a source cell containing
+    ``this didn\u2019t work`` would otherwise slip through the ``in``
+    substring match. Normalising both sides to ASCII is the cheapest
+    robust fix; we do not try to cover every exotic Unicode apostrophe
+    because Jupyter's auto-conversion only produces U+2019.
+    """
+    return text.replace("\u2019", "'")
+
+
 def _check_chasing_offline(
     path: Path,
     cells: Sequence[nbformat.NotebookNode],
@@ -234,7 +253,10 @@ def _check_chasing_offline(
     for idx, cell in enumerate(cells):
         if cell.get("cell_type") != "markdown":
             continue
-        source_lower = _cell_source(cell).lower()
+        # Normalise smart-quotes BEFORE lower-casing so that the phrase
+        # list (ASCII-apostrophe, lower-case) can match source cells
+        # authored in editors that auto-convert ``'`` to ``\u2019``.
+        source_lower = _normalize_apostrophes(_cell_source(cell)).lower()
         for phrase in FORBIDDEN_PHRASES:
             if phrase.lower() in source_lower:
                 violations.append(
@@ -276,7 +298,11 @@ def main(argv: Sequence[str]) -> int:
             "usage: lint_notebook_citations.py NB1.ipynb [NB2.ipynb ...]",
             file=sys.stderr,
         )
-        return 0  # empty invocation — nothing to check, nothing to fail
+        # Unix convention: exit 2 = command misuse. A silent exit 0 on
+        # empty argv could mask a misconfigured CI invocation that
+        # forgets to pass filenames (pre-commit's ``pass_filenames: true``
+        # guarantees files, but a direct call missing them is a bug).
+        return 2
 
     paths = tuple(Path(a) for a in argv[1:])
     missing = tuple(p for p in paths if not p.is_file())

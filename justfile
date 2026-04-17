@@ -56,3 +56,18 @@ notebooks:
     cd contracts && .venv/bin/jupyter nbconvert --to pdf notebooks/fx_vol_cpi_surprise/Colombia/02_estimation.ipynb
     cd contracts && .venv/bin/jupyter nbconvert --to pdf notebooks/fx_vol_cpi_surprise/Colombia/03_tests_and_sensitivity.ipynb
 
+# Install the pre-commit hook in .git/hooks/pre-commit.
+#
+# Run ONCE per clone (per worktree). Required to gate commits on
+# contracts/scripts/lint_notebook_citations.py (Task 5 — Rule 6
+# citation-block + Rule 7 chasing-offline lint for FX-vol notebooks).
+#
+# The worktree's .git is a pointer file (sub-worktree layout); pre-commit
+# handles this internally and installs the hook into the correct
+# .git/modules/<path>/hooks/ location in the main repo.
+#
+# Closes the trapdoor flagged in the review: without this step, a new
+# contributor's commits bypass the notebook citation lint silently.
+pre-commit-install:
+    cd contracts && .venv/bin/pre-commit install
+

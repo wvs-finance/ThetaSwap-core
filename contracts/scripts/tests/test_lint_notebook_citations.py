@@ -147,7 +147,25 @@ def _build_chasing_offline_notebook() -> nbformat.NotebookNode:
     return nb
 
 
-# ── Fixture file materialisation (session-scoped) ─────────────────────────
+# ── Fixture source-of-truth policy ────────────────────────────────────────
+#
+# The five synthetic ``.ipynb`` files under ``fixtures/`` are the SINGLE
+# source of truth. They are committed to git and read by the tests below
+# exactly as they are on disk. There is NO autouse fixture that rebuilds
+# them — committing and running must agree on one canonical bytes-stream
+# per fixture, so that a reviewer inspecting the diff sees what the tests
+# actually run against.
+#
+# The ``_build_*`` helpers above remain in the module for one reason: when
+# someone intentionally wants to change a fixture (e.g. add a new failure
+# mode), they run this test file as a script to regenerate:
+#
+#     python contracts/scripts/tests/test_lint_notebook_citations.py
+#
+# ``rebuild_fixtures()`` writes each builder's output to the corresponding
+# file under ``fixtures/``. The resulting diff is then reviewed and
+# committed alongside the test change. Running the test suite itself
+# never calls this function.
 
 _FIXTURE_BUILDERS: Final[dict[str, object]] = {
     "nb_citation_valid.ipynb": _build_valid_notebook,
@@ -158,13 +176,13 @@ _FIXTURE_BUILDERS: Final[dict[str, object]] = {
 }
 
 
-@pytest.fixture(scope="module", autouse=True)
-def _materialise_fixtures() -> None:
-    """Build each synthetic .ipynb in fixtures/ on first use.
+def rebuild_fixtures() -> None:
+    """Regenerate every committed fixture from its builder. Manual-invoke only.
 
-    Module-scoped + autouse so every test sees the files on disk without
-    needing to request the fixture explicitly. Re-writes on every module
-    load to keep fixtures deterministic.
+    Run ``python test_lint_notebook_citations.py`` to refresh the on-disk
+    fixtures after intentionally editing a builder. The resulting diff must
+    be reviewed and committed alongside the test change. Not a pytest
+    fixture — never auto-invoked during test runs.
     """
     FIXTURES_DIR.mkdir(parents=True, exist_ok=True)
     for filename, builder in _FIXTURE_BUILDERS.items():
@@ -287,7 +305,7 @@ def test_pre_commit_run_invokes_lint_hook() -> None:
     ``.git/hooks`` in this worktree. Uses the pre-built valid fixture so
     the hook itself has a deterministic PASS baseline.
     """
-    # Ensure fixtures exist (module autouse fixture already did this).
+    # Committed fixture — single source of truth, checked into git.
     valid_fixture = FIXTURES_DIR / "nb_citation_valid.ipynb"
     assert valid_fixture.is_file()
 
@@ -316,3 +334,13 @@ def test_pre_commit_run_invokes_lint_hook() -> None:
             "pre-commit invocation failed with hook-identified violation.\n"
             f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
         )
+
+
+# ── Manual-invoke entrypoint for fixture regeneration ────────────────────
+
+if __name__ == "__main__":  # pragma: no cover - manual-invoke only
+    # Explicit, opt-in fixture rebuild. Running this file as a script
+    # regenerates every .ipynb under fixtures/ from its builder. Review
+    # the resulting diff and commit it alongside the test change.
+    rebuild_fixtures()
+    print(f"Regenerated {len(_FIXTURE_BUILDERS)} fixtures under {FIXTURES_DIR}")

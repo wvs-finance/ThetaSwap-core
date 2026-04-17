@@ -1,29 +1,42 @@
-# Pre-commit hooks for contracts/ (Task 5 of econ-notebook-implementation).
+# Pre-commit hooks for the thetaSwap-core-dev monorepo (Task 5 of
+# econ-notebook-implementation).
 #
 # Enforces Rule 6 (citation-block) and Rule 7 (chasing-offline) on every
 # FX-vol notebook at commit time by invoking
-# ``scripts/lint_notebook_citations.py``. The hook scopes itself to
-# ``notebooks/fx_vol_cpi_surprise/**/*.ipynb`` so unrelated notebooks
-# outside that tree are not linted.
+# ``contracts/scripts/lint_notebook_citations.py``.
 #
-# Installation (one-time per checkout):
+# Scoping (cwd-robust):
+# ---------------------
+# Pre-commit anchors path patterns at the GIT REPO ROOT, regardless of
+# the cwd from which it is invoked. We therefore use the repo-root-
+# anchored pattern ``^contracts/notebooks/fx_vol_cpi_surprise/.*\.ipynb$``
+# rather than the contracts/-cwd-relative ``^notebooks/...``. This makes
+# the config robust to invocation from either the repo root or from
+# ``contracts/``.
 #
-#     cd contracts
-#     pre-commit install
+# Installation (one-time per worktree):
+# -------------------------------------
+#     just pre-commit-install
 #
-# If ``.git`` is a worktree pointer file, ``pre-commit install`` writes
-# the hook into the main repo's ``.git/modules/<path>/hooks/`` directory.
-# Alternatively, invoke the hook directly without installing:
+# (See the ``pre-commit-install`` recipe in the worktree-root justfile.)
+# That recipe runs ``contracts/.venv/bin/pre-commit install`` from within
+# contracts/, which writes the hook into the correct
+# ``.git/modules/<path>/hooks/`` location when ``.git`` is a worktree
+# pointer file.
 #
-#     pre-commit run lint-notebook-citations --all-files
+# Without running the install recipe, commits bypass this lint silently.
+#
+# Ad-hoc invocation without installing:
+# -------------------------------------
+#     cd contracts && .venv/bin/pre-commit run lint-notebook-citations --all-files
 #
 repos:
   - repo: local
     hooks:
       - id: lint-notebook-citations
         name: Citation-block + chasing-offline lint (FX-vol notebooks)
-        entry: python scripts/lint_notebook_citations.py
+        entry: python contracts/scripts/lint_notebook_citations.py
         language: system
-        files: '^notebooks/fx_vol_cpi_surprise/.*\.ipynb$'
+        files: '^contracts/notebooks/fx_vol_cpi_surprise/.*\.ipynb$'
         types: [jupyter]
         pass_filenames: true
