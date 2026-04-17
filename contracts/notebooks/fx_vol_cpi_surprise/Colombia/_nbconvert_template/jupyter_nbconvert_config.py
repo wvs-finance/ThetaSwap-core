@@ -26,15 +26,20 @@ Loading env.py:
       <this file>  = .../Colombia/_nbconvert_template/jupyter_nbconvert_config.py
       parents[1]   = .../Colombia/env.py  ← target
 
-If the loader ever fails (env.py moved, file missing), we fall through to
-the literal 1800 s so nbconvert still works; a warning is printed so the
-drift is visible in CI logs.
+If the loader ever fails (env.py moved, file missing, importlib unable to
+build a spec), we RAISE a ``RuntimeError`` rather than silently falling back
+to a hard-coded literal. Rationale: env.NBCONVERT_TIMEOUT is the single
+source of truth for the PDF-export runtime budget. A silent fallback would
+mask structural drift — a moved env.py, a renamed directory, a broken
+``parents[1]`` offset — and let CI pass while the notebook suite runs
+under a duplicated, stale constant. A hard error surfaces the breakage at
+config-load time, where the fix (update the path offset, or re-run
+``just pre-commit-install``) is obvious.
 """
 from __future__ import annotations
 
 import importlib.util
 import sys
-import warnings
 from pathlib import Path
 
 # ── Resolve env.py by file location (parents[1]/env.py relative to here) ──
@@ -42,31 +47,45 @@ from pathlib import Path
 _CONFIG_DIR = Path(__file__).resolve().parent
 _ENV_PATH = _CONFIG_DIR.parent / "env.py"
 
+# Documented-expected value used ONLY in the RuntimeError message below so
+# operators know what timeout env.NBCONVERT_TIMEOUT should currently produce.
+# NOT used as a silent fallback — see _load_env_timeout() for the rationale.
 _FALLBACK_TIMEOUT_SECONDS = 1800  # kept in sync with env.NBCONVERT_TIMEOUT
 
 
 def _load_env_timeout() -> int:
-    """Return env.NBCONVERT_TIMEOUT, or the hard fallback if env.py is missing."""
+    """Return env.NBCONVERT_TIMEOUT, or raise RuntimeError if env.py is unloadable.
+
+    This function intentionally does NOT fall back to a hard-coded literal.
+    env.NBCONVERT_TIMEOUT is the single source of truth for the notebook-
+    export runtime budget; a silent fallback would hide structural drift
+    (moved env.py, broken path offset, incomplete setup) behind a stale
+    duplicate constant. A loud RuntimeError at config-load time forces the
+    fix to happen where it's needed.
+    """
     if not _ENV_PATH.is_file():
-        warnings.warn(
-            f"env.py not found at {_ENV_PATH}; falling back to "
-            f"{_FALLBACK_TIMEOUT_SECONDS}s timeout. This is expected only "
-            f"if the notebook directory has been restructured — update "
-            f"this config's parents[1] offset if so.",
-            RuntimeWarning,
-            stacklevel=2,
+        raise RuntimeError(
+            f"Could not load env.py at {_ENV_PATH}: file missing. "
+            f"NBCONVERT_TIMEOUT is the single source of truth for the "
+            f"notebook PDF-export runtime budget (expected value would have "
+            f"been {_FALLBACK_TIMEOUT_SECONDS}s); falling back silently "
+            f"would hide structural drift. To fix: update the `parents[1] / "
+            f"\"env.py\"` path in this config if env.py has moved, or re-run "
+            f"`just pre-commit-install` if setup is incomplete."
         )
-        return _FALLBACK_TIMEOUT_SECONDS
 
     spec = importlib.util.spec_from_file_location("fx_vol_env", _ENV_PATH)
     if spec is None or spec.loader is None:
-        warnings.warn(
-            f"Could not build importlib spec for {_ENV_PATH}; falling back "
-            f"to {_FALLBACK_TIMEOUT_SECONDS}s timeout.",
-            RuntimeWarning,
-            stacklevel=2,
+        raise RuntimeError(
+            f"Could not load env.py at {_ENV_PATH}: importlib failed to "
+            f"build a module spec. NBCONVERT_TIMEOUT is the single source "
+            f"of truth for the notebook PDF-export runtime budget (expected "
+            f"value would have been {_FALLBACK_TIMEOUT_SECONDS}s); falling "
+            f"back silently would hide structural drift. To fix: update "
+            f"the `parents[1] / \"env.py\"` path in this config if env.py "
+            f"has moved, or re-run `just pre-commit-install` if setup is "
+            f"incomplete."
         )
-        return _FALLBACK_TIMEOUT_SECONDS
     module = importlib.util.module_from_spec(spec)
     # Register by a private name so we do not collide with a real package
     # if env.py is later promoted to sys.path. The underscore prefix keeps

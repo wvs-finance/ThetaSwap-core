@@ -334,3 +334,62 @@ def test_config_enables_tagremove_preprocessor_for_remove_input_tag() -> None:
         f"remove_input_tags setting is a no-op. Got "
         f"{cfg.TagRemovePreprocessor.enabled!r}."
     )
+
+
+# ── Regression: missing env.py must RAISE, not silently fall back ─────────
+
+def test_load_env_timeout_raises_when_env_missing(tmp_path: Path) -> None:
+    """Loading the config with env.py absent must raise RuntimeError.
+
+    Regression guard: the earlier revision of ``_load_env_timeout()`` emitted
+    a ``RuntimeWarning`` and returned the literal ``1800`` when env.py could
+    not be loaded. Because ``RuntimeWarning`` is not fatal by default, CI
+    passed silently even when env.py structurally moved — the notebook suite
+    then ran under a stale duplicated constant. The fix promotes the
+    fallback to a hard ``RuntimeError``. This test locks that behavior.
+
+    Strategy: copy the real config file into a throwaway temp directory
+    WITHOUT an accompanying env.py. The config computes
+    ``_ENV_PATH = Path(__file__).resolve().parent.parent / "env.py"`` at
+    load time, so executing the copy with its ``__file__`` pointed at the
+    temp location makes ``_ENV_PATH`` resolve to a non-existent file and
+    triggers the ``is_file()`` guard. No patching, no monkey-business on
+    ``Path.exists`` — just a clean, isolated filesystem layout that
+    exercises the real code path end-to-end.
+
+    The error message must name ``env.py`` (what went wrong),
+    ``NBCONVERT_TIMEOUT`` (why it matters), and reference either
+    ``parents[1]`` or ``just pre-commit-install`` (how to fix). We assert
+    the two load-bearing substrings — the fix hints — are present.
+    """
+    from traitlets.config import Config
+
+    # Lay out the temp dir to mirror the real on-disk structure:
+    #   tmp_path/_nbconvert_template/jupyter_nbconvert_config.py  ← copy
+    #   tmp_path/env.py                                           ← ABSENT
+    fake_template_dir = tmp_path / "_nbconvert_template"
+    fake_template_dir.mkdir()
+    fake_config = fake_template_dir / "jupyter_nbconvert_config.py"
+    fake_config.write_text(CONFIG_FILE.read_text(encoding="utf-8"), encoding="utf-8")
+
+    # Sanity: ensure env.py is genuinely absent in the fake layout so the
+    # test is actually exercising the failure path and not passing by
+    # accident.
+    assert not (tmp_path / "env.py").exists(), (
+        f"Test setup invariant violated: {tmp_path / 'env.py'} must NOT "
+        f"exist for this regression test to exercise the failure path."
+    )
+
+    c = Config()
+
+    def get_config() -> Config:
+        return c
+
+    globals_dict: dict = {"get_config": get_config, "__file__": str(fake_config)}
+    code = compile(fake_config.read_text(encoding="utf-8"), str(fake_config), "exec")
+
+    # ``match`` uses a regex — escape the literal substrings we care about.
+    # We match on ``env.py`` AND ``NBCONVERT_TIMEOUT`` to lock both halves
+    # of the 3-part error message (what went wrong + why it matters).
+    with pytest.raises(RuntimeError, match=r"env\.py.*NBCONVERT_TIMEOUT"):
+        exec(code, globals_dict)  # noqa: S102 — trusted in-repo config
