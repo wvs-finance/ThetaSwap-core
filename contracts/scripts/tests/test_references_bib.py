@@ -54,7 +54,7 @@ REQUIRED_ENTRIES: Final[tuple[tuple[str, str], ...]] = (
     ("baiPerron1998estimating", "Bai-Perron 1998 Econometrica structural changes"),
     ("baiPerron2003computation", "Bai-Perron 2003 JAE computation structural change"),
     ("balduzzi2001economic", "Balduzzi-Elton-Green 2001 JFQA news and bond prices"),
-    ("baroneAdesi2008filtered", "Barone-Adesi-Giannopoulos-Vosper 2008 JBF filtered historical sim"),
+    ("baroneAdesi2008filtered", "Barone-Adesi-Engle-Mancini 2008 RFS GARCH-FHS option pricing"),
     ("belsley1980regression", "Belsley-Kuh-Welsch 1980 Wiley regression diagnostics (VIF)"),
     ("bollerslev1986generalized", "Bollerslev 1986 JE GARCH"),
     ("bollerslevWooldridge1992qmle", "Bollerslev-Wooldridge 1992 Econometric Reviews QMLE"),
@@ -200,9 +200,10 @@ def test_hanKristensen_journal_is_jbes() -> None:
         "Entry hanKristensen2014garch missing"
     )
     journal = entries["hanKristensen2014garch"].get("journal", "").strip()
-    assert journal == "Journal of Business & Economic Statistics", (
-        f"Han-Kristensen journal must be exactly 'Journal of Business & "
-        f"Economic Statistics' (plan rev 2 correction), got: {journal!r}"
+    assert journal == r"Journal of Business {\&} Economic Statistics", (
+        r"Han-Kristensen journal must be exactly 'Journal of Business {\&} "
+        f"Economic Statistics' (plan rev 2 correction + LaTeX-safe escape), "
+        f"got: {journal!r}"
     )
 
 
