@@ -69,6 +69,24 @@ API_MODULE_TOKEN: Final[str] = "econ_query_api"
 
 # ── Pure lint helpers ────────────────────────────────────────────────────────
 
+# Python 3.12+ tokenizes f-strings into three distinct token types:
+# ``FSTRING_START`` (the ``f"`` prefix), ``FSTRING_MIDDLE`` (the literal
+# text between interpolated braces), and ``FSTRING_END`` (the closing
+# quote). These token constants do NOT exist on Python 3.11 and earlier,
+# where f-strings were emitted as a single ``STRING`` token. We collect
+# whichever of these constants exist at runtime so the lint remains
+# correct on 3.12+ AND importable on 3.11.
+_FSTRING_TOKEN_TYPES: Final[frozenset[int]] = frozenset(
+    tok_type
+    for tok_type in (
+        getattr(tokenize, "FSTRING_START", None),
+        getattr(tokenize, "FSTRING_MIDDLE", None),
+        getattr(tokenize, "FSTRING_END", None),
+    )
+    if tok_type is not None
+)
+
+
 def _strip_comments_and_strings(source: str) -> str:
     """Return ``source`` with all comments and string literals removed.
 
@@ -84,6 +102,16 @@ def _strip_comments_and_strings(source: str) -> str:
     ``(`` concat to ``conn.execute(``) while safely erasing any string or
     comment content. The returned text is not a faithful Python source —
     it is only consumed by substring grepping.
+
+    F-strings receive special handling on Python 3.12+, where they are
+    split into ``FSTRING_START`` / ``FSTRING_MIDDLE`` / ``FSTRING_END``
+    tokens. The ``FSTRING_MIDDLE`` token carries the literal text between
+    interpolated ``{...}`` expressions — without explicit handling, an
+    f-string like ``f"use {api}.execute( for debugging"`` would leak the
+    substring ``.execute(`` into the cleaned output and falsely flag the
+    module. All three fstring token types are dropped (equivalent to
+    replacing the whole f-string with ``""``), matching the treatment
+    applied to regular ``STRING`` tokens.
     """
     parts: list[str] = []
     readline = io.StringIO(source).readline
@@ -92,6 +120,12 @@ def _strip_comments_and_strings(source: str) -> str:
             continue
         if tok.type == tokenize.STRING:
             parts.append('""')
+            continue
+        # F-string sub-tokens (Python 3.12+): drop all three so that the
+        # f-string is completely elided from the cleaned text. Interpolated
+        # name references inside ``{...}`` still appear as ordinary NAME
+        # tokens, so genuine code paths are preserved.
+        if tok.type in _FSTRING_TOKEN_TYPES:
             continue
         # NEWLINE, NL, INDENT, DEDENT, ENCODING, ENDMARKER contribute no
         # characters that affect substring matches; drop them. NAME, OP,
@@ -252,6 +286,56 @@ def test_clean_fixture_imports_econ_query_api() -> None:
     assert API_MODULE_TOKEN in source, (
         f"clean fixture does not reference '{API_MODULE_TOKEN}'; "
         "cannot demonstrate 'flows through API' invariant"
+    )
+
+
+# ── F-string regression (Python 3.12+ safety) ────────────────────────────────
+
+def test_violator_disguised_as_fstring_is_not_flagged() -> None:
+    """An f-string whose middle contains ``.execute(`` must be elided.
+
+    Python 3.12+ splits f-strings into ``FSTRING_START`` / ``FSTRING_MIDDLE``
+    / ``FSTRING_END`` tokens. Without explicit handling, the literal text
+    between interpolated expressions would leak into the cleaned source and
+    produce a false positive. This test confirms that a forbidden pattern
+    appearing ONLY inside the middle of an f-string is stripped along with
+    the rest of the string literal.
+    """
+    source = (
+        "def docstring_only() -> None:\n"
+        "    x = 'value'\n"
+        "    msg = f\"use {x}.execute( as mock\"\n"
+        "    return msg\n"
+    )
+    cleaned = _strip_comments_and_strings(source)
+    assert ".execute(" not in cleaned, (
+        "f-string middle was not stripped — forbidden pattern leaked into "
+        f"cleaned source: {cleaned!r}"
+    )
+
+
+def test_real_code_with_fstring_execute_survives() -> None:
+    """Fix must not over-strip: a real ``conn.execute(...)`` call is still flagged.
+
+    Guards against an over-eager fix that also drops genuine NAME/OP tokens
+    that happen to compose ``.execute(``. The module below contains both a
+    docstring-as-f-string mentioning ``.execute(`` (must be ignored) AND an
+    actual ``conn.execute(...)`` call (must still trigger the lint). If the
+    fix were too aggressive (e.g. dropping the NAME ``execute`` token), the
+    real call would slip through.
+    """
+    source = (
+        'def describe() -> str:\n'
+        '    label = "sql"\n'
+        '    doc = f"this helper used to call .execute( in {label} mode"\n'
+        '    conn = object()\n'
+        '    conn.execute("SELECT 1")\n'
+        '    return doc\n'
+    )
+    hits = _find_forbidden_patterns(source)
+    assert ".execute(" in hits, (
+        "real conn.execute(...) call was NOT flagged — the f-string stripper "
+        f"is over-eager and ate genuine code tokens. Hits: {hits}"
     )
 
 
