@@ -1,0 +1,29 @@
+# Pre-commit hooks for contracts/ (Task 5 of econ-notebook-implementation).
+#
+# Enforces Rule 6 (citation-block) and Rule 7 (chasing-offline) on every
+# FX-vol notebook at commit time by invoking
+# ``scripts/lint_notebook_citations.py``. The hook scopes itself to
+# ``notebooks/fx_vol_cpi_surprise/**/*.ipynb`` so unrelated notebooks
+# outside that tree are not linted.
+#
+# Installation (one-time per checkout):
+#
+#     cd contracts
+#     pre-commit install
+#
+# If ``.git`` is a worktree pointer file, ``pre-commit install`` writes
+# the hook into the main repo's ``.git/modules/<path>/hooks/`` directory.
+# Alternatively, invoke the hook directly without installing:
+#
+#     pre-commit run lint-notebook-citations --all-files
+#
+repos:
+  - repo: local
+    hooks:
+      - id: lint-notebook-citations
+        name: Citation-block + chasing-offline lint (FX-vol notebooks)
+        entry: python scripts/lint_notebook_citations.py
+        language: system
+        files: '^notebooks/fx_vol_cpi_surprise/.*\.ipynb$'
+        types: [jupyter]
+        pass_filenames: true
