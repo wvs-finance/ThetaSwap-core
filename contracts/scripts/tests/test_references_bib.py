@@ -6,7 +6,7 @@ and nbconvert LaTeX PDFs that resolve every citation through this file.
 
 Assertions (per plan Rev 2):
   * The file exists at contracts/notebooks/fx_vol_cpi_surprise/Colombia/references.bib
-  * All 34 required BibTeX keys are present.
+  * All 35 required BibTeX keys are present.
   * Every entry has a non-empty journal OR booktitle field (whichever is
     appropriate for its entry type).
   * Han-Kristensen 2014 is explicitly in the Journal of Business & Economic
@@ -42,13 +42,14 @@ REFERENCES_BIB_PATH: Final[Path] = (
 )
 
 
-# ── Required entries (34 total) ──
+# ── Required entries (35 total) ──
 
 # Each tuple is (citation_key, human_readable_description). The description
 # is used only in failure messages; the key is the assertion target.
 REQUIRED_ENTRIES: Final[tuple[tuple[str, str], ...]] = (
     ("andersen2001distribution", "Andersen-Bollerslev-Diebold-Ebens 2001 JFE realized vol"),
     ("andersen2003micro", "Andersen-Bollerslev-Diebold-Vega 2003 AER micro macro announcements"),
+    ("andrews1991heteroskedasticity", "Andrews 1991 Econometrica HAC consistency"),
     ("ang2006crosssection", "Ang-Hodrick-Xing-Zhang 2006 JFE cross-section of vol"),
     ("ankelPeters2024protocol", "Ankel-Peters-Brodeur et al. 2024 I4R robustness protocol"),
     ("baiPerron1998estimating", "Bai-Perron 1998 Econometrica structural changes"),
@@ -120,7 +121,7 @@ def test_references_bib_parses_with_bibtexparser() -> None:
     assert db.entries, "references.bib parsed but contains zero entries"
 
 
-def test_references_bib_has_all_34_required_keys() -> None:
+def test_references_bib_has_all_35_required_keys() -> None:
     """Every required entry is present. Failure message names the missing keys."""
     entries = _entries_by_key()
     missing = [
@@ -135,7 +136,7 @@ def test_references_bib_has_all_34_required_keys() -> None:
 
 
 def test_references_bib_entry_count_matches_required() -> None:
-    """Exactly the 34 required entries are present (no extras, no omissions)."""
+    """Exactly the 35 required entries are present (no extras, no omissions)."""
     entries = _entries_by_key()
     required_keys = {key for key, _ in REQUIRED_ENTRIES}
     assert set(entries) == required_keys, (
