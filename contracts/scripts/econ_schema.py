@@ -15,6 +15,7 @@ EXPECTED_TABLES: Final[frozenset[str]] = frozenset({
     "banrep_trm_daily",
     "banrep_ibr_daily",
     "banrep_intervention_daily",
+    "banrep_meeting_calendar",
     "fred_daily",
     "fred_monthly",
     "dane_ipc_monthly",
@@ -54,6 +55,16 @@ CREATE TABLE IF NOT EXISTS banrep_intervention_daily (
     ndf DOUBLE,
     fx_swaps DOUBLE,
     _ingested_at TIMESTAMP NOT NULL DEFAULT current_timestamp
+)
+"""
+
+_DDL_BANREP_MEETING_CALENDAR: Final[str] = """
+CREATE TABLE IF NOT EXISTS banrep_meeting_calendar (
+    year SMALLINT NOT NULL,
+    meeting_date DATE NOT NULL,
+    meeting_type VARCHAR NOT NULL,
+    _ingested_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    PRIMARY KEY (year, meeting_date)
 )
 """
 
@@ -134,6 +145,7 @@ _ALL_DDL: Final[tuple[str, ...]] = (
     _DDL_BANREP_TRM_DAILY,
     _DDL_BANREP_IBR_DAILY,
     _DDL_BANREP_INTERVENTION_DAILY,
+    _DDL_BANREP_MEETING_CALENDAR,
     _DDL_FRED_DAILY,
     _DDL_FRED_MONTHLY,
     _DDL_DANE_IPC_MONTHLY,
