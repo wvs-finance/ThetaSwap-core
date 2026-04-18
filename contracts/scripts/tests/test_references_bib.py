@@ -4,9 +4,11 @@ Task 2 of the econ-notebook-implementation plan. The three notebooks
 (01_data_eda, 02_estimation, 03_tests_and_sensitivity) emit citation blocks
 and nbconvert LaTeX PDFs that resolve every citation through this file.
 
-Assertions (per plan Rev 2):
+Assertions (per plan Rev 2, updated 2026-04-18 Task 15 citation integrity fix):
   * The file exists at contracts/notebooks/fx_vol_cpi_surprise/Colombia/references.bib
-  * All 35 required BibTeX keys are present.
+  * All 37 required BibTeX keys are present (35 original + 2 Colombian-canon
+    anchors for Decision #6 added 2026-04-18 after Reality Checker review:
+    anzoateguiGalvis2019comunicacion, galvisOliveiraAnzoategui2017anuncios).
   * Every entry has a non-empty journal OR booktitle field (whichever is
     appropriate for its entry type).
   * Han-Kristensen 2014 is explicitly in the Journal of Business & Economic
@@ -42,16 +44,26 @@ REFERENCES_BIB_PATH: Final[Path] = (
 )
 
 
-# ── Required entries (35 total) ──
+# ── Required entries (37 total: 35 original + 2 Colombian-canon anchors) ──
 
 # Each tuple is (citation_key, human_readable_description). The description
 # is used only in failure messages; the key is the assertion target.
+#
+# 2026-04-18 addition (Task 15 three-way review gate citation integrity fix):
+#   anzoateguiGalvis2019comunicacion + galvisOliveiraAnzoategui2017anuncios
+# are the web-verified Colombian-literature anchors for Decision #6
+# (BanRep rate surprise event-study ΔIBR methodology). Added after Reality
+# Checker flagged the mis-attributed "Uribe-Gil & Galvis-Ciro 2022 BIS WP
+# 1022" citation in NB1 cells 73/75 Decision #6 prose; see research doc
+# .scratch/2026-04-18-banrep-rate-surprise-methodology-research.md §0
+# (Amendment) for full audit trail.
 REQUIRED_ENTRIES: Final[tuple[tuple[str, str], ...]] = (
     ("andersen2001distribution", "Andersen-Bollerslev-Diebold-Ebens 2001 JFE realized vol"),
     ("andersen2003micro", "Andersen-Bollerslev-Diebold-Vega 2003 AER micro macro announcements"),
     ("andrews1991heteroskedasticity", "Andrews 1991 Econometrica HAC consistency"),
     ("ang2006crosssection", "Ang-Hodrick-Xing-Zhang 2006 JFE cross-section of vol"),
     ("ankelPeters2024protocol", "Ankel-Peters-Brodeur et al. 2024 I4R robustness protocol"),
+    ("anzoateguiGalvis2019comunicacion", "Anzoátegui-Zapata-Galvis-Ciro 2019 Cuadernos de Economía 38(77) — Decision #6 secondary Colombian anchor (event-study ΔIBR-1m on public debt)"),
     ("baiPerron1998estimating", "Bai-Perron 1998 Econometrica structural changes"),
     ("baiPerron2003computation", "Bai-Perron 2003 JAE computation structural change"),
     ("balduzzi2001economic", "Balduzzi-Elton-Green 2001 JFQA news and bond prices"),
@@ -69,6 +81,7 @@ REQUIRED_ENTRIES: Final[tuple[tuple[str, str], ...]] = (
     ("elliott1996efficient", "Elliott-Rothenberg-Stock 1996 Econometrica DF-GLS"),
     ("engleRangel2008spline", "Engle-Rangel 2008 RFS Spline-GARCH"),
     ("fuentes2014bis462", "Fuentes-Pincheira-Julio-Rincón et al. 2014 BIS WP 462"),
+    ("galvisOliveiraAnzoategui2017anuncios", "Galvis-Ciro-Oliveira-Anzoátegui 2017 Lecturas de Economía 87 — Decision #6 primary Colombian anchor (event-study ΔIBR-1m on COP/USD FX volatility)"),
     ("hanKristensen2014garch", "Han-Kristensen 2014 JBES GARCH-X QMLE asymptotics"),
     ("hansenLunde2005forecast", "Hansen-Lunde 2005 JAE anything beat GARCH(1,1)"),
     ("hestonNandi2000closed", "Heston-Nandi 2000 RFS closed-form GARCH option"),
@@ -121,7 +134,7 @@ def test_references_bib_parses_with_bibtexparser() -> None:
     assert db.entries, "references.bib parsed but contains zero entries"
 
 
-def test_references_bib_has_all_35_required_keys() -> None:
+def test_references_bib_has_all_37_required_keys() -> None:
     """Every required entry is present. Failure message names the missing keys."""
     entries = _entries_by_key()
     missing = [
@@ -136,7 +149,7 @@ def test_references_bib_has_all_35_required_keys() -> None:
 
 
 def test_references_bib_entry_count_matches_required() -> None:
-    """Exactly the 35 required entries are present (no extras, no omissions)."""
+    """Exactly the 37 required entries are present (no extras, no omissions)."""
     entries = _entries_by_key()
     required_keys = {key for key, _ in REQUIRED_ENTRIES}
     assert set(entries) == required_keys, (
