@@ -1,14 +1,21 @@
-"""Tests for the three empty .ipynb skeletons and placeholder README.md.
+"""Tests for the remaining .ipynb skeletons and placeholder README.md.
 
-Task 1c of the econ-notebook-implementation plan. Asserts that:
+Task 1c of the econ-notebook-implementation plan (narrowed post-Task 7).
+Originally this module parametrised across all three notebooks. NB1 has
+since been authored (Trios 1-3 of Task 7) and is no longer a skeleton; its
+structure is covered by ``test_nb1_section1.py``. NB2 and NB3 remain empty
+skeletons here until Tasks 16 and 24 start authoring them, at which point
+those two entries will be retired the same way.
 
-  * Each of 01_data_eda.ipynb, 02_estimation.ipynb, 03_tests_and_sensitivity.ipynb
+Remaining assertions:
+
+  * Each of 02_estimation.ipynb, 03_tests_and_sensitivity.ipynb
     is valid ``nbformat.v4`` (validates via ``nbformat.validate``).
-  * Each notebook contains EXACTLY two cells, BOTH markdown:
-      - cell[0]: a title cell identifying the notebook (NB1 / NB2 / NB3 + topic).
+  * Each skeleton contains EXACTLY two cells, BOTH markdown:
+      - cell[0]: a title cell identifying the notebook (NB2 / NB3 + topic).
       - cell[1]: a "Gate Verdict" admonition with the literal placeholder text
         "populated after NB2 and NB3".
-  * Zero code cells in any skeleton.
+  * Zero code cells in any remaining skeleton.
   * The placeholder README.md exists, is short (< 500 bytes), and references
     "Task 30" (the Jinja2 auto-render task that overwrites this file).
 
@@ -64,8 +71,10 @@ README_PATH: Final[Path] = _env.READMEPath
 # Identifying title-substring tokens per notebook. The title cell must contain
 # the NB-N prefix; we intentionally do NOT pin the full title string so that
 # authors can refine wording without breaking the test.
+#
+# NB1_PATH is retained as a valid env.py export but is deliberately NOT in
+# this mapping: NB1 is no longer a skeleton. See module docstring.
 NB_TITLE_TOKENS: Final[dict[Path, str]] = {
-    NB1_PATH: "NB1",
     NB2_PATH: "NB2",
     NB3_PATH: "NB3",
 }
@@ -76,7 +85,9 @@ GATE_VERDICT_TOKENS: Final[tuple[str, ...]] = (
     "populated after NB2 and NB3",
 )
 
-ALL_NB_PATHS: Final[tuple[Path, ...]] = (NB1_PATH, NB2_PATH, NB3_PATH)
+# Skeletons only — NB1 was authored by Task 7 and is covered by
+# test_nb1_section1.py.
+ALL_NB_PATHS: Final[tuple[Path, ...]] = (NB2_PATH, NB3_PATH)
 
 
 # ── .ipynb structural tests ────────────────────────────────────────────────
