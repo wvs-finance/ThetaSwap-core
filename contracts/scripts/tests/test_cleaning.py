@@ -34,9 +34,9 @@ from scripts import cleaning
 from scripts.cleaning import (
     CleanedPanel,
     LockedDecisions,
-    compute_decision_hash,
     load_cleaned_panel,
 )
+from scripts.cleaning import _compute_decision_hash as compute_decision_hash
 
 # ── Expected column sets ─────────────────────────────────────────────────────
 
