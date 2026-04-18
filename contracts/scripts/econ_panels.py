@@ -19,9 +19,16 @@ def build_weekly_panel(
 
     Uses parameterized queries. Lookback window for LAG() on first sample week.
     dane_ipc_pct/dane_ipp_pct populated from release-week joins.
-    cpi_surprise_ar1, us_cpi_surprise, banrep_rate_surprise initialized to 0.0 —
-    Task 6 populates CPI surprises via post-processing UPDATE.
-    banrep_rate_surprise deferred to estimation module (spec §3.10).
+    cpi_surprise_ar1, us_cpi_surprise initialized to 0.0 — Task 6 populates
+    CPI surprises via post-processing UPDATE.
+
+    banrep_rate_surprise is constructed directly here via the event-study
+    operator of research doc 2026-04-18 §8.1:
+        s_w = sum_{τ ∈ meetings ∩ week w} (IBR_ON_τ - IBR_ON_τ-1)
+    where τ are Junta Directiva meeting days from ``banrep_meeting_calendar``
+    and IBR_ON is the overnight IBR from ``banrep_ibr_daily``. Weeks with no
+    meeting receive a structural zero. The within-week SUM handles the rare
+    two-meetings-in-one-week case sign-preservingly.
     """
     lookback = sample_start - _timedelta(days=14)
     conn.execute("""
@@ -120,6 +127,28 @@ def build_weekly_panel(
     ppi_release_weeks AS (
         SELECT DISTINCT date_trunc('week', release_date)::DATE AS week_start
         FROM dane_release_calendar WHERE series = 'ipp'
+    ),
+    -- Event-study Banrep surprise (research doc §8.1, Anzoátegui-Zapata &
+    -- Galvis 2019 / Uribe-Gil & Galvis-Ciro BIS 2022 canon):
+    -- per-meeting-day IBR daily change, SUMMED within week (sign-preserving).
+    -- Every row in banrep_meeting_calendar contributes — rate-change meetings
+    -- show the full TPM step (~25-100 bp); hold-inferred meetings show OMO
+    -- noise (< 5 bp typical per research doc §4.2). This is the literal
+    -- spec of §8.1 ("sum over τ in week w of IBR^ON_τ - IBR^ON_τ-1").
+    ibr_daily_change AS (
+        SELECT
+            date AS ibr_date,
+            ibr_overnight_er
+              - LAG(ibr_overnight_er) OVER (ORDER BY date) AS delta_ibr
+        FROM banrep_ibr_daily
+    ),
+    banrep_surprise_weekly AS (
+        SELECT
+            date_trunc('week', cal.meeting_date)::DATE AS week_start,
+            SUM(COALESCE(idc.delta_ibr, 0.0)) AS banrep_rate_surprise
+        FROM banrep_meeting_calendar cal
+        LEFT JOIN ibr_daily_change idc ON idc.ibr_date = cal.meeting_date
+        GROUP BY date_trunc('week', cal.meeting_date)::DATE
     )
     -- Final join (only weeks >= sample_start)
     SELECT
@@ -136,7 +165,7 @@ def build_weekly_panel(
         CAST(0.0 AS DOUBLE) AS cpi_surprise_ar1,
         COALESCE(dic.ipc_pct_change, 0.0) AS dane_ipc_pct,
         COALESCE(dip.ipp_pct_change, 0.0) AS dane_ipp_pct,
-        CAST(0.0 AS DOUBLE) AS banrep_rate_surprise,
+        COALESCE(bsw.banrep_rate_surprise, 0.0)::DOUBLE AS banrep_rate_surprise,
         COALESCE(iw.intervention_dummy, 0)::SMALLINT AS intervention_dummy,
         COALESCE(iw.intervention_amount, 0.0)::DOUBLE AS intervention_amount,
         crw.week_start IS NOT NULL AS is_cpi_release_week,
@@ -149,6 +178,7 @@ def build_weekly_panel(
     LEFT JOIN dane_ipp_releases dip ON dip.week_start = r.week_start
     LEFT JOIN cpi_release_weeks crw ON crw.week_start = r.week_start
     LEFT JOIN ppi_release_weeks prw ON prw.week_start = r.week_start
+    LEFT JOIN banrep_surprise_weekly bsw ON bsw.week_start = r.week_start
     ORDER BY r.week_start
     """, [lookback, sample_start, sample_start, lookback])
 
@@ -160,7 +190,11 @@ def build_daily_panel(
     """Build daily_panel from raw tables. CREATE OR REPLACE — idempotent.
 
     One row per COP/USD trading day. Lookback for LAG on first day.
-    Surprise columns initialized to 0.0 — Task 6 populates via UPDATE.
+    CPI surprise columns initialized to 0.0 — Task 6 populates via UPDATE.
+
+    banrep_rate_surprise: event-study operator applied at daily frequency —
+    on a meeting day the surprise equals the IBR daily change; on non-meeting
+    days the surprise is a structural zero (research doc §8.1, §9.3).
     """
     lookback = sample_start - _timedelta(days=14)
     conn.execute("""
@@ -189,6 +223,38 @@ def build_daily_panel(
             CASE WHEN value > 0 THEN LN(value) ELSE NULL END AS oil_log_level
         FROM fred_daily
         WHERE series_id = 'DCOILWTICO' AND value IS NOT NULL
+    ),
+    -- Event-study daily surprise (research doc §8.1, §8.4, §9.3): ΔIBR on
+    -- every meeting day in banrep_meeting_calendar, structural zero
+    -- elsewhere.
+    --
+    -- Holiday handling (§8.4): when the meeting_date falls on a day with
+    -- no FX-trading observation (Colombian TRM does not publish on Lunes
+    -- festivo), the surprise is assigned to the first trading day on or
+    -- after the meeting date by joining to the trm trading-day index.
+    ibr_daily_change AS (
+        SELECT
+            date AS ibr_date,
+            ibr_overnight_er
+              - LAG(ibr_overnight_er) OVER (ORDER BY date) AS delta_ibr
+        FROM banrep_ibr_daily
+    ),
+    meeting_with_delta AS (
+        SELECT cal.meeting_date,
+               COALESCE(idc.delta_ibr, 0.0) AS delta_ibr,
+               LEAD(cal.meeting_date) OVER (ORDER BY cal.meeting_date) AS next_meeting
+        FROM banrep_meeting_calendar cal
+        LEFT JOIN ibr_daily_change idc ON idc.ibr_date = cal.meeting_date
+    ),
+    banrep_surprise_daily AS (
+        SELECT
+            MIN(t.date) AS date,
+            mwd.delta_ibr AS banrep_rate_surprise
+        FROM meeting_with_delta mwd
+        JOIN trm_returns t
+          ON t.date >= mwd.meeting_date
+         AND (mwd.next_meeting IS NULL OR t.date < mwd.next_meeting)
+        GROUP BY mwd.meeting_date, mwd.delta_ibr
     )
     SELECT
         t.date,
@@ -196,7 +262,7 @@ def build_daily_panel(
         t.cop_usd_return,
         CAST(0.0 AS DOUBLE) AS abs_cpi_surprise,
         CAST(0.0 AS DOUBLE) AS cpi_surprise_ar1_daily,
-        CAST(0.0 AS DOUBLE) AS banrep_rate_surprise,
+        COALESCE(bsd.banrep_rate_surprise, 0.0)::DOUBLE AS banrep_rate_surprise,
         CASE WHEN bi.date IS NOT NULL THEN 1 ELSE 0 END::SMALLINT AS intervention_dummy,
         v.value AS vix,
         o.oil_return,
@@ -209,6 +275,7 @@ def build_daily_panel(
     LEFT JOIN banrep_intervention_daily bi ON bi.date = t.date
     LEFT JOIN cpi_release_days cd ON cd.date = t.date
     LEFT JOIN ppi_release_days pd ON pd.date = t.date
+    LEFT JOIN banrep_surprise_daily bsd ON bsd.date = t.date
     WHERE t.date >= ?
     ORDER BY t.date
     """, [lookback, sample_start])
@@ -252,7 +319,10 @@ def compute_ar1_surprises(
     Colombian CPI: expanding-window AR(1) on DANE IPC MoM % changes.
     US CPI: same method on CPIAUCSL MoM % changes.
     Mapped to release weeks/days via calendars.
-    banrep_rate_surprise deferred to estimation module (spec §3.10).
+
+    banrep_rate_surprise is NOT handled here — it is constructed directly by
+    the event-study operator inside ``build_weekly_panel`` and
+    ``build_daily_panel`` (research doc 2026-04-18 §8.1, §9.2, §9.3).
     """
     # Check which panels exist
     existing_tables = {r[0] for r in conn.execute("SHOW TABLES").fetchall()}
