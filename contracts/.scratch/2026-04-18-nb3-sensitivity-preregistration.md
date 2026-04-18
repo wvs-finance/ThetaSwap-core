@@ -14,7 +14,7 @@ This document is the **frozen set** of specification-sensitivity analyses that N
 
 **Binding rule.** Any sensitivity added to NB3 after the disk-mtime of this file, without an explicit amendment that (a) is dated, (b) is signed by the pipeline owner, (c) cites written rationale tied to a pre-amendment artifact (not a post-amendment β̂), and (d) is registered **strictly before** any NB2 point estimate is observed, constitutes p-hacking under the Simonsohn (2020) specification-curve convention and invalidates the T3b gate.
 
-**Anti-fishing seal.** The list of sensitivity IDs below (A9, A12, S1, S2, S3, S4, S5, S6) is to be hashed into `nb1_panel_fingerprint.json` by Task 13 so that post-hoc additions or silent edits are detectable. The fingerprint hash becomes the tamper-evidence seal on this pre-registration.
+**Anti-fishing seal.** The list of sensitivity IDs below (A9, A12, S1, S2, S3, S4, S5, S6, S7) is to be hashed into `nb1_panel_fingerprint.json` by Task 13 so that post-hoc additions or silent edits are detectable. The fingerprint hash becomes the tamper-evidence seal on this pre-registration.
 
 **Atomic pre-commitment.** The presence of this file on disk — even before the git commit that will track it — is the pre-commitment event. Editing this file after any NB2 β̂ has been observed does not retroactively legalize additions; the original on-disk state governs. Amendments must follow §5 (Amendment Protocol) below.
 
@@ -33,8 +33,9 @@ This pre-registration adds explicit freezing of:
 - **A9** (Asymmetric response): formalized execution spec for an anticipated-but-under-specified Rev 4 entry.
 - **A12** (HAC bandwidth robustness): **new**. Not anticipated in Rev 4 §8 (which enumerates A1–A9 only). Added here ahead of NB2 on the strength of §4b Trio 1 evidence (US CPI kurt_exc = 8.51).
 - **S1–S6** (six new motivated sensitivities): not anticipated in Rev 4. Motivated by NB1 findings surfaced in §4a and §4b.
+- **S7** (intervention data-freshness sub-sample drop): **new**. Not anticipated in Rev 4. Motivated by the §4f Trio 2 finding (NB1 cell 88) that `banrep_intervention_daily` terminates 2024-10-04, leaving 73 weeks (2024-10-07 → 2026-03-01) with `intervention_dummy = 0` by absence-of-data rather than absence-of-intervention.
 
-**Relationship to Rev 4 §8.** Spec Rev 4 §8 enumerates A1–A9. A12 and S1–S6 are additive to that set. Their addition is pre-registered here, before any β̂ has been observed, and is therefore permitted under the Simonsohn (2020) regime provided the amendment protocol is respected for any further additions.
+**Relationship to Rev 4 §8.** Spec Rev 4 §8 enumerates A1–A9. A12, S1–S6, and S7 are additive to that set. Their addition is pre-registered here, before any β̂ has been observed, and is therefore permitted under the Simonsohn (2020) regime provided the amendment protocol is respected for any further additions.
 
 ---
 
@@ -195,9 +196,28 @@ S6 does **not** gate T3b. It is reported as supplementary evidence on the attenu
 
 ---
 
+### S7 — Intervention data-freshness sub-sample drop
+
+**Status:** **new** (not in spec Rev 4 §8). Pre-registered 2026-04-18 under §5 Amendment Protocol while no β̂ has been observed.
+
+**Motivating finding.** NB1 §4f Trio 2 (commit `a1caa2130`) and the Decision #9 card (cell 90, commit `050484524`) established that `banrep_intervention_daily` terminates 2024-10-04: the BanRep public-disclosure series has not been extended past that date at the time of the Phase 1 lock. The 2008-01-02 → 2026-03-01 primary window therefore carries 73 weeks (2024-10-07 → 2026-03-01, ~8% of the 947-week panel) with `intervention_dummy = 0` imputed by absence-of-data rather than by observed absence-of-intervention. Applying the 30% 2024-partial intervention rate to the 73-week stale tail implies approximately 22 missing intervention events miscoded as zero. This is a known, bounded measurement-error exposure on one of the six Column-6 controls, and its effect on β̂_CPI is empirically testable by dropping the stale tail.
+
+**Frozen execution specification.** Re-run the Column-6 OLS on the sub-sample `week_start < '2024-10-07'`. Expected effective sample: n_effective = 874 weeks (947 − 73). All other Decision #1-12 choices (LHS transform, frequency, surprise construction, US CPI warmup, BanRep spec, VIX aggregation, oil aggregation, intervention form, collinearity policy, stationarity, merge policy) are held identical to the NB2 primary. HAC(4) Newey-West standard errors. Report β̂_CPI, SE_HAC(4), T3b one-sided statistic.
+
+**Pass condition.** Both prongs must hold:
+
+1. **Point-estimate stability:** `|β̂_CPI,S7 − β̂_CPI,primary| < 2 · max(SE_HAC(4),S7, SE_HAC(4),primary)`.
+2. **Sign invariance:** `sign(β̂_CPI,S7) == sign(β̂_CPI,primary)`.
+
+If both hold, the stale-tail exposure is classified as **immaterial** to the primary β̂_CPI. If prong (1) fails with sign invariance preserved, flag as **stale-tail-sensitive** in the gate-verdict README and require the NB3 §9 material-mover spotlight to enumerate S7. If sign flips, escalate to a Decision-#9-reopening event under the amendment protocol's pre-NB2 window (not post-hoc if observed).
+
+**Relationship to NB1 Decisions.** Decision #9 (intervention regressor form, commit `050484524`) pre-registered `intervention_dummy` as the primary Column-6 control under the known data-freshness gap. S7 executes the freshness-sensitivity row anticipated in that Decision card. It is formally additive to Decision #9's sensitivity ladder, not a modification of the Decision itself.
+
+---
+
 ## 4. Interpretation Rules
 
-NB3 produces eight sensitivity outcomes (A9, A12, S1, S2, S3, S4, S5, S6) plus the T3b gate from NB2 and the T1–T7 specification tests. The following interpretation table maps combinations of pass/fail onto three product-facing narratives. This table is itself pre-registered; the narrative selected at gate time must be the one this table designates, not one chosen post-hoc.
+NB3 produces nine sensitivity outcomes (A9, A12, S1, S2, S3, S4, S5, S6, S7) plus the T3b gate from NB2 and the T1–T7 specification tests. The following interpretation table maps combinations of pass/fail onto three product-facing narratives. This table is itself pre-registered; the narrative selected at gate time must be the one this table designates, not one chosen post-hoc.
 
 ### (a) Clean-primary story
 
@@ -211,6 +231,7 @@ NB3 produces eight sensitivity outcomes (A9, A12, S1, S2, S3, S4, S5, S6) plus t
 - S1 passes (sign-unchanged, within 2·SE of primary).
 - At least one of {S2, S3} passes (β̂ retains T3b significance on the regime-dropped subsample).
 - S4 main effect retains T3b significance.
+- S7 passes (stale-tail drop leaves β̂_CPI stable within 2·SE and sign unchanged).
 - A9 may classify as symmetric or asymmetric; does not gate the clean story.
 
 ### (b) Conditional-event-day story
@@ -300,9 +321,10 @@ S3  |  drop_2020_2021 |  T3b_90pct_onesided
 S4  |  surprise_x_intervention |  main_effect_T3b_90pct
 S5  |  event_day_ratio |  ratio_gt_1_and_Welch_p_lt_0p05
 S6  |  demeaned_surprise |  supplementary_direction_and_sign
+S7  |  drop_ge_2024_10_07 |  point_stable_2SE_and_sign_unchanged
 ```
 
-The hash algorithm is SHA-256 over the UTF-8 encoding of the above 8-line block, newlines as LF, no trailing newline. Task 13 records the hash and rejects any downstream fingerprint mismatch as a p-hacking detection event.
+The hash algorithm is SHA-256 over the UTF-8 encoding of the full pre-registration document file (`contracts/.scratch/2026-04-18-nb3-sensitivity-preregistration.md`), newlines as LF, no trailing modification. Task 13 records the hash and rejects any downstream fingerprint mismatch as a p-hacking detection event.
 
 ---
 
