@@ -36,12 +36,12 @@
     "us_cpi_warmup": "us_cpi_surprise_ar1_warmup_12m",
     "vix_aggregation": "vix_avg_weekly_mean"
   },
-  "generated_at": "2026-04-18T22:52:36+00:00",
+  "generated_at": "2026-04-18T23:22:27+00:00",
   "ledger_table": [
     {
       "anti_fishing_binding": "closed interval [2008-01-02, 2026-03-01]",
       "cell_index": 18,
-      "commit_sha": "0d4fc1bec",
+      "commit_sha": "abab9c8e5",
       "decision_id": 1,
       "primary_value": "2008-01-02 \u2192 2026-03-01",
       "scope": "Primary-estimation sample window",
@@ -71,7 +71,7 @@
     {
       "anti_fishing_binding": "ABDV 2003 AR(1) expanding-window on IPC",
       "cell_index": 45,
-      "commit_sha": "cpi_surp_ar1",
+      "commit_sha": "bfb52e8d0",
       "decision_id": 4,
       "primary_value": "cpi_surprise_ar1",
       "scope": "CPI surprise specification",
@@ -81,7 +81,7 @@
     {
       "anti_fishing_binding": "AR(1) expanding on CPIAUCSL + 12-month warmup",
       "cell_index": 54,
-      "commit_sha": "us_cpi_w12m",
+      "commit_sha": "53d0b4895",
       "decision_id": 5,
       "primary_value": "us_cpi_surprise_ar1_warmup_12m",
       "scope": "US CPI surprise warmup",
@@ -91,7 +91,7 @@
     {
       "anti_fishing_binding": "event-study \u0394IBR at Junta dates, sum to week",
       "cell_index": 75,
-      "commit_sha": "banrep_evt_sum",
+      "commit_sha": "11389a7b1",
       "decision_id": 6,
       "primary_value": "event_study_delta_ibr_meeting_sum",
       "scope": "BanRep rate surprise construction",
@@ -101,7 +101,7 @@
     {
       "anti_fishing_binding": "arithmetic mean of Mon-Fri VIXCLS closes",
       "cell_index": 66,
-      "commit_sha": "vix_weekly_avg",
+      "commit_sha": "d55eda6a9",
       "decision_id": 7,
       "primary_value": "vix_avg_weekly_mean",
       "scope": "VIX weekly aggregation",
@@ -111,7 +111,7 @@
     {
       "anti_fishing_binding": "log-return of last positive DCOILWTICO in ISO week",
       "cell_index": 81,
-      "commit_sha": "oil_lastpos_w",
+      "commit_sha": "c0c9d7eaf",
       "decision_id": 8,
       "primary_value": "oil_return_weekly_lastpositive_logret",
       "scope": "Oil return weekly aggregation",
@@ -121,7 +121,7 @@
     {
       "anti_fishing_binding": "binary any-activity indicator (weekly)",
       "cell_index": 90,
-      "commit_sha": "interv_dummy_any",
+      "commit_sha": "050484524",
       "decision_id": 9,
       "primary_value": "intervention_dummy_any_activity_binary",
       "scope": "Intervention regressor form",
@@ -131,7 +131,7 @@
     {
       "anti_fishing_binding": "no adjustment; max VIF = 1.04, max |\u03c1| = 0.14",
       "cell_index": 96,
-      "commit_sha": "collin_none_1p04",
+      "commit_sha": "f87bd4075",
       "decision_id": 10,
       "primary_value": "none_max_vif_1p04",
       "scope": "Collinearity resolution",
@@ -141,7 +141,7 @@
     {
       "anti_fishing_binding": "levels; ADF rejects unit root for all 7 series",
       "cell_index": 105,
-      "commit_sha": "stat_levels",
+      "commit_sha": "460b08cd4",
       "decision_id": 11,
       "primary_value": "levels_no_differencing",
       "scope": "Stationarity treatment",
@@ -151,7 +151,7 @@
     {
       "anti_fishing_binding": "listwise complete-case drop on any NULL",
       "cell_index": 114,
-      "commit_sha": "merge_listwise",
+      "commit_sha": "b3e034141",
       "decision_id": 12,
       "primary_value": "listwise_complete_case",
       "scope": "Merge-alignment policy",
@@ -159,6 +159,8 @@
       "sensitivity_alt": "forward-fill, MICE (NB3 if missingness > 0)"
     }
   ],
+  "schema_version": "1.0",
+  "sensitivity_preregistration_hash": "534d84ecaeaa3cf6486f6f05f7b5d916087fbf9f34df58be014a7ea86a13214d",
   "weekly_panel": {
     "column_count": 18,
     "column_dtypes": {
