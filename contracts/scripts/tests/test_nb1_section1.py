@@ -8,9 +8,17 @@ not a TDD-first test — because §1 is data-authored notebook content
 (citation prose + gated code cells rendered to HTML), not algorithmic
 code whose behaviour can be specified before implementation.
 
+Scope note (Task 8 Trio 1 widening): §2 authoring appends new cells at
+indices 10+. This module remains scoped to §1 — its cell-count assertion
+checks that the notebook has AT LEAST 10 cells and that the first 10
+match the §1 layout exactly. Every other assertion in this module
+references cell indices 0-9 only. §2-specific structural regressions
+live in ``test_nb1_section2.py`` (Task 8 Step 1), where the full
+"exactly N cells" contract for the whole notebook will migrate.
+
 What gets asserted, in order of decreasing "load-bearing":
 
-  1. Cell count: exactly 10 cells as of Trio 3 commit.
+  1. Cell count: at least 10 cells; §1 occupies indices 0-9 exactly.
   2. Cell type layout: cells (0,1,2,5,6,8,9) are markdown; cells (3,4,7)
      are code.
   3. Tag coverage: cells 2-9 carry ``section:1``; cells 0 and 1 (title +
@@ -125,7 +133,10 @@ EXPECTED_CELLS: Final[tuple[CellExpectation, ...]] = (
     CellExpectation(9, "markdown", True, False, "Data Availability Statement block"),
 )
 
-EXPECTED_CELL_COUNT: Final[int] = len(EXPECTED_CELLS)
+# §1 occupies indices 0..SECTION1_CELL_COUNT-1 exactly. Downstream
+# sections (§2 onward) append at index SECTION1_CELL_COUNT and above —
+# §2's structural contract lives in test_nb1_section2.py, not here.
+SECTION1_CELL_COUNT: Final[int] = len(EXPECTED_CELLS)
 
 # Citation-block cells: the two markdown cells that precede a gated code
 # cell inside §1. Cell 2 precedes the Trio 1b manifest code; cell 6
@@ -182,10 +193,17 @@ def _count_bullet_lines(markdown_source: str) -> int:
 # ── Test cases ────────────────────────────────────────────────────────────
 
 def test_nb1_cell_count(nb1: nbformat.NotebookNode) -> None:
-    """NB1 has exactly the expected number of cells after Trio 3."""
-    assert len(nb1.cells) == EXPECTED_CELL_COUNT, (
-        f"Expected {EXPECTED_CELL_COUNT} cells after §1 Trio 3; "
-        f"got {len(nb1.cells)}."
+    """NB1 has at least the §1 cell count; §1 occupies indices 0..N-1.
+
+    Scoped to §1 only. The full-notebook "exactly N cells" contract
+    migrates to test_nb1_section2.py (Task 8 Step 1) once §2 is
+    authored; this test asserts the §1 layout is intact and that §2+
+    content, if present, lives strictly above index
+    SECTION1_CELL_COUNT-1.
+    """
+    assert len(nb1.cells) >= SECTION1_CELL_COUNT, (
+        f"Expected at least {SECTION1_CELL_COUNT} cells (§1 layout); "
+        f"got {len(nb1.cells)} — §1 is truncated."
     )
 
 
