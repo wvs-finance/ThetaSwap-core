@@ -1,0 +1,15 @@
+{
+  "bootstrap_hac_agreement": "AGREEMENT",
+  "gate_verdict": "FAIL",
+  "material_movers_count": 0,
+  "pkl_degraded": false,
+  "reconciliation": "AGREE",
+  "t1_verdict": "FAIL",
+  "t2_verdict": "FAIL",
+  "t3a_verdict": "FAIL TO REJECT",
+  "t3b_verdict": "FAIL",
+  "t4_verdict": "FAIL",
+  "t5_verdict": "FAIL",
+  "t6_verdict": "FAIL",
+  "t7_verdict": "PASS"
+}
