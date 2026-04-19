@@ -5,14 +5,19 @@ Task 2 of the econ-notebook-implementation plan. The three notebooks
 and nbconvert LaTeX PDFs that resolve every citation through this file.
 
 Assertions (per plan Rev 2, updated 2026-04-18 Task 15 citation integrity fix
-and Model QA MEDIUM follow-up for Decision #11 KPSS attribution):
+and Model QA MEDIUM follow-up for Decision #11 KPSS attribution; 2026-04-18
+Task 23 three-way review E3 follow-up added andrews1999estimation as the
+parameter-on-the-boundary reference for the Han-Kristensen 2014 GARCH-X δ
+positivity boundary caveat in NB2 §6):
   * The file exists at contracts/notebooks/fx_vol_cpi_surprise/Colombia/references.bib
-  * All 38 required BibTeX keys are present (35 original + 2 Colombian-canon
+  * All 39 required BibTeX keys are present (35 original + 2 Colombian-canon
     anchors for Decision #6 added 2026-04-18 after Reality Checker review:
     anzoateguiGalvis2019comunicacion, galvisOliveiraAnzoategui2017anuncios;
     + 1 KPSS-under-heteroskedasticity technical anchor added 2026-04-18 after
     Model QA MEDIUM finding on Decision #11 attribution:
-    cavaliereTaylor2005wildKPSS).
+    cavaliereTaylor2005wildKPSS; + 1 parameter-on-the-boundary anchor added
+    2026-04-18 after Task 23 three-way review E3 finding on NB2 §6 GARCH-X
+    boundary CI caveat: andrews1999estimation).
   * Every entry has a non-empty journal OR booktitle field (whichever is
     appropriate for its entry type).
   * Han-Kristensen 2014 is explicitly in the Journal of Business & Economic
@@ -48,7 +53,7 @@ REFERENCES_BIB_PATH: Final[Path] = (
 )
 
 
-# ── Required entries (38 total: 35 original + 2 Colombian-canon + 1 KPSS) ──
+# ── Required entries (39 total: 35 original + 2 Colombian-canon + 1 KPSS + 1 boundary) ──
 
 # Each tuple is (citation_key, human_readable_description). The description
 # is used only in failure messages; the key is the assertion target.
@@ -73,6 +78,7 @@ REQUIRED_ENTRIES: Final[tuple[tuple[str, str], ...]] = (
     ("andersen2001distribution", "Andersen-Bollerslev-Diebold-Ebens 2001 JFE realized vol"),
     ("andersen2003micro", "Andersen-Bollerslev-Diebold-Vega 2003 AER micro macro announcements"),
     ("andrews1991heteroskedasticity", "Andrews 1991 Econometrica HAC consistency"),
+    ("andrews1999estimation", "Andrews 1999 Econometrica parameter-on-the-boundary estimation (Decision #6 GARCH-X δ positivity-boundary CI caveat)"),
     ("ang2006crosssection", "Ang-Hodrick-Xing-Zhang 2006 JFE cross-section of vol"),
     ("ankelPeters2024protocol", "Ankel-Peters-Brodeur et al. 2024 I4R robustness protocol"),
     ("anzoateguiGalvis2019comunicacion", "Anzoátegui-Zapata-Galvis-Ciro 2019 Cuadernos de Economía 38(77) — Decision #6 secondary Colombian anchor (event-study ΔIBR-1m on public debt)"),
@@ -147,7 +153,7 @@ def test_references_bib_parses_with_bibtexparser() -> None:
     assert db.entries, "references.bib parsed but contains zero entries"
 
 
-def test_references_bib_has_all_38_required_keys() -> None:
+def test_references_bib_has_all_39_required_keys() -> None:
     """Every required entry is present. Failure message names the missing keys."""
     entries = _entries_by_key()
     missing = [
@@ -162,7 +168,7 @@ def test_references_bib_has_all_38_required_keys() -> None:
 
 
 def test_references_bib_entry_count_matches_required() -> None:
-    """Exactly the 38 required entries are present (no extras, no omissions)."""
+    """Exactly the 39 required entries are present (no extras, no omissions)."""
     entries = _entries_by_key()
     required_keys = {key for key, _ in REQUIRED_ENTRIES}
     assert set(entries) == required_keys, (
