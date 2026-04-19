@@ -180,14 +180,21 @@ def _load_nb2_serialize():
       * ``_write_pkl_atomic`` — module-private helper that ``write_all``
         uses after the JSON write. The atomic-rollback test monkey-patches
         this one.
+
+    We register the loaded module in ``sys.modules`` under the chosen name
+    BEFORE executing it so the dataclass machinery (``HandoffMetadata``
+    decorator) can look up ``cls.__module__`` during field-annotation
+    resolution. Skipping this registration surfaces as
+    ``AttributeError: 'NoneType' object has no attribute '__dict__'`` in
+    dataclasses.py during field processing.
     """
     serialize_path = _SCRIPTS_DIR / "nb2_serialize.py"
     assert serialize_path.is_file(), f"Missing {serialize_path}"
-    spec = importlib.util.spec_from_file_location(
-        "nb2_serialize_test_target", serialize_path
-    )
+    mod_name = "nb2_serialize_test_target"
+    spec = importlib.util.spec_from_file_location(mod_name, serialize_path)
     assert spec is not None and spec.loader is not None
     module = importlib.util.module_from_spec(spec)
+    sys.modules[mod_name] = module
     spec.loader.exec_module(module)
     return module
 
@@ -245,6 +252,23 @@ def _markdown_cells(
     return [c for c in cells if c.get("cell_type") == "markdown"]
 
 
+def _resolve_ref(schema: dict[str, Any], node: dict[str, Any]) -> dict[str, Any]:
+    """Resolve a single-level local ``$ref`` (``#/$defs/xxx``) against schema.
+
+    Returns ``node`` unchanged if it has no ``$ref``. Only supports one hop —
+    the schema is authored to avoid nested refs on the covariance + regime
+    definitions, so single-level resolution is sufficient.
+    """
+    ref = node.get("$ref")
+    if ref is None:
+        return node
+    assert ref.startswith("#/$defs/"), (
+        f"Only local $defs refs are supported in tests; got {ref!r}."
+    )
+    def_name = ref[len("#/$defs/"):]
+    return schema["$defs"][def_name]
+
+
 # ── (1) Schema validation tests ───────────────────────────────────────────
 
 def test_schema_is_valid_json_schema_draft_2020_12(schema: dict[str, Any]) -> None:
@@ -287,7 +311,7 @@ def test_schema_covariance_blocks_use_param_names_matrix_layout(
         node = properties
         for key in path[:-1]:
             node = node[key]["properties"]
-        cov_schema = node[path[-1]]
+        cov_schema = _resolve_ref(schema, node[path[-1]])
         cov_required = set(cov_schema.get("required", []))
         assert "param_names" in cov_required and "matrix" in cov_required, (
             f"Covariance block at {'.'.join(path)} must require both "
@@ -324,7 +348,8 @@ def test_schema_subsamples_has_three_regimes(schema: dict[str, Any]) -> None:
         assert regime in sub_props, (
             f"Subsamples block must define regime {regime!r}."
         )
-        regime_required = set(sub_props[regime].get("required", []))
+        regime_schema = _resolve_ref(schema, sub_props[regime])
+        regime_required = set(regime_schema.get("required", []))
         for field in ("beta", "cov", "n", "date_min", "date_max"):
             assert field in regime_required, (
                 f"Regime {regime!r} must require field {field!r}."
@@ -371,16 +396,17 @@ def test_schema_reconciliation_is_agree_or_disagree(schema: dict[str, Any]) -> N
 # ── (2) Reconciliation rule tests — synthetic fits per failure mode ───────
 
 def test_reconcile_agree_both_negative_both_sig(serialize_module) -> None:
-    """Both β̂ and δ̂ negative, both significant at 10% → AGREE."""
+    """Both β̂ and δ̂ negative, both significant at 10%, CIs overlap → AGREE."""
     verdict = serialize_module.reconcile(
-        beta_cpi=-0.002,
-        beta_cpi_hac_ci90=(-0.004, -0.0005),
-        delta=-0.01,
-        delta_qmle_ci90=(-0.02, -0.005),
+        beta_cpi=-0.003,
+        beta_cpi_hac_ci90=(-0.005, -0.001),
+        delta=-0.002,
+        delta_qmle_ci90=(-0.004, -0.0005),
     )
     assert verdict == "AGREE", (
         f"Expected AGREE when both point estimates are same-sign, CIs "
-        f"overlap, and both exclude zero; got {verdict!r}."
+        f"overlap (intersection [-0.004, -0.001]), and both exclude zero; "
+        f"got {verdict!r}."
     )
 
 
