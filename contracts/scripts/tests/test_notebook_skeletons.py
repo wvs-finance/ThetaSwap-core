@@ -56,25 +56,35 @@ _env = _load_env()
 README_PATH: Final[Path] = _env.READMEPath
 
 
-# ── Placeholder README.md tests ───────────────────────────────────────────
+# ── README.md tests ───────────────────────────────────────────────────────
+#
+# Task 30 replaces the earlier placeholder README with a Jinja2 auto-
+# rendered artifact. The two structural tests below used to guard the
+# placeholder shape ("< 500 bytes", "mentions Task 30 as author"); they
+# now guard the post-Task-30 shape — the README is auto-rendered from
+# the committed JSON artifacts and must contain the canonical title
+# headline plus the gate-verdict line. The deeper content + byte-
+# identical CI diff check live in scripts/tests/test_readme_render.py.
 
 def test_readme_placeholder_exists() -> None:
-    """Placeholder README.md exists (will be overwritten by Task 30)."""
-    assert README_PATH.is_file(), f"Missing placeholder README: {README_PATH}"
+    """README.md exists (auto-rendered by Task 30)."""
+    assert README_PATH.is_file(), f"Missing README: {README_PATH}"
 
 
 def test_readme_placeholder_references_task_30() -> None:
-    """Placeholder body mentions Task 30 as the auto-render author."""
+    """README body carries the FX-vol-on-CPI-surprise Colombia title."""
     content = README_PATH.read_text(encoding="utf-8")
-    assert "Task 30" in content, (
-        f"README placeholder should reference 'Task 30'; got: {content!r}"
+    assert "FX-vol-on-CPI-surprise" in content and "Colombia" in content, (
+        f"README.md missing the Task 30 canonical title line; got: "
+        f"{content[:400]!r}"
     )
 
 
 def test_readme_placeholder_is_short() -> None:
-    """Placeholder README stays under 500 bytes — just a pointer, not content."""
-    size = README_PATH.stat().st_size
-    assert size < 500, (
-        f"README placeholder grew to {size} bytes — should be a one-line "
-        f"pointer under 500 bytes (Task 30 writes the real content)."
+    """README.md carries the Gate Verdict headline required by Task 30."""
+    content = README_PATH.read_text(encoding="utf-8")
+    assert "Gate Verdict" in content, (
+        "README.md does not contain the 'Gate Verdict' headline required "
+        "by plan line 557 item (1). Task 30's _readme_template.md.j2 must "
+        "emit it."
     )

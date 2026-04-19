@@ -1,0 +1,62 @@
+# FX-vol-on-CPI-surprise — Colombia 2008-2026
+
+**Gate Verdict: {{ gate_verdict.gate_verdict }}** — β̂_CPI = {{ primary.beta_fmt }} (HAC({{ primary.hac_lag }}) SE = {{ primary.se_fmt }}, 90% CI = [{{ primary.ci_lo_fmt }}, {{ primary.ci_hi_fmt }}], n = {{ primary.n }}).
+
+Primary Column-6 OLS of weekly RV^(1/3) on the AR(1)-filtered CPI surprise plus six controls, estimated on the Colombian weekly panel from {{ primary.date_min }} to {{ primary.date_max }}. The one-sided T3b gate rule β̂_CPI − 1.28·SE > 0 is the pre-committed primary; the above headline is a single deterministic summary of that test outcome.
+
+## Primary Results
+
+| Specification | β̂ | SE | 90% CI lower | 90% CI upper | n |
+|---|---|---|---|---|---|
+| Primary (Column 6, HAC({{ primary.hac_lag }})) | {{ primary.beta_fmt }} | {{ primary.se_fmt }} | {{ primary.ci_lo_fmt }} | {{ primary.ci_hi_fmt }} | {{ primary.n }} |
+| GARCH-X δ̂_CPI | {{ garch.beta_fmt }} | {{ garch.se_fmt }} | {{ garch.ci_lo_fmt }} | {{ garch.ci_hi_fmt }} | {{ garch.n }} |
+| Decomposition β̂_CPI (+ IPP) | {{ decomp_cpi.beta_fmt }} | {{ decomp_cpi.se_fmt }} | {{ decomp_cpi.ci_lo_fmt }} | {{ decomp_cpi.ci_hi_fmt }} | {{ decomp_cpi.n }} |
+| Decomposition β̂_PPI (ipp_std) | {{ decomp_ppi.beta_fmt }} | {{ decomp_ppi.se_fmt }} | {{ decomp_ppi.ci_lo_fmt }} | {{ decomp_ppi.ci_hi_fmt }} | {{ decomp_ppi.n }} |
+
+All confidence intervals are two-sided 90% normal-approximation whiskers (±1.645·SE) on the primary point estimate. Coverage is HAC(4) robust on the OLS blocks and QMLE on the GARCH-X block.
+
+## Reconciliation
+
+| Check | Verdict |
+|---|---|
+| GARCH-X vs OLS primary sign/magnitude reconciliation | {{ point_params.reconciliation }} |
+| Bootstrap vs HAC 90% CI agreement (NB2 §3.5) | {{ gate_verdict.bootstrap_hac_agreement }} |
+
+The reconciliation column summarises whether the three top-level estimators (OLS primary, GARCH-X, PPI decomposition) agree on sign and order of magnitude for the CPI-surprise loading. The bootstrap-HAC agreement flag encodes whether the stationary-bootstrap 90% CI for β̂_CPI and the HAC(4) 90% CI overlap by at least 50%.
+
+## Forest Plot
+
+![NB3 §8 sensitivity forest plot — primary anchor + 12 sensitivities](figures/forest_plot.png)
+
+Thirteen specifications are plotted with 90% HAC CI whiskers: the primary Column-6 anchor at the top (divider below), then A1/A4/A5/A6/A8/A9+/A9- refits, three subsample regimes, the GARCH-X loading, and the PPI decomposition rows. A2/A3/A7 are carried forward from NB2 §10 per the Task 27 scope boundary; see that section for those rows.
+
+## Per-Test Gate Table
+
+| Test | Verdict | Role |
+|---|---|---|
+| T1 consensus rationality (Mincer-Zarnowitz F) | {{ gate_verdict.t1_verdict }} | Auxiliary gate |
+| T2 Levene announcement-channel | {{ gate_verdict.t2_verdict }} | Auxiliary gate |
+| T3a two-sided β ≠ 0 | {{ gate_verdict.t3a_verdict }} | Diagnostic |
+| T3b one-sided β > 0 (PRIMARY) | {{ gate_verdict.t3b_verdict }} | Primary gate |
+| T4 Ljung-Box Q(1..8) | {{ gate_verdict.t4_verdict }} | Diagnostic |
+| T5 Jarque-Bera | {{ gate_verdict.t5_verdict }} | Diagnostic |
+| T6 Bai-Perron alignment | {{ gate_verdict.t6_verdict }} | Diagnostic |
+| T7 intervention-dummy adequacy | {{ gate_verdict.t7_verdict }} | Auxiliary gate |
+
+Material movers from NB3 §9 two-pronged rule: {{ gate_verdict.material_movers_count }}. PKL degraded (NB2→NB3 version drift): {{ gate_verdict.pkl_degraded }}.
+
+Aggregation rule (Rev 4 spec): T3b FAIL ⇒ final FAIL regardless of other tests. T3b PASS plus all of (T1, T2, T7) PASS ⇒ final PASS. Diagnostic tests (T3a, T4, T5, T6) are recorded for auditability and do not gate the final verdict.
+
+## Reports
+
+- [NB1 Data EDA PDF]({{ nb1_pdf_relpath }})
+- [NB2 Estimation PDF]({{ nb2_pdf_relpath }})
+- [NB3 Tests and Sensitivity PDF]({{ nb3_pdf_relpath }})
+
+PDFs are produced by the `just notebooks` recipe. The JSON handoff artifacts (`nb1_panel_fingerprint.json`, `nb2_params_point.json`, `nb2_params_full.pkl`, `gate_verdict.json`) live under `estimates/`.
+
+---
+
+*Spec hash: `{{ point_params.spec_hash }}`*
+
+*Panel fingerprint: `{{ point_params.panel_fingerprint }}`*
