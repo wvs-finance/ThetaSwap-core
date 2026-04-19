@@ -327,6 +327,49 @@ def test_nb2_section12_interp_has_no_decision_marker(
         )
 
 
+# ── Review-remediation tests (3-way review convergence) ──────────────────
+
+def test_nb2_section12_has_pooled_mean_caveat(
+    nb2: nbformat.NotebookNode,
+) -> None:
+    """Per 3-way review (Model QA #3 + Reality Checker #3), §12 interp-md
+    must flag the pooled-mean linearisation caveat so readers don't
+    confuse the pooled bp/σ with a regime-conditional number."""
+    cells = _section12_cells(nb2)
+    md_cells = _markdown_cells(cells)
+    combined_md = "".join(_cell_source(c) for c in md_cells)
+    # Accept any phrasing that names "pooled" + "linearisation" (or
+    # "linearization") + "regime".
+    _pooled_caveat_tokens = ("pooled", "regime")
+    for token in _pooled_caveat_tokens:
+        assert token.lower() in combined_md.lower(), (
+            f"§12 interp-md must carry a pooled-sample-linearisation caveat; "
+            f"token {token!r} not found."
+        )
+
+
+def test_nb2_section12_has_one_line_summary(
+    nb2: nbformat.NotebookNode,
+) -> None:
+    """Per 3-way review (Tech Writer LOW 7), §12 interp-md must lead
+    with a one-line summary so readers see the two numbers before
+    the three-paragraph exposition."""
+    cells = _section12_cells(nb2)
+    md_cells = _markdown_cells(cells)
+    # Find the interp-md (the one that starts with "**Interpretation").
+    interp_md_candidates = [
+        _cell_source(c)
+        for c in md_cells
+        if _cell_source(c).lstrip().startswith("**Interpretation")
+    ]
+    assert interp_md_candidates, "§12 interp-md cell not found."
+    interp_md = interp_md_candidates[0]
+    assert "One-line summary" in interp_md or "one-line summary" in interp_md, (
+        "§12 interp-md must lead with a 'One-line summary:' phrase "
+        "per Tech Writer review LOW 7."
+    )
+
+
 # ── Citation-lint integration test ────────────────────────────────────────
 
 def test_nb2_citation_lint_passes_after_task23() -> None:
