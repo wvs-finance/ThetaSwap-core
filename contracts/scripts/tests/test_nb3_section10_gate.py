@@ -112,6 +112,22 @@ import nbformat
 import pytest
 
 
+# ── Section tag constants for cell filtering ─────────────────────────────
+
+_ALL_SECTION_TAGS: Final[tuple[str, ...]] = (
+    "section:1",
+    "section:2",
+    "section:3",
+    "section:4",
+    "section:5",
+    "section:6",
+    "section:7",
+    "section:8",
+    "section:9",
+    "section:10",
+)
+
+
 # ── Path plumbing (mirrors test_nb3_section9.py) ──────────────────────────
 
 _SCRIPTS_DIR: Final[Path] = Path(__file__).resolve().parents[1]
@@ -603,6 +619,170 @@ def test_nb3_section10_citation_has_ankel_peters_2024(
         f"§10 citation block must reference bib key "
         f"@{_ANKELPETERS2024_KEY} (I4R gate-aggregation output protocol). "
         f"Not found."
+    )
+
+
+# ── R2 remediation: live cell-31 execution + JSON equality check ─────────
+#
+# Reality-Checker three-way-review finding (2026-04-19): the §10 tests
+# exercise ``build_gate_verdict`` + ``write_gate_verdict_atomic`` only
+# on synthetic inputs. The live cell 31 — which normalises §1-§9
+# verdicts, re-derives the bootstrap-HAC agreement flag, and writes
+# gate_verdict.json atomically — is exec-tested only via the end-to-end
+# nbconvert subprocess, which catches crashes but not silent logical
+# drift in the verdict mapping (e.g. a mis-spelled ``_levene_verdict``
+# → ``_t2_verdict`` swap would escape).
+#
+# Fix: concatenate the §1-§10 code sources and exec them in a fresh
+# namespace, then re-read ``env.GATE_VERDICT_PATH`` and assert the live
+# notebook-derived JSON matches the committed on-disk JSON. This is the
+# same exec-concatenation pattern §5/§7/§8/§9 tests use.
+
+
+def _build_live_exec_source(nb: nbformat.NotebookNode) -> str:
+    """Concatenate §1-§10 code-cell sources into one exec-able string.
+
+    Mirrors the real notebook execution chain: §1 pre-flight (reads
+    DuckDB + PKL), §2-§7 test machinery (bind verdict scalars),
+    §8 forest table, §9 spotlight + material_movers, §10 gate assembly
+    + atomic JSON emission.
+
+    Every cell carries ``section:N`` + ``remove-input`` tags; we pull
+    source in tag order so the execution context matches nbconvert's.
+    """
+    parts: list[str] = [
+        # Import path shim: make `import env` and `from scripts import
+        # *` work from the exec context.
+        "import sys",
+        f"sys.path.insert(0, {str(_CONTRACTS_DIR)!r})",
+        f"sys.path.insert(0, {str(_ENV_PATH.parent)!r})",
+    ]
+    for tag in _ALL_SECTION_TAGS:
+        for c in nb.cells:
+            cell_tags = tuple(c.metadata.get("tags", []))
+            if tag in cell_tags and c.get("cell_type") == "code":
+                src = c.get("source", "")
+                if isinstance(src, list):
+                    src = "".join(src)
+                parts.append(str(src))
+    return "\n\n".join(parts)
+
+
+# Pinned per-test verdict values the live notebook chain MUST emit
+# under the current pre-committed data + PKL. These values are NOT
+# parameters the test allows to drift — they reflect:
+#   - Decision #1 locked weekly panel (2008-01-02 → 2026-02-23)
+#   - NB2's Column-6 primary HAC(4) fit
+#   - The Rev 4 spec's null-semantics map for T1/T2/T4/T5/T6/T7
+# Any logical drift in cell 31's normalisation (e.g. a PASS/FAIL swap
+# on T2) will flip at least one of these and be caught here — which the
+# round-trip on-disk comparison misses because cell 31 WRITES the
+# buggy value to disk during exec.
+_EXPECTED_LIVE_VERDICTS: Final[dict[str, Any]] = {
+    "t1_verdict": "FAIL",         # T1 REJECT → auxiliary-gate FAIL
+    "t2_verdict": "FAIL",         # T2 FAIL TO REJECT → channel ABSENT → FAIL
+    "t3b_verdict": "FAIL",        # NB2 t3b_pass = False
+    "t7_verdict": "PASS",         # intervention |Δβ̂| ≤ SE
+    "gate_verdict": "FAIL",       # T3b FAIL binds final
+    "pkl_degraded": False,        # version-pin match
+    "material_movers_count": 0,   # §9 halt-on-T3b-FAIL
+    "reconciliation": "AGREE",
+    "bootstrap_hac_agreement": "AGREEMENT",
+}
+
+
+def test_nb3_section10_live_exec_matches_expected_verdicts(
+    nb3: nbformat.NotebookNode,
+) -> None:
+    """Exec-run §1-§10 live; assert per-test verdicts match spec-derived values.
+
+    This is the load-bearing check Task 31-R2 introduces. It prevents a
+    silent logical-drift class where cell 31's verdict-normalisation
+    chain (e.g. the ``_t1_verdict → _t1_final`` map or the
+    ``_levene_verdict → _t2_final`` map) could be mis-authored such
+    that the emitted JSON differs from intent — a case the end-to-end
+    nbconvert test cannot catch (exit code 0 + no NameError is
+    compatible with a wrong verdict), and a case the prior disk-
+    round-trip test misses because cell 31 writes the wrong value to
+    disk during the same exec (the in-memory and on-disk dicts both
+    carry the bug).
+
+    The test:
+      1. Exec-concatenates §1-§10 code in a fresh namespace.
+      2. Cell 31 binds ``gate_verdict_dict``.
+      3. For each key in ``_EXPECTED_LIVE_VERDICTS``, assert the live
+         in-memory value matches the pinned expected value.
+
+    A swap bug in cell 31's mapping (e.g. inverting the T2 PASS/FAIL
+    branch) will flip ``t2_verdict`` from "FAIL" to "PASS" and the test
+    will fail loudly.
+    """
+    # Guard: the live DuckDB + PKL must be present or we can't exec.
+    duckdb_path = _CONTRACTS_DIR / "data" / "structural_econ.duckdb"
+    if not duckdb_path.is_file():
+        pytest.skip(
+            f"{duckdb_path} missing — can't exec-run the live notebook "
+            f"chain."
+        )
+    if not _env.FULL_PKL_PATH.is_file():
+        pytest.skip(
+            f"{_env.FULL_PKL_PATH} missing — NB2 §10 has not been run."
+        )
+
+    source = _build_live_exec_source(nb3)
+    ns: dict[str, Any] = {}
+    exec(compile(source, "<nb3-section10-live>", "exec"), ns)
+
+    # Cell 31 binds ``gate_verdict_dict``.
+    assert "gate_verdict_dict" in ns, (
+        "Cell 31 live exec did not bind `gate_verdict_dict`. "
+        "Check §10 code for NameError upstream."
+    )
+    live = dict(ns["gate_verdict_dict"])
+
+    # Assert each pinned verdict key matches exactly.
+    mismatches = {
+        k: (expected, live.get(k, "<missing>"))
+        for k, expected in _EXPECTED_LIVE_VERDICTS.items()
+        if live.get(k) != expected
+    }
+    assert not mismatches, (
+        f"Cell 31 live exec produced {len(mismatches)} verdict "
+        f"mismatches against spec-derived expectations:\n"
+        + "\n".join(
+            f"  {k!r}: expected {exp!r}, got {actual!r}"
+            for k, (exp, actual) in sorted(mismatches.items())
+        )
+    )
+
+
+def test_nb3_section10_live_exec_final_verdict_is_fail(
+    nb3: nbformat.NotebookNode,
+) -> None:
+    """Live exec produces the FAIL verdict driven by T3b.
+
+    Pins the T3b-FAIL → final-FAIL branch against silent inversion of
+    the PASS/FAIL logic (e.g. a reviewer hand-editing the branch
+    ordering in ``build_gate_verdict``).
+    """
+    duckdb_path = _CONTRACTS_DIR / "data" / "structural_econ.duckdb"
+    if not duckdb_path.is_file():
+        pytest.skip(f"{duckdb_path} missing — can't exec-run.")
+    if not _env.FULL_PKL_PATH.is_file():
+        pytest.skip(f"{_env.FULL_PKL_PATH} missing.")
+
+    source = _build_live_exec_source(nb3)
+    ns: dict[str, Any] = {}
+    exec(compile(source, "<nb3-section10-live-verdict>", "exec"), ns)
+
+    v = ns["gate_verdict_dict"]
+    assert v["gate_verdict"] == "FAIL", (
+        f"Live exec expected final gate_verdict = FAIL (T3b FAIL drives "
+        f"it); got {v['gate_verdict']!r}."
+    )
+    assert v["t3b_verdict"] == "FAIL", (
+        f"Live exec expected t3b_verdict = FAIL; got "
+        f"{v['t3b_verdict']!r}."
     )
 
 

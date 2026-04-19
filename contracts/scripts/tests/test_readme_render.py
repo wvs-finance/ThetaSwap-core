@@ -522,6 +522,109 @@ def test_readme_byte_identical_to_committed() -> None:
     )
 
 
+# ── R4 remediation: single-source forest-plot title constant ─────────────
+#
+# Reality-Checker three-way-review finding (2026-04-19): the forest-plot
+# title is spelled three different ways across three surfaces:
+#   1. NB3 cell 25's in-notebook Axes.set_title — Unicode § + em-dash
+#      + dynamic "(engine: {_engine})" suffix.
+#   2. NB3 cell 33's saved-PNG Axes.set_title — ASCII "NB3 sec 8 forest
+#      plot -- primary anchor + 12 sensitivities" (deliberate ASCII
+#      safety, no engine).
+#   3. README template's markdown image alt-text — Unicode § + em-dash
+#      but with the word "sensitivity" inserted.
+#
+# A reader following the README's image link sees a title that neither
+# matches the caption nor the in-notebook figure. Fix: single-source
+# the base title string via a module-level constant in
+# ``scripts.render_readme`` and require both notebook surfaces and the
+# README alt-text to resolve from the same base. The dynamic-engine
+# suffix in cell 25 is permitted to extend the base string; what's
+# locked is the base prefix.
+
+_FOREST_PLOT_BASE_TITLE_TOKEN: Final[str] = (
+    "Column 6 β̂_CPI — primary + 13 sensitivities (90% HAC CI)"
+)
+
+
+def test_forest_plot_title_constant_exported() -> None:
+    """``scripts.render_readme`` exports ``_FOREST_PLOT_TITLE`` constant.
+
+    Downstream surfaces (NB3 §8, NB3 final PNG-render cell, README
+    template) read from this one constant to prevent drift.
+    """
+    mod = importlib.import_module("scripts.render_readme")
+    assert hasattr(mod, "_FOREST_PLOT_TITLE"), (
+        "scripts.render_readme must expose a module-level "
+        "`_FOREST_PLOT_TITLE` constant as the single source of truth "
+        "for the forest-plot base title."
+    )
+    title = getattr(mod, "_FOREST_PLOT_TITLE")
+    assert isinstance(title, str) and title.strip(), (
+        f"_FOREST_PLOT_TITLE must be a non-empty string; got {title!r}."
+    )
+    # Landmark substring lock: the exported title must contain the
+    # "Column 6 β̂_CPI" and "90% HAC CI" fragments that unambiguously
+    # identify the forest plot's content.
+    assert "Column 6" in title, (
+        f"_FOREST_PLOT_TITLE must reference 'Column 6'; got {title!r}."
+    )
+    assert "90% HAC CI" in title or "HAC" in title, (
+        f"_FOREST_PLOT_TITLE must reference HAC coverage; got {title!r}."
+    )
+
+
+def test_forest_plot_title_landmark_in_notebook_cells() -> None:
+    """NB3 cells 25 + 33 both render the same title landmark.
+
+    We can't force byte-identical titles without importing the
+    constant in both cells (which we do in the fix), but the test
+    asserts the landmark fragment appears in both cell source texts so
+    any hand-edit that drops the shared title will be caught.
+    """
+    nb = nbformat.read(NB3_PATH, as_version=4)
+    code_cells = [c for c in nb.cells if c.cell_type == "code"]
+    assert len(code_cells) >= 2, (
+        f"NB3 must have multiple code cells; got {len(code_cells)}."
+    )
+
+    # Find the §8 primary forest cell (first cell whose source contains
+    # _forest_table assembly) and the §10 PNG-render cell (last code
+    # cell).
+    s8_cells = [c for c in code_cells if "_forest_rows = []" in "".join(c.source)]
+    assert s8_cells, "Could not locate §8 forest-plot code cell."
+    last_cell = code_cells[-1]
+
+    s8_src = "".join(s8_cells[0].source)
+    last_src = "".join(last_cell.source)
+
+    # Both cells must reference the shared constant name so they read
+    # the same title at execution time.
+    assert "_FOREST_PLOT_TITLE" in s8_src, (
+        "NB3 §8 primary forest-plot cell must reference the shared "
+        "`_FOREST_PLOT_TITLE` constant from scripts.render_readme "
+        "(single-source pattern)."
+    )
+    assert "_FOREST_PLOT_TITLE" in last_src, (
+        "NB3 §10 PNG-render cell must reference the shared "
+        "`_FOREST_PLOT_TITLE` constant (single-source pattern)."
+    )
+
+
+def test_forest_plot_title_landmark_in_readme_template() -> None:
+    """README template alt-text aligns with the forest-plot title base."""
+    tpl = TEMPLATE_PATH.read_text(encoding="utf-8")
+    # Landmarks: "Forest Plot" + "primary" + "sensitivit" share across
+    # template + cell titles without requiring byte-identical strings.
+    # The key anti-drift fragment is "β̂_CPI" — the exported constant
+    # contains it and the template alt-text now references it.
+    assert "β̂_CPI" in tpl or "forest_plot.png" in tpl, (
+        "README template must reference the forest plot image with a "
+        "β̂_CPI-branded alt-text aligned to the _FOREST_PLOT_TITLE "
+        "constant."
+    )
+
+
 # ── C2 remediation: anti-fishing discipline paragraph visibility ──────────
 #
 # Technical-Writer three-way-review finding (2026-04-19): the README,

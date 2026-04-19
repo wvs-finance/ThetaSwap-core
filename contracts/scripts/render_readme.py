@@ -76,6 +76,23 @@ _Z_90: Final[float] = 1.6448536269514722
 # heuristics changing between point releases).
 _FLOAT_FMT: Final[str] = "{:.6f}"
 
+# Single source of truth for the forest-plot title across three render
+# surfaces (Reality-Checker R4 2026-04-19 remediation):
+#   1. NB3 §8 in-notebook Axes.set_title — imports this constant and
+#      optionally suffixes "(engine: <engine>)" for diagnostic reads.
+#   2. NB3 §10 final-cell PNG emission — sets the saved-PNG title to
+#      this exact constant so the file on disk and the in-notebook
+#      figure read the same.
+#   3. README template's image-alt text — hand-authored to align with
+#      this constant's landmark substring ("Column 6 β̂_CPI" +
+#      "90% HAC CI").
+# Defining the title here — in the rendering module that is already
+# imported by NB3 — means a single edit propagates to all three
+# surfaces without manual synchronisation.
+_FOREST_PLOT_TITLE: Final[str] = (
+    "Column 6 β̂_CPI — primary + 13 sensitivities (90% HAC CI)"
+)
+
 
 # ── Private helpers ──────────────────────────────────────────────────────
 
