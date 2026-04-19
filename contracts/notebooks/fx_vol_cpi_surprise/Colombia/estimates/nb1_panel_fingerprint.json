@@ -36,7 +36,7 @@
     "us_cpi_warmup": "us_cpi_surprise_ar1_warmup_12m",
     "vix_aggregation": "vix_avg_weekly_mean"
   },
-  "generated_at": "2026-04-18T23:22:27+00:00",
+  "generated_at": "2026-04-19T03:28:58+00:00",
   "ledger_table": [
     {
       "anti_fishing_binding": "closed interval [2008-01-02, 2026-03-01]",
@@ -90,7 +90,7 @@
     },
     {
       "anti_fishing_binding": "event-study \u0394IBR at Junta dates, sum to week",
-      "cell_index": 75,
+      "cell_index": 63,
       "commit_sha": "11389a7b1",
       "decision_id": 6,
       "primary_value": "event_study_delta_ibr_meeting_sum",
@@ -100,7 +100,7 @@
     },
     {
       "anti_fishing_binding": "arithmetic mean of Mon-Fri VIXCLS closes",
-      "cell_index": 66,
+      "cell_index": 72,
       "commit_sha": "d55eda6a9",
       "decision_id": 7,
       "primary_value": "vix_avg_weekly_mean",
