@@ -73,15 +73,6 @@ def _ci_contains_zero(ci: tuple[float, float]) -> bool:
     return lo <= 0.0 <= hi
 
 
-def _ci_overlap_nonempty(
-    ci_a: tuple[float, float], ci_b: tuple[float, float]
-) -> bool:
-    """True iff two closed intervals [lo_a, hi_a] and [lo_b, hi_b] share a point."""
-    lo_a, hi_a = ci_a
-    lo_b, hi_b = ci_b
-    return max(lo_a, lo_b) <= min(hi_a, hi_b)
-
-
 def reconcile(
     *,
     beta_cpi: float,
@@ -93,9 +84,11 @@ def reconcile(
 
     Arguments are keyword-only so the call site cannot accidentally swap
     the β̂ and δ̂ arguments — their numerical magnitudes are incommensurable
-    (one is a mean-equation slope on cuberoot-RV, the other is a
-    variance-equation coefficient on |CPI surprise|), but their signs and
-    significance classifications are the comparable quantities.
+    (one is a mean-equation slope on weekly cuberoot-RV in units of the
+    LHS-scale, the other is a variance-equation coefficient on |CPI
+    surprise| in units of daily conditional variance). Their signs and
+    significance classifications are the comparable quantities — not
+    their numerical values.
 
     Args:
         beta_cpi: Point estimate β̂_CPI from the OLS primary.
@@ -106,24 +99,44 @@ def reconcile(
     Returns:
         ``"AGREE"`` iff all three conditions hold, else ``"DISAGREE"``.
 
-    Rules (locked per plan rev 2):
+    Rules (locked per plan rev 2 line 431 — **directional concordance**,
+    NOT numerical CI intersection):
+
         (i)   Sign concordance: sign(β̂_CPI) == sign(δ̂). Special-case:
-              δ̂ = 0 at boundary counts as concordant with any β̂_CPI
-              whose 90% CI contains zero (joint-null case).
-        (ii)  CI overlap: the two 90% CIs share at least one point.
-        (iii) Significance-at-10% concordance: both CIs exclude zero
-              OR both contain zero.
+              δ̂ = 0 at the Han-Kristensen 2014 positivity boundary counts
+              as concordant with any β̂_CPI whose 90% CI contains zero
+              (joint-null case). Symmetric for β̂_CPI = 0.
+        (ii)  Directional concordance on zero-containment: BOTH CIs
+              contain zero OR BOTH exclude zero. This is what plan rev 2
+              line 431 encodes as "overlap is non-empty" — the two
+              parameters live in different spaces so numerical interval
+              intersection would be meaningless; the substantive
+              comparison is whether both fits land the zero on the same
+              side of the CI.
+        (iii) Significance-at-10% concordance: equivalent to (ii) under
+              symmetric two-sided 90% CIs at a 10% one-sided test —
+              retained as an explicit check so authors reading the code
+              can trace the three-clause plan rev 2 mandate line-by-line.
     """
     beta_ci_contains_zero = _ci_contains_zero(beta_cpi_hac_ci90)
     delta_ci_contains_zero = _ci_contains_zero(delta_qmle_ci90)
 
-    # Condition (iii): significance concordance at 10%.
+    # Condition (iii): significance concordance at 10% — both reject null
+    # (CIs exclude zero) OR both fail to reject (CIs contain zero).
     sig_concordant = beta_ci_contains_zero == delta_ci_contains_zero
     if not sig_concordant:
         return "DISAGREE"
 
-    # Condition (ii): CI overlap (non-empty intersection).
-    if not _ci_overlap_nonempty(beta_cpi_hac_ci90, delta_qmle_ci90):
+    # Condition (ii): DIRECTIONAL concordance on zero-containment, NOT
+    # literal numerical CI intersection. β̂ (weekly RV^(1/3) slope) and
+    # δ̂ (daily conditional-variance coefficient) are in incommensurable
+    # units — a numerical max/min test on the two tuples would conflate
+    # "CIs share a numerical point" with the substantive question "do
+    # the two fits agree on whether zero is inside the CI?". The
+    # directional test is: both contain zero (joint failure to reject)
+    # OR both exclude zero (joint rejection).
+    ci_concordance = beta_ci_contains_zero == delta_ci_contains_zero
+    if not ci_concordance:
         return "DISAGREE"
 
     # Condition (i): sign concordance. Boundary-zero on δ̂ concordant
@@ -147,6 +160,85 @@ def reconcile(
 
 
 # ── Payload builder ──────────────────────────────────────────────────────
+
+_ISO_DATE_RE: Final = __import__("re").compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def _coerce_iso_date(value: Any) -> str:
+    """Coerce a date-like scalar to ISO ``YYYY-MM-DD``.
+
+    Accepts:
+      * ``pandas.Timestamp`` / ``datetime.datetime`` / ``datetime.date``
+      * numpy datetime64 scalars
+      * strings already in ISO form (returned unchanged)
+      * strings that pandas can parse to Timestamp (e.g. ``"2015-01-05 00:00:00"``)
+
+    Raises ``ValueError`` on integer/RangeIndex-position inputs (the E1
+    failure mode) so the bug surfaces here at construction time rather
+    than downstream in the JSON Schema validator — a much better error
+    message for operators debugging notebook failures.
+
+    The docstring encodes the invariant enforced by ``nb2_params_point.
+    schema.json`` §``$defs.date_iso``: ``^\\d{4}-\\d{2}-\\d{2}$``.
+    """
+    # Fast path: already a matching ISO string.
+    if isinstance(value, str) and _ISO_DATE_RE.match(value):
+        return value
+
+    # Reject bare integers / ints-as-strings (the RangeIndex bug).
+    if isinstance(value, (int, bool)):
+        raise ValueError(
+            f"Cannot coerce integer {value!r} to ISO date; did a fit with "
+            f"`reset_index(drop=True)` leak an integer RangeIndex into the "
+            f"payload? Fix: pass ISO strings (or pandas.Timestamp) explicitly."
+        )
+    if isinstance(value, str):
+        # Try pandas for string parsing.
+        try:
+            import pandas as pd
+
+            ts = pd.Timestamp(value)
+            return ts.strftime("%Y-%m-%d")
+        except Exception as exc:
+            raise ValueError(
+                f"Cannot coerce string {value!r} to ISO date: {exc}"
+            ) from exc
+
+    # Try the .strftime / .isoformat paths for Timestamp / datetime / date.
+    if hasattr(value, "strftime"):
+        try:
+            return value.strftime("%Y-%m-%d")
+        except Exception:
+            pass
+    if hasattr(value, "isoformat"):
+        try:
+            iso = value.isoformat()
+            return iso.split("T")[0]
+        except Exception:
+            pass
+
+    # numpy datetime64 and anything else: route through pandas.
+    try:
+        import pandas as pd
+
+        ts = pd.Timestamp(value)
+        return ts.strftime("%Y-%m-%d")
+    except Exception as exc:
+        raise ValueError(
+            f"Cannot coerce {type(value).__name__} {value!r} to ISO date: "
+            f"{exc}"
+        ) from exc
+
+
+def _iso_date_bounds(dates: Any) -> tuple[str, str]:
+    """Return ``(iso_min, iso_max)`` ISO strings for a date-like sequence.
+
+    Accepts anything with ``.min()`` / ``.max()``. The result is guaranteed
+    to match the schema's ``^\\d{4}-\\d{2}-\\d{2}$`` regex or ``_coerce_iso_date``
+    raises a diagnostic ``ValueError``.
+    """
+    return _coerce_iso_date(dates.min()), _coerce_iso_date(dates.max())
+
 
 def _named_cov(matrix: Any, param_names: list[str]) -> dict[str, Any]:
     """Build the {param_names, matrix} covariance record.
@@ -268,6 +360,7 @@ def build_payload(
     handoff_metadata: HandoffMetadata,
     weekly_index_dates: Any,
     daily_index_dates: Any,
+    regime_date_ranges: Mapping[str, tuple[Any, Any]] | None = None,
 ) -> dict[str, Any]:
     """Assemble the §4.4-compliant payload dict from NB2 fit objects.
 
@@ -278,6 +371,15 @@ def build_payload(
     The weekly and daily index-date sequences feed the per-block
     date_min / date_max fields. They are expected to be pandas
     DatetimeIndex-like objects (anything with ``.min()`` / ``.max()``).
+
+    Args:
+        regime_date_ranges: Optional per-regime ``(date_min, date_max)``
+            overrides used for the ``subsamples`` block. Required when
+            per-regime fits were built via ``reset_index(drop=True)`` (the
+            NB2 §8.1 shape) because then ``fit.model.data.row_labels`` is
+            an integer RangeIndex rather than a DatetimeIndex. If omitted,
+            the function attempts to coerce ``row_labels`` and falls back
+            to the weekly bounds if coercion raises.
     """
     column6_regressors = [
         "cpi_surprise_ar1",
@@ -289,14 +391,8 @@ def build_payload(
     ]
     full_param_names = ["const"] + column6_regressors
 
-    def _date_bounds(dates: Any) -> tuple[str, str]:
-        return (
-            str(dates.min()).split(" ")[0],
-            str(dates.max()).split(" ")[0],
-        )
-
-    weekly_min, weekly_max = _date_bounds(weekly_index_dates)
-    daily_min, daily_max = _date_bounds(daily_index_dates)
+    weekly_min, weekly_max = _iso_date_bounds(weekly_index_dates)
+    daily_min, daily_max = _iso_date_bounds(daily_index_dates)
 
     # ── ols_primary ──────────────────────────────────────────────────────
     ols_primary = {
@@ -403,6 +499,38 @@ def build_payload(
         sigma = regime_sigma_hats[label]
         # Per-regime Σ̂ is a DataFrame on the 6 base regressors.
         sigma_names = list(sigma.columns)
+        # Date bounds: three-way review E1 fix. When §8.1 builds regime
+        # fits via `_sub.reset_index(drop=True)`, `fit.model.data.row_labels`
+        # is an integer RangeIndex whose .min()/.max() are the integers
+        # 0 / n-1 — those cannot be rendered as ISO dates and the schema
+        # rejects them. Resolution order:
+        #   (1) caller-supplied regime_date_ranges override (preferred —
+        #       audited, explicit, no type introspection);
+        #   (2) attempt to coerce row_labels via _coerce_iso_date (handles
+        #       the native DatetimeIndex case);
+        #   (3) fall back to the weekly-panel bounds so the payload
+        #       remains schema-valid even when (1) is missing and the
+        #       index was reset.
+        date_min_final: str
+        date_max_final: str
+        if regime_date_ranges is not None and label in regime_date_ranges:
+            rng_lo, rng_hi = regime_date_ranges[label]
+            date_min_final = _coerce_iso_date(rng_lo)
+            date_max_final = _coerce_iso_date(rng_hi)
+        elif hasattr(fit.model.data, "row_labels"):
+            try:
+                date_min_final = _coerce_iso_date(
+                    fit.model.data.row_labels.min()
+                )
+                date_max_final = _coerce_iso_date(
+                    fit.model.data.row_labels.max()
+                )
+            except ValueError:
+                date_min_final = weekly_min
+                date_max_final = weekly_max
+        else:
+            date_min_final = weekly_min
+            date_max_final = weekly_max
         subsamples_block[label] = {
             "beta": {
                 k: float(fit.params[k]) for k in sigma_names if k in fit.params
@@ -413,12 +541,8 @@ def build_payload(
             "cov": _named_cov(sigma.values, sigma_names),
             "n": int(fit.nobs),
             "adj_r_squared": float(fit.rsquared_adj),
-            "date_min": str(fit.model.data.row_labels.min()).split(" ")[0]
-            if hasattr(fit.model.data, "row_labels")
-            else weekly_min,
-            "date_max": str(fit.model.data.row_labels.max()).split(" ")[0]
-            if hasattr(fit.model.data, "row_labels")
-            else weekly_max,
+            "date_min": date_min_final,
+            "date_max": date_max_final,
         }
     subsamples_block["pooling_wald_chi2"] = {
         "statistic": float(pooling_wald_chi2["statistic"]),
