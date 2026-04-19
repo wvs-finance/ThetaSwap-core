@@ -51,11 +51,11 @@ Aggregation rule (Rev 4 spec): T3b FAIL ⇒ final FAIL regardless of other tests
 
 ## Reports
 
-- [NB1 Data EDA PDF](pdf/01_data_eda.pdf)
-- [NB2 Estimation PDF](pdf/02_estimation.pdf)
-- [NB3 Tests and Sensitivity PDF](pdf/03_tests_and_sensitivity.pdf)
+- [NB1 Data EDA PDF](pdf/01_data_eda.pdf) — *pending `just notebooks` generation*
+- [NB2 Estimation PDF](pdf/02_estimation.pdf) — *pending `just notebooks` generation*
+- [NB3 Tests and Sensitivity PDF](pdf/03_tests_and_sensitivity.pdf) — *pending `just notebooks` generation*
 
-PDFs are produced by the `just notebooks` recipe. The JSON handoff artifacts (`nb1_panel_fingerprint.json`, `nb2_params_point.json`, `nb2_params_full.pkl`, `gate_verdict.json`) live under `estimates/`.
+PDFs are produced by the `just notebooks` recipe; until that recipe has run in a given worktree, the three links above resolve to missing files (the `pdf/` directory ships empty in a clean clone). The JSON handoff artifacts (`nb1_panel_fingerprint.json`, `nb2_params_point.json`, `nb2_params_full.pkl`, `gate_verdict.json`) live under `estimates/` and are always present.
 
 ---
 

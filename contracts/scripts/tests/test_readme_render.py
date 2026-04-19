@@ -625,6 +625,62 @@ def test_forest_plot_title_landmark_in_readme_template() -> None:
     )
 
 
+# ── C1 remediation: PDF links marked pending until `just notebooks` runs ──
+#
+# Technical-Writer three-way-review finding (2026-04-19): the README
+# Reports section lists three PDF links under `pdf/` but the `pdf/`
+# directory is empty in the current worktree because `just notebooks`
+# has not been run yet. A reader who clicks today gets a 404. Fix:
+# template marks the PDF links with a visible "pending" indicator so
+# readers know the artifacts have not been produced — the alternative
+# (option b: generate PDFs now via nbconvert --to pdf) is deferred to
+# Task 33's scope.
+
+_PENDING_MARKER_TOKENS: Final[tuple[str, ...]] = (
+    "pending",  # the word appears somewhere in the Reports section
+)
+
+
+def test_render_readme_pdf_links_marked_pending() -> None:
+    """Reports section marks PDF links as pending-generation.
+
+    When `just notebooks` has not yet run, `pdf/*.pdf` is empty. The
+    README template flags this so readers do not expect clickable PDF
+    links. This test asserts the marker landmark exists in the
+    Reports section output.
+    """
+    from scripts.render_readme import render_readme
+    md = render_readme(
+        _SYNTHETIC_GATE_VERDICT_FAIL,
+        _SYNTHETIC_POINT_PARAMS,
+        TEMPLATE_PATH,
+    )
+    reports_parts = md.split("\n## ")
+    reports_block = next(
+        (p for p in reports_parts if p.startswith("Reports")), None
+    )
+    assert reports_block is not None, (
+        "README must contain a '## Reports' H2 section."
+    )
+    lower = reports_block.lower()
+    has_marker = any(t in lower for t in _PENDING_MARKER_TOKENS)
+    assert has_marker, (
+        f"Reports section must mark PDF links with a 'pending' "
+        f"visible indicator until `just notebooks` produces the "
+        f"actual PDFs. Found Reports block:\n{reports_block[:400]}..."
+    )
+
+
+def test_pending_marker_in_committed_readme() -> None:
+    """Committed README carries the pending-marker landmark."""
+    if not README_PATH.is_file():
+        pytest.skip(f"{README_PATH} not present.")
+    md = README_PATH.read_text(encoding="utf-8").lower()
+    assert any(t in md for t in _PENDING_MARKER_TOKENS), (
+        "Committed README must carry the 'pending' PDF marker."
+    )
+
+
 # ── C2 remediation: anti-fishing discipline paragraph visibility ──────────
 #
 # Technical-Writer three-way-review finding (2026-04-19): the README,
