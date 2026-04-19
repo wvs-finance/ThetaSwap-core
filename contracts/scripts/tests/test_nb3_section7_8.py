@@ -655,6 +655,103 @@ def test_nb3_section8_citation_has_simonsohn2020(
     )
 
 
+# ── R1 remediation: A1 monthly sample-window filter (Decision #1 lock) ───
+#
+# Reality-Checker-flagged: the A1 monthly-cadence sensitivity previously
+# consumed the full monthly panel (2003-01 → 2026-04, n≈280) which
+# violates Decision #1's pre-committed lower bound of 2008-01-02. The
+# spec-compliant filter yields n=220, β̂≈+0.015. These two tests protect
+# the fix — one asserts the filter literal is in the §8 source, the
+# other exec-runs §8 and asserts the A1 row in `_forest_table` has the
+# Decision-#1-aligned sample size within tolerance.
+
+_DECISION_1_LOWER_BOUND: Final[str] = "2008-01-01"
+_A1_EXPECTED_N_LOWER: Final[int] = 215  # 220 is target; ±5 slack for
+                                        #   re-runs that drop NaN rows
+_A1_EXPECTED_N_UPPER: Final[int] = 225
+
+
+def test_nb3_section8_a1_filters_to_decision_1_window(
+    nb3: nbformat.NotebookNode,
+) -> None:
+    """§8 A1 must filter the monthly panel to date >= 2008-01-01.
+
+    Decision #1 locks the identifying sample at 2008-01-02 onward
+    (weekly panel) and the monthly cadence MUST inherit the same lower
+    bound or the A1 row silently expands the sample by ~27% (60/220
+    extra pre-2008 observations). This test asserts the filter literal
+    appears somewhere in §8's code so a reviewer hand-editing the
+    monthly-panel block cannot silently drop it.
+    """
+    combined = _section_source(nb3, SECTION8_TAG)
+    assert _DECISION_1_LOWER_BOUND in combined, (
+        f"§8 must filter the A1 monthly panel with the Decision #1 "
+        f"lower-bound literal {_DECISION_1_LOWER_BOUND!r}. Not found "
+        f"in §8 source."
+    )
+
+
+def test_nb3_section8_a1_row_sample_size_matches_decision_1(
+    nb3: nbformat.NotebookNode,
+) -> None:
+    """§8 A1 row n is within [215, 225] (Decision-#1-compliant target 220).
+
+    Exec-runs §7 + §8 against the live PKL + DuckDB, extracts the A1
+    row from `_forest_table`, and asserts n lands in the Decision #1
+    window. The full-panel n=280 is the regression we prevent. Slack
+    tolerance ±5 covers minor NaN drops that vary across re-runs.
+    """
+    ns = _exec_section8(nb3)
+    import pandas as pd
+    table = ns[_FOREST_TABLE_VAR]
+    assert isinstance(table, pd.DataFrame), (
+        f"{_FOREST_TABLE_VAR!r} must be a DataFrame; got "
+        f"type={type(table).__name__}."
+    )
+    # Find the A1 monthly row by label prefix.
+    a1_rows = table[table["label"].str.startswith("A1 monthly")]
+    assert len(a1_rows) == 1, (
+        f"Expected exactly one A1 monthly row in forest table; got "
+        f"{len(a1_rows)} rows. Labels: "
+        f"{table['label'].tolist()!r}"
+    )
+    a1_n = int(a1_rows.iloc[0]["n"])
+    assert _A1_EXPECTED_N_LOWER <= a1_n <= _A1_EXPECTED_N_UPPER, (
+        f"A1 monthly row n must land in [{_A1_EXPECTED_N_LOWER}, "
+        f"{_A1_EXPECTED_N_UPPER}] (Decision-#1 window target = 220). "
+        f"Got n={a1_n} — sample is likely unfiltered (regression: "
+        f"unfiltered n=280)."
+    )
+
+
+def test_nb3_section8_a1_row_beta_matches_decision_1(
+    nb3: nbformat.NotebookNode,
+) -> None:
+    """§8 A1 row β̂ is within [+0.010, +0.020] (Decision-#1 target ≈ +0.015).
+
+    Under the Decision #1 filter, A1's β̂ shifts from ≈+0.0131 (full
+    panel, n=280) to ≈+0.0152 (filtered, n=220). This test asserts the
+    committed β̂ lies in a window that includes the filtered target
+    and excludes the unfiltered regression.
+    """
+    ns = _exec_section8(nb3)
+    import pandas as pd
+    table = ns[_FOREST_TABLE_VAR]
+    a1_rows = table[table["label"].str.startswith("A1 monthly")]
+    a1_beta = float(a1_rows.iloc[0]["beta"])
+    assert 0.010 <= a1_beta <= 0.020, (
+        f"A1 monthly β̂ must land in [+0.010, +0.020] "
+        f"(Decision-#1-compliant window, target ≈ +0.015). Got "
+        f"β̂={a1_beta:+.6f}."
+    )
+    # Sign-preservation: positive still excludes zero at 90% CI.
+    a1_ci_lo = float(a1_rows.iloc[0]["ci_lo_90"])
+    assert a1_ci_lo > 0.0, (
+        f"A1 monthly 90% CI lower bound must remain > 0 (sign-preserved "
+        f"from unfiltered result). Got ci_lo_90 = {a1_ci_lo:+.6f}."
+    )
+
+
 # ── End-to-end lint ───────────────────────────────────────────────────────
 
 def test_nb3_citation_lint_passes_after_task27() -> None:

@@ -606,6 +606,49 @@ def test_nb3_section10_citation_has_ankel_peters_2024(
     )
 
 
+# ── R3 remediation: §2 prose-vs-code drift on t1_pvalue / t1_source ──────
+#
+# Reality-Checker-flagged: the §2 interpretation cell (cell 8) promised
+# three gate_verdict.json fields that cell 31 never emits:
+#   - t1_pvalue
+#   - t1_source
+#   - Abrigo simulator "predictive-regression-interpretation" flag
+# Fix: scrub the prose. The regression asserts the cell 8 text does
+# NOT reference `t1_pvalue`, `t1_source`, or the flag name, because
+# none of them exist in the current gate_verdict.json schema.
+
+_UNFULFILLED_PROSE_TOKENS: Final[tuple[str, ...]] = (
+    "t1_pvalue",
+    "t1_source",
+    "predictive-regression interpretation flag",
+    "predictive-regression-interpretation flag",
+)
+
+
+def test_nb3_section2_prose_matches_gate_verdict_schema(
+    nb3: nbformat.NotebookNode,
+) -> None:
+    """§2 cell 8 prose must not promise gate_verdict.json fields that do
+    not exist.
+
+    Cell 8 previously claimed the gate writer records ``t1_pvalue``,
+    ``t1_source``, and a simulator "predictive-regression interpretation
+    flag" — none of which are emitted by cell 31 or defined in the
+    gate_verdict.json schema. This regression pins cell 8 to the
+    actual schema.
+    """
+    section2_md = _markdown_cells(_section_cells(nb3, "section:2"))
+    combined = "\n\n".join(_cell_source(c) for c in section2_md)
+    violations = [
+        t for t in _UNFULFILLED_PROSE_TOKENS if t in combined
+    ]
+    assert not violations, (
+        f"§2 prose promises gate_verdict.json fields that cell 31 does "
+        f"not emit: {violations!r}. Either add the fields to the "
+        f"schema + emitter, or strip them from the prose."
+    )
+
+
 # ── End-to-end lint ───────────────────────────────────────────────────────
 
 def test_nb3_citation_lint_passes_after_task29() -> None:
