@@ -357,7 +357,13 @@ def test_schema_subsamples_has_three_regimes(schema: dict[str, Any]) -> None:
 
 
 def test_schema_handoff_metadata_fields(schema: dict[str, Any]) -> None:
-    """Handoff-metadata block carries all pinned library versions + bootstrap + seed."""
+    """Handoff-metadata block carries all pinned library versions + bootstrap + seed.
+
+    scipy_version added 2026-04-18 (Task 23 E4 three-way review follow-up)
+    because NB3's T2 Levene equal-variance test depends on
+    ``scipy.stats.levene``; the Layer-2 reproducibility contract must
+    pin scipy alongside the other numeric libraries.
+    """
     handoff_required = set(
         schema["properties"]["handoff_metadata"].get("required", [])
     )
@@ -367,6 +373,7 @@ def test_schema_handoff_metadata_fields(schema: dict[str, Any]) -> None:
         "arch_version",
         "numpy_version",
         "pandas_version",
+        "scipy_version",
         "bootstrap_distribution",
         "recommended_seed",
     ):
@@ -918,6 +925,7 @@ def _synthetic_payload(estimates_dir: Path) -> dict[str, Any]:
             "arch_version": "8.0.x",
             "numpy_version": "2.4.x",
             "pandas_version": "3.0.x",
+            "scipy_version": "1.14.x",
             "bootstrap_distribution": (
                 "OLS blocks: multivariate normal from the HAC-robust "
                 "covariance. GARCH-X block: parametric bootstrap from the "

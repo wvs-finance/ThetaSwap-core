@@ -256,6 +256,7 @@
         "arch_version",
         "numpy_version",
         "pandas_version",
+        "scipy_version",
         "bootstrap_distribution",
         "recommended_seed"
       ],
@@ -265,6 +266,7 @@
         "arch_version": {"type": "string"},
         "numpy_version": {"type": "string"},
         "pandas_version": {"type": "string"},
+        "scipy_version": {"type": "string"},
         "bootstrap_distribution": {
           "type": "string",
           "description": "Prose describing the Layer 2 draw convention. OLS: multivariate normal from the HAC-robust covariance. GARCH-X: parametric bootstrap from the fitted standardized residuals (Barone-Adesi 2008 / Bollerslev-Wooldridge 1992) — Gaussian draws would violate α_1+β_1<1."

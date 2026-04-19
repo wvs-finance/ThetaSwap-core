@@ -266,13 +266,20 @@ def _named_cov(matrix: Any, param_names: list[str]) -> dict[str, Any]:
 
 @dataclass(frozen=True)
 class HandoffMetadata:
-    """Pinned version strings + Layer 2 bootstrap-draw convention."""
+    """Pinned version strings + Layer 2 bootstrap-draw convention.
+
+    Version fields include ``scipy_version`` (Task 23 E4 follow-up) because
+    NB3's T2 Levene equal-variance test (Task 25) depends on
+    ``scipy.stats.levene``, so the Layer-2 reproducibility contract must
+    pin scipy's version alongside statsmodels / arch / numpy / pandas.
+    """
 
     python_version: str
     statsmodels_version: str
     arch_version: str
     numpy_version: str
     pandas_version: str
+    scipy_version: str
     bootstrap_distribution: str
     recommended_seed: int
     schema_version: str = "1.0"
@@ -284,6 +291,7 @@ class HandoffMetadata:
             "arch_version": self.arch_version,
             "numpy_version": self.numpy_version,
             "pandas_version": self.pandas_version,
+            "scipy_version": self.scipy_version,
             "bootstrap_distribution": self.bootstrap_distribution,
             "recommended_seed": int(self.recommended_seed),
             "schema_version": self.schema_version,
@@ -293,15 +301,20 @@ class HandoffMetadata:
 def default_handoff_metadata() -> HandoffMetadata:
     """Build the canonical HandoffMetadata from the current interpreter.
 
-    Reads Python, statsmodels, arch, numpy, pandas versions at runtime so
-    the emitted JSON records exactly what was in force during NB2
-    execution. The bootstrap-distribution string is pre-registered text
-    per plan line 437 — OLS blocks use multivariate-normal draws from the
-    HAC-robust covariance; the GARCH-X block uses parametric bootstrap
-    from the fitted standardized residuals (Barone-Adesi 2008 /
+    Reads Python, statsmodels, arch, numpy, pandas, scipy versions at
+    runtime so the emitted JSON records exactly what was in force during
+    NB2 execution. The bootstrap-distribution string is pre-registered
+    text per plan line 437 — OLS blocks use multivariate-normal draws
+    from the HAC-robust covariance; the GARCH-X block uses parametric
+    bootstrap from the fitted standardized residuals (Barone-Adesi 2008 /
     Bollerslev-Wooldridge 1992), because Gaussian draws from N(θ̂, Σ̂)
     would violate the α_1+β_1 < 1 stationarity constraint with non-trivial
     probability at realistic Colombian persistence (~0.996).
+
+    scipy is pinned alongside the other numeric libraries per Task 23 E4
+    (three-way review follow-up) because NB3's T2 Levene equal-variance
+    test depends on ``scipy.stats.levene``; pinning scipy here closes
+    the reproducibility gap between NB2 estimates and NB3 variance tests.
 
     The recommended seed 20260418 is the Rev 4 spec-lock date.
     """
@@ -335,6 +348,7 @@ def default_handoff_metadata() -> HandoffMetadata:
         arch_version=_safe_version("arch"),
         numpy_version=_safe_version("numpy"),
         pandas_version=_safe_version("pandas"),
+        scipy_version=_safe_version("scipy"),
         bootstrap_distribution=bootstrap_text,
         recommended_seed=20260418,
     )
