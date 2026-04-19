@@ -51,8 +51,10 @@ What gets asserted, in order of decreasing "load-bearing":
   5. §7 citation block references ``@andersen2003micro`` (ABDV 2003).
   6. §8 exists: ≥1 ``section:8`` code cell, every code cell has
      ``remove-input``.
-  7. §8 forest-plot table has exactly 13 rows (1 primary + 12
-     sensitivities; A2/A3/A7 are annotations, not rows).
+  7. §8 forest-plot table has exactly 14 rows (1 primary + 13
+     sensitivities, of which A9+ and A9- are two separate rows;
+     A2/A3/A7 are annotations, not rows). Task-prompt shorthand
+     "13 rows" counts only the post-primary sensitivities.
   8. §8 row 1 is the primary anchor (label contains "Primary" or
      "Column 6").
   9. §8 rows 2+ sorted by |β̂| descending.
@@ -150,7 +152,15 @@ _ANDERSEN2003_KEY: Final[str] = "andersen2003micro"
 
 # §8 landmarks.
 _FOREST_TABLE_VAR: Final[str] = "_forest_table"
-_FOREST_EXPECTED_ROWS: Final[int] = 13
+_FOREST_EXPECTED_ROWS: Final[int] = 14  # 1 primary + 13 sensitivities
+# Enumeration (per plan lines 503-515):
+#   1 anchor primary
+# + 6 PKL rows: GARCH-X, Decomp β̂_CPI, Decomp β̂_PPI, pre-2015,
+#   2015-2021, post-2021
+# + 5 A-series fits here: A1, A4, A5, A6, A8
+# + 2 asymmetric-response subsets: A9+, A9-
+# = 14 rows total. (Task prompt header said "13 rows" which counts the
+# post-primary sensitivities; the plan's explicit list enumerates 14.)
 _A9_PLUS_TOKENS: Final[tuple[str, ...]] = ("A9+", "A9⁺", "positive-surprise", "positive surprise")
 _A9_MINUS_TOKENS: Final[tuple[str, ...]] = ("A9-", "A9−", "A9⁻", "negative-surprise", "negative surprise")
 _MONTHLY_PANEL_LANDMARK: Final[str] = "get_monthly_panel"
