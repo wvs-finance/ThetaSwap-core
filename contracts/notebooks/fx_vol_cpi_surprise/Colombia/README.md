@@ -30,6 +30,8 @@ The reconciliation column summarises whether the three top-level estimators (OLS
 
 Thirteen specifications are plotted with 90% HAC CI whiskers: the primary Column-6 anchor at the top (divider below), then A1/A4/A5/A6/A8/A9+/A9- refits, three subsample regimes, the GARCH-X loading, and the PPI decomposition rows. A2/A3/A7 are carried forward from NB2 §10 per the Task 27 scope boundary; see that section for those rows.
 
+**Note on pre-registered sensitivities.** The forest plot shows two rows (A1 monthly cadence, A4 release-day-excluded) with 90% CI excluding zero in the positive direction. Under a T3b-PASS gate these would have been material-mover candidates; under the current T3b-FAIL state, the pre-committed anti-fishing protocol (Simonsohn, Simmons & Nelson 2020; Ankel-Peters, Brodeur & Connolly 2024) halts spotlight promotion to prevent specification-search bias. The rejecting-but-not-rescue rows are preserved here for reader transparency, not for gate revision.
+
 ## Per-Test Gate Table
 
 | Test | Verdict | Role |

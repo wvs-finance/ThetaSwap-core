@@ -522,6 +522,88 @@ def test_readme_byte_identical_to_committed() -> None:
     )
 
 
+# ── C2 remediation: anti-fishing discipline paragraph visibility ──────────
+#
+# Technical-Writer three-way-review finding (2026-04-19): the README,
+# read standalone, does not transmit the central scientific-discipline
+# moment of the analysis — that A1 and A4 sensitivities DID reject the
+# null but were NOT promoted to the gate verdict because T3b FAILed
+# upstream and post-hoc subset selection is ruled out by the
+# pre-committed anti-fishing protocol. The fix adds a paragraph under
+# the Forest Plot section. These tests lock the paragraph's presence
+# + its load-bearing citations.
+
+_ANTI_FISHING_LANDMARK_PHRASES: Final[tuple[str, ...]] = (
+    "pre-registered sensitivities",
+    "A1",
+    "A4",
+    "anti-fishing",
+)
+
+_ANTI_FISHING_CITATION_TOKENS: Final[tuple[str, ...]] = (
+    "Simonsohn",
+    "Ankel-Peters",
+)
+
+
+def test_render_readme_has_anti_fishing_paragraph_under_forest_plot() -> None:
+    """README carries the anti-fishing-discipline paragraph under the
+    Forest Plot H2 section.
+
+    The paragraph must:
+      (a) name "A1" and "A4" as the rejecting-but-not-promoted rows,
+      (b) reference the "anti-fishing" framing explicitly,
+      (c) cite Simonsohn et al. 2020 and Ankel-Peters et al. 2024,
+      (d) appear under the ``## Forest Plot`` section and before the
+          next H2 section (``## Per-Test Gate Table``).
+    """
+    from scripts.render_readme import render_readme
+
+    md = render_readme(
+        _SYNTHETIC_GATE_VERDICT_FAIL,
+        _SYNTHETIC_POINT_PARAMS,
+        TEMPLATE_PATH,
+    )
+
+    # Isolate the Forest Plot H2 block.
+    parts = md.split("\n## ")
+    forest_parts = [p for p in parts if p.startswith("Forest Plot")]
+    assert forest_parts, (
+        "README must contain a '## Forest Plot' section; not found."
+    )
+    forest_block = forest_parts[0]
+
+    # (a) + (b): landmark phrases naming A1, A4, anti-fishing.
+    for phrase in _ANTI_FISHING_LANDMARK_PHRASES:
+        assert phrase in forest_block, (
+            f"Forest Plot section must reference {phrase!r} "
+            f"(anti-fishing discipline paragraph). Not found."
+        )
+
+    # (c): citation tokens.
+    for token in _ANTI_FISHING_CITATION_TOKENS:
+        assert token in forest_block, (
+            f"Forest Plot section must cite {token!r} as part of the "
+            f"anti-fishing discipline paragraph. Not found."
+        )
+
+
+def test_anti_fishing_paragraph_in_committed_readme() -> None:
+    """Committed README carries the anti-fishing paragraph.
+
+    Guards against a template update that regenerates the committed
+    README but silently drops the paragraph.
+    """
+    if not README_PATH.is_file():
+        pytest.skip(f"{README_PATH} not present — run NB3 §10 to render.")
+    md = README_PATH.read_text(encoding="utf-8")
+    for phrase in _ANTI_FISHING_LANDMARK_PHRASES:
+        assert phrase in md, (
+            f"Committed README must reference {phrase!r} (anti-fishing "
+            f"discipline paragraph). Not found."
+        )
+
+
 # ── NB3 final cell structural check ───────────────────────────────────────
 
 def test_notebook_final_cell_writes_readme() -> None:
