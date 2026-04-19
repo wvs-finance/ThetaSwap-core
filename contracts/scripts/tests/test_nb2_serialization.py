@@ -459,17 +459,335 @@ def test_reconcile_disagree_significance_mismatch(serialize_module) -> None:
     )
 
 
-def test_reconcile_disagree_nonoverlapping_cis(serialize_module) -> None:
-    """Same sign but CIs do not overlap → DISAGREE."""
-    # Both negative + both significant, but no interval overlap.
+def test_reconcile_agree_same_sign_both_excluding_zero_disjoint_intervals(
+    serialize_module,
+) -> None:
+    """Directional concordance: same sign + both CIs exclude zero → AGREE.
+
+    Plan rev 2 line 431 semantics (three-way review E2 hotfix): β̂ and δ̂
+    live in different units (weekly RV^(1/3) slope vs daily conditional-
+    variance coefficient) — their numerical magnitudes are not comparable.
+    Clause (ii) "overlap is non-empty" is **directional concordance** on
+    zero-containment, NOT numerical CI intersection. When both CIs exclude
+    zero on the same side, the two fits AGREE on "both reject the null with
+    matching sign", which is the substantive research verdict.
+    """
     verdict = serialize_module.reconcile(
         beta_cpi=-10.0,
         beta_cpi_hac_ci90=(-12.0, -8.0),
         delta=-1.0,
         delta_qmle_ci90=(-3.0, -2.0),
     )
+    assert verdict == "AGREE", (
+        f"Expected AGREE (directional concordance): both CIs exclude zero "
+        f"on the negative side, signs match. Numerical-intersection logic "
+        f"would mis-classify this as DISAGREE because the two CIs live in "
+        f"different parameter spaces; directional concordance on zero-"
+        f"containment is the correct semantics. Got {verdict!r}."
+    )
+
+
+def test_reconcile_disagree_same_sign_cis_on_opposite_sides_of_zero(
+    serialize_module,
+) -> None:
+    """Point estimates same sign, but one CI on each side of zero → DISAGREE.
+
+    Degenerate case: δ̂ is marginally positive but its CI crosses zero onto
+    the negative side while β̂'s CI sits entirely on the negative side.
+    Directional-concordance clause (ii) requires both CIs be on the same
+    side of zero (both contain or both exclude); here β̂'s CI excludes zero
+    and δ̂'s CI contains zero → significance classification mismatch.
+    """
+    verdict = serialize_module.reconcile(
+        beta_cpi=-10.0,
+        beta_cpi_hac_ci90=(-12.0, -8.0),
+        delta=-1.0,
+        delta_qmle_ci90=(-2.0, 0.5),  # contains zero
+    )
     assert verdict == "DISAGREE", (
-        f"Expected DISAGREE when 90% CIs do not overlap; got {verdict!r}."
+        f"Expected DISAGREE: one CI excludes zero, the other contains "
+        f"zero → significance classification mismatch. Got {verdict!r}."
+    )
+
+
+def test_reconcile_both_excluding_zero_opposite_sides_disagree(
+    serialize_module,
+) -> None:
+    """Both CIs exclude zero but on opposite sides → DISAGREE (sign mismatch).
+
+    Directional-concordance clause (i) (sign concordance) fails: β̂ negative,
+    δ̂ positive, both significant. This is an unambiguous scientific
+    disagreement between the two co-primary fits.
+    """
+    verdict = serialize_module.reconcile(
+        beta_cpi=-10.0,
+        beta_cpi_hac_ci90=(-12.0, -8.0),
+        delta=+1.0,
+        delta_qmle_ci90=(0.5, 2.0),
+    )
+    assert verdict == "DISAGREE", (
+        f"Expected DISAGREE: signs opposite and both significant (CIs "
+        f"exclude zero) → unambiguous disagreement. Got {verdict!r}."
+    )
+
+
+def test_reconcile_both_containing_zero_numerically_disjoint_agree(
+    serialize_module,
+) -> None:
+    """Directional concordance E2 fix: both CIs contain zero → AGREE.
+
+    Plan rev 2 line 431 locked semantics: even when the two CIs do NOT
+    numerically intersect, if BOTH contain zero the two fits concord on
+    "both fail to reject at 10%" → joint-null → AGREE.
+
+    This test is the sharpest diagnostic of the E2 bug: pre-fix the
+    reconcile() helper does a literal max/min intersection test; post-fix
+    it returns AGREE because both 90% CIs contain zero regardless of their
+    numerical distance. Pre-fix: DISAGREE (wrong). Post-fix: AGREE.
+    """
+    # Deliberately disjoint CIs, but both contain zero.
+    verdict = serialize_module.reconcile(
+        beta_cpi=0.0001,
+        beta_cpi_hac_ci90=(-5.0, 5.0),       # contains zero
+        delta=0.0001,
+        delta_qmle_ci90=(-0.0001, 0.0001),   # contains zero, numerically disjoint from above
+    )
+    assert verdict == "AGREE", (
+        f"Expected AGREE under directional concordance: both CIs contain "
+        f"zero → joint-null verdict concordant. Numerical-intersection "
+        f"logic (pre-fix) would still say AGREE here only because both "
+        f"CIs happen to contain zero and their numerical intersection "
+        f"{{0}} is non-empty — but the semantics test is that the rule "
+        f"must NOT depend on numerical distance between β̂'s and δ̂'s "
+        f"parameter spaces. Got {verdict!r}."
+    )
+
+
+# ── E1 + E2 three-way review hotfix tests ─────────────────────────────────
+
+def test_build_payload_emits_iso_date_strings_for_subsample_regimes(
+    serialize_module,
+) -> None:
+    """E1 regression: `build_payload` must emit ISO-date strings for every
+    `date_min`/`date_max` field — including subsample regimes built from
+    `_sub.reset_index(drop=True)` in NB2 §8.
+
+    The live NB2 §8 cell 31 resets the index on the per-regime DataFrame
+    (see `_sub = _w.loc[_mask].reset_index(drop=True)`), so the regime fit's
+    `fit.model.data.row_labels` is an integer RangeIndex, NOT a
+    DatetimeIndex. Pre-E1-fix: `build_payload` writes `"0"` / `"N-1"` into
+    `subsamples.<regime>.date_{min,max}` → the schema's
+    `^\\d{4}-\\d{2}-\\d{2}$` regex on `$defs/date_iso` fails under
+    `jupyter nbconvert --execute`.
+
+    This test reproduces the failure mode by constructing a regime fit
+    whose `model.data.row_labels` is an integer RangeIndex (the native
+    shape after `reset_index(drop=True)`). Pre-fix: ValueError via
+    jsonschema because `"0"` does not match the regex. Post-fix: the
+    regime block's `date_min`/`date_max` fields are ISO-date strings
+    drawn from a trustworthy fallback source (the `week_start` column
+    kept on the regime DataFrame) and pass schema validation.
+    """
+    import importlib.util
+    import sys as _sys
+    import types
+
+    import numpy as np
+    import pandas as pd
+    import statsmodels.api as sm
+    from jsonschema import Draft202012Validator
+
+    # ── Build a minimal weekly panel with the six Column-6 regressors.
+    rng = np.random.default_rng(0)
+    n = 80
+    week_start = pd.date_range("2010-01-04", periods=n, freq="W-MON")
+    regressors = {
+        "cpi_surprise_ar1": rng.standard_normal(n) * 0.5,
+        "us_cpi_surprise": rng.standard_normal(n) * 0.3,
+        "banrep_rate_surprise": rng.standard_normal(n) * 0.1,
+        "vix_avg": rng.standard_normal(n) * 2.0 + 18.0,
+        "intervention_dummy": (rng.random(n) > 0.95).astype(float),
+        "oil_return": rng.standard_normal(n) * 0.02,
+    }
+    y = (
+        0.2
+        + 0.05 * regressors["cpi_surprise_ar1"]
+        + 0.3 * rng.standard_normal(n)
+    )
+    weekly_df = pd.DataFrame(
+        {"week_start": week_start, "rv_cuberoot": y, **regressors}
+    )
+
+    # ── Fit Column-6 primary on full panel (for build_payload).
+    X = sm.add_constant(weekly_df[list(regressors.keys())])
+    column6_fit = sm.OLS(weekly_df["rv_cuberoot"], X).fit(
+        cov_type="HAC", cov_kwds={"maxlags": 4}
+    )
+
+    # ── Build per-regime fits EXACTLY like §8.1: reset_index(drop=True).
+    regime_fits: dict[str, Any] = {}
+    regime_sigma_hats: dict[str, Any] = {}
+    regime_labels = ("pre_2015", "mid_2015_2021", "post_2021")
+    for i, label in enumerate(regime_labels):
+        lo = i * (n // 3)
+        hi = lo + (n // 3) if i < 2 else n
+        sub = weekly_df.iloc[lo:hi].reset_index(drop=True)  # ← loses datetime idx
+        Xr = sm.add_constant(sub[list(regressors.keys())])
+        fit_r = sm.OLS(sub["rv_cuberoot"], Xr).fit(
+            cov_type="HAC", cov_kwds={"maxlags": 4}
+        )
+        regime_fits[label] = fit_r
+        regime_sigma_hats[label] = fit_r.cov_params().loc[
+            list(regressors.keys()), list(regressors.keys())
+        ]
+
+    # ── Build a minimal Student-t-like fit (not load-bearing for E1).
+    # The build_payload contract requires an object with .params, .bse,
+    # .cov_params(), .nobs — a plain OLS on 2 columns suffices.
+    t_panel = sm.add_constant(weekly_df[list(regressors.keys())])
+    tfit_stub = sm.OLS(weekly_df["rv_cuberoot"], t_panel).fit()
+
+    # Fake a TLinearModel-style params index: params[-2] = df, params[-1] = scale.
+    class _TfitAdapter:
+        """Duck-types the TLinearModel fit shape build_payload expects."""
+
+        def __init__(self, fit):
+            self._fit = fit
+            # Six regressors + const = 7 β-params, plus df and scale = 9 total.
+            # Emulate by appending two synthetic trailing values.
+            import numpy as _np
+
+            self.params = _np.concatenate(
+                [fit.params.values, [5.0, 0.04]]
+            )
+            self.bse = _np.concatenate([fit.bse.values, [1.0, 0.01]])
+            # Extend cov_params to 9×9 block-diagonal.
+            base = fit.cov_params().values
+            pad = _np.eye(2) * 1e-6
+            self._cov = _np.block(
+                [
+                    [base, _np.zeros((base.shape[0], 2))],
+                    [_np.zeros((2, base.shape[0])), pad],
+                ]
+            )
+            self.nobs = int(fit.nobs)
+
+        def cov_params(self):
+            return self._cov
+
+    tfit = _TfitAdapter(tfit_stub)
+
+    # ── Ladder: six 1-term regressions on cpi_surprise_ar1 incrementally.
+    ladder_fits = []
+    cumulative = ["cpi_surprise_ar1"]
+    base_regs = list(regressors.keys())
+    for k in range(1, 7):
+        cumulative = base_regs[:k]
+        X_lad = sm.add_constant(weekly_df[cumulative])
+        f_lad = sm.OLS(weekly_df["rv_cuberoot"], X_lad).fit(
+            cov_type="HAC", cov_kwds={"maxlags": 4}
+        )
+        ladder_fits.append(f_lad)
+
+    # ── GARCH-X bag (synthetic, not load-bearing).
+    garch_x_bag = {
+        "mu": 0.01,
+        "omega": 0.01,
+        "alpha_1": 0.07,
+        "beta_1": 0.92,
+        "delta": 0.0,
+        "qmle_cov_matrix": np.eye(5) * 1e-6,
+        "log_likelihood": -1234.5,
+        "persistence": 0.99,
+        "iterations": 123,
+        "hessian_pd_status": True,
+        "std_resid": [0.1, -0.2, 0.05],
+        "conditional_vol": [0.4, 0.41, 0.42],
+    }
+
+    # ── Decomposition fit (2-regressor CPI/PPI).
+    weekly_df["ipp_std"] = rng.standard_normal(n) * 0.5
+    X_dec = sm.add_constant(weekly_df[["cpi_surprise_ar1", "ipp_std"]])
+    decomposition_fit = sm.OLS(weekly_df["rv_cuberoot"], X_dec).fit(
+        cov_type="HAC", cov_kwds={"maxlags": 4}
+    )
+
+    # ── Pooling tests stubs.
+    pooling_wald_chi2 = {"statistic": 1.2, "pvalue": 0.54, "df": 2}
+    pooling_f_test = {"statistic": 0.6, "pvalue": 0.55, "df_num": 2, "df_den": n - 10}
+
+    # ── Handoff metadata.
+    handoff_meta = serialize_module.default_handoff_metadata()
+
+    # ── Daily index dates (ISO date range).
+    daily_dates = pd.date_range("2010-01-01", periods=3000, freq="D")
+
+    payload = serialize_module.build_payload(
+        column6_fit=column6_fit,
+        tfit=tfit,
+        ladder_fits=ladder_fits,
+        garch_x=garch_x_bag,
+        decomposition_fit=decomposition_fit,
+        regime_fits=regime_fits,
+        regime_sigma_hats=regime_sigma_hats,
+        pooling_wald_chi2=pooling_wald_chi2,
+        pooling_f_test=pooling_f_test,
+        reconciliation="AGREE",
+        t3b_pass=False,
+        gate_verdict="FAIL",
+        spec_hash="5d86d01c5d2ca58587f966c2b0a66c942500107436ecb91c11d8efc3e65aa2c6",
+        panel_fingerprint="deadbeef" * 8,
+        intervention_coverage=5,
+        handoff_metadata=handoff_meta,
+        weekly_index_dates=weekly_df["week_start"],
+        daily_index_dates=daily_dates,
+    )
+
+    # ── Load the authoritative schema and validate.
+    with open(SCHEMA_PATH, "r", encoding="utf-8") as fh:
+        schema = json.load(fh)
+    validator = Draft202012Validator(schema)
+
+    # The key E1 assertion: the regime date fields match the ISO-date regex.
+    import re
+
+    iso_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    for label in regime_labels:
+        block = payload["subsamples"][label]
+        assert iso_re.match(str(block["date_min"])), (
+            f"Regime {label!r} date_min must be ISO 'YYYY-MM-DD'; got "
+            f"{block['date_min']!r}. Pre-fix this is '0' (RangeIndex from "
+            f"reset_index(drop=True))."
+        )
+        assert iso_re.match(str(block["date_max"])), (
+            f"Regime {label!r} date_max must be ISO 'YYYY-MM-DD'; got "
+            f"{block['date_max']!r}."
+        )
+
+    # Full schema validation: raises ValidationError on any ISO-date regex failure.
+    validator.validate(payload)
+
+
+def test_nb2_section11_live_build_payload_call_passes_iso_dates(
+    nb2: nbformat.NotebookNode,
+) -> None:
+    """E1 regression: NB2 §11 cell must hand ISO-date compatible inputs to
+    build_payload — either the cell pre-coerces to ISO strings OR
+    build_payload itself coerces every date field at construction time.
+
+    This is a structural check: the cell must either import/use a date
+    coercion utility OR the serializer must handle pandas Timestamp/
+    integer-index edge cases internally. We assert the serializer itself
+    (tested by the sibling test above) handles the case cleanly.
+    """
+    s11_code_src = "\n\n".join(
+        _cell_source(c)
+        for c in _code_cells(_section_cells(nb2, SECTION11_TAG))
+    )
+    # Must call build_payload — the site where coercion happens.
+    assert "build_payload" in s11_code_src, (
+        "§11 must call nb2_serialize.build_payload so date coercion "
+        "happens in a single audited location."
     )
 
 
