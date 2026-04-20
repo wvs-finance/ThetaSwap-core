@@ -90,7 +90,7 @@ PDF_DIR: Final[Path] = _REMITTANCE_COLOMBIA_DIR / "pdf"
 
 FINGERPRINT_PATH: Final[Path] = ESTIMATES_DIR / "nb1_panel_fingerprint.json"
 POINT_JSON_PATH: Final[Path] = ESTIMATES_DIR / "nb2_params_point.json"
-FULL_PKL_PATH: Final[Path] = ESTIMATES_DIR / "nb2_full.pkl"
+FULL_PKL_PATH: Final[Path] = ESTIMATES_DIR / "nb2_params_full.pkl"
 GATE_VERDICT_REMITTANCE_PATH: Final[Path] = (
     ESTIMATES_DIR / "gate_verdict_remittance.json"
 )

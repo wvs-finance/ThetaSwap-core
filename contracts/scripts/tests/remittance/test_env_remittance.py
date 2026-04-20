@@ -194,9 +194,9 @@ def test_point_json_path_under_remittance_estimates() -> None:
 
 
 def test_full_pkl_path_under_remittance_estimates() -> None:
-    """FULL_PKL_PATH == <remittance estimates>/nb2_full.pkl (per Task-7 spec)."""
+    """FULL_PKL_PATH == <remittance estimates>/nb2_params_full.pkl (mirrors Rev-4 convention per Task-7 post-review plan patch)."""
     env_rem = _load_env_remittance()
-    expected = _REMITTANCE_COLOMBIA_DIR / "estimates" / "nb2_full.pkl"
+    expected = _REMITTANCE_COLOMBIA_DIR / "estimates" / "nb2_params_full.pkl"
     assert Path(env_rem.FULL_PKL_PATH).resolve() == expected.resolve()
 
 
