@@ -12,6 +12,24 @@
 
 % ── A ──
 
+% Anzoátegui-Zapata & Galvis-Ciro 2019 — Colombian event-study anchor for
+% Decision #6 (BanRep rate surprise). Uses daily ΔIBR (1-month tenor) on
+% Banrep communication dates as monetary-policy surprise; EGARCH(1,1)
+% applied to public-debt-security returns. On-methodology, secondary-anchor
+% variant (outcome is public debt, not FX). Web-verified 2026-04-18 after
+% Reality Checker finding.
+@article{anzoateguiGalvis2019comunicacion,
+  author  = {Anzo{\'a}tegui-Zapata, Juan Camilo and Galvis-Ciro, Juan Camilo},
+  title   = {Efectos de la comunicaci{\'o}n del banco central sobre los t{\'i}tulos p{\'u}blicos: evidencia emp{\'i}rica para {Colombia}},
+  journal = {Cuadernos de Econom{\'i}a},
+  year    = {2019},
+  volume  = {38},
+  number  = {77},
+  pages   = {337--364},
+  doi     = {10.15446/cuad.econ.v38n77.64706},
+  note    = {Constructs Colombian monetary-policy surprise as daily change in 1-month IBR on Banrep communication dates; applies EGARCH to public-debt-security returns. On-methodology for Decision #6 event-study ΔIBR; outcome variable is public debt (not FX).}
+}
+
 @article{andersen2001distribution,
   author  = {Andersen, Torben G. and Bollerslev, Tim and Diebold, Francis X. and Ebens, Heiko},
   title   = {The Distribution of Realized Stock Return Volatility},
@@ -32,6 +50,32 @@
   number  = {1},
   pages   = {38--62},
   doi     = {10.1257/000282803321455151}
+}
+
+@article{andrews1991heteroskedasticity,
+  author  = {Andrews, Donald W. K.},
+  title   = {Heteroskedasticity and Autocorrelation Consistent Covariance Matrix Estimation},
+  journal = {Econometrica},
+  year    = {1991},
+  volume  = {59},
+  number  = {3},
+  pages   = {817--858},
+  doi     = {10.2307/2938229}
+}
+
+% Andrews 1999 — parameter-on-the-boundary inference theory.
+% Canonical source for the caveat that standard two-sided Wald
+% CIs are invalid at constraint boundaries (applies to §6 GARCH-X
+% when δ̂ hits the Han-Kristensen positivity boundary δ = 0).
+@article{andrews1999estimation,
+  author  = {Andrews, Donald W. K.},
+  title   = {Estimation When a Parameter is on a Boundary},
+  journal = {Econometrica},
+  year    = {1999},
+  volume  = {67},
+  number  = {6},
+  pages   = {1341--1383},
+  doi     = {10.1111/1468-0262.00082}
 }
 
 @article{ang2006crosssection,
@@ -161,6 +205,23 @@
   url       = {https://press.princeton.edu/books/hardcover/9780691043012/the-econometrics-of-financial-markets}
 }
 
+% Cavaliere-Taylor 2005 is the canonical technical source for KPSS
+% over-rejection behavior under time-varying second moments
+% (heteroskedasticity + regime-shift conditional variance). Cited in
+% NB1 Decision #11 to ground the "documented small-sample behavior"
+% attribution used when five of seven series reject KPSS stationarity
+% in the 2008-2026 Colombia sample.
+@article{cavaliereTaylor2005wildKPSS,
+  author  = {Cavaliere, Giuseppe and Taylor, A. M. Robert},
+  title   = {Stationarity Tests under Time-Varying Second Moments},
+  journal = {Econometric Theory},
+  year    = {2005},
+  volume  = {21},
+  number  = {6},
+  pages   = {1112--1129},
+  doi     = {10.1017/S0266466605050553}
+}
+
 @article{chow1960tests,
   author  = {Chow, Gregory C.},
   title   = {Tests of Equality Between Sets of Coefficients in Two Linear Regressions},
@@ -253,6 +314,26 @@
   number      = {462},
   year        = {2014},
   url         = {https://www.bis.org/publ/work462.htm}
+}
+
+% ── G ──
+
+% Galvis-Ciro, Oliveira de Moraes, & Anzoátegui-Zapata 2017 — PRIMARY Colombian
+% anchor for Decision #6. Exact on-methodology precedent: daily ΔIBR (1-month
+% tenor) on Banrep announcement dates as the monetary-policy surprise,
+% event-study on COP/USD exchange-rate volatility, sample 2008-2015.
+% Web-verified 2026-04-18 after Reality Checker finding (replaces the
+% mis-attributed "Uribe-Gil & Galvis-Ciro 2022 BIS WP 1022" citation).
+% Published in Lecturas de Economía issue 87.
+@article{galvisOliveiraAnzoategui2017anuncios,
+  author  = {Galvis-Ciro, Juan Camilo and Oliveira de Moraes, Claudio and Anzo{\'a}tegui-Zapata, Juan Camilo},
+  title   = {Efectos de los anuncios de pol{\'i}tica monetaria sobre la volatilidad de la tasa de cambio: un an{\'a}lisis para {Colombia}, 2008--2015},
+  journal = {Lecturas de Econom{\'i}a},
+  year    = {2017},
+  number  = {87},
+  pages   = {67--95},
+  doi     = {10.17533/udea.le.n87a03},
+  note    = {Primary Colombian-literature precedent for Decision #6 event-study ΔIBR (1-month tenor) on Banrep announcement dates with COP/USD FX-volatility as the outcome. Matches both the operator and the outcome variable of this project's identification equation.}
 }
 
 % ── H ──

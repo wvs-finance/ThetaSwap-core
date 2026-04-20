@@ -322,22 +322,26 @@ def test_conn_fixture_queries_real_weekly_panel(conn: duckdb.DuckDBPyConnection)
     assert count > 0, "weekly_panel is empty — DB not populated?"
 
 
-# ── nb2_serialize stub tests ───────────────────────────────────────────────
+# ── nb2_serialize full-implementation smoke tests ─────────────────────────
 
 def test_nb2_serialize_importable() -> None:
-    """The stub module imports without raising."""
+    """The full-implementation module imports without raising."""
     from scripts import nb2_serialize  # noqa: F401
 
 
 def test_nb2_serialize_docstring_names_task_22() -> None:
-    """The module docstring mentions 'Task 22' as the implementation target."""
+    """The module docstring still names Task 22 as the originating plan row."""
     from scripts import nb2_serialize
     assert nb2_serialize.__doc__ is not None
     assert "Task 22" in nb2_serialize.__doc__
 
 
-def test_nb2_serialize_write_all_raises_not_implemented() -> None:
-    """Any placeholder function raises NotImplementedError with Task 22 marker."""
+def test_nb2_serialize_public_api() -> None:
+    """Post-Task-22 the module exports ``reconcile``, ``write_all``, and
+    ``HandoffMetadata`` as the Layer-1-→-Layer-2 handoff surface."""
     from scripts import nb2_serialize
-    with pytest.raises(NotImplementedError, match="Task 22"):
-        nb2_serialize.write_all()
+    for symbol in ("reconcile", "write_all", "HandoffMetadata",
+                    "default_handoff_metadata", "build_payload"):
+        assert hasattr(nb2_serialize, symbol), (
+            f"nb2_serialize must export {symbol!r} post-Task-22."
+        )

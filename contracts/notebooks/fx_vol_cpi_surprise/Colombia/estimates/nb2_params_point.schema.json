@@ -1,0 +1,279 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://abrigo/fx-vol-cpi-surprise/Colombia/nb2_params_point.schema.json",
+  "title": "NB2 Layer 1 → Layer 2 handoff contract (nb2_params_point.json)",
+  "description": "Authoritative JSON Schema for the structural-econometrics NB2 parameter handoff. Every covariance block is a {param_names, matrix} pair so row/column ordering is explicit and cannot silently drift on library upgrades. Locked against Rev 4 §4.4.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "ols_primary",
+    "ols_student_t",
+    "ols_ladder",
+    "garch_x",
+    "decomposition",
+    "subsamples",
+    "reconciliation",
+    "t3b_pass",
+    "gate_verdict",
+    "spec_hash",
+    "panel_fingerprint",
+    "intervention_coverage",
+    "handoff_metadata"
+  ],
+  "$defs": {
+    "named_covariance": {
+      "type": "object",
+      "description": "Row-major covariance matrix with explicit parameter ordering. `param_names` indexes both axes of `matrix` identically.",
+      "additionalProperties": false,
+      "required": ["param_names", "matrix"],
+      "properties": {
+        "param_names": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "matrix": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {"type": "number"}
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "date_iso": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "number_dict": {
+      "type": "object",
+      "additionalProperties": {"type": "number"}
+    },
+    "regime_block": {
+      "type": "object",
+      "description": "One subsample-regime refit: point estimates, full covariance, sample size, date range.",
+      "additionalProperties": false,
+      "required": ["beta", "cov", "n", "date_min", "date_max"],
+      "properties": {
+        "beta": {"$ref": "#/$defs/number_dict"},
+        "cov": {"$ref": "#/$defs/named_covariance"},
+        "n": {"type": "integer", "minimum": 1},
+        "date_min": {"$ref": "#/$defs/date_iso"},
+        "date_max": {"$ref": "#/$defs/date_iso"},
+        "se": {"$ref": "#/$defs/number_dict"},
+        "adj_r_squared": {"type": "number"}
+      }
+    }
+  },
+  "properties": {
+    "ols_primary": {
+      "type": "object",
+      "description": "Rev 4 §3 Column-6 primary OLS with HAC(4). Loaded by Layer 2 as the headline β̂.",
+      "additionalProperties": false,
+      "required": [
+        "beta", "cov", "se", "hac_lag", "n", "r_squared", "adj_r_squared",
+        "date_min", "date_max"
+      ],
+      "properties": {
+        "beta": {"$ref": "#/$defs/number_dict"},
+        "cov": {"$ref": "#/$defs/named_covariance"},
+        "se": {"$ref": "#/$defs/number_dict"},
+        "hac_lag": {"type": "integer", "minimum": 0},
+        "n": {"type": "integer", "minimum": 1},
+        "r_squared": {"type": "number"},
+        "adj_r_squared": {"type": "number"},
+        "date_min": {"$ref": "#/$defs/date_iso"},
+        "date_max": {"$ref": "#/$defs/date_iso"},
+        "notes": {"type": "string"}
+      }
+    },
+    "ols_student_t": {
+      "type": "object",
+      "description": "Rev 4 §5 Student-t MLE refit on the Column-6 design. ν̂ captures the fat-tail robustness.",
+      "additionalProperties": false,
+      "required": [
+        "beta", "cov", "se", "nu_hat", "scale_hat", "n", "date_min", "date_max"
+      ],
+      "properties": {
+        "beta": {"$ref": "#/$defs/number_dict"},
+        "cov": {"$ref": "#/$defs/named_covariance"},
+        "se": {"$ref": "#/$defs/number_dict"},
+        "nu_hat": {"type": "number", "exclusiveMinimum": 0},
+        "scale_hat": {"type": "number", "exclusiveMinimum": 0},
+        "n": {"type": "integer", "minimum": 1},
+        "date_min": {"$ref": "#/$defs/date_iso"},
+        "date_max": {"$ref": "#/$defs/date_iso"}
+      }
+    },
+    "ols_ladder": {
+      "type": "object",
+      "description": "Rev 4 §3 six-column nested-control robustness ladder. Columns 1-6 with point estimates + SEs (no full covariance — Layer 2 does not consume the ladder).",
+      "additionalProperties": false,
+      "required": ["columns"],
+      "properties": {
+        "columns": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 6,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "column", "beta", "se", "n", "adj_r_squared",
+              "date_min", "date_max"
+            ],
+            "properties": {
+              "column": {"type": "integer", "minimum": 1, "maximum": 6},
+              "beta": {"$ref": "#/$defs/number_dict"},
+              "se": {"$ref": "#/$defs/number_dict"},
+              "n": {"type": "integer", "minimum": 1},
+              "adj_r_squared": {"type": "number"},
+              "date_min": {"$ref": "#/$defs/date_iso"},
+              "date_max": {"$ref": "#/$defs/date_iso"}
+            }
+          }
+        }
+      }
+    },
+    "garch_x": {
+      "type": "object",
+      "description": "Rev 4 §6 GARCH(1,1)-X co-primary on daily COP/USD returns. Includes standardized-residual and conditional-volatility series (Barone-Adesi 2008 filtered-historical-simulation machinery for Layer 2).",
+      "additionalProperties": false,
+      "required": [
+        "theta", "cov", "log_likelihood", "persistence",
+        "iterations", "hessian_pd_status",
+        "std_resid", "conditional_vol",
+        "date_min", "date_max"
+      ],
+      "properties": {
+        "theta": {"$ref": "#/$defs/number_dict"},
+        "cov": {"$ref": "#/$defs/named_covariance"},
+        "log_likelihood": {"type": "number"},
+        "persistence": {"type": "number"},
+        "iterations": {"type": "integer", "minimum": 0},
+        "hessian_pd_status": {"type": "boolean"},
+        "std_resid": {
+          "type": "array",
+          "items": {"type": "number"},
+          "description": "Standardized residual series ẑ_t = ε̂_t / σ̂_t — parametric bootstrap source for Layer 2."
+        },
+        "conditional_vol": {
+          "type": "array",
+          "items": {"type": "number"},
+          "description": "Conditional-volatility series σ̂_t — Layer 2 seeds its simulation from σ̂_T."
+        },
+        "date_min": {"$ref": "#/$defs/date_iso"},
+        "date_max": {"$ref": "#/$defs/date_iso"},
+        "nu_hat": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "decomposition": {
+      "type": "object",
+      "description": "Rev 4 §7 CPI/PPI decomposition refit. Joint covariance on {cpi_surprise_ar1, ipp_std} so Layer 2 draws the two-channel pair from the correct bivariate normal.",
+      "additionalProperties": false,
+      "required": ["beta", "cov", "se", "n", "date_min", "date_max"],
+      "properties": {
+        "beta": {"$ref": "#/$defs/number_dict"},
+        "cov": {"$ref": "#/$defs/named_covariance"},
+        "se": {"$ref": "#/$defs/number_dict"},
+        "n": {"type": "integer", "minimum": 1},
+        "date_min": {"$ref": "#/$defs/date_iso"},
+        "date_max": {"$ref": "#/$defs/date_iso"}
+      }
+    },
+    "subsamples": {
+      "type": "object",
+      "description": "Rev 4 §8 subsample regimes split at 2015-01-05 and 2021-01-04. Each regime carries a full 6×6 HAC(4) Σ̂ on the Column-6 regressor set (or a smaller cov matrix as the regime's active regressors dictate) so Layer 2 draws regime-specific parameter vectors.",
+      "additionalProperties": false,
+      "required": [
+        "pre_2015", "mid_2015_2021", "post_2021",
+        "pooling_wald_chi2", "pooling_f_test"
+      ],
+      "properties": {
+        "pre_2015": {"$ref": "#/$defs/regime_block"},
+        "mid_2015_2021": {"$ref": "#/$defs/regime_block"},
+        "post_2021": {"$ref": "#/$defs/regime_block"},
+        "pooling_wald_chi2": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statistic", "pvalue", "df"],
+          "properties": {
+            "statistic": {"type": "number"},
+            "pvalue": {"type": "number"},
+            "df": {"type": "integer"}
+          }
+        },
+        "pooling_f_test": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["statistic", "pvalue", "df_num", "df_den"],
+          "properties": {
+            "statistic": {"type": "number"},
+            "pvalue": {"type": "number"},
+            "df_num": {"type": "integer"},
+            "df_den": {"type": "integer"}
+          }
+        }
+      }
+    },
+    "reconciliation": {
+      "type": "string",
+      "enum": ["AGREE", "DISAGREE"],
+      "description": "OLS primary vs GARCH-X reconciliation verdict per plan rev 2: AGREE iff sign-concordant AND 90% CIs overlap AND significance-at-10% concordant."
+    },
+    "t3b_pass": {
+      "type": "boolean",
+      "description": "Rev 4 §5 T3b gate — true iff β̂_CPI − 1.28·SE(β̂_CPI) > 0 on OLS primary (GARCH-X cannot override)."
+    },
+    "gate_verdict": {
+      "type": "string",
+      "enum": ["PASS", "FAIL"],
+      "description": "Composite primary gate: PASS iff t3b_pass AND adj_r_squared ≥ 0.15."
+    },
+    "spec_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "sha256 of the upstream Rev 4 spec file. NB3 asserts this matches on load."
+    },
+    "panel_fingerprint": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8,}$",
+      "description": "sha256 of the cleaned weekly panel serialized as a sorted CSV, as emitted by NB1 (§4.7)."
+    },
+    "intervention_coverage": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Count of weeks in the primary sample with intervention_dummy = 1. T7 validity needs this bounded away from zero and the sample size."
+    },
+    "handoff_metadata": {
+      "type": "object",
+      "description": "Version-guard + Layer 2 consumption-contract metadata.",
+      "additionalProperties": true,
+      "required": [
+        "python_version",
+        "statsmodels_version",
+        "arch_version",
+        "numpy_version",
+        "pandas_version",
+        "scipy_version",
+        "bootstrap_distribution",
+        "recommended_seed"
+      ],
+      "properties": {
+        "python_version": {"type": "string"},
+        "statsmodels_version": {"type": "string"},
+        "arch_version": {"type": "string"},
+        "numpy_version": {"type": "string"},
+        "pandas_version": {"type": "string"},
+        "scipy_version": {"type": "string"},
+        "bootstrap_distribution": {
+          "type": "string",
+          "description": "Prose describing the Layer 2 draw convention. OLS: multivariate normal from the HAC-robust covariance. GARCH-X: parametric bootstrap from the fitted standardized residuals (Barone-Adesi 2008 / Bollerslev-Wooldridge 1992) — Gaussian draws would violate α_1+β_1<1."
+        },
+        "recommended_seed": {"type": "integer"},
+        "schema_version": {"type": "string"}
+      }
+    }
+  }
+}
