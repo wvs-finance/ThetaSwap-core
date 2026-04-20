@@ -57,17 +57,35 @@ _REV4_COLOMBIA_DIR: Final[Path] = (
     _NOTEBOOKS_DIR / "fx_vol_cpi_surprise" / "Colombia"
 )
 
+# Guard against silent resolution: the Rev-4 directory must exist. Raise a
+# typed error (not bare assert) so the import-time failure is informative
+# and symmetric with the conftest fail-loud pattern.
+if not _REV4_COLOMBIA_DIR.is_dir():
+    raise FileNotFoundError(
+        f"Rev-4 Colombia directory missing at {_REV4_COLOMBIA_DIR}; "
+        "env_remittance cannot inherit shared pins."
+    )
+
+# sys.path.append (NOT insert-at-0) — stdlib and site-packages win over Rev-4
+# Colombia, so an unrelated top-level `env` module elsewhere on the path is
+# not shadowed by this shim. See Task-7 code-review Issue #1.
 _rev4_colombia_str = str(_REV4_COLOMBIA_DIR)
 if _rev4_colombia_str not in sys.path:
-    sys.path.insert(0, _rev4_colombia_str)
+    sys.path.append(_rev4_colombia_str)
 
-# Guard against silent resolution: the Rev-4 directory must exist.
-assert _REV4_COLOMBIA_DIR.is_dir(), (
-    f"Rev-4 Colombia directory missing at {_REV4_COLOMBIA_DIR}; "
-    "env_remittance cannot inherit shared pins."
-)
+import env as _rev4_env  # noqa: E402  (sys.path extended just above)
 
-import env as _rev4_env  # noqa: E402  (sys.path mutated just above)
+# Hardening: verify the imported ``env`` module really is the Rev-4 file,
+# not a same-named module that pytest-xdist or a stray editable-install may
+# have registered earlier in ``sys.modules``. See Task-7 code-review Issue #2.
+_expected_rev4_env_path = (_REV4_COLOMBIA_DIR / "env.py").resolve()
+_actual_rev4_env_path = Path(getattr(_rev4_env, "__file__", "")).resolve()
+if _actual_rev4_env_path != _expected_rev4_env_path:
+    raise RuntimeError(
+        f"env_remittance bound to wrong `env` module: expected "
+        f"{_expected_rev4_env_path}, got {_actual_rev4_env_path}. "
+        "Check sys.modules['env'] state and test-ordering."
+    )
 
 # ── Inherited symbols (re-bound so callers need not know about the shim) ───
 
