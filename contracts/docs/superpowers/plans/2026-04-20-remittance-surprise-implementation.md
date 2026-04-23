@@ -1,12 +1,13 @@
 # Phase-A.0 Remittance-Surprise → TRM-RV Implementation Plan
 
-> **Status:** Rev 2 (2026-04-20). See Revision history below.
+> **Status:** Rev 3 (2026-04-20). See Revision history below. **Rev 3 patch is awaiting three-way review.**
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 ## Revision history
 
 - **Rev 1 (2026-04-20):** initial plan, 30 tasks across 5 phases, committed alongside the three-way-reviewed design doc at `437fd8bd2`.
 - **Rev 2 (2026-04-20):** three-way plan review applied (Code Reviewer + Reality Checker + Senior PM); 6 BLOCKs + 14 FLAGs + 7 NITs addressed; task splits and inserts executed (Tasks 17 → 17a/17b/17c; 21 → 21a/21b/21c with a separate Task 21d review gate; 22 → 22a/22b; 24 → 24a/24b with a separate Task 24c review gate; 30 → 30a/30b/30c; + intra-phase review-gate inserts at 18a, 21d, 24c); Phase-0 Task 1 tightened with the "13-input resolution matrix" deliverable requirement; Task 11 data-access mechanism corrected from "pinned Socrata endpoint" to MPR-derived manual compilation (no public remittance API exists; `mcec-87by` is TRM-only). See fix-log at `contracts/.scratch/2026-04-20-remittance-plan-fix-log.md`. Total task count: **41** (5+5+5+18+8 across Phases 0-4).
+- **Rev 3 (2026-04-20):** mid-execution methodology escalation. Task 11 implementation (committed at `939df12e1` DONE_WITH_CONCERNS) confirmed the Rev-2 RC B1 finding was worse than anticipated: **BanRep publishes remittance at QUARTERLY cadence only**, not monthly. Exhaustive verification against the MPR index, 4 recent MPR PDFs, the ficha metodológica, BanRep suameca series 4150, and the methodology note confirms no public monthly aggregate-inflow series exists. 104 real quarterly rows (2000-Q1 → 2025-Q4) were committed; Rev-1 spec §§4.6 (monthly LOCF), §4.7 (AR(1) on monthly), §4.8 (real-time vintage primary) are thereby invalidated for the monthly-cadence primary. Rev 3 inserts a **daily-native middle-plan** (new Tasks 11.A–11.E) that: (a) acquires daily on-chain COPM + cCOP flow data via Dune MCP, (b) aggregates daily → weekly via a rich statistics vector preserving intra-week information, (c) cross-validates against the BanRep quarterly series via a pre-registered bridge ρ-gate at N=7 quarterly obs, (d) patches the Rev-1 spec to Rev-1.1 with the new primary X definition + BanRep quarterly as validation row, (e) three-way reviews the Rev-1.1 patch before Phase 2 resumes at Task 12. Total task count: **46** (5+5+**10**+18+8). **Rev 3 patch is awaiting three-way plan review; no Rev 3 tasks shall execute until that review converges.**
 
 **Goal:** Implement Phase-A.0 of the Abrigo structural-econometric program: a single-row exercise testing whether the Colombian aggregate-monthly remittance AR(1) surprise carries detectable information for COP/USD weekly realized volatility, under identical Rev-4 discipline, on the frozen 947-obs weekly panel (decision-hash extended, not replaced), with pre-registered anti-fishing framing distinct from the CPI-FAIL.
 
@@ -225,6 +226,96 @@ Bulk authoring of multiple trios in a single dispatch is forbidden. Infrastructu
 - [ ] **Step 4: Implement** the pure-read loader. Document explicitly in the module docstring that re-pulling requires MPR re-parse; there is no API.
 - [ ] **Step 5: Run and confirm pass** against the committed fixture.
 - [ ] **Step 6: Commit** with message `feat(remittance): MPR-derived aggregate monthly remittance loader + manually compiled fixture with per-row SOURCE provenance`.
+
+**Task 11 post-implementation status (Rev 3, 2026-04-20):** implementation committed at `939df12e1` as DONE_WITH_CONCERNS. File name actually used was `banrep_remittance_fetcher.py` (not `_loader.py` as the Rev-2 plan text said); schema emitted `{reference_period, value_usd, mpr_vintage_date, source_url}`. The implementer exhaustively verified that BanRep publishes this series at QUARTERLY cadence only (104 rows 2000-Q1 → 2025-Q4, all carrying `mpr_vintage_date = 2026-03-06` snapshot; no revision archive). The monthly-cadence primary in Rev-1 spec §§4.6/4.7/4.8 is invalidated. **Tasks 11.A–11.E (below) are the Rev-3 middle-plan response.**
+
+### Task 11.A: Daily on-chain COPM + cCOP flow acquisition via Dune MCP (Rev 3 insert)
+
+**Subagent:** Data Engineer (MANDATORY: `mcp__dune__*` tools)
+
+**Rationale:** The quarterly-only BanRep finding means the monthly-cadence primary cannot be built from public off-chain data. The daily-native middle-plan replaces it with a daily on-chain signal aggregated to weekly via a rich statistics vector (not a flat sum), preserving intra-week information that a monthly-aggregate X would discard. COPM launched Apr-2024 ($200M/mo, 100K Littio users); cCOP launched Oct-2024 (4,913 cleaned-cohort senders per `CCOP_BEHAVIORAL_FINGERPRINTS.md` §5). Union window: Apr-2024 → most-recent ≈ 24 months daily ≈ 95–104 weekly observations.
+
+**Files:**
+- Create: `contracts/scripts/dune_onchain_flow_fetcher.py` (pure loader + validator; no network on import)
+- Create: `contracts/data/copm_ccop_daily_flow.csv` (real-data fixture, committed; columns: `date, copm_mint_usd, copm_burn_usd, copm_unique_minters, ccop_usdt_inflow_usd, ccop_usdt_outflow_usd, ccop_unique_senders, source_query_ids`)
+- Create: `contracts/data/dune_onchain_sources.md` (per-query provenance log)
+- Test: `contracts/scripts/tests/remittance/test_dune_onchain_flow_fetcher.py`
+
+- [ ] **Step 1:** Write failing test asserting the 8-column schema + daily-monotone date index + pre-Oct-2024 NaN cCOP discipline + non-negative USD + non-empty `source_query_ids` + `FileNotFoundError` on missing path + determinism + row count ≥ 720.
+- [ ] **Step 2:** Run and confirm failure.
+- [ ] **Step 3:** Acquire via Dune MCP using cached permanent queries (`#6941901` cCOP volume, `#6940691` COPM transfers, `#6939814` Mento broker) where available; fall back to `mcp__dune__updateDuneQuery` only if modification is required. Credit budget: ≤30 free-tier credits.
+- [ ] **Step 4:** Write CSV with real joined data + `dune_onchain_sources.md` provenance log.
+- [ ] **Step 5:** Implement pure loader + validator.
+- [ ] **Step 6:** Run tests, confirm pass.
+- [ ] **Step 7:** Commit with message `feat(remittance): daily COPM+cCOP on-chain flow fixture + Dune loader (Rev-3 Task 11.A)`.
+
+**Fallback:** if Dune free-tier fails, document attempted URLs + MCP errors and propose either manual Dune CSV export paste-in or direct Celo RPC via Alchemy free tier. Do NOT fabricate data.
+
+### Task 11.B: Weekly rich-aggregation module (daily → weekly vector; Rev 3 insert)
+
+**Subagent:** Data Engineer
+
+**Rationale:** Flat daily-sum-to-weekly loses intra-week heterogeneity. A multi-channel weekly vector preserves information that is load-bearing for the primary identification at small sample size (N≈95 weekly obs).
+
+**Files:**
+- Create: `contracts/scripts/weekly_onchain_flow_vector.py` (pure transformation module)
+- Create: `contracts/scripts/tests/remittance/test_weekly_onchain_flow_vector.py`
+- Create: `contracts/scripts/tests/remittance/fixtures/golden_daily_flow.csv` (hand-authored synthetic 35-row fixture spanning 5 Friday-anchored weeks)
+
+- [ ] **Step 1:** Write failing test for `aggregate_daily_to_weekly_vector(daily_df, friday_anchor_tz="America/Bogota") → pd.DataFrame` with 6 output channels per week: `flow_sum_w`, `flow_var_w` (daily-within-week variance), `flow_concentration_w` (HHI of |daily|), `flow_directional_asymmetry_w` (pos-days minus neg-days), `unique_daily_active_senders_w` (union across COPM+cCOP), `flow_max_single_day_w`. Assert pinned values from the golden fixture at 6-decimal tolerance. Assert determinism + order-invariance + pre-data-window NaN discipline.
+- [ ] **Step 2:** Run and confirm failure.
+- [ ] **Step 3:** Implement pure vectorized aggregation (pandas groupby + named-agg).
+- [ ] **Step 4:** Run tests, confirm pass.
+- [ ] **Step 5:** Commit with message `feat(remittance): weekly rich-aggregation vector preserving daily information (Rev-3 Task 11.B)`.
+
+### Task 11.C: Bridge-validation notebook (pre-registered ρ-gate; Rev 3 insert)
+
+**Subagent:** Analytics Reporter (X-trio discipline per `feedback_notebook_trio_checkpoint.md`)
+
+**Rationale:** Cross-validate that the daily on-chain aggregate is an economically meaningful proxy for the BanRep remittance channel. Pre-register the gate BEFORE computing any correlation. Under FAIL-BRIDGE the primary regression still runs (X is a well-defined on-chain observable), but the economic-interpretation narrative shifts from "remittance" to "crypto-rail income-conversion."
+
+**Files:**
+- Create: `contracts/notebooks/fx_vol_remittance_surprise/Colombia/0B_bridge_validation.ipynb` (one-off validation notebook, 4-5 X-trio cells)
+- Create: `contracts/.scratch/2026-04-20-onchain-banrep-bridge-result.md` (scratch log of the gate outcome)
+
+- [ ] **Step 1:** Author failing test for the notebook's §1 (data alignment), §2 (quarterly aggregation), §3 (Pearson ρ + sign-concordance), §4 (verdict emission). X-trio HALTs between each section for human review.
+- [ ] **Step 2:** Run nbconvert-execute; confirm failure.
+- [ ] **Step 3:** Author NB 0B cells trio-by-trio. Pre-registered gate logic:
+  - PASS-BRIDGE: ρ > 0.5 on 7 quarterly obs AND sign-concordant on Δ quarter-over-quarter
+  - FAIL-BRIDGE: ρ ≤ 0.3 OR sign-discordant
+  - INCONCLUSIVE-BRIDGE: 0.3 < ρ ≤ 0.5
+- [ ] **Step 4:** Run notebook, confirm test pass + emit scratch log with verdict.
+- [ ] **Step 5:** Commit with message `feat(remittance): bridge-validation notebook (on-chain vs BanRep quarterly; Rev-3 Task 11.C)`.
+
+### Task 11.D: Rev-1.1 spec patch (Rev 3 insert — SPEC amendment)
+
+**Subagent:** Technical Writer (amendment) + structural-econometrics skill re-invocation if any new methodology decision surfaces
+
+**Rationale:** The daily-native middle-plan changes the primary X definition; the Rev-1 spec must reflect the amendment with explicit supersedes-banner language. The 13-input resolution matrix must be revisited for any row whose resolution is affected (sign prior, MDES at new effective-N, HAC bandwidth at new sample size, interpolation side no longer applies, AR order no longer on monthly-source, vintage policy now on daily on-chain source, reconciliation unchanged, Quandt-Andrews window unchanged, GARCH-X unchanged, Dec-Jan seasonality unchanged, event-study unchanged).
+
+**Files:**
+- Modify: `contracts/docs/superpowers/specs/2026-04-20-remittance-surprise-trm-rv-spec-rev1.md` (patch to Rev-1.1 in place; update frontmatter `status` + `Revision history`)
+- Create: `contracts/.scratch/2026-04-20-remittance-spec-rev1.1-fix-log.md`
+
+- [ ] **Step 1:** Author the Rev-1.1 patch in place: add "supersedes banner" section noting the Task 11 finding and the quarterly-only BanRep reality. Redefine primary X in §4.1 as the weekly rich-aggregation vector from Task 11.B. Add BanRep quarterly as a pre-registered validation row S14 in §6. Update §4.5 MDES to reflect new N_eff ≈ 88. Update §12 resolution matrix rows 5 (Andrews bandwidth), 6 (interpolation side → no longer applies; mark as superseded), 7 (AR order → now on daily-aggregated weekly vector), 8 (vintage policy → daily on-chain does not revise).
+- [ ] **Step 2:** Fix-log documents every matrix-row change. Any methodology-row whose resolution is unclear gets escalated back to the `structural-econometrics` skill for re-derivation.
+- [ ] **Step 3:** Commit with message `spec(remittance): Rev-1.1 patch — daily-native primary X + BanRep-quarterly validation row (Rev-3 Task 11.D)`.
+
+### Task 11.E: Three-way review of Rev-1.1 spec patch (Rev 3 insert)
+
+**Subagent:** three parallel dispatches — Code Reviewer + Reality Checker + Technical Writer (spec-review trio per `feedback_three_way_review.md`).
+
+**Files:**
+- Create: `contracts/.scratch/2026-04-20-remittance-spec-rev1.1-review-code-reviewer.md`
+- Create: `contracts/.scratch/2026-04-20-remittance-spec-rev1.1-review-reality-checker.md`
+- Create: `contracts/.scratch/2026-04-20-remittance-spec-rev1.1-review-technical-writer.md`
+
+- [ ] **Step 1:** Dispatch three reviewers in parallel; each independently reviews the Rev-1.1 patch against: (a) consistency with Rev-1 pre-Rev-1.1 content not superseded, (b) coverage of all 13 resolution-matrix rows that need updating, (c) anti-fishing framing preserved or strengthened (the patch is explicitly framed as a methodology escalation responding to a real-world data reality, NOT as a rescue of a null result), (d) factual grounding of any new claims (RC), (e) clarity of the supersedes-banner and the new primary X definition (TW).
+- [ ] **Step 2:** Consolidate via Technical Writer; apply all BLOCKs + FLAGs in place; NITs optional.
+- [ ] **Step 3:** Iterate: if any reviewer returns BLOCK, re-dispatch that reviewer after fixes. Plan Rule 13 (3-cycle cap) applies; escalate to user if not converging.
+- [ ] **Step 4:** Commit with message `spec(remittance): Rev-1.1 fix-pass, all 3-way reviewer findings addressed (Rev-3 Task 11.E)`.
+
+**Gate:** Tasks 12+ shall NOT resume until Task 11.E returns a unanimous PASS-WITH-FIXES or PASS verdict and TW consolidation is committed. This gate is non-negotiable per memory rule `feedback_three_way_review.md`.
 
 ### Task 12: Decision-hash extension preserving Rev-4 fingerprint (may parallelize with Task 11)
 
@@ -722,12 +813,12 @@ Anti-fishing framing appears in Task 8 (notebook headers), Tasks 22b-23 (NB3 §9
 
 Additive-only scope: every Phase-1 task is additive to Rev-4 pipeline; decision-hash extension preserves Rev-4 hash (Task 12 test) and extends in Tasks 13 (aux columns) + 14 (corridor column or placeholder).
 
-**Total task count (Rev-2): 41.**
+**Total task count (Rev-3): 46.**
 - Phase 0: Tasks 1-5 (5 tasks; unchanged from Rev-1)
 - Phase 1: Tasks 6-10 (5 tasks; unchanged)
-- Phase 2: Tasks 11-15 (5 tasks; unchanged; Task 11 substantively reworked for data-access, Task 14 for go/no-go pre-flight)
-- Phase 3: Tasks 16, 17a, 17b, 17c, 18, 18a, 19, 20, 21a, 21b, 21c, 21d, 22a, 22b, 23, 24a, 24b, 24c (18 tasks; up from 9 in Rev-1 per splits 17→17a/b/c, 21→21a/b/c, 22→22a/b, 24→24a/b and intra-phase review-gate inserts 18a, 21d, 24c)
-- Phase 4: Tasks 25, 26, 27, 28, 29, 30a, 30b, 30c (8 tasks; up from 6 per 30→30a/b/c)
+- Phase 2: Tasks 11, 11.A, 11.B, 11.C, 11.D, 11.E, 12, 13, 14, 15 (**10 tasks**; up from 5 in Rev-2 via the Rev-3 daily-native middle-plan inserts 11.A/B/C/D/E responding to the Task 11 quarterly-only BanRep finding)
+- Phase 3: Tasks 16, 17a, 17b, 17c, 18, 18a, 19, 20, 21a, 21b, 21c, 21d, 22a, 22b, 23, 24a, 24b, 24c (18 tasks; unchanged from Rev-2)
+- Phase 4: Tasks 25, 26, 27, 28, 29, 30a, 30b, 30c (8 tasks; unchanged from Rev-2)
 
 Compared to Rev-4 CPI which shipped with 33 tasks as counted in CLAUDE.md (36 with letter-suffix expansions shown in the plan body — PM N1), Rev-2 remittance is 41 tasks — slightly higher than Rev-4, reflecting the NB1/NB2/NB3 intra-phase review gate triplet and the dual-subagent-split discipline. Growth vs Rev-1's nominal 30 reflects (a) 3 intra-phase review gates (Rev-4 parity per PM B1), (b) split-for-atomicity of four over-packed authoring tasks (PM B3), (c) helper+author separation for dual-subagent tasks (CR N5 / PM F2), (d) completion unbundling (PM F6).
 
