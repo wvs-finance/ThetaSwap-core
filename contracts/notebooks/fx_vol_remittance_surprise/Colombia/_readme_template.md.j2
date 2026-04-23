@@ -1,3 +1,17 @@
+{#
+Required Jinja context for the Task-24 renderer (render_readme.py):
+  primary.{beta_fmt, se_fmt, ci_lo_fmt, ci_hi_fmt, n, hac_lag, date_min, date_max}
+  garch.{beta_fmt, se_fmt, ci_lo_fmt, ci_hi_fmt, n}
+  event_study.{beta_fmt, se_fmt, ci_lo_fmt, ci_hi_fmt, n}
+  sens.s{1..13}.{verdict, ci_pos}   — 13 pre-registered sensitivity rows (Rev-1 spec §6)
+  gate_verdict.{gate_verdict, t1_verdict, t2_verdict, t3a_verdict, t3b_verdict,
+                t4_verdict, t5_verdict, t6_verdict, t7_verdict,
+                event_concordance, bootstrap_hac_agreement,
+                sensitivity_ci_excludes_zero_count, material_movers_count, pkl_degraded}
+  point_params.{reconciliation, spec_hash, panel_fingerprint}
+  nb1_pdf_relpath, nb2_pdf_relpath, nb3_pdf_relpath
+  spec_relpath   — relative path to Rev-1 spec from README.md location
+#}
 # FX-vol-on-Remittance-surprise — Colombia 2008-2026 (Phase-A.0)
 
 **Gate Verdict: {{ gate_verdict.gate_verdict }}** — β̂_Rem = {{ primary.beta_fmt }} (HAC({{ primary.hac_lag }}) SE = {{ primary.se_fmt }}, 90% CI = [{{ primary.ci_lo_fmt }}, {{ primary.ci_hi_fmt }}], n = {{ primary.n }}).
