@@ -1135,6 +1135,57 @@ def load_onchain_copm_time_patterns(
     )
 
 
+# ── Task 11.N: weekly X_d surrogate loader ─────────────────────────────────
+
+
+@dataclass(frozen=True, slots=True)
+class OnchainXdWeekly:
+    """One Friday-anchored weekly X_d row from ``onchain_xd_weekly``.
+
+    ``value_usd`` is stored as VARCHAR in the source table to preserve
+    the 6-decimal text format (mirrors
+    :class:`OnchainCcopDailyFlow`'s USD convention); the loader casts to
+    ``float`` for the frozen-dataclass consumer contract.
+
+    ``proxy_kind`` carries the ``X_D_INSUFFICIENT_DATA`` escalation
+    flag; the only currently-valid value is ``"net_primary_issuance_usd"``
+    (enforced by a CHECK constraint on the table).  See
+    ``contracts/.scratch/2026-04-24-xd-filter-design-memo.md``.
+    """
+
+    week_start: date
+    value_usd: float
+    is_partial_week: bool
+    proxy_kind: str
+
+
+def load_onchain_xd_weekly(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> tuple[OnchainXdWeekly, ...]:
+    """Return rows from ``onchain_xd_weekly`` as frozen dataclasses.
+
+    Optionally date-filtered on the ``week_start`` Friday anchor.
+    """
+    _check_table(conn, "onchain_xd_weekly")
+    where, params = _date_filter(start, end, col="week_start")
+    sql = (
+        "SELECT week_start, value_usd, is_partial_week, proxy_kind "
+        f"FROM onchain_xd_weekly{where} ORDER BY week_start"
+    )
+    rows = conn.execute(sql, params).fetchall()
+    return tuple(
+        OnchainXdWeekly(
+            week_start=r[0],
+            value_usd=float(r[1]),
+            is_partial_week=bool(r[2]),
+            proxy_kind=r[3],
+        )
+        for r in rows
+    )
+
+
 def load_onchain_daily_flow(
     conn: duckdb.DuckDBPyConnection,
 ) -> tuple[OnchainCcopDailyFlow, ...]:

@@ -33,6 +33,8 @@ EXPECTED_TABLES: Final[frozenset[str]] = frozenset({
     "onchain_copm_address_activity_top400",
     "onchain_copm_time_patterns",
     "onchain_copm_ccop_daily_flow",
+    # ── Task 11.N: weekly X_d surrogate (net primary issuance USD) ──────
+    "onchain_xd_weekly",
 })
 
 # ── DDL statements ───────────────────────────────────────────────────────────
@@ -355,6 +357,23 @@ CREATE TABLE IF NOT EXISTS onchain_copm_ccop_daily_flow (
 )
 """
 
+# Task 11.N — weekly X_d surrogate panel (net primary issuance USD).
+# ``value_usd`` preserved as VARCHAR to keep 6-decimal text exact (same
+# rationale as ``onchain_copm_ccop_daily_flow``).  ``proxy_kind`` carries
+# the ``X_D_INSUFFICIENT_DATA`` escalation tag committed in the
+# design memo `contracts/.scratch/2026-04-24-xd-filter-design-memo.md`
+# so every consumer sees the surrogate flag inline.
+_DDL_ONCHAIN_XD_WEEKLY: Final[str] = """
+CREATE TABLE IF NOT EXISTS onchain_xd_weekly (
+    week_start DATE NOT NULL PRIMARY KEY,  -- Friday anchor
+    value_usd VARCHAR NOT NULL,
+    is_partial_week BOOLEAN NOT NULL,
+    proxy_kind VARCHAR NOT NULL
+      CHECK (proxy_kind = 'net_primary_issuance_usd'),
+    _ingested_at TIMESTAMP NOT NULL DEFAULT current_timestamp
+)
+"""
+
 _ONCHAIN_DDL: Final[tuple[str, ...]] = (
     _DDL_ONCHAIN_COPM_MINTS,
     _DDL_ONCHAIN_COPM_BURNS,
@@ -365,6 +384,7 @@ _ONCHAIN_DDL: Final[tuple[str, ...]] = (
     _DDL_ONCHAIN_COPM_ADDRESS_ACTIVITY,
     _DDL_ONCHAIN_COPM_TIME_PATTERNS,
     _DDL_ONCHAIN_COPM_CCOP_DAILY_FLOW,
+    _DDL_ONCHAIN_XD_WEEKLY,
 )
 
 

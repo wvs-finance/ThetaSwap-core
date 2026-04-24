@@ -610,6 +610,54 @@ def ingest_onchain_ccop_daily_flow(
     return len(rows)
 
 
+# ── Task 11.N: weekly X_d surrogate ingestion ──────────────────────────────
+#
+# Derived table: computed from ``onchain_copm_ccop_daily_flow`` and written
+# to ``onchain_xd_weekly``.  See the design memo at
+# ``contracts/.scratch/2026-04-24-xd-filter-design-memo.md`` for the
+# ``X_D_INSUFFICIENT_DATA`` escalation; ``proxy_kind`` is the in-row flag.
+
+
+def ingest_onchain_xd_weekly(
+    conn: duckdb.DuckDBPyConnection,
+) -> int:
+    """Compute the X_d weekly panel and write it to ``onchain_xd_weekly``.
+
+    Consumes ``onchain_copm_ccop_daily_flow`` via
+    :func:`scripts.econ_query_api.load_onchain_daily_flow` and applies
+    :func:`scripts.copm_xd_filter.compute_weekly_xd`.  Persists each
+    Friday anchor as one row.  ``value_usd`` stored as VARCHAR with
+    exact 6-decimal formatting (mirrors the daily-flow table's USD
+    text-preservation convention).
+
+    Returns row-count written.  Idempotent via ``INSERT OR REPLACE``
+    keyed on ``week_start``.
+    """
+    # Imports kept local to prevent a module-level cycle — both
+    # ``copm_xd_filter`` and ``econ_query_api`` import from ``econ_schema``.
+    from scripts.copm_xd_filter import compute_weekly_xd
+    from scripts.econ_query_api import load_onchain_daily_flow
+
+    daily = load_onchain_daily_flow(conn)
+    panel = compute_weekly_xd(daily)
+
+    for friday, value, partial in zip(
+        panel.weeks, panel.values_usd, panel.is_partial_week, strict=True
+    ):
+        # 6-decimal USD formatting matches the ``copm_mint_usd`` /
+        # ``copm_burn_usd`` VARCHAR convention so round-trip checksums
+        # align naturally.  ``f"{v:.6f}"`` on a float preserves the
+        # decimal exactly when the source is already 6-dp-bounded.
+        conn.execute(
+            "INSERT OR REPLACE INTO onchain_xd_weekly "
+            "(week_start, value_usd, is_partial_week, proxy_kind) "
+            "VALUES (?, ?, ?, ?)",
+            [friday, f"{value:.6f}", bool(partial), panel.proxy_kind],
+        )
+
+    return len(panel.weeks)
+
+
 # ── Orchestrator ────────────────────────────────────────────────────────────
 
 
@@ -623,6 +671,9 @@ _ONCHAIN_TABLES: Final[tuple[str, ...]] = (
     "onchain_copm_address_activity_top400",
     "onchain_copm_time_patterns",
     "onchain_copm_ccop_daily_flow",
+    # Task 11.N derived table — listed here so run_onchain_migration
+    # drops+recreates it alongside the raw tables.
+    "onchain_xd_weekly",
 )
 
 
@@ -659,6 +710,7 @@ def run_onchain_migration(
         _DDL_ONCHAIN_COPM_TIME_PATTERNS,
         _DDL_ONCHAIN_COPM_TOP100_EDGES,
         _DDL_ONCHAIN_COPM_TRANSFERS_SAMPLE,
+        _DDL_ONCHAIN_XD_WEEKLY,
     )
 
     # Drop (in reverse dependency order — all tables are independent) then
@@ -675,6 +727,7 @@ def run_onchain_migration(
         _DDL_ONCHAIN_COPM_ADDRESS_ACTIVITY,
         _DDL_ONCHAIN_COPM_TIME_PATTERNS,
         _DDL_ONCHAIN_COPM_CCOP_DAILY_FLOW,
+        _DDL_ONCHAIN_XD_WEEKLY,
     ):
         conn.execute(ddl)
 
@@ -717,5 +770,9 @@ def run_onchain_migration(
     result["onchain_copm_ccop_daily_flow"] = ingest_onchain_ccop_daily_flow(
         conn, root / "copm_ccop_daily_flow.csv"
     )
+    # Task 11.N: derived weekly-X_d panel — must run LAST because it
+    # consumes ``onchain_copm_ccop_daily_flow`` that the line above
+    # has just ingested.
+    result["onchain_xd_weekly"] = ingest_onchain_xd_weekly(conn)
 
     return result
