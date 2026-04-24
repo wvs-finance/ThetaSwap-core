@@ -674,6 +674,9 @@ _ONCHAIN_TABLES: Final[tuple[str, ...]] = (
     # Task 11.N derived table — listed here so run_onchain_migration
     # drops+recreates it alongside the raw tables.
     "onchain_xd_weekly",
+    # Task 11.N.1 full-dataset table (Rev-5.2.1). Distinct from
+    # ``onchain_copm_transfers_sample`` — the sample stays as audit pointer.
+    "onchain_copm_transfers",
 )
 
 
@@ -709,6 +712,7 @@ def run_onchain_migration(
         _DDL_ONCHAIN_COPM_MINTS,
         _DDL_ONCHAIN_COPM_TIME_PATTERNS,
         _DDL_ONCHAIN_COPM_TOP100_EDGES,
+        _DDL_ONCHAIN_COPM_TRANSFERS,
         _DDL_ONCHAIN_COPM_TRANSFERS_SAMPLE,
         _DDL_ONCHAIN_XD_WEEKLY,
     )
@@ -728,6 +732,7 @@ def run_onchain_migration(
         _DDL_ONCHAIN_COPM_TIME_PATTERNS,
         _DDL_ONCHAIN_COPM_CCOP_DAILY_FLOW,
         _DDL_ONCHAIN_XD_WEEKLY,
+        _DDL_ONCHAIN_COPM_TRANSFERS,
     ):
         conn.execute(ddl)
 

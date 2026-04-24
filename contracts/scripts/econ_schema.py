@@ -35,6 +35,8 @@ EXPECTED_TABLES: Final[frozenset[str]] = frozenset({
     "onchain_copm_ccop_daily_flow",
     # ── Task 11.N: weekly X_d surrogate (net primary issuance USD) ──────
     "onchain_xd_weekly",
+    # ── Task 11.N.1: full COPM transfers (Rev-5.2.1) ────────────────────
+    "onchain_copm_transfers",
 })
 
 # ── DDL statements ───────────────────────────────────────────────────────────
@@ -363,14 +365,52 @@ CREATE TABLE IF NOT EXISTS onchain_copm_ccop_daily_flow (
 # the ``X_D_INSUFFICIENT_DATA`` escalation tag committed in the
 # design memo `contracts/.scratch/2026-04-24-xd-filter-design-memo.md`
 # so every consumer sees the surrogate flag inline.
+#
+# Rev-5.2.1 Task 11.N.1 Step 0 (BLOCKER CR-B1 / RC-B1) — the CHECK
+# constraint was pinned singleton ``proxy_kind = 'net_primary_issuance_usd'``
+# and the PK was single-column ``week_start``. That schema could not
+# host the distribution-channel X_d (``b2b_to_b2c_net_flow_usd``)
+# alongside the surrogate. The migration helper
+# ``scripts.econ_pipeline.migrate_onchain_xd_weekly_allow_both_channels``
+# rebuilds legacy tables into this shape; this DDL is the target state
+# for fresh DBs.
 _DDL_ONCHAIN_XD_WEEKLY: Final[str] = """
 CREATE TABLE IF NOT EXISTS onchain_xd_weekly (
-    week_start DATE NOT NULL PRIMARY KEY,  -- Friday anchor
+    week_start DATE NOT NULL,  -- Friday anchor
     value_usd VARCHAR NOT NULL,
     is_partial_week BOOLEAN NOT NULL,
     proxy_kind VARCHAR NOT NULL
-      CHECK (proxy_kind = 'net_primary_issuance_usd'),
-    _ingested_at TIMESTAMP NOT NULL DEFAULT current_timestamp
+      CHECK (proxy_kind IN (
+        'net_primary_issuance_usd',
+        'b2b_to_b2c_net_flow_usd'
+      )),
+    _ingested_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    PRIMARY KEY (week_start, proxy_kind)
+)
+"""
+
+# Rev-5.2.1 Task 11.N.1 (BLOCKER CR-B2) — full COPM transfers. This is
+# a NEW table distinct from ``onchain_copm_transfers_sample``, which
+# continues to live on unchanged as a historical-sample audit pointer.
+# The full dataset is ingested via :func:`econ_pipeline.ingest_onchain_copm_transfers`
+# after the RPC backfill populates ``contracts/data/copm_per_tx/copm_transfers.csv``.
+# Same column set as the sample table; no ``_csv_row_idx`` needed
+# because the RPC-ordered backfill is monotone on
+# ``(evt_block_number, logIndex)`` — we instead include ``log_index`` as
+# the event-level tie-break so the PK covers the natural on-chain
+# identity of a Transfer event.
+_DDL_ONCHAIN_COPM_TRANSFERS: Final[str] = """
+CREATE TABLE IF NOT EXISTS onchain_copm_transfers (
+    evt_block_date DATE NOT NULL,
+    evt_block_time VARCHAR NOT NULL,  -- raw RPC-derived ISO text
+    evt_tx_hash VARCHAR(66) NOT NULL,
+    from_address VARCHAR(42) NOT NULL,
+    to_address VARCHAR(42) NOT NULL,
+    value_wei HUGEINT NOT NULL,
+    evt_block_number UBIGINT NOT NULL,
+    log_index UBIGINT NOT NULL,
+    _ingested_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    PRIMARY KEY (evt_tx_hash, log_index)
 )
 """
 
@@ -385,6 +425,7 @@ _ONCHAIN_DDL: Final[tuple[str, ...]] = (
     _DDL_ONCHAIN_COPM_TIME_PATTERNS,
     _DDL_ONCHAIN_COPM_CCOP_DAILY_FLOW,
     _DDL_ONCHAIN_XD_WEEKLY,
+    _DDL_ONCHAIN_COPM_TRANSFERS,
 )
 
 

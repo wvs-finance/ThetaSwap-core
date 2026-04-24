@@ -564,3 +564,250 @@ def test_migration_is_idempotent(tmp_path: Path) -> None:
         f"before: {first}\n"
         f"after:  {second}"
     )
+
+
+# ── (Step 0) Task 11.N.1 schema migration — Rev-5.2.1 BLOCKER resolution ─────
+#
+# Pre-committed Step-0 contract (5 assertions, each a separate test function):
+#
+#   (S0-a) ``onchain_xd_weekly`` CHECK constraint accepts BOTH
+#          ``'net_primary_issuance_usd'`` AND ``'b2b_to_b2c_net_flow_usd'``.
+#
+#   (S0-b) Composite PK ``(week_start, proxy_kind)`` allows BOTH channels
+#          to coexist for the same ``week_start`` row.
+#
+#   (S0-c) New ``onchain_copm_transfers`` table exists (distinct from the
+#          preserved ``onchain_copm_transfers_sample``) and holds the full
+#          dataset (schema-validated here; full rows arrive in Step 4).
+#
+#   (S0-d) ``copm_xd_filter.compute_weekly_xd()`` accepts a ``proxy_kind``
+#          keyword argument (Literal["net_primary_issuance_usd",
+#          "b2b_to_b2c_net_flow_usd"]); default preserves the existing
+#          supply-channel behaviour so the 6 inequality-family tests keep
+#          passing.
+#
+#   (S0-e) Rev-4 ``decision_hash`` preserved byte-exact — additive-only
+#          guarantee (the hash covers LOCKED_DECISIONS, NOT on-chain
+#          tables, so the schema change must not regress it).
+#
+# Plan reference: 2026-04-20-remittance-surprise-implementation.md,
+# §"Step 0 (SCHEMA MIGRATION …)" under Task 11.N.1 (Rev 5.2.1).
+
+
+def test_step0_xd_weekly_check_accepts_both_proxy_kinds(
+    migrated_db: Path,
+) -> None:
+    """(S0-a) The migrated CHECK accepts the new B2B→B2C tag."""
+    conn = duckdb.connect(str(migrated_db))
+    try:
+        # Supply channel — pre-existing — must still insert.
+        conn.execute(
+            "INSERT OR REPLACE INTO onchain_xd_weekly "
+            "(week_start, value_usd, is_partial_week, proxy_kind) "
+            "VALUES (?, ?, ?, ?)",
+            [date(2025, 10, 31), "111.111111", False, "net_primary_issuance_usd"],
+        )
+        # Distribution channel — new — must also insert after migration.
+        conn.execute(
+            "INSERT OR REPLACE INTO onchain_xd_weekly "
+            "(week_start, value_usd, is_partial_week, proxy_kind) "
+            "VALUES (?, ?, ?, ?)",
+            [date(2025, 10, 31), "222.222222", False, "b2b_to_b2c_net_flow_usd"],
+        )
+        # Invalid tag still rejected by the relaxed CHECK.
+        with pytest.raises(duckdb.ConstraintException):
+            conn.execute(
+                "INSERT INTO onchain_xd_weekly "
+                "(week_start, value_usd, is_partial_week, proxy_kind) "
+                "VALUES (?, ?, ?, ?)",
+                [date(2025, 10, 24), "0.0", False, "some_other_proxy"],
+            )
+    finally:
+        conn.close()
+
+
+def test_step0_xd_weekly_composite_pk_allows_both_channels(
+    migrated_db: Path,
+) -> None:
+    """(S0-b) Composite PK (week_start, proxy_kind) lets both channels coexist.
+
+    Under the Rev-5.1 singleton PK ``week_start``, inserting two rows with
+    the same Friday but different ``proxy_kind`` would raise a
+    ``ConstraintException``. Under the Rev-5.2.1 migration, this is the
+    expected behaviour.
+    """
+    conn = duckdb.connect(str(migrated_db))
+    try:
+        friday = date(2025, 10, 31)
+        # Delete pre-existing rows for this Friday to avoid PK collision
+        # with the migration-seeded supply-channel data.
+        conn.execute(
+            "DELETE FROM onchain_xd_weekly WHERE week_start = ?", [friday]
+        )
+        conn.execute(
+            "INSERT INTO onchain_xd_weekly "
+            "(week_start, value_usd, is_partial_week, proxy_kind) "
+            "VALUES (?, ?, ?, ?)",
+            [friday, "1000.000000", False, "net_primary_issuance_usd"],
+        )
+        conn.execute(
+            "INSERT INTO onchain_xd_weekly "
+            "(week_start, value_usd, is_partial_week, proxy_kind) "
+            "VALUES (?, ?, ?, ?)",
+            [friday, "2000.000000", False, "b2b_to_b2c_net_flow_usd"],
+        )
+        rows = conn.execute(
+            "SELECT proxy_kind, value_usd FROM onchain_xd_weekly "
+            "WHERE week_start = ? ORDER BY proxy_kind",
+            [friday],
+        ).fetchall()
+        assert len(rows) == 2, (
+            f"Expected both channels coexisting at {friday}; got {rows}"
+        )
+        kinds = {r[0] for r in rows}
+        assert kinds == {
+            "net_primary_issuance_usd",
+            "b2b_to_b2c_net_flow_usd",
+        }, f"Missing expected proxy_kinds: got {kinds}"
+
+        # PK enforcement still blocks duplicate (week_start, proxy_kind) tuples.
+        with pytest.raises(duckdb.ConstraintException):
+            conn.execute(
+                "INSERT INTO onchain_xd_weekly "
+                "(week_start, value_usd, is_partial_week, proxy_kind) "
+                "VALUES (?, ?, ?, ?)",
+                [friday, "3000.000000", False, "net_primary_issuance_usd"],
+            )
+    finally:
+        conn.close()
+
+
+def test_step0_onchain_copm_transfers_table_exists_distinct_from_sample(
+    migrated_db: Path,
+) -> None:
+    """(S0-c) Full-dataset table exists distinct from the sample table.
+
+    ``onchain_copm_transfers`` is the Rev-5.2.1 table for the full ~110k
+    dataset (populated in Step 4); ``onchain_copm_transfers_sample`` is
+    preserved byte-exact as a historical-audit pointer.
+    """
+    conn = duckdb.connect(str(migrated_db), read_only=True)
+    try:
+        tables = {
+            r[0]
+            for r in conn.execute(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema = 'main'"
+            ).fetchall()
+        }
+        assert "onchain_copm_transfers" in tables, (
+            "onchain_copm_transfers table missing after Step 0 migration"
+        )
+        assert "onchain_copm_transfers_sample" in tables, (
+            "onchain_copm_transfers_sample must be preserved (audit pointer)"
+        )
+        # Distinct tables.
+        assert "onchain_copm_transfers" != "onchain_copm_transfers_sample"
+
+        # Schema check: onchain_copm_transfers holds the same data-bearing
+        # columns as the sample table (future rows will use identical dtypes),
+        # plus it must be creatable/empty (row count 0 at Step 0 — rows
+        # arrive in Step 4).
+        cols = {
+            r[0]
+            for r in conn.execute(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'onchain_copm_transfers' "
+                "AND table_schema = 'main'"
+            ).fetchall()
+        }
+        required_cols = {
+            "evt_block_date",
+            "evt_block_time",
+            "evt_tx_hash",
+            "from_address",
+            "to_address",
+            "value_wei",
+            "evt_block_number",
+        }
+        assert required_cols.issubset(cols), (
+            f"onchain_copm_transfers missing columns: "
+            f"{required_cols - cols}"
+        )
+
+        # Sample table row count unchanged at 10.
+        sample_n = conn.execute(
+            "SELECT COUNT(*) FROM onchain_copm_transfers_sample"
+        ).fetchone()
+        assert sample_n is not None and sample_n[0] == 10, (
+            f"Sample table row count drifted: got "
+            f"{sample_n[0] if sample_n else None}, expected 10"
+        )
+    finally:
+        conn.close()
+
+
+def test_step0_compute_weekly_xd_accepts_proxy_kind_argument() -> None:
+    """(S0-d) ``compute_weekly_xd`` is parametrized on ``proxy_kind``.
+
+    The Rev-5.1 signature was ``compute_weekly_xd(daily_flow_rows, *,
+    friday_anchor_tz='America/Bogota')`` and emitted
+    ``proxy_kind='net_primary_issuance_usd'`` unconditionally. Step 0
+    adds a ``proxy_kind`` keyword accepting the two-member Literal set
+    while preserving the default (supply-channel) for backward
+    compatibility with the existing 6 ``inequality/test_copm_xd_filter``
+    assertions.
+    """
+    import inspect
+
+    from scripts.copm_xd_filter import compute_weekly_xd
+
+    sig = inspect.signature(compute_weekly_xd)
+    assert "proxy_kind" in sig.parameters, (
+        "compute_weekly_xd missing 'proxy_kind' parameter after Step 0"
+    )
+    param = sig.parameters["proxy_kind"]
+    # Keyword-only or with a default — either is acceptable, so long as
+    # callers need not pass it to preserve Rev-5.1 behaviour.
+    assert param.default != inspect.Parameter.empty, (
+        "compute_weekly_xd 'proxy_kind' must have a default to stay "
+        "additive with existing Rev-5.1 callers."
+    )
+    assert param.default == "net_primary_issuance_usd", (
+        f"Default proxy_kind must be 'net_primary_issuance_usd' (supply "
+        f"channel); got {param.default!r}"
+    )
+
+    # Accepts the new distribution-channel value (empty input tuple is
+    # a valid smoke input — should not raise).
+    from scripts.copm_xd_filter import compute_weekly_xd as fn
+
+    panel = fn((), proxy_kind="b2b_to_b2c_net_flow_usd")
+    assert panel.proxy_kind == "b2b_to_b2c_net_flow_usd"
+
+    # Default call unchanged.
+    default_panel = fn(())
+    assert default_panel.proxy_kind == "net_primary_issuance_usd"
+
+
+def test_step0_rev4_decision_hash_preserved(migrated_db: Path) -> None:
+    """(S0-e) Rev-4 ``decision_hash`` preserved byte-exact through Step 0.
+
+    The migration must not touch ``LOCKED_DECISIONS`` or the fingerprint
+    JSON. This is additive-only with respect to the Rev-4 discipline
+    (schema change affects only DuckDB tables that do NOT participate in
+    the hash computation).
+    """
+    from scripts.cleaning import LOCKED_DECISIONS, _compute_decision_hash
+
+    got = _compute_decision_hash(LOCKED_DECISIONS)
+    assert got == _EXPECTED_DECISION_HASH, (
+        f"Rev-4 decision_hash drifted through Step 0: got {got}, "
+        f"expected {_EXPECTED_DECISION_HASH}"
+    )
+
+    with _FINGERPRINT_PATH.open() as fh:
+        fingerprint = json.load(fh)
+    assert fingerprint["decision_hash"] == _EXPECTED_DECISION_HASH, (
+        "nb1_panel_fingerprint.json decision_hash drifted through Step 0"
+    )

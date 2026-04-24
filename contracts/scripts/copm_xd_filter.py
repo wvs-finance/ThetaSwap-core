@@ -57,7 +57,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, timedelta
-from typing import Final
+from typing import Final, Literal
+
 from zoneinfo import ZoneInfo
 
 from scripts.econ_query_api import (
@@ -68,7 +69,15 @@ from scripts.econ_query_api import (
 
 # ── Constants ───────────────────────────────────────────────────────────────
 
+# Rev-5.1: supply-channel surrogate — Σ mint − Σ burn per Friday-week.
+# Rev-5.2.1 Task 11.N.1 Step 0 adds the distribution-channel variant
+# ``b2b_to_b2c_net_flow_usd`` (full-transfers panel required to compute).
 PROXY_KIND: Final[str] = "net_primary_issuance_usd"
+
+#: Allowed ``proxy_kind`` literal set — mirrored in the
+#: ``onchain_xd_weekly`` CHECK constraint (see :mod:`scripts.econ_schema`).
+ProxyKindT = Literal["net_primary_issuance_usd", "b2b_to_b2c_net_flow_usd"]
+
 DEFAULT_FRIDAY_ANCHOR_TZ: Final[str] = "America/Bogota"
 
 #: ISO-weekday code for Monday (Python ``date.isoweekday()`` == 1).
@@ -262,6 +271,7 @@ def compute_weekly_xd(
     daily_flow_rows: tuple[OnchainCcopDailyFlow, ...],
     *,
     friday_anchor_tz: str = DEFAULT_FRIDAY_ANCHOR_TZ,
+    proxy_kind: ProxyKindT = PROXY_KIND,
 ) -> WeeklyXdPanel:
     """Aggregate daily (mint − burn) USD into Friday-anchored weekly X_d.
 
@@ -286,6 +296,22 @@ def compute_weekly_xd(
         IANA timezone name.  Default ``"America/Bogota"`` matches
         Task 11.B convention.  Validated but not otherwise used in this
         date-only aggregation.
+    proxy_kind:
+        Rev-5.2.1 Task 11.N.1 Step 0 parametrization (RC-new finding).
+        ``"net_primary_issuance_usd"`` (the Rev-5.1 default) keeps the
+        supply-channel surrogate definition defined above; Rev-5.2.1
+        introduces the distribution-channel literal
+        ``"b2b_to_b2c_net_flow_usd"`` so this function can tag its
+        output with either label under the relaxed
+        ``onchain_xd_weekly`` CHECK constraint.  The computation here is
+        currently identical for both tags (they share the daily-flow
+        input); a full distribution-channel recomputation requires the
+        Task 11.N.1 full-transfers panel — callers that need
+        edge-level B2B→B2C differential will replace this branch once
+        ``onchain_copm_transfers`` rows are landed by the Step-4
+        backfill.  In the interim the function honours the ``proxy_kind``
+        argument on the resulting :class:`WeeklyXdPanel` so the DuckDB
+        ``onchain_xd_weekly`` row tag is set correctly.
 
     Returns
     -------
@@ -310,6 +336,7 @@ def compute_weekly_xd(
             weeks=(),
             values_usd=(),
             is_partial_week=(),
+            proxy_kind=proxy_kind,
         )
 
     # Date-sorted defensive ordering (input from
@@ -346,4 +373,5 @@ def compute_weekly_xd(
         weeks=fridays,
         values_usd=tuple(values),
         is_partial_week=tuple(partials),
+        proxy_kind=proxy_kind,
     )
