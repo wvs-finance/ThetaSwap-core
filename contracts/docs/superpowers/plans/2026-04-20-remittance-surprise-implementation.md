@@ -210,7 +210,9 @@ Bulk authoring of multiple trios in a single dispatch is forbidden. Infrastructu
 
 ---
 
-## Phase 2 — Data Ingestion (Task 11 historical; Tasks 12-15 below Phase 1.5)
+## Phase 2a — Data Ingestion (historical anchor: Task 11 only)
+
+> **Rev-3.1 F-3.1-1 reconciliation note**: Phase sequence is intentionally non-monotone (0, 1, **2a**, 1.5, **2b**, 3, 4). Task 11 landed DONE_WITH_CONCERNS BEFORE the escalation, so it physically precedes the Phase-1.5 middle-plan that responds to its finding. Phase 2b (Panel Extension, Tasks 12-15) resumes after Phase 1.5 convergence. Readers: follow 0 → 1 → 2a (Task 11) → 1.5 (Rev-3 middle-plan) → 2b (Tasks 12-15) → 3 → 4.
 
 **Rev 3.1 structural note (PM-F2):** Phase 2 in Rev-3.1 spans Task 11 (DONE_WITH_CONCERNS at `939df12e1`, retained here as historical context because its quarterly-only BanRep finding is the trigger for Phase 1.5) followed by the textual insert of **Phase 1.5 — Data-Bridge** (Tasks 11.A–11.E) and then Phase 2 resumes with Tasks 12-15. Textually this means "Phase 2" appears as two section blocks in the document: the first containing only Task 11 (historical), the second (after Phase 1.5) containing Tasks 12–15. This is intentional — it preserves the causal ordering (Task 11 triggers Phase 1.5 triggers Phase-2-resume) while keeping Task 11 inside Phase 2 per the Rev-2 shape.
 
@@ -252,7 +254,7 @@ Bulk authoring of multiple trios in a single dispatch is forbidden. Infrastructu
 **Rationale (Rev 3.1 amended — RC-F2, RC-N2):** The quarterly-only BanRep finding means the monthly-cadence primary cannot be built from public off-chain data. The daily-native middle-plan replaces it with a daily on-chain signal aggregated to weekly via a rich statistics vector (not a flat sum), preserving intra-week information that a monthly-aggregate X would discard. COPM launched Apr-2024 (adoption-colour figures such as "$200M/mo" and "100K Littio users" circulate in marketing materials but are not in-corpus-verified by Reality Checker at Rev 3.1 review; removed from load-bearing rationale per RC-N2; retained only as non-load-bearing background). cCOP launched Oct-2024. Per `CCOP_BEHAVIORAL_FINGERPRINTS.md` line 27: the 4,913-sender figure is specifically the cCOP-OLD cohort (address `0x8a56…`, "Dead (migrated Jan 2025)") — it is a pre-migration lifetime stock, NOT a forward-looking active-post-Oct-2024 population (RC-F2 correction). The post-migration cohort populating Apr-2024 → present may be smaller and must be recomputed by the Task 11.A subagent at acquisition time; "≥4,913 lifetime cleaned-cohort senders (pre-migration)" is the only defensible phrasing. Union window: Apr-2024 → most-recent ≈ 22-24 months daily. **Pre-committed N for downstream T3b critical value and bridge-gate power analysis: N = 95 weekly observations** (the conservative floor anchored to Rev-4-panel-end Feb-2026; RC-F3 single-number commitment). If the observed sample yields more than 95 weekly rows at Task 11.A implementation time, the additional rows are held in the fixture but the pre-committed test statistic uses exactly N=95 anchored at the Feb-2026 floor.
 
 **Data-target disambiguation (Rev 3.1 — RC-B2):** two distinct on-chain entities must not be conflated:
-- **cCOP TOKEN contract address** — the ERC-20 token itself (holds balances, `transfer`/`transferFrom` events are the raw transfer signal). The Task 11.A subagent must look up the current cCOP token contract via Dune `mcp__dune__searchTablesByContractAddress` or Celo block explorer before querying; **note the post-2026-01-25 migration renamed cCOP → COPm at the SAME contract address** (per corpus `CCOP_BEHAVIORAL_FINGERPRINTS.md` migration row) — the subagent must handle the rename and verify the address maps to the active (not "old/dead") contract.
+- **cCOP TOKEN contract address** — the ERC-20 token itself (holds balances, `transfer`/`transferFrom` events are the raw transfer signal). The Task 11.A subagent must look up the current cCOP token contract via Dune `mcp__dune__searchTablesByContractAddress` or Celo block explorer before querying; **note the post-2026-01-25 migration renamed cCOP → COPm at the SAME contract address** (per corpus `CCOP_BEHAVIORAL_FINGERPRINTS.md` migration row) — the subagent must handle the rename and verify the address maps to the active (not "old/dead") contract. **Rev-3.1 F-3.1-2 footnote**: the corpus file `CCOP_BEHAVIORAL_FINGERPRINTS.md` has an internal date inconsistency on this migration — line 27 reads "Jan 2025" while line 163 reads "Jan 2026"; Rev-3.1 aligns with the more specific line-163 date ("2026-01-25") as the canonical rename date. The subagent MUST use 2026-01-25 as the cutover and ignore the line-27 reading.
 - **Mento BROKER contract address** `0x777a8255ca72412f0d706dc03c9d1987306b4cad` — the swap venue (Mento protocol broker, NOT the token). Its events are swap-level, not transfer-level. Dune query `#6939814` queries broker swaps and is the correct source for swap-venue volumes; it is **not** a source for token-level transfers.
 
 A subagent that confuses these two queries the broker when it needs token transfers, or vice versa — the data acquired will be categorically wrong. Task 11.A Step 3 must explicitly verify each query's target entity before execution.
@@ -372,7 +374,7 @@ Do NOT fabricate data under any failure mode.
 
 ---
 
-## Phase 2 — Panel Extension (Rev 3.1 scope clarified)
+## Phase 2b — Panel Extension (resumes after Phase 1.5 convergence)
 
 ### Task 12: Decision-hash extension preserving Rev-4 fingerprint (may parallelize with Task 11)
 
