@@ -1,0 +1,84 @@
+# HAND-AUTHORED TEST FIXTURE — NOT REAL BanRep/Dune DATA.
+#
+# This CSV is the golden fixture for the Task-11.B weekly on-chain flow
+# vector aggregator (`contracts/scripts/weekly_onchain_flow_vector.py`).
+# It is consumed by
+# `contracts/scripts/tests/remittance/test_weekly_onchain_flow_vector.py`
+# and DOES NOT touch any real on-chain data.
+#
+# Design (Phase-A.0 Rev-3.3 Task 11.B, Step 1):
+#   * 35 rows spanning 2024-10-19 (Saturday) -> 2024-11-22 (Friday)
+#   * Exactly 5 Friday-anchored complete weeks of 7 days each.
+#   * Schema matches Task-11.A loader
+#     (`contracts/scripts/dune_onchain_flow_fetcher.py::EXPECTED_COLUMNS`).
+#
+# Week-by-week edge cases exercised (week labels are the Friday-end date):
+#   * Week ending 2024-10-25 — PRE-cCOP-LAUNCH (all 7 days < 2024-10-31).
+#     cCOP columns are empty (NaN) per Task-11.A pre-launch contract.
+#     COPM directional signs are arranged so positive-day count = 3 and
+#     negative-day count = 3, giving `flow_directional_asymmetry_w` = 0.
+#     Tests the "cCOP columns properly ignored; COPM-only aggregation still
+#     emits valid weekly values" requirement.
+#   * Week ending 2024-11-01 — TRANSITION WEEK. First 5 days (10-26..10-30)
+#     are still pre-cCOP-launch (cCOP columns NaN); last 2 days (10-31,
+#     11-01) are post-launch with cCOP values present. Every day's
+#     directional flow is positive, so asymmetry = +7.
+#   * Week ending 2024-11-08 — EQUAL-FLOW WEEK (post-cCOP). All 7 days
+#     identical: copm_mint_usd=50, ccop_usdt_inflow_usd=50, burns=0. Daily
+#     `net_flow` is constant at 100 USD, so `flow_var_w` = 0 and
+#     `flow_concentration_w` = 1/7 exactly. All 7 days positive →
+#     asymmetry = +7.
+#   * Week ending 2024-11-15 — SINGLE-SPIKE WEEK. 6 days all zero; Friday
+#     11-15 carries the entire week's flow (copm_mint_usd=700). This
+#     yields `flow_concentration_w` = 1.0 and `flow_max_single_day_w` = 700.
+#     Six zero-flow days contribute 0 to both positive and negative counts,
+#     so asymmetry = +1 (the Friday alone).
+#   * Week ending 2024-11-22 — MIXED-SIGN WEEK (post-cCOP). Per-day
+#     directional signs: + − 0 + + − + yielding asymmetry = +2 (4 pos −
+#     2 neg).
+#
+# Boundary (<7 days) behavior is exercised by the test suite via an
+# inline slicing of this fixture; no boundary row is authored here.
+#
+# Provenance: this fixture is entirely synthetic. The real-data Task-11.A
+# CSV at `contracts/data/copm_ccop_daily_flow.csv` (585 rows, 2024-09-17
+# → 2026-04-24) is NOT used by these unit tests — the whole point of the
+# golden-fixture discipline is to pin channel arithmetic independently of
+# Dune query drift. Downstream end-to-end tests on the real fixture live
+# outside Task 11.B.
+date,copm_mint_usd,copm_burn_usd,copm_unique_minters,ccop_usdt_inflow_usd,ccop_usdt_outflow_usd,ccop_unique_senders,source_query_ids
+2024-10-19,100.00,20.00,3,,,,GOLDEN_SYNTHETIC
+2024-10-20,30.00,50.00,2,,,,GOLDEN_SYNTHETIC
+2024-10-21,0.00,0.00,0,,,,GOLDEN_SYNTHETIC
+2024-10-22,200.00,10.00,5,,,,GOLDEN_SYNTHETIC
+2024-10-23,15.00,45.00,1,,,,GOLDEN_SYNTHETIC
+2024-10-24,75.00,25.00,4,,,,GOLDEN_SYNTHETIC
+2024-10-25,10.00,90.00,2,,,,GOLDEN_SYNTHETIC
+2024-10-26,20.00,0.00,1,,,,GOLDEN_SYNTHETIC
+2024-10-27,20.00,0.00,1,,,,GOLDEN_SYNTHETIC
+2024-10-28,20.00,0.00,1,,,,GOLDEN_SYNTHETIC
+2024-10-29,20.00,0.00,1,,,,GOLDEN_SYNTHETIC
+2024-10-30,20.00,0.00,1,,,,GOLDEN_SYNTHETIC
+2024-10-31,20.00,0.00,1,30.00,0.00,2.0,GOLDEN_SYNTHETIC
+2024-11-01,20.00,0.00,1,30.00,0.00,2.0,GOLDEN_SYNTHETIC
+2024-11-02,50.00,0.00,3,50.00,0.00,4.0,GOLDEN_SYNTHETIC
+2024-11-03,50.00,0.00,3,50.00,0.00,4.0,GOLDEN_SYNTHETIC
+2024-11-04,50.00,0.00,3,50.00,0.00,4.0,GOLDEN_SYNTHETIC
+2024-11-05,50.00,0.00,3,50.00,0.00,4.0,GOLDEN_SYNTHETIC
+2024-11-06,50.00,0.00,3,50.00,0.00,4.0,GOLDEN_SYNTHETIC
+2024-11-07,50.00,0.00,3,50.00,0.00,4.0,GOLDEN_SYNTHETIC
+2024-11-08,50.00,0.00,3,50.00,0.00,4.0,GOLDEN_SYNTHETIC
+2024-11-09,0.00,0.00,0,0.00,0.00,0.0,GOLDEN_SYNTHETIC
+2024-11-10,0.00,0.00,0,0.00,0.00,0.0,GOLDEN_SYNTHETIC
+2024-11-11,0.00,0.00,0,0.00,0.00,0.0,GOLDEN_SYNTHETIC
+2024-11-12,0.00,0.00,0,0.00,0.00,0.0,GOLDEN_SYNTHETIC
+2024-11-13,0.00,0.00,0,0.00,0.00,0.0,GOLDEN_SYNTHETIC
+2024-11-14,0.00,0.00,0,0.00,0.00,0.0,GOLDEN_SYNTHETIC
+2024-11-15,700.00,0.00,5,0.00,0.00,0.0,GOLDEN_SYNTHETIC
+2024-11-16,100.00,0.00,3,50.00,0.00,2.0,GOLDEN_SYNTHETIC
+2024-11-17,0.00,50.00,0,0.00,100.00,3.0,GOLDEN_SYNTHETIC
+2024-11-18,50.00,50.00,2,25.00,25.00,1.0,GOLDEN_SYNTHETIC
+2024-11-19,200.00,0.00,4,0.00,100.00,2.0,GOLDEN_SYNTHETIC
+2024-11-20,10.00,0.00,1,0.00,0.00,0.0,GOLDEN_SYNTHETIC
+2024-11-21,0.00,100.00,0,10.00,0.00,1.0,GOLDEN_SYNTHETIC
+2024-11-22,20.00,20.00,1,30.00,10.00,2.0,GOLDEN_SYNTHETIC
