@@ -5,8 +5,8 @@ All functions are pure free functions operating on a caller-supplied connection.
 """
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import date
+from dataclasses import dataclass, field
+from datetime import date, datetime
 from typing import Final, Literal
 
 import duckdb
@@ -744,4 +744,424 @@ def load_banrep_ibr_weekly(
     rows = conn.execute(sql, params).fetchall()
     return tuple(
         BanrepIbrWeekly(week_start=r[0], value=float(r[1])) for r in rows
+    )
+
+
+# ── Task 11.M.5: on-chain COPM / cCOP loaders ───────────────────────────────
+#
+# Nine pure loader functions — one per table ingested by
+# :func:`scripts.econ_pipeline.run_onchain_migration`. Each returns a
+# tuple of frozen dataclasses keyed by the table's natural order. Zero
+# network calls; zero side effects. Follow the ``load_fed_funds_weekly``
+# convention from Task 11.M.6.
+
+
+@dataclass(frozen=True, slots=True)
+class OnchainCopmMint:
+    """One COPM ``mint`` call (146 total across 2024-09-17 → 2026-04-14).
+
+    Keys: ``(tx_hash, call_block_time)`` is unique. ``amount_wei`` stored
+    as Python int (DuckDB HUGEINT → int loss-free).
+    """
+
+    call_block_date: date
+    call_block_time: datetime
+    tx_hash: str
+    tx_from: str
+    to_address: str
+    amount_wei: int
+    call_success: bool
+    call_block_number: int
+
+
+@dataclass(frozen=True, slots=True)
+class OnchainCopmBurn:
+    """One COPM ``burn`` or ``burnFrozen`` call (121 total).
+
+    ``account`` is nullable — ``burn`` variants that do not take an
+    explicit account argument leave the column NULL.
+    """
+
+    call_block_date: date
+    call_block_time: datetime
+    tx_hash: str
+    tx_from: str
+    account: str | None
+    amount_wei: int
+    call_success: bool
+    call_block_number: int
+    burn_kind: str
+
+
+@dataclass(frozen=True, slots=True)
+class OnchainCopmTransferSample:
+    """One row from the 10-row SAMPLE of COPM transfers.
+
+    The full 110,069-row raw dataset is retrievable via Dune query
+    7369028 (Dune web UI). The Dune MCP server paginates at 100 rows
+    per call, so a complete MCP-based retrieval would require ~1,101
+    paginated calls in a single agent session and is impractical.
+
+    Downstream X_d filter-design code MUST treat these rows as a
+    representative first-100-chronological sample rather than a
+    complete series — the ``is_sample`` flag (default True) makes that
+    contract explicit and unforgeable at the dataclass layer.
+    """
+
+    evt_block_date: date
+    evt_block_time: datetime
+    evt_tx_hash: str
+    from_address: str
+    to_address: str
+    value_wei: int
+    evt_block_number: int
+    is_sample: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class OnchainCopmFreezeThaw:
+    """One ``frozen``, ``thawed`` or ``burnedfrozen`` event (4 total)."""
+
+    evt_block_date: date
+    evt_block_time: datetime
+    evt_tx_hash: str
+    account: str
+    amount_wei: int | None
+    event_type: str
+    evt_block_number: int
+
+
+@dataclass(frozen=True, slots=True)
+class OnchainCopmTopEdge:
+    """One from→to volume-aggregate edge (top 100 by total_value_wei)."""
+
+    from_address: str
+    to_address: str
+    n_transfers: int
+    total_value_wei: int
+    first_time: datetime
+    last_time: datetime
+
+
+@dataclass(frozen=True, slots=True)
+class OnchainCopmDailyTransfer:
+    """One daily-aggregate row (522 dates covered)."""
+
+    evt_block_date: date
+    n_transfers: int
+    n_tx: int
+    n_distinct_from: int
+    n_distinct_to: int
+    total_value_wei: int
+
+
+@dataclass(frozen=True, slots=True)
+class OnchainCopmAddressActivity:
+    """One address with (inbound, outbound) activity counts + wei volume.
+
+    Source CSV is named ``top400`` but the actual row count is 300 — the
+    Dune query truncates at the activity threshold rather than a fixed
+    rank. 300 covers the full observed active-address universe.
+    """
+
+    address: str
+    n_inbound: int
+    inbound_wei: int
+    n_outbound: int
+    outbound_wei: int
+
+
+@dataclass(frozen=True, slots=True)
+class OnchainCopmTimePattern:
+    """One day-of-month / day-of-week / month bucket (86 rows)."""
+
+    kind: str
+    bucket: int
+    n: int
+    wei: int
+
+
+@dataclass(frozen=True, slots=True)
+class OnchainCcopDailyFlow:
+    """One Task 11.A daily flow row (COPM + cCOP USD, 585 dates).
+
+    ``ccop_*`` columns are NULL for pre-cCOP-launch dates
+    (< 2024-10-31).
+    """
+
+    date: date
+    copm_mint_usd: float
+    copm_burn_usd: float
+    copm_unique_minters: int
+    ccop_usdt_inflow_usd: float | None
+    ccop_usdt_outflow_usd: float | None
+    ccop_unique_senders: int | None
+    source_query_ids: str | None
+
+
+# ── Loader functions ────────────────────────────────────────────────────────
+
+
+def _parse_dune_timestamp(raw: str) -> datetime:
+    """Parse a Dune ``YYYY-MM-DD HH:MM:SS.sss UTC`` text back to ``datetime``.
+
+    Timestamp columns are stored as VARCHAR verbatim (see
+    :mod:`scripts.econ_schema`) to preserve byte-exact CSV round-trip.
+    Loaders that expose a ``datetime`` field re-parse the text here.
+    """
+    s = raw.strip()
+    if s.endswith(" UTC"):
+        s = s[:-4]
+    # Support both "YYYY-MM-DD HH:MM:SS" and "YYYY-MM-DD HH:MM:SS.sss".
+    for fmt in ("%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M:%S"):
+        try:
+            return datetime.strptime(s, fmt)
+        except ValueError:
+            continue
+    raise ValueError(f"cannot parse Dune timestamp: {raw!r}")
+
+
+def load_onchain_copm_mints(
+    conn: duckdb.DuckDBPyConnection,
+) -> tuple[OnchainCopmMint, ...]:
+    """Return all 146 COPM mint calls as frozen dataclasses."""
+    _check_table(conn, "onchain_copm_mints")
+    rows = conn.execute(
+        "SELECT call_block_date, call_block_time, tx_hash, tx_from, "
+        "to_address, amount_wei, call_success, call_block_number "
+        "FROM onchain_copm_mints "
+        "ORDER BY call_block_number, tx_hash"
+    ).fetchall()
+    return tuple(
+        OnchainCopmMint(
+            call_block_date=r[0],
+            call_block_time=_parse_dune_timestamp(r[1]),
+            tx_hash=r[2],
+            tx_from=r[3],
+            to_address=r[4],
+            amount_wei=int(r[5]),
+            call_success=bool(r[6]),
+            call_block_number=int(r[7]),
+        )
+        for r in rows
+    )
+
+
+def load_onchain_copm_burns(
+    conn: duckdb.DuckDBPyConnection,
+) -> tuple[OnchainCopmBurn, ...]:
+    """Return all 121 COPM burn / burnFrozen calls as frozen dataclasses."""
+    _check_table(conn, "onchain_copm_burns")
+    rows = conn.execute(
+        "SELECT call_block_date, call_block_time, tx_hash, tx_from, account, "
+        "amount_wei, call_success, call_block_number, burn_kind "
+        "FROM onchain_copm_burns "
+        "ORDER BY call_block_number, tx_hash, burn_kind"
+    ).fetchall()
+    return tuple(
+        OnchainCopmBurn(
+            call_block_date=r[0],
+            call_block_time=_parse_dune_timestamp(r[1]),
+            tx_hash=r[2],
+            tx_from=r[3],
+            account=r[4],
+            amount_wei=int(r[5]),
+            call_success=bool(r[6]),
+            call_block_number=int(r[7]),
+            burn_kind=r[8],
+        )
+        for r in rows
+    )
+
+
+def load_onchain_copm_transfers(
+    conn: duckdb.DuckDBPyConnection,
+) -> tuple[OnchainCopmTransferSample, ...]:
+    """Return the 10-row COPM transfer SAMPLE as frozen dataclasses.
+
+    Every returned row carries ``is_sample=True``. The complete
+    110,069-row raw dataset lives in Dune query 7369028; see
+    :class:`OnchainCopmTransferSample` for the re-execution note.
+    """
+    _check_table(conn, "onchain_copm_transfers_sample")
+    rows = conn.execute(
+        "SELECT evt_block_date, evt_block_time, evt_tx_hash, from_address, "
+        "to_address, value_wei, evt_block_number "
+        "FROM onchain_copm_transfers_sample "
+        "ORDER BY evt_block_number, evt_tx_hash, from_address, to_address"
+    ).fetchall()
+    return tuple(
+        OnchainCopmTransferSample(
+            evt_block_date=r[0],
+            evt_block_time=_parse_dune_timestamp(r[1]),
+            evt_tx_hash=r[2],
+            from_address=r[3],
+            to_address=r[4],
+            value_wei=int(r[5]),
+            evt_block_number=int(r[6]),
+        )
+        for r in rows
+    )
+
+
+def load_onchain_copm_freeze_thaw(
+    conn: duckdb.DuckDBPyConnection,
+) -> tuple[OnchainCopmFreezeThaw, ...]:
+    """Return all 4 freeze/thaw/burnedfrozen events as frozen dataclasses."""
+    _check_table(conn, "onchain_copm_freeze_thaw")
+    rows = conn.execute(
+        "SELECT evt_block_date, evt_block_time, evt_tx_hash, account, "
+        "amount_wei, event_type, evt_block_number "
+        "FROM onchain_copm_freeze_thaw "
+        "ORDER BY evt_block_number, event_type"
+    ).fetchall()
+    return tuple(
+        OnchainCopmFreezeThaw(
+            evt_block_date=r[0],
+            evt_block_time=_parse_dune_timestamp(r[1]),
+            evt_tx_hash=r[2],
+            account=r[3],
+            amount_wei=(None if r[4] is None else int(r[4])),
+            event_type=r[5],
+            evt_block_number=int(r[6]),
+        )
+        for r in rows
+    )
+
+
+def load_onchain_copm_top100_edges(
+    conn: duckdb.DuckDBPyConnection,
+) -> tuple[OnchainCopmTopEdge, ...]:
+    """Return the top 100 from→to volume edges as frozen dataclasses.
+
+    Ordered by the stored ``_csv_row_idx`` (CSV-native row order) — the
+    Dune CSV is sorted by ``n_transfers DESC`` which is NOT reproducible
+    from ``ORDER BY total_value_wei DESC`` on the data columns alone.
+    """
+    _check_table(conn, "onchain_copm_transfers_top100_edges")
+    rows = conn.execute(
+        "SELECT from_address, to_address, n_transfers, total_value_wei, "
+        "first_time, last_time "
+        "FROM onchain_copm_transfers_top100_edges "
+        "ORDER BY _csv_row_idx"
+    ).fetchall()
+    return tuple(
+        OnchainCopmTopEdge(
+            from_address=r[0],
+            to_address=r[1],
+            n_transfers=int(r[2]),
+            total_value_wei=int(r[3]),
+            first_time=_parse_dune_timestamp(r[4]),
+            last_time=_parse_dune_timestamp(r[5]),
+        )
+        for r in rows
+    )
+
+
+def load_onchain_copm_daily_transfers(
+    conn: duckdb.DuckDBPyConnection,
+) -> tuple[OnchainCopmDailyTransfer, ...]:
+    """Return 522 daily transfer aggregates as frozen dataclasses."""
+    _check_table(conn, "onchain_copm_daily_transfers")
+    rows = conn.execute(
+        "SELECT evt_block_date, n_transfers, n_tx, n_distinct_from, "
+        "n_distinct_to, total_value_wei "
+        "FROM onchain_copm_daily_transfers "
+        "ORDER BY evt_block_date"
+    ).fetchall()
+    return tuple(
+        OnchainCopmDailyTransfer(
+            evt_block_date=r[0],
+            n_transfers=int(r[1]),
+            n_tx=int(r[2]),
+            n_distinct_from=int(r[3]),
+            n_distinct_to=int(r[4]),
+            total_value_wei=int(r[5]),
+        )
+        for r in rows
+    )
+
+
+def load_onchain_copm_address_activity(
+    conn: duckdb.DuckDBPyConnection,
+) -> tuple[OnchainCopmAddressActivity, ...]:
+    """Return the 300 top-activity addresses as frozen dataclasses.
+
+    Ordered by the stored ``_csv_row_idx`` (CSV-native row order) — the
+    Dune CSV's tie-break on ``(n_inbound + n_outbound)`` is not a
+    monotone function of any single column, so the source order is the
+    only deterministic ordering available.
+    """
+    _check_table(conn, "onchain_copm_address_activity_top400")
+    rows = conn.execute(
+        "SELECT address, n_inbound, inbound_wei, n_outbound, outbound_wei "
+        "FROM onchain_copm_address_activity_top400 "
+        "ORDER BY _csv_row_idx"
+    ).fetchall()
+    return tuple(
+        OnchainCopmAddressActivity(
+            address=r[0],
+            n_inbound=int(r[1]),
+            inbound_wei=int(r[2]),
+            n_outbound=int(r[3]),
+            outbound_wei=int(r[4]),
+        )
+        for r in rows
+    )
+
+
+def load_onchain_copm_time_patterns(
+    conn: duckdb.DuckDBPyConnection,
+) -> tuple[OnchainCopmTimePattern, ...]:
+    """Return 86 day-of-month / day-of-week / month buckets.
+
+    ``bucket`` is stored as VARCHAR (lexical CSV order preserved) and
+    cast back to int for the frozen-dataclass consumer contract.
+    """
+    _check_table(conn, "onchain_copm_time_patterns")
+    rows = conn.execute(
+        "SELECT kind, bucket, n, wei "
+        "FROM onchain_copm_time_patterns "
+        "ORDER BY kind, bucket"
+    ).fetchall()
+    return tuple(
+        OnchainCopmTimePattern(
+            kind=r[0],
+            bucket=int(r[1]),
+            n=int(r[2]),
+            wei=int(r[3]),
+        )
+        for r in rows
+    )
+
+
+def load_onchain_daily_flow(
+    conn: duckdb.DuckDBPyConnection,
+) -> tuple[OnchainCcopDailyFlow, ...]:
+    """Return the 585 Task 11.A daily COPM + cCOP USD flow rows.
+
+    USD columns are stored as VARCHAR (6-decimal CSV text preserved)
+    and cast back to ``float`` here for the frozen-dataclass consumer
+    contract.
+    """
+    _check_table(conn, "onchain_copm_ccop_daily_flow")
+    rows = conn.execute(
+        "SELECT date, copm_mint_usd, copm_burn_usd, copm_unique_minters, "
+        "ccop_usdt_inflow_usd, ccop_usdt_outflow_usd, ccop_unique_senders, "
+        "source_query_ids "
+        "FROM onchain_copm_ccop_daily_flow "
+        "ORDER BY date"
+    ).fetchall()
+    return tuple(
+        OnchainCcopDailyFlow(
+            date=r[0],
+            copm_mint_usd=float(r[1]),
+            copm_burn_usd=float(r[2]),
+            copm_unique_minters=int(r[3]),
+            ccop_usdt_inflow_usd=(None if r[4] is None else float(r[4])),
+            ccop_usdt_outflow_usd=(None if r[5] is None else float(r[5])),
+            ccop_unique_senders=(None if r[6] is None else int(r[6])),
+            source_query_ids=r[7],
+        )
+        for r in rows
     )
