@@ -332,8 +332,12 @@ def test_onchain_xd_weekly_roundtrip(
     daily = load_onchain_daily_flow(xd_conn)
     panel = compute_weekly_xd(daily)
 
-    # Persisted path.
-    persisted = load_onchain_xd_weekly(xd_conn)
+    # Persisted path — filter to the supply-channel proxy_kind since
+    # Rev-5.2.1 Task 11.N.1 Step 0 relaxed the CHECK constraint and
+    # the distribution-channel (b2b_to_b2c_net_flow_usd) rows now
+    # co-exist for the same Friday. This test exercises ONLY the
+    # supply-channel round-trip (compute_weekly_xd's contract).
+    persisted = load_onchain_xd_weekly(xd_conn, proxy_kind=PROXY_KIND)
 
     # Row count alignment.
     assert len(persisted) == len(panel.weeks), (

@@ -980,8 +980,9 @@ def load_onchain_copm_transfers(
     """Return the 10-row COPM transfer SAMPLE as frozen dataclasses.
 
     Every returned row carries ``is_sample=True``. The complete
-    110,069-row raw dataset lives in Dune query 7369028; see
-    :class:`OnchainCopmTransferSample` for the re-execution note.
+    110,069-row raw dataset lives in the ``onchain_copm_transfers``
+    table after Task 11.N.1 lands — use
+    :func:`load_onchain_copm_transfers_full` to access it.
     """
     _check_table(conn, "onchain_copm_transfers_sample")
     rows = conn.execute(
@@ -999,6 +1000,69 @@ def load_onchain_copm_transfers(
             to_address=r[4],
             value_wei=int(r[5]),
             evt_block_number=int(r[6]),
+        )
+        for r in rows
+    )
+
+
+# ── Task 11.N.1 (Rev-5.2.1): full COPM transfers ────────────────────────────
+
+
+@dataclass(frozen=True, slots=True)
+class OnchainCopmTransfer:
+    """One row from the FULL ``onchain_copm_transfers`` table (~110k rows).
+
+    This is the Rev-5.2.1 Task 11.N.1 companion to
+    :class:`OnchainCopmTransferSample`. Where the sample dataclass
+    carries an ``is_sample=True`` flag to discourage downstream consumers
+    from treating 10 sample rows as the complete series, this class
+    represents real Transfer events retrieved directly from Celo RPC
+    (primary) or Alchemy (secondary) — the ``log_index`` field ties each
+    row back to its on-chain event position.
+
+    Primary key: ``(evt_tx_hash, log_index)``. A single transaction can
+    emit multiple Transfer events (e.g. a mint fires both
+    ``0x0 → treasury`` and the immediately-following treasury → hub
+    transfer in the same tx); ``log_index`` disambiguates them.
+    """
+
+    evt_block_date: date
+    evt_block_time: datetime
+    evt_tx_hash: str
+    from_address: str
+    to_address: str
+    value_wei: int
+    evt_block_number: int
+    log_index: int
+
+
+def load_onchain_copm_transfers_full(
+    conn: duckdb.DuckDBPyConnection,
+) -> tuple[OnchainCopmTransfer, ...]:
+    """Return the FULL COPM transfers set from ``onchain_copm_transfers``.
+
+    Ordered by ``(evt_block_number, log_index)`` — the natural on-chain
+    event order, which is deterministic and reproducible. Returns an
+    empty tuple when the table has not yet been populated by the Task
+    11.N.1 Step-4 backfill.
+    """
+    _check_table(conn, "onchain_copm_transfers")
+    rows = conn.execute(
+        "SELECT evt_block_date, evt_block_time, evt_tx_hash, from_address, "
+        "to_address, value_wei, evt_block_number, log_index "
+        "FROM onchain_copm_transfers "
+        "ORDER BY evt_block_number, log_index"
+    ).fetchall()
+    return tuple(
+        OnchainCopmTransfer(
+            evt_block_date=r[0],
+            evt_block_time=_parse_dune_timestamp(r[1]),
+            evt_tx_hash=r[2],
+            from_address=r[3],
+            to_address=r[4],
+            value_wei=int(r[5]),
+            evt_block_number=int(r[6]),
+            log_index=int(r[7]),
         )
         for r in rows
     )
@@ -1163,16 +1227,33 @@ def load_onchain_xd_weekly(
     conn: duckdb.DuckDBPyConnection,
     start: date | None = None,
     end: date | None = None,
+    *,
+    proxy_kind: str | None = None,
 ) -> tuple[OnchainXdWeekly, ...]:
     """Return rows from ``onchain_xd_weekly`` as frozen dataclasses.
 
     Optionally date-filtered on the ``week_start`` Friday anchor.
+
+    Rev-5.2.1 Task 11.N.1 (PM-P1): ``proxy_kind`` filter — ``None``
+    returns all channels (both ``'net_primary_issuance_usd'`` and
+    ``'b2b_to_b2c_net_flow_usd'`` if both are populated); an explicit
+    string restricts to that one channel. Callers that only want the
+    supply-channel surrogate can pass
+    ``proxy_kind='net_primary_issuance_usd'``; callers using the
+    distribution channel pass ``'b2b_to_b2c_net_flow_usd'``.
     """
     _check_table(conn, "onchain_xd_weekly")
     where, params = _date_filter(start, end, col="week_start")
+    if proxy_kind is not None:
+        # Compose filters — add proxy_kind predicate to the date filter.
+        if where:
+            where = where + " AND proxy_kind = ?"
+        else:
+            where = " WHERE proxy_kind = ?"
+        params = [*params, proxy_kind]
     sql = (
         "SELECT week_start, value_usd, is_partial_week, proxy_kind "
-        f"FROM onchain_xd_weekly{where} ORDER BY week_start"
+        f"FROM onchain_xd_weekly{where} ORDER BY week_start, proxy_kind"
     )
     rows = conn.execute(sql, params).fetchall()
     return tuple(

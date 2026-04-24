@@ -57,7 +57,7 @@ Data types: addresses lowercase `0x`-prefixed 40-hex; `*_wei` / `amount` / `valu
 - **Transfers**: 2024-09-17 → 2026-04-24 (522 distinct dates)
 - **Freeze/thaw**: 2024-12-13 → 2024-12-16 (single account)
 
-## IMPORTANT CAVEAT — Raw transfers CSV incomplete
+## IMPORTANT CAVEAT — Raw transfers CSV incomplete (Task 11.M only)
 
 The full 110,069-row raw transfer dataset exceeded the practical limit of Dune MCP pagination
 (100 rows per `getExecutionResults` call → ~1,101 paginated calls would be required, each
@@ -74,6 +74,63 @@ classification) reduce to SQL-side aggregates that are computed in Dune and save
 smaller supporting CSVs above. The per-tx raw rows are not used by the profile analysis
 beyond spot-checks; they would only be needed for per-tx labelling (e.g. identifying a
 specific swap on DEX-X on date-Y), which is out of scope for Task 11.M.
+
+## Task 11.N.1 (Rev-5.2.1): full raw-transfers backfill → `copm_transfers_full.csv`
+
+Task 11.N escalated `X_D_INSUFFICIENT_DATA` because X_d was committed as a surrogate
+(`net_primary_issuance_usd`) in the absence of the full 110k-row raw-transfers dataset.
+Task 11.N.1 backfills the full dataset via a free on-chain-native data path so the
+distribution-channel X_d (B2B→B2C net flow) can be computed directly.
+
+### Data-path summary
+
+- **Primary (on-chain-native, no API key)**: Celo public RPCs
+  `https://forno.celo.org` (preferred) + `https://rpc.ankr.com/celo` (rotational fallback)
+  via `eth_getLogs` paginated over 100k-block windows (plan's 10k-block specification is the
+  minimum; the orchestrator uses the forno-tolerated 100k max and narrows via binary-search
+  on any `query returned more than N results` server-side cap).
+- **Secondary fallback**: Alchemy `getAssetTransfers` at
+  `https://celo-mainnet.g.alchemy.com/v2/<ALCHEMY_API_KEY>` with page keys (1000 transfers
+  per call). Engaged only if (i) row count < 110,069 × 0.99, (ii) an endpoint times out on 3
+  consecutive ranges, (iii) windowing narrowing collapses below 1k blocks, or (iv) total
+  wall-time exceeds 30 minutes. HALT-on-missing for `ALCHEMY_API_KEY`.
+
+### Checkpoint (Rev-5.2.1 PM-P2)
+
+`contracts/.scratch/copm_transfers_backfill_progress.json` — updated after every completed
+100k-block window. On restart, orchestration resumes from `last_completed_end_block + 1`
+rather than from block zero.
+
+### Schema
+
+`copm_transfers_full.csv` mirrors the 10-row sample's columns plus a `log_index` disambiguator:
+`evt_block_date, evt_block_time, evt_tx_hash, from_address, to_address, value_wei,
+evt_block_number, log_index`. The `log_index` is the natural on-chain event position within a
+block — a single transaction can emit multiple Transfer events (e.g. a mint fires both
+`0x0 → treasury` and the subsequent treasury → hub transfer in the same tx); `log_index`
+makes the PK `(evt_tx_hash, log_index)` non-colliding.
+
+### Provenance (Step 4 commit, 2026-04-24)
+
+<!-- BACKFILL_PROVENANCE_BEGIN -->
+- **Data source used**: forno.celo.org (primary, no API key)
+- **Block range covered**: 27,786,128 → 30,285,761 (inclusive; first transfer → last block reached)
+- **Pull timestamp (UTC)**: 2026-04-24
+- **Row count achieved**: **52,068 rows** (47.3% of Dune-reported 110,069 → 52.7% under target)
+- **Fallback triggered?**: Attempted — Alchemy 403 (invalid free-tier Celo key) → HALT-on-missing engaged
+- **Wall-clock time**: ~35 min across multiple retry attempts (forno sporadic 503s required resume loops)
+- **Status**: `X_D_STILL_INSUFFICIENT` — row count falls outside the ±1 % tolerance of the 110,069 Dune target; distribution-channel X_d is COMPUTED (16 Fridays of B2B→B2C flow) but spans only 2024-09-17 → 2025-02-09 (~20 weeks), NOT the full 85-week panel window. Downstream Task 11.O consumes this rev-1 as a provisional secondary under the supply-channel surrogate primary; a follow-up Task 11.N.1b is recommended to either (a) re-run when forno infrastructure stabilises, or (b) provision a working Alchemy Celo key to complete the scan.
+
+#### Backfill-failure diagnostic (for Task 11.N.1b)
+
+- **Primary RPC** (`forno.celo.org`): worked for blocks 27.79M-30.29M but returns consistent HTTP 503 on later ranges (sporadic — some 100k-block requests succeed, others fail persistently for >2 min). Forno's ``eth_blockNumber`` stays healthy, isolating the 503 to `eth_getLogs`. Suggests upstream-node variability for log-index scans.
+- **Rotational fallback** (`rpc.ankr.com/celo`): rejected all `eth_getLogs` calls with windows ≥ 1,000 blocks ("Block range is too large"). Free-tier Ankr is not viable for this pull volume.
+- **Secondary fallback** (Alchemy Celo): returned HTTP 403 Forbidden for the ALCHEMY_API_KEY present in the environment. Either the key is invalid, the Celo-mainnet endpoint is not enabled on the free tier for this key, or a distinct Celo-specific key is required.
+
+#### Retry semantics
+
+Resumability holds: the checkpoint at `contracts/.scratch/copm_transfers_backfill_progress.json` plus the `copm_transfers_full.csv` cumulative-append write pattern mean a subsequent rerun of `backfill_copm_transfers()` will resume from block 30,285,761 + 1 rather than restart from deployment. Running the function a second time with the CSV intact will append new rows and update the checkpoint transparently.
+<!-- BACKFILL_PROVENANCE_END -->
 
 ## Known irregularities
 
