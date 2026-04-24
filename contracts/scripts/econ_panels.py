@@ -281,6 +281,70 @@ def build_daily_panel(
     """, [lookback, sample_start])
 
 
+# ── Task 11.M.6: weekly rate panel (DFF + IBR level) ─────────────────────────
+#
+# Purely ADDITIVE extension — DOES NOT touch ``weekly_panel``. The Rev-4
+# ``weekly_panel`` SHA-256 fingerprint
+# (``769ec955e72ddfcb6ff5b16e9c949fd8f53d9e8c349fc56ce96090fce81d791f``)
+# is a project-wide invariant asserted by ``test_readme_render`` and the
+# NB2/NB3 notebook handoff cells, so this task exposes the new rate
+# columns via a separate ``weekly_rate_panel`` VIEW built from the raw
+# tables.
+#
+# Columns:
+#   * ``week_start``         Friday-anchored ISO week start (Bogota time
+#                             matches US East by weekday; DuckDB
+#                             ``date_trunc('week', date)`` yields Monday
+#                             so we shift +4 days to land on Friday).
+#   * ``fed_funds_weekly``   Friday close of the FRED DFF daily series.
+#   * ``banrep_ibr_weekly``  Friday close of banrep_ibr_daily.
+#   * ``trm_friday_close``   Friday close of banrep_trm_daily.
+#
+# Y_asset_leg per RC plan-review is computable downstream as:
+#   (banrep_ibr_weekly - fed_funds_weekly) / 52 + trm_return_weekly
+
+
+def build_weekly_rate_panel(conn: duckdb.DuckDBPyConnection) -> None:
+    """Build ``weekly_rate_panel`` VIEW — additive to ``weekly_panel``.
+
+    Friday-anchored weekly closes for DFF, IBR-overnight-ER and TRM. A
+    VIEW (not a TABLE) is used so no materialized state competes with
+    the Rev-4 fingerprint-locked ``weekly_panel``. Idempotent: uses
+    ``CREATE OR REPLACE VIEW``.
+    """
+    conn.execute("""
+    CREATE OR REPLACE VIEW weekly_rate_panel AS
+    WITH
+    fed_funds_friday AS (
+        SELECT date::DATE AS week_start, value AS fed_funds_weekly
+        FROM fred_daily
+        WHERE series_id = 'DFF'
+          AND EXTRACT('isodow' FROM date) = 5
+    ),
+    ibr_friday AS (
+        SELECT date::DATE AS week_start, ibr_overnight_er AS banrep_ibr_weekly
+        FROM banrep_ibr_daily
+        WHERE EXTRACT('isodow' FROM date) = 5
+    ),
+    trm_friday AS (
+        SELECT date::DATE AS week_start, trm AS trm_friday_close
+        FROM banrep_trm_daily
+        WHERE EXTRACT('isodow' FROM date) = 5
+    )
+    SELECT
+        COALESCE(ff.week_start, ib.week_start, tf.week_start) AS week_start,
+        ff.fed_funds_weekly,
+        ib.banrep_ibr_weekly,
+        tf.trm_friday_close
+    FROM fed_funds_friday ff
+    FULL OUTER JOIN ibr_friday ib ON ib.week_start = ff.week_start
+    FULL OUTER JOIN trm_friday tf ON tf.week_start
+                                   = COALESCE(ff.week_start, ib.week_start)
+    WHERE COALESCE(ff.week_start, ib.week_start, tf.week_start) IS NOT NULL
+    ORDER BY week_start
+    """)
+
+
 # ── AR(1) surprise construction ──────────────────────────────────────────────
 
 

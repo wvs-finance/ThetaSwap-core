@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS banrep_meeting_calendar (
 
 _DDL_FRED_DAILY: Final[str] = """
 CREATE TABLE IF NOT EXISTS fred_daily (
-    series_id VARCHAR NOT NULL CHECK (series_id IN ('VIXCLS', 'DCOILWTICO', 'DCOILBRENTEU')),
+    series_id VARCHAR NOT NULL CHECK (series_id IN ('VIXCLS', 'DCOILWTICO', 'DCOILBRENTEU', 'DFF')),
     date DATE NOT NULL,
     value DOUBLE,
     PRIMARY KEY (series_id, date)

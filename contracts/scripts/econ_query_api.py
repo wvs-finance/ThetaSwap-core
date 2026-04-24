@@ -75,6 +75,38 @@ class DateCoverage:
     null_count: int
 
 
+# ── Task 11.M.6 types: Fed funds + BanRep IBR weekly series ─────────────────
+
+
+@dataclass(frozen=True, slots=True)
+class FedFundsWeekly:
+    """One weekly-close observation of the FRED DFF series.
+
+    ``week_start`` is the Friday the close was observed on; ``value`` is
+    the DFF percent-per-annum figure. Friday anchoring mirrors the
+    ``vix_friday_close`` convention already used in the Rev-4 weekly
+    panel and is the operationally stable closure point for the US
+    Federal Reserve's daily effective-rate publication.
+    """
+
+    week_start: date
+    value: float
+
+
+@dataclass(frozen=True, slots=True)
+class BanrepIbrWeekly:
+    """One weekly-close observation of the BanRep IBR overnight rate.
+
+    ``week_start`` is the Friday the rate was observed on; ``value`` is
+    the IBR overnight effective rate (``ibr_overnight_er``) as
+    published by BanRep. Friday anchoring matches ``FedFundsWeekly``
+    so (IBR − DFF) is computable on a single date-aligned frame.
+    """
+
+    week_start: date
+    value: float
+
+
 # ── Internal helpers ─────────────────────────────────────────────────────────
 
 
@@ -650,3 +682,66 @@ def get_intervention_details(
         "ORDER BY date"
     )
     return conn.execute(sql, params).fetchdf()
+
+
+# ── Task 11.M.6: Fed funds + BanRep IBR weekly loaders ──────────────────────
+
+
+def load_fed_funds_weekly(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> tuple[FedFundsWeekly, ...]:
+    """Return Friday-anchored weekly FRED DFF closes as frozen dataclasses.
+
+    Pulls the Friday (isodow=5) close of the DFF daily series from
+    ``fred_daily``. Returns a tuple of :class:`FedFundsWeekly` — an
+    immutable, ordered collection keyed on ``week_start``. NULL
+    observations in the raw series are filtered; callers needing a
+    null-aware view should query the raw table directly.
+    """
+    _check_table(conn, "fred_daily")
+    where, params = _date_filter(start, end, col="date")
+    release_clause = (
+        "series_id = 'DFF' AND value IS NOT NULL "
+        "AND EXTRACT('isodow' FROM date) = 5"
+    )
+    if where:
+        where += f" AND {release_clause}"
+    else:
+        where = f" WHERE {release_clause}"
+    sql = f"SELECT date, value FROM fred_daily{where} ORDER BY date"
+    rows = conn.execute(sql, params).fetchall()
+    return tuple(
+        FedFundsWeekly(week_start=r[0], value=float(r[1])) for r in rows
+    )
+
+
+def load_banrep_ibr_weekly(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> tuple[BanrepIbrWeekly, ...]:
+    """Return Friday-anchored weekly BanRep IBR overnight ER closes.
+
+    Pulls the Friday (isodow=5) close of the IBR overnight effective
+    rate from ``banrep_ibr_daily``. Friday anchoring mirrors
+    :func:`load_fed_funds_weekly` so the two series can be differenced
+    row-wise to form the (IBR − DFF) carry-leg component of
+    ``Y_asset_leg``.
+    """
+    _check_table(conn, "banrep_ibr_daily")
+    where, params = _date_filter(start, end, col="date")
+    release_clause = "EXTRACT('isodow' FROM date) = 5"
+    if where:
+        where += f" AND {release_clause}"
+    else:
+        where = f" WHERE {release_clause}"
+    sql = (
+        f"SELECT date, ibr_overnight_er FROM banrep_ibr_daily{where} "
+        "ORDER BY date"
+    )
+    rows = conn.execute(sql, params).fetchall()
+    return tuple(
+        BanrepIbrWeekly(week_start=r[0], value=float(r[1])) for r in rows
+    )
