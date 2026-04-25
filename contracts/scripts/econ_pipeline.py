@@ -2901,8 +2901,12 @@ def ingest_y3_weekly(
             continue
 
         # 2) WC-CPI components → composite → weekly LOCF → weekly Δlog.
+        # Rev-5.3.2 Task 11.N.2d-rev: forward ``conn`` so the kwarg-aware
+        # dispatch in ``fetch_country_wc_cpi_components`` activates the
+        # CO → DANE and BR → BCB source upgrades. Without this kwarg the
+        # fetcher falls back to the IMF-IFS path for all countries.
         try:
-            comp = fetch_country_wc_cpi_components(country, start, end)
+            comp = fetch_country_wc_cpi_components(country, start, end, conn=conn)
         except Y3FetchError:
             skipped.append(country)
             continue
