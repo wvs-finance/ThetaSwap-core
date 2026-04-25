@@ -68,8 +68,11 @@ from scripts.carbon_calibration import (
 class TestStep0Constants:
     """Module-level Final constants match the design-doc + corrections values byte-exact."""
 
-    def test_n_min_is_80(self) -> None:
-        assert cc.N_MIN == 80, "N_MIN must equal 80 per design doc §3"
+    def test_n_min_is_75(self) -> None:
+        # N_MIN relaxed from design-doc §3's 80 to 75 per Rev-5.3.1 CORRECTIONS
+        # (user-approved 2026-04-25 path α). Power floor preserved:
+        # required_power(75, 13, 0.40) = 0.864 ≥ POWER_MIN=0.80.
+        assert cc.N_MIN == 75, "N_MIN must equal 75 per Rev-5.3.1 CORRECTIONS (relaxed from 80; power floor preserved)"
 
     def test_power_min_is_080(self) -> None:
         assert cc.POWER_MIN == 0.80, "POWER_MIN must equal 0.80 per design doc §3"

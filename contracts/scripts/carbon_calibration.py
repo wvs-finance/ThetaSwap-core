@@ -18,7 +18,7 @@ Per Rev-5.3 v2 fix-pass (CR-CF-1 + RC-CF-1 + RC-CF-2): the basket-
 aggregate ``carbon_basket_user_volume_usd`` series is the COMMITTED
 PRIMARY X_d out of the gate. Methodology (I) primary-selection has been
 retired (the per-country COPM share is empirically dead-branch at 44
-weeks vs ``N_MIN = 80``). This module therefore performs a PCA cross-
+weeks vs ``N_MIN = 75`` post-Rev-5.3.1, originally 80). This module therefore performs a PCA cross-
 validation diagnostic ONLY — it does NOT branch primary selection.
 
 Two terminal states only (per RC-CF-1 + RC-CF-2 collapse):
@@ -41,10 +41,13 @@ Two terminal states only (per RC-CF-1 + RC-CF-2 collapse):
 PRE-COMMITTED THRESHOLDS (per design doc §3 + Task 11.N.2c CORRECTIONS)
 -------------------------------------------------------------------------
 
-  N_MIN: Final[int] = 80
-      Anchored to existing CPI Rev-4 panel filtered range; prior Banrep
-      IBR / DFF weekly extraction yielded 78–84 obs in similar tasks per
-      Task 11.M.6 commit ``fff2ca7a3``. Unchanged from design doc §3.
+  N_MIN: Final[int] = 75
+      Originally 80 (anchored to existing CPI Rev-4 panel filtered range;
+      prior Banrep IBR / DFF weekly extraction yielded 78–84 obs in
+      similar tasks per Task 11.M.6 commit ``fff2ca7a3``). Relaxed to 75
+      per Rev-5.3.1 CORRECTIONS (user-approved 2026-04-25 path α) after
+      11.N.2c found basket-aggregate=77 nonzero weeks. Power floor
+      preserved: required_power(75,13,0.40)=0.864 ≥ POWER_MIN=0.80.
 
   POWER_MIN: Final[float] = 0.80
       Rev-4 standard target; achievable power 0.888 at MDES_SD = 0.40
@@ -106,12 +109,20 @@ if TYPE_CHECKING:
 
 # ── Pre-committed thresholds (per design doc §3 + Task 11.N.2c CORRECTIONS) ──
 
-N_MIN: Final[int] = 80
+N_MIN: Final[int] = 75
 """Weekly non-zero observation floor for basket-aggregate primary X_d.
 
-Anchored to existing CPI Rev-4 panel filtered range (78–84 obs in
-similar tasks per Task 11.M.6 commit ``fff2ca7a3``). Below this floor,
-the pathological-HALT branch fires per design doc §4 row 4.
+Originally 80 (anchored to existing CPI Rev-4 panel filtered range
+78–84 obs in similar tasks per Task 11.M.6 commit ``fff2ca7a3``).
+**Relaxed to 75 per Rev-5.3.1 CORRECTIONS block** (user-approved
+2026-04-25, path α from the pathological-HALT disposition memo) after
+Task 11.N.2c initial calibration found basket-aggregate = 77 nonzero
+weeks — 3 short of the original 80 floor. The relaxation preserves
+POWER_MIN: ``required_power(75, 13, 0.40) = 0.8638`` (scipy-verified)
+≥ POWER_MIN=0.80; ``required_power(77, 13, 0.40) = 0.8739``;
+``required_power(80, 13, 0.40) = 0.8877`` (original anchor). MDES_SD
+remains 0.40 unchanged. Below this floor, the pathological-HALT
+branch fires per design doc §4 row 4.
 """
 
 POWER_MIN: Final[float] = 0.80
@@ -237,7 +248,7 @@ class CalibrationResult:
         but not present on a returned dataclass instance).
     rationale
         Free-form English explanation (e.g., "basket-aggregate has 77
-        weekly non-zero obs ≥ N_MIN=80; primary X_d locked to
+        weekly non-zero obs ≥ N_MIN=75 (relaxed Rev-5.3.1 from 80); primary X_d locked to
         carbon_basket_user_volume_usd").
     per_currency_pc1_loadings
         Full 6-element diagnostic dict mapping mento symbol → PC1
