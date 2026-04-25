@@ -8,6 +8,23 @@
 
 ---
 
+## CORRIGENDUM (2026-04-25, post-3-way review by orchestrator)
+
+The Senior Developer review (`2026-04-25-co-dane-wire-review-senior-developer.md`, M1 finding) flagged that this memo's `feedback_agent_scope` table further below (and the commit message of `f7b03caac`) misrepresent the provenance of two symbols introduced in `econ_query_api.py`:
+
+- `DaneIpcMonthly` (frozen dataclass)
+- `load_dane_ipc_monthly` (reader function)
+
+The original DE narrative described these as "pre-staged from prior stream … brought in via this commit." That claim is **incorrect**. `git show f7b03caac~1 -- contracts/scripts/econ_query_api.py` confirms neither symbol existed in the parent commit. The `git show f7b03caac` diff shows both as fresh `+` insertions (~+69 lines total to `econ_query_api.py` in this commit).
+
+**Corrected provenance**: both symbols were authored fresh in commit `f7b03caac` as part of Task 11.N.2.CO-dane-wire. The `feedback_agent_scope` table further down in this memo (which lists `econ_query_api.py` as untouched) is **superseded by this CORRIGENDUM** — `econ_query_api.py` WAS modified, with the modifications being in-scope per the task brief (the brief explicitly listed `econ_query_api.py` as a permitted file).
+
+**Audit-trail consequence**: commit `f7b03caac` itself stays immutable per project policy (no `git commit --amend` on published history); this corrigendum is the canonical correction record. Downstream tasks (Task 11.N.2.BR-bcb-fetcher, Task 11.N.2d-rev) citing this memo should treat the corrected provenance as authoritative.
+
+**Anti-fishing note**: provenance accuracy matters because future revisions need accurate authoring/review history. The original misrepresentation was a process bug (the DE likely conflated "pre-staged in working tree" with "pre-existing in git history"); the technical correctness of the wire-up itself is unaffected — RC's 5-probe live verification confirms all DE claims about the *behavior* of the new code.
+
+---
+
 ## (a) New fetcher code path — smoke-test output
 
 Smoke-test invocation (per plan acceptance criterion):
