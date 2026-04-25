@@ -747,6 +747,75 @@ def load_banrep_ibr_weekly(
     )
 
 
+# ── Rev-5.3.2 Task 11.N.2.CO-dane-wire: DANE IPC monthly reader ─────────────
+#
+# Pure free function over the existing-and-populated ``dane_ipc_monthly``
+# DuckDB table. Consume-only: no schema mutation, no re-ingestion, no
+# normalization. The DANE table is owned upstream by the ingest path
+# that landed it on 2026-04-16 (861 rows, 1954-07 → 2026-03); this
+# reader is read-side state only.
+#
+# Live schema (per the canonical ``contracts/data/structural_econ.duckdb``):
+#     date            DATE PRIMARY KEY (first-of-month)
+#     ipc_index       DOUBLE
+#     ipc_pct_change  DOUBLE
+#     _ingested_at    TIMESTAMP (audit metadata, not surfaced)
+#
+# Note: the plan body cites ``ipc_value`` / ``monthly_variation_pct`` as
+# the column names; the live schema uses ``ipc_index`` / ``ipc_pct_change``
+# per RC re-review advisory A1. The live schema is authoritative.
+
+
+@dataclass(frozen=True, slots=True)
+class DaneIpcMonthly:
+    """One row of the DANE IPC (Colombian CPI) monthly publication.
+
+    ``date`` is first-of-month (DANE convention). ``ipc_index`` is the
+    headline IPC level (base 2018=100 per DANE's published methodology).
+    ``ipc_pct_change`` is the month-on-month percent change.
+
+    Used by Task 11.N.2.CO-dane-wire to drive the CO branch of
+    ``fetch_country_wc_cpi_components`` in the Y₃ inequality-differential
+    pipeline (replacing the IMF-IFS-via-DBnomics path with a direct
+    DANE-source path that lands ≤ 2 months stale instead of ≥ 6).
+    """
+
+    date: date
+    ipc_index: float
+    ipc_pct_change: float | None
+
+
+def load_dane_ipc_monthly(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> tuple[DaneIpcMonthly, ...]:
+    """Return DANE IPC monthly rows as frozen dataclasses, ascending by ``date``.
+
+    Reads the existing ``dane_ipc_monthly`` table (consume-only — no
+    mutation, no migration). ``[start, end]`` inclusive bounds match the
+    project-wide ``_date_filter`` semantics. Rows whose
+    ``ipc_pct_change`` is NULL (the earliest observation in the series)
+    are surfaced as ``None`` in the dataclass — the natural value rather
+    than synthesised zero.
+    """
+    _check_table(conn, "dane_ipc_monthly")
+    where, params = _date_filter(start, end, col="date")
+    sql = (
+        f"SELECT date, ipc_index, ipc_pct_change FROM dane_ipc_monthly"
+        f"{where} ORDER BY date"
+    )
+    rows = conn.execute(sql, params).fetchall()
+    return tuple(
+        DaneIpcMonthly(
+            date=r[0],
+            ipc_index=float(r[1]),
+            ipc_pct_change=(None if r[2] is None else float(r[2])),
+        )
+        for r in rows
+    )
+
+
 # ── Task 11.M.5: on-chain COPM / cCOP loaders ───────────────────────────────
 #
 # Nine pure loader functions — one per table ingested by

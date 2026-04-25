@@ -38,10 +38,13 @@ graceful-degradation paths (3-country aggregate fallback).
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Final, Literal
+from typing import TYPE_CHECKING, Final, Literal
 
 import pandas as pd
 import requests
+
+if TYPE_CHECKING:
+    import duckdb
 
 CountryCode = Literal["CO", "BR", "KE", "EU"]
 
@@ -242,6 +245,8 @@ def fetch_country_wc_cpi_components(
     country: CountryCode,
     start: date,
     end: date,
+    *,
+    conn: "duckdb.DuckDBPyConnection | None" = None,
 ) -> pd.DataFrame:
     """Monthly CPI component levels (food / energy / housing / transport).
 
@@ -254,7 +259,13 @@ def fetch_country_wc_cpi_components(
 
     Source-routing:
       * EU: Eurostat HICP via DBnomics — full COICOP-2 split available.
-      * CO/BR/KE: IMF IFS headline CPI via DBnomics — split components
+      * CO (Rev-5.3.2 Task 11.N.2.CO-dane-wire): when ``conn`` is provided,
+        consume the existing-and-populated ``dane_ipc_monthly`` DuckDB
+        table directly (DANE source, ≤ 2-month staleness). When ``conn``
+        is None, fall back to the IMF-IFS-via-DBnomics path — preserved
+        as the single-source-IMF-only sensitivity comparator consumed by
+        Task 11.N.2d.1-reframe.
+      * BR/KE: IMF IFS headline CPI via DBnomics — split components
         are not consistently published on free-tier APIs at monthly
         cadence for these countries; per design doc §10 row 2
         substitution-fallback rule, the headline level is broadcast
@@ -263,10 +274,18 @@ def fetch_country_wc_cpi_components(
         countries — a well-defined monthly inflation series whose
         log-changes drive the per-country differential.
 
+    The ``conn`` kwarg is opt-in and country-conditional: only the CO
+    branch consumes it under Rev-5.3.2. Other branches ignore it,
+    preserving backward compatibility for callers that pre-date the
+    DANE wire-up. The ``dane_ipc_monthly`` table is read-only — no
+    schema mutation, no re-ingestion (consume-only contract).
+
     Raises :class:`Y3FetchError` when the fetch fails or returns no rows.
     """
     if country == "EU":
         return _fetch_eu_hicp_split(start, end)
+    if country == "CO" and conn is not None:
+        return _fetch_dane_headline_broadcast(conn, start, end)
     return _fetch_imf_ifs_headline_broadcast(country, start, end)
 
 
@@ -330,5 +349,50 @@ def _fetch_imf_ifs_headline_broadcast(
             "energy_cpi": headline["value"],
             "housing_cpi": headline["value"],
             "transport_cpi": headline["value"],
+        }
+    )
+
+
+def _fetch_dane_headline_broadcast(
+    conn: "duckdb.DuckDBPyConnection",
+    start: date,
+    end: date,
+) -> pd.DataFrame:
+    """DANE IPC headline level broadcast across the 4 component columns.
+
+    Rev-5.3.2 Task 11.N.2.CO-dane-wire: the CO branch of
+    :func:`fetch_country_wc_cpi_components` consumes the existing-and-
+    populated ``dane_ipc_monthly`` DuckDB table via the canonical
+    :func:`scripts.econ_query_api.load_dane_ipc_monthly` reader (consume-
+    only — no schema mutation, no re-ingestion).
+
+    DANE publishes a headline IPC index only (no expenditure-component
+    split at the monthly cadence); per design doc §10 row 2 substitution-
+    fallback rule, the headline level is broadcast across all four
+    component slots. The 60/25/15 weighted composite then collapses to
+    the headline level for CO — a well-defined monthly inflation level
+    whose Δlog drives the per-country differential per design doc §1.
+
+    Same broadcast contract as :func:`_fetch_imf_ifs_headline_broadcast`;
+    same DataFrame shape — the consumer contract is preserved byte-exact.
+    """
+    # Local import to avoid a circular import at module-load time
+    # (econ_query_api is consumer-side state; y3_data_fetchers is HTTP).
+    from scripts.econ_query_api import load_dane_ipc_monthly
+
+    rows = load_dane_ipc_monthly(conn, start=start, end=end)
+    if not rows:
+        raise Y3FetchError(
+            f"DANE ipc table: no rows in [{start}, {end}]"
+        )
+    levels = [r.ipc_index for r in rows]
+    dates = [r.date for r in rows]
+    return pd.DataFrame(
+        {
+            "date": dates,
+            "food_cpi": levels,
+            "energy_cpi": levels,
+            "housing_cpi": levels,
+            "transport_cpi": levels,
         }
     )
