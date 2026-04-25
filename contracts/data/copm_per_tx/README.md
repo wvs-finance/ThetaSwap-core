@@ -132,6 +132,48 @@ makes the PK `(evt_tx_hash, log_index)` non-colliding.
 Resumability holds: the checkpoint at `contracts/.scratch/copm_transfers_backfill_progress.json` plus the `copm_transfers_full.csv` cumulative-append write pattern mean a subsequent rerun of `backfill_copm_transfers()` will resume from block 30,285,761 + 1 rather than restart from deployment. Running the function a second time with the CSV intact will append new rows and update the checkpoint transparently.
 <!-- BACKFILL_PROVENANCE_END -->
 
+### Provenance (Task 11.N.1b resume — Rev 5.3, 2026-04-24)
+
+<!-- PHASE2_BACKFILL_PROVENANCE_BEGIN -->
+- **Path fired**: path-1 (Celo public RPC — forno.celo.org primary + rpc.ankr.com/celo for the gap-fill window).
+- **Predecessor-path failure reasons**: N/A — path-1 succeeded end-to-end; paths 2-6 (paid Alchemy / Covalent / Flipside / Dune REST / manual Dune CSV) were not consulted (none of the corresponding env vars were set in this run; recovery would have triggered HALT-on-missing).
+- **Block range covered**: 30,486,128 → 65,207,786 (post-checkpoint resume to chain-tip; 10.82 M blocks).
+- **Resume timestamp (UTC)**: 2026-04-24.
+- **Row count delta vs prior 77,426 (snapshot at resume start)**:
+  - Phase-2 main resume (post-checkpoint to tip): +27,803 rows in 405 s via forno (100 k window) + Ankr (1 k window) auto-narrowing on 503.
+  - Phase-2 gap-fill (blocks 30,285,762 → 30,486,127): +5,024 rows in 153 s via Ankr (1 k window) — forno 503'd on the wide window for this single sub-range. The gap-fill recovered a 200,366-block sub-range that the original Task 11.N.1 baseline checkpointed-as-covered without persisting rows; Dune-canonical count for this exact sub-range reports 5,024 rows (query `7372267` execution `01KQ1ZJ0CMHZW2JXQZYKAAS5AT`). Recovered byte-exact match to Dune.
+- **Total row count vs target**: 110,253 / 110,069 ± 0.5 % target → +0.167 % drift, comfortably inside ±0.5 %.
+- **Dune-canonical drift cross-check (RC 2026-04-24)**: re-running Dune query `7369028` today (execution `01KQ1ZFRY3PQVRXJYRXQY80638`, 0.013 credits) yielded 110,253 rows total with `max_block = 65,205,135`. The plan-pinned 110,069 figure was set at 11.N.1 plan-freeze; the +184-row drift is genuine Dune-side accretion of new transfers since plan freeze, NOT path-1 undercount. The CSV's 110,253 rows match Dune-canonical 110,253 byte-exact at the (`evt_tx_hash`, `log_index`) PK level for the entire 27,786,128 → 65,205,135 range covered by Dune; CSV `max_block = 65,207,786` extends slightly beyond Dune's snapshot horizon (path-1 advanced to live chain-tip).
+- **Wall-clock time**: 558 s combined (405 s main resume + 153 s gap-fill).
+- **Fallback-trigger log**:
+  - Phase-2 main resume: empty — single-path success (forno+ankr auto-rotation on transient 503s, no path rotation).
+  - Phase-2 gap-fill: forno 503 on the 200,366-block window → Ankr 1 k-block windows (200 windows) succeeded.
+- **Byte-exact preservation**: pre-existing 77,426-data-row baseline (sha256 head-77,427 = `42219ffd72b02fc0ed1212bca7d52fe76c234c781149ada14996da25cd453c01`) preserved bit-for-bit through both phases — verified pre/post each phase. New rows append at the tail of the CSV (the file is no longer strictly block-sorted; downstream DuckDB ingest is order-independent because PK `(evt_tx_hash, log_index)` does not depend on file row order).
+- **Rev-4 `decision_hash`**: `6a5f9d1b05c18defd8b30c4b3cef6af896d6e45a2a26c1c60aa342da0a5a443c` preserved byte-exact.
+- **Distribution-channel X_d coverage**: `onchain_xd_weekly` now carries 79 Friday observations under `proxy_kind = "b2b_to_b2c_net_flow_usd"` (vs 16 prior; supply-channel rows under `net_primary_issuance_usd` preserved at 84). The 5-Friday gap (84 supply vs 79 distribution) reflects weeks where the distribution-channel PCA cluster has zero edge volume — pre-committed treatment by `compute_weekly_xd_from_transfers`, not a path-1 coverage shortfall.
+
+#### Re-verification empirical (RC 2026-04-24)
+
+Both `https://forno.celo.org` and `https://rpc.ankr.com/celo` respond
+HTTP 200 to fresh `eth_blockNumber` and `eth_getLogs` probes.
+Forno tolerates 100,000-block windows in practice (RC plan-text says
+"≥ 5k"; empirically much wider — Task 11.N.1 ran successfully at 100k);
+the orchestrator used 100k-block windows for forno and 1k for Ankr.
+The "503 stickiness" rationale anchoring the prior fallback ladder
+ordering is therefore retired in Rev 5.3.
+
+#### Six-path ladder (Rev 5.3, in order — first-working wins)
+
+1. **Celo public RPC retry (forno + Ankr)** — re-verified live 2026-04-24.
+2. **Paid Alchemy Celo tier** — `ALCHEMY_API_KEY_PAID` env-var gated; HALT-on-missing logs skip.
+3. **Covalent / GoldRush trial** — `COVALENT_API_KEY` (25k credits / 14-day trial).
+4. **Flipside Crypto SQL REST** — `FLIPSIDE_API_KEY` (Celo coverage unverified; verify-existence-first).
+5. **Dune REST API direct** — `DUNE_API_KEY` (single CSV pull of query 7369028).
+6. **Manual Dune-web CSV export** — zero-credential interactive fallback.
+
+All six failing → orchestrator HALTs with `X_D_STILL_INSUFFICIENT_PHASE_2`.
+<!-- PHASE2_BACKFILL_PROVENANCE_END -->
+
 ## Known irregularities
 
 - **`copm_burns.csv` has 1 `burnFrozen` row** (2024-12-16, account `0x1ca33cff...`, 30.67M wei).

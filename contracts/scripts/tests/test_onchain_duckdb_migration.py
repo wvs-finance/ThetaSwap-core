@@ -1127,6 +1127,339 @@ def test_r5_load_onchain_copm_transfers_full_dataset(migrated_db: Path) -> None:
             assert hasattr(r, attr), f"frozen-dataclass missing {attr}"
 
 
+# ── (Step 1) Task 11.N.1b — Resume backfill via alternative paths ───────────
+#
+# Pre-committed Step-1 assertions per plan §Task 11.N.1b (Rev 5.3 insert):
+#
+#   (N1b-a) Tightened tolerance: full ``copm_transfers_full.csv`` has
+#           110,069 ± 0.5 % rows post-resume (vs Task 11.N.1's ±1 %).
+#
+#   (N1b-b) The pre-existing 52,068 rows in ``copm_transfers_full.csv``
+#           are preserved byte-exact across the resume (CR-MINOR-2:
+#           ``head(52068)`` post-resume == pre-resume snapshot byte-exact).
+#
+#   (N1b-c) ``load_onchain_copm_transfers_full()`` returns the FULL
+#           dataset (not a partial / not the 52k baseline); row count
+#           equals the table count.
+#
+#   (N1b-d) Rev-4 ``decision_hash`` preserved byte-exact post-resume.
+#
+#   (N1b-e) ``resume_copm_transfers_backfill()`` reads the existing
+#           checkpoint and starts from ``last_completed_end_block + 1``
+#           (NOT zero). Mocked checkpoint pointing at block 30,486,127;
+#           orchestrator's first RPC call must request ``fromBlock =
+#           0x1d13380`` (= 30,486,128).
+#
+#   (N1b-f) Checkpoint-corruption HALT assertions (PM-N2):
+#             • corrupted JSON → HALT with ``CHECKPOINT_CORRUPTED``
+#             • missing file → HALT with
+#               ``CHECKPOINT_MISSING_RESTART_FROM_TASK_11.N.1``
+#             • schema mismatch → HALT with explicit field-list dump
+#           (none of these silently default to block 0).
+#
+# The N1b-a / N1b-c / N1b-d gates are skipped when the resume has not
+# yet landed (got_db < 0.99 × 110_069). The skip reason embeds
+# ``X_D_STILL_INSUFFICIENT_PHASE_2`` so the partial state is loud.
+
+# Rev-5.3 tightened tolerance — was 0.01 in Rev-5.2.1, now 0.005.
+_ROW_COUNT_TOLERANCE_REV53: Final[float] = 0.005
+
+
+def test_n1b_a_full_csv_row_count_within_half_percent() -> None:
+    """(N1b-a) ``copm_transfers_full.csv`` carries 110,069 ± 0.5 % rows.
+
+    Skipped with ``X_D_STILL_INSUFFICIENT_PHASE_2`` until Task 11.N.1b
+    Step 9 has run.
+    """
+    import pandas as pd
+
+    csv_path = _COPM_PER_TX / "copm_transfers_full.csv"
+    if not csv_path.is_file():
+        pytest.skip(
+            "copm_transfers_full.csv missing — Task 11.N.1 has not run yet"
+        )
+    n = sum(1 for _ in csv_path.open()) - 1  # subtract header
+    low = int(_EXPECTED_FULL_ROWS * (1 - _ROW_COUNT_TOLERANCE_REV53))
+    high = int(_EXPECTED_FULL_ROWS * (1 + _ROW_COUNT_TOLERANCE_REV53))
+    if n < low:
+        pytest.skip(
+            f"X_D_STILL_INSUFFICIENT_PHASE_2: copm_transfers_full.csv has "
+            f"{n} rows ({100 * n / _EXPECTED_FULL_ROWS:.1f}% of "
+            f"Dune-reported {_EXPECTED_FULL_ROWS}); Task 11.N.1b resume "
+            f"has not yet completed. Target ±0.5%."
+        )
+    assert n <= high, (
+        f"copm_transfers_full.csv has {n} rows — exceeds +0.5% of "
+        f"{_EXPECTED_FULL_ROWS} (likely duplicate ingestion bug)."
+    )
+    del pd  # quiet linters
+
+
+# Pre-resume baseline snapshot — committed at f1f114cd1 with 52,068 rows.
+# Used by N1b-b to assert byte-exact preservation across the resume.
+_PRE_RESUME_BASELINE_ROWS: Final[int] = 52_068
+
+
+def test_n1b_b_existing_52k_rows_preserved_byte_exact() -> None:
+    """(N1b-b) The pre-resume 52,068 rows are preserved byte-exact.
+
+    Compares ``copm_transfers_full.csv`` head-52068 lines against the
+    git-committed baseline at commit ``f1f114cd1``. Skipped if the file
+    or git history is unavailable.
+    """
+    import subprocess
+
+    csv_path = _COPM_PER_TX / "copm_transfers_full.csv"
+    if not csv_path.is_file():
+        pytest.skip("copm_transfers_full.csv missing")
+
+    # Read first 52,069 lines of current file (header + 52,068 data rows).
+    with csv_path.open("rb") as fh:
+        current_lines: list[bytes] = []
+        for i, line in enumerate(fh):
+            if i >= _PRE_RESUME_BASELINE_ROWS + 1:
+                break
+            current_lines.append(line)
+    if len(current_lines) < _PRE_RESUME_BASELINE_ROWS + 1:
+        pytest.skip(
+            f"copm_transfers_full.csv has only {len(current_lines) - 1} "
+            f"data rows; baseline is {_PRE_RESUME_BASELINE_ROWS}"
+        )
+    current_blob = b"".join(current_lines)
+
+    # Pull the same prefix from git at f1f114cd1.
+    git_root = _CONTRACTS_ROOT.parent
+    rel_path = csv_path.relative_to(git_root)
+    try:
+        git_blob_full = subprocess.check_output(
+            ["git", "-C", str(git_root), "show", f"f1f114cd1:{rel_path}"],
+            stderr=subprocess.PIPE,
+        )
+    except subprocess.CalledProcessError as exc:
+        pytest.skip(f"git show f1f114cd1:{rel_path} unavailable: {exc}")
+
+    # Take the same prefix from the historical blob.
+    git_lines: list[bytes] = []
+    pos = 0
+    seen = 0
+    while seen < _PRE_RESUME_BASELINE_ROWS + 1 and pos < len(git_blob_full):
+        nl = git_blob_full.find(b"\n", pos)
+        if nl == -1:
+            git_lines.append(git_blob_full[pos:])
+            break
+        git_lines.append(git_blob_full[pos : nl + 1])
+        pos = nl + 1
+        seen += 1
+    git_blob = b"".join(git_lines)
+
+    assert current_blob == git_blob, (
+        "First 52,068 rows of copm_transfers_full.csv have drifted from "
+        "the f1f114cd1 baseline — Task 11.N.1b resume violated the "
+        "additive-only invariant (CR-MINOR-2 byte-exact preservation)."
+    )
+
+
+def test_n1b_c_load_onchain_full_returns_full_dataset(
+    migrated_db: Path,
+) -> None:
+    """(N1b-c) Loader returns the FULL post-resume dataset.
+
+    Skipped with ``X_D_STILL_INSUFFICIENT_PHASE_2`` if the table still
+    holds < 99% of Dune target.
+    """
+    from scripts import econ_query_api as api
+
+    conn = duckdb.connect(str(migrated_db), read_only=True)
+    try:
+        count = conn.execute(
+            "SELECT COUNT(*) FROM onchain_copm_transfers"
+        ).fetchone()
+        got_db = int(count[0]) if count else 0
+    finally:
+        conn.close()
+
+    low = int(_EXPECTED_FULL_ROWS * (1 - _ROW_COUNT_TOLERANCE_REV53))
+    if got_db < low:
+        pytest.skip(
+            f"X_D_STILL_INSUFFICIENT_PHASE_2: onchain_copm_transfers has "
+            f"{got_db} rows ({100 * got_db / _EXPECTED_FULL_ROWS:.1f}%); "
+            f"Task 11.N.1b resume has not landed full set."
+        )
+
+    loader = api.load_onchain_copm_transfers_full
+    conn = duckdb.connect(str(migrated_db), read_only=True)
+    try:
+        rows = loader(conn)
+    finally:
+        conn.close()
+    assert len(rows) == got_db, (
+        f"loader returned {len(rows)} rows; table has {got_db}"
+    )
+
+
+def test_n1b_d_rev4_decision_hash_preserved_post_resume() -> None:
+    """(N1b-d) Rev-4 ``decision_hash`` preserved byte-exact post-resume."""
+    from scripts.cleaning import LOCKED_DECISIONS, _compute_decision_hash
+
+    got = _compute_decision_hash(LOCKED_DECISIONS)
+    assert got == _EXPECTED_DECISION_HASH, (
+        f"Rev-4 decision_hash drifted post-resume: got {got}, "
+        f"expected {_EXPECTED_DECISION_HASH}"
+    )
+
+    with _FINGERPRINT_PATH.open() as fh:
+        fingerprint = json.load(fh)
+    assert fingerprint["decision_hash"] == _EXPECTED_DECISION_HASH, (
+        "nb1_panel_fingerprint.json decision_hash drifted post-resume"
+    )
+
+
+def test_n1b_e_resume_orchestrator_reads_checkpoint(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """(N1b-e) ``resume_copm_transfers_backfill`` honours checkpoint.
+
+    Mocks the checkpoint file at block 30,486,127; intercepts the FIRST
+    RPC POST and asserts ``fromBlock = hex(30_486_128)``. Does NOT
+    require live RPC — uses ``monkeypatch.setattr`` on ``requests.post``
+    to short-circuit after capturing the first request.
+    """
+    import json as _json
+
+    from scripts import econ_pipeline
+
+    # Mock checkpoint file pointing at the resume boundary.
+    chkpt_path = tmp_path / "copm_transfers_backfill_progress.json"
+    chkpt_path.write_text(
+        _json.dumps(
+            {
+                "last_completed_end_block": 30_486_127,
+                "total_rows_so_far": 52_068,
+                "data_source": "forno",
+            }
+        )
+    )
+    monkeypatch.setattr(econ_pipeline, "_CHECKPOINT_PATH", chkpt_path)
+
+    # Public symbol must exist.
+    assert hasattr(econ_pipeline, "resume_copm_transfers_backfill"), (
+        "scripts.econ_pipeline.resume_copm_transfers_backfill missing"
+    )
+
+    captured: dict[str, object] = {}
+
+    class _StopAfterCapture(Exception):
+        pass
+
+    def _fake_post(url: str, json: dict, timeout: float = 60.0):  # noqa: A002
+        method = json.get("method")
+        # First eth_blockNumber call (orchestrator probes head); allow.
+        if method == "eth_blockNumber":
+            class _R:
+                status_code = 200
+
+                def raise_for_status(self) -> None:
+                    return None
+
+                def json(self):  # noqa: ANN001
+                    # Return a tip 200 blocks beyond the checkpoint so
+                    # the orchestrator schedules at least one window.
+                    return {
+                        "jsonrpc": "2.0",
+                        "result": hex(30_486_127 + 200),
+                        "id": 1,
+                    }
+
+            return _R()
+        if method == "eth_getLogs":
+            params = json["params"][0]
+            captured["fromBlock_hex"] = params["fromBlock"]
+            captured["fromBlock_int"] = int(params["fromBlock"], 16)
+            captured["url"] = url
+            raise _StopAfterCapture("captured first eth_getLogs")
+        raise AssertionError(f"unexpected method {method}")
+
+    monkeypatch.setattr(econ_pipeline.requests, "post", _fake_post)
+
+    try:
+        econ_pipeline.resume_copm_transfers_backfill(
+            output_csv=tmp_path / "noop.csv",
+        )
+    except _StopAfterCapture:
+        pass
+    except Exception as exc:  # noqa: BLE001
+        # Other path attempts (alchemy etc.) may surface as RuntimeError
+        # AFTER path-1 captures — that's still success for this assertion
+        # if we captured the first call.
+        if "fromBlock_int" not in captured:
+            raise AssertionError(
+                f"resume orchestrator never issued a path-1 eth_getLogs; "
+                f"raised {exc!r}"
+            ) from exc
+
+    assert captured.get("fromBlock_int") == 30_486_128, (
+        f"resume orchestrator started at block "
+        f"{captured.get('fromBlock_int')!r}; expected 30,486,128 "
+        f"(checkpoint last_completed_end_block + 1). Silent restart at "
+        f"block 0 would breach PM-N2."
+    )
+
+
+def test_n1b_f_checkpoint_corruption_halts(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """(N1b-f) Corrupted / missing / schema-mismatched checkpoint HALTs.
+
+    No silent default to block 0.
+    """
+    from scripts import econ_pipeline
+
+    chkpt = tmp_path / "copm_transfers_backfill_progress.json"
+    monkeypatch.setattr(econ_pipeline, "_CHECKPOINT_PATH", chkpt)
+
+    # 1. Missing file → HALT with explicit error code.
+    if chkpt.is_file():
+        chkpt.unlink()
+    with pytest.raises(RuntimeError) as exc_missing:
+        econ_pipeline.resume_copm_transfers_backfill(
+            output_csv=tmp_path / "noop.csv",
+        )
+    assert "CHECKPOINT_MISSING_RESTART_FROM_TASK_11.N.1" in str(
+        exc_missing.value
+    ), (
+        f"missing checkpoint must HALT with explicit error code; "
+        f"got: {exc_missing.value}"
+    )
+
+    # 2. Corrupted JSON → HALT.
+    chkpt.write_text("{not valid json")
+    with pytest.raises(RuntimeError) as exc_corrupt:
+        econ_pipeline.resume_copm_transfers_backfill(
+            output_csv=tmp_path / "noop.csv",
+        )
+    assert "CHECKPOINT_CORRUPTED" in str(exc_corrupt.value), (
+        f"corrupted checkpoint must HALT with explicit error code; "
+        f"got: {exc_corrupt.value}"
+    )
+
+    # 3. Schema mismatch (missing required field) → HALT with field dump.
+    import json as _json
+
+    chkpt.write_text(_json.dumps({"only_a_random_field": 1}))
+    with pytest.raises(RuntimeError) as exc_schema:
+        econ_pipeline.resume_copm_transfers_backfill(
+            output_csv=tmp_path / "noop.csv",
+        )
+    msg = str(exc_schema.value)
+    assert "CHECKPOINT_SCHEMA_MISMATCH" in msg, (
+        f"schema-mismatch checkpoint must HALT; got: {msg}"
+    )
+    # Field-list dump per PM-N2.
+    assert "last_completed_end_block" in msg, (
+        f"schema-mismatch HALT must dump expected field list; got: {msg}"
+    )
+
+
 # ── (Step N2b.1) Task 11.N.2b.1 schema migration — Carbon-basket pre-commit ───
 #
 # Pre-committed Step-N2b.1 contract (7 assertions, each a separate test

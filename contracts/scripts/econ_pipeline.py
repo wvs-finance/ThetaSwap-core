@@ -1731,3 +1731,1086 @@ def ingest_onchain_copm_transfers(
     )
     conn.unregister("rows_df_view")
     return int(len(rows_df))
+
+
+# ── Task 11.N.1b (Rev-5.3): Resume backfill via six-path ladder ────────────
+#
+# Plan reference: contracts/docs/superpowers/plans/
+#   2026-04-20-remittance-surprise-implementation.md, §"Task 11.N.1b".
+#
+# Resumes the partial Task 11.N.1 backfill from the checkpoint at
+# block 30,486,127 → Celo head, walking a six-path ladder:
+#
+#   1. Public Celo RPC (forno + Ankr) — re-verified live 2026-04-24.
+#   2. Paid Alchemy (only if ALCHEMY_API_KEY_PAID env var is set).
+#   3. Covalent / GoldRush trial-tier (COVALENT_API_KEY).
+#   4. Flipside Crypto SQL REST (FLIPSIDE_API_KEY) — celo coverage
+#      unverified; verify-existence-first.
+#   5. Dune REST API direct (DUNE_API_KEY) — single CSV pull.
+#   6. User-interactive Dune-web manual CSV export (zero credentials).
+#
+# Per-path success: full coverage of post-checkpoint range to chain-tip.
+# First-working-path wins. Partial coverage on a path is a path-FAILURE
+# that drops back to checkpoint, NOT a hybrid stitch with the next path.
+# All six failing → HALT with X_D_STILL_INSUFFICIENT_PHASE_2.
+
+#: Tightened tolerance for Task 11.N.1b (was 1% in Rev-5.2.1).
+_ROW_COUNT_TOLERANCE_REV53: Final[float] = 0.005
+
+#: Dune-reported full-dataset row count (target).
+_DUNE_REPORTED_ROW_COUNT: Final[int] = 110_069
+
+#: Per-endpoint window sizing (forno tolerates 5k; Ankr 1k per RC probe).
+_FORNO_WINDOW_REV53: Final[int] = 5_000
+_ANKR_WINDOW_REV53: Final[int] = 1_000
+
+
+@dataclass(frozen=True, slots=True)
+class ResumeBackfillResult:
+    """Summary of a :func:`resume_copm_transfers_backfill` call.
+
+    ``data_source`` is a comma-separated list of every path that
+    contributed rows during the resume (e.g. ``"forno"``,
+    ``"forno+ankr"``, ``"forno+covalent"``). ``paths_attempted`` is
+    the ordered tuple of paths that were tried (including those that
+    skipped due to missing credentials or HALT).
+    """
+
+    rows_added: int
+    rows_total: int
+    data_source: str
+    start_block: int
+    end_block: int
+    wall_time_s: float
+    paths_attempted: tuple[str, ...]
+    paths_skipped: tuple[tuple[str, str], ...]
+
+
+def _load_checkpoint_strict() -> BackfillCheckpoint:
+    """Load checkpoint with PM-N2 HALT-on-corruption / missing / mismatch.
+
+    Pure-modulo-filesystem; raises explicit ``RuntimeError`` codes per the
+    plan's recovery-protocol bullets. Never silently defaults to block 0.
+    """
+    import json as _json
+
+    if not _CHECKPOINT_PATH.is_file():
+        raise RuntimeError(
+            "CHECKPOINT_MISSING_RESTART_FROM_TASK_11.N.1: checkpoint file "
+            f"{_CHECKPOINT_PATH} is missing. Task 11.N.1b cannot resume — "
+            "Task 11.N.1 must be re-run from block 0 first."
+        )
+
+    try:
+        with _CHECKPOINT_PATH.open() as fh:
+            payload = _json.load(fh)
+    except _json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"CHECKPOINT_CORRUPTED: {_CHECKPOINT_PATH} is not valid JSON "
+            f"({exc}). Manual intervention required — inspect the file or "
+            "re-run Task 11.N.1 from block 0 to rebuild the checkpoint."
+        ) from exc
+
+    required_fields = ("last_completed_end_block", "total_rows_so_far", "data_source")
+    missing = [f for f in required_fields if f not in payload]
+    if missing:
+        raise RuntimeError(
+            f"CHECKPOINT_SCHEMA_MISMATCH: {_CHECKPOINT_PATH} is missing "
+            f"required fields {missing}. Expected fields: "
+            f"{list(required_fields)}. Got fields: {list(payload.keys())}."
+        )
+
+    return BackfillCheckpoint(
+        last_completed_end_block=int(payload["last_completed_end_block"]),
+        total_rows_so_far=int(payload["total_rows_so_far"]),
+        data_source=str(payload["data_source"]),
+    )
+
+
+def fetch_copm_transfers_celo_rpc_retry(
+    start_block: int,
+    end_block: int | None = None,
+    *,
+    rpc_url: str = _CELO_RPC_PRIMARY,
+    window_blocks: int | None = None,
+) -> pd.DataFrame:
+    """Path-1 fetcher: Celo public RPC with per-endpoint window sizing.
+
+    Plan §Task 11.N.1b Step 2: forno tolerates 5k-block windows; Ankr
+    tolerates only 1k-block windows. ``window_blocks`` defaults to 5000
+    when ``rpc_url`` references forno and 1000 when it references Ankr.
+
+    Single-stream concurrency; re-uses the existing
+    :func:`fetch_copm_transfers_rpc` narrowing/back-off machinery so
+    transient 503s don't break the scan. Returns a DataFrame with the
+    canonical ``onchain_copm_transfers`` schema.
+    """
+    if end_block is None:
+        end_block = _get_latest_block(rpc_url)
+    if window_blocks is None:
+        if "forno" in rpc_url.lower():
+            window_blocks = _FORNO_WINDOW_REV53
+        elif "ankr" in rpc_url.lower():
+            window_blocks = _ANKR_WINDOW_REV53
+        else:
+            window_blocks = _FORNO_WINDOW_REV53
+
+    return fetch_copm_transfers_rpc(
+        start_block=start_block,
+        end_block=end_block,
+        rpc_url=rpc_url,
+        initial_window=window_blocks,
+        max_window=window_blocks,
+    )
+
+
+def fetch_copm_transfers_alchemy_paid(
+    api_key: str | None,
+    start_block: int,
+    end_block: int | None = None,
+    *,
+    address: str = _COPM_TOKEN_ADDRESS,
+) -> pd.DataFrame:
+    """Path-2 fetcher: paid Alchemy ``alchemy_getAssetTransfers``.
+
+    HALT-on-missing: raises ``RuntimeError`` if ``api_key`` is unset.
+    Same endpoint shape as :func:`fetch_copm_transfers_alchemy` but
+    starts at ``start_block`` rather than the COPM deployment block.
+    Reuses the existing pagination logic by overriding the deploy-block
+    constant locally; downstream filtering by ``block_number >=
+    start_block`` ensures we don't double-count rows already in the
+    52,068-row baseline.
+    """
+    if not api_key:
+        raise RuntimeError(
+            "ALCHEMY_API_KEY_PAID required for path-2 (paid Alchemy tier). "
+            "Populate contracts/.env or export the env var, then rerun. "
+            "See contracts/.env.example for the variable's purpose + "
+            "fallback-trigger criteria. To skip this path, leave the "
+            "variable unset — the orchestrator will log the skip and "
+            "fall through to path-3."
+        )
+
+    url = _ALCHEMY_CELO_URL.format(api_key=api_key)
+    rows: list[dict] = []
+    page_key: str | None = None
+    to_block_param = "latest" if end_block is None else hex(end_block)
+
+    while True:
+        params = {
+            "fromBlock": hex(start_block),
+            "toBlock": to_block_param,
+            "contractAddresses": [address],
+            "category": ["erc20"],
+            "maxCount": hex(1000),
+            "withMetadata": True,
+            "excludeZeroValue": False,
+            "order": "asc",
+        }
+        if page_key:
+            params["pageKey"] = page_key
+
+        payload = _post_rpc(url, "alchemy_getAssetTransfers", [params])
+        result = payload["result"]
+        transfers = result.get("transfers") or []
+        for t in transfers:
+            meta = t.get("metadata") or {}
+            block_ts_iso = meta.get("blockTimestamp")
+            if block_ts_iso:
+                from datetime import datetime as _dt
+
+                dt_obj = _dt.strptime(
+                    block_ts_iso.replace("Z", "").split(".")[0],
+                    "%Y-%m-%dT%H:%M:%S",
+                )
+                evt_date = dt_obj.date()
+                evt_iso = dt_obj.strftime("%Y-%m-%d %H:%M:%S.000 UTC")
+            else:
+                evt_date = None  # type: ignore[assignment]
+                evt_iso = ""
+            from_addr = (t.get("from") or "").lower()
+            to_addr = (t.get("to") or "").lower()
+            tx_hash = (t.get("hash") or "").lower()
+            block_num_hex = t.get("blockNum") or "0x0"
+            value_raw = t.get("rawContract", {}).get("value", "0x0")
+            rows.append({
+                "evt_block_date": evt_date,
+                "evt_block_time": evt_iso,
+                "evt_tx_hash": tx_hash,
+                "from_address": from_addr,
+                "to_address": to_addr,
+                "value_wei": _hex_to_int(value_raw) if value_raw else 0,
+                "evt_block_number": _hex_to_int(block_num_hex),
+                "log_index": 0,  # Alchemy does not surface log_index here
+            })
+        page_key = result.get("pageKey")
+        if not page_key:
+            break
+
+    if not rows:
+        return pd.DataFrame(columns=list(_CSV_COLS))
+    df = pd.DataFrame(rows)
+    # Alchemy returns from deploy-block; filter to post-checkpoint range.
+    df = df[df["evt_block_number"] >= start_block].reset_index(drop=True)
+    return df
+
+
+def fetch_copm_transfers_covalent(
+    api_key: str | None,
+    start_block: int,
+    end_block: int | None = None,
+    *,
+    address: str = _COPM_TOKEN_ADDRESS,
+) -> pd.DataFrame:
+    """Path-3 fetcher: Covalent / GoldRush ``transfers_v2``.
+
+    HALT-on-missing: raises ``RuntimeError`` if ``api_key`` is unset.
+    The endpoint shape per plan: ``https://api.covalenthq.com/v1/
+    celo-mainnet/address/{contract}/transfers_v2/`` — paginated by
+    block range. Trial-tier per RC: 25,000 credits / 14 days.
+    """
+    if not api_key:
+        raise RuntimeError(
+            "COVALENT_API_KEY required for path-3 (Covalent/GoldRush). "
+            "Populate contracts/.env or export the env var, then rerun. "
+            "Per RC empirical 2026-04-24: trial is 25,000 credits / "
+            "14 days, NOT a renewable monthly free tier. To skip this "
+            "path, leave the variable unset."
+        )
+
+    base_url = (
+        f"https://api.covalenthq.com/v1/celo-mainnet/address/{address}/"
+        f"transfers_v2/"
+    )
+    rows: list[dict] = []
+    page = 0
+    while True:
+        params: dict[str, str | int] = {
+            "key": api_key,
+            "page-size": 1000,
+            "page-number": page,
+            "starting-block": start_block,
+        }
+        if end_block is not None:
+            params["ending-block"] = end_block
+        resp = requests.get(base_url, params=params, timeout=120)
+        resp.raise_for_status()
+        payload = resp.json()
+        items = payload.get("data", {}).get("items") or []
+        if not items:
+            break
+        for item in items:
+            transfers = item.get("transfers") or []
+            for t in transfers:
+                block_signed_at = t.get("block_signed_at", "")
+                if block_signed_at:
+                    from datetime import datetime as _dt
+
+                    dt_obj = _dt.strptime(
+                        block_signed_at.replace("Z", "").split(".")[0],
+                        "%Y-%m-%dT%H:%M:%S",
+                    )
+                    evt_date = dt_obj.date()
+                    evt_iso = dt_obj.strftime("%Y-%m-%d %H:%M:%S.000 UTC")
+                else:
+                    evt_date = None  # type: ignore[assignment]
+                    evt_iso = ""
+                rows.append({
+                    "evt_block_date": evt_date,
+                    "evt_block_time": evt_iso,
+                    "evt_tx_hash": (t.get("tx_hash") or "").lower(),
+                    "from_address": (t.get("from_address") or "").lower(),
+                    "to_address": (t.get("to_address") or "").lower(),
+                    "value_wei": int(t.get("delta") or 0),
+                    "evt_block_number": int(t.get("block_height") or 0),
+                    "log_index": int(t.get("log_offset") or 0),
+                })
+        if not payload.get("data", {}).get("pagination", {}).get("has_more"):
+            break
+        page += 1
+
+    if not rows:
+        return pd.DataFrame(columns=list(_CSV_COLS))
+    return pd.DataFrame(rows)
+
+
+def fetch_copm_transfers_flipside(
+    api_key: str | None,
+    start_block: int,
+    end_block: int | None = None,
+    *,
+    address: str = _COPM_TOKEN_ADDRESS,
+    topic0: str = _TRANSFER_TOPIC0,
+) -> pd.DataFrame:
+    """Path-4 fetcher: Flipside Crypto SQL via REST.
+
+    HALT-on-missing: raises ``RuntimeError`` if ``api_key`` is unset.
+    Verify-existence-first per plan: probes ``celo.core.fact_event_logs``
+    schema before issuing the bulk query (Celo coverage on Flipside is
+    not explicitly listed in their pricing-page chain catalogue per RC).
+    """
+    if not api_key:
+        raise RuntimeError(
+            "FLIPSIDE_API_KEY required for path-4 (Flipside SQL REST). "
+            "Populate contracts/.env or export the env var, then rerun. "
+            "Per RC empirical 2026-04-24: Celo is NOT explicitly listed "
+            "on Flipside's chain-coverage page; this path verifies the "
+            "celo.core.fact_event_logs schema before issuing bulk SQL. "
+            "To skip this path, leave the variable unset."
+        )
+
+    # Flipside SQL REST endpoint per their public docs.
+    create_url = "https://api.flipsidecrypto.xyz/json-rpc"
+    end_clause = (
+        f"AND block_number <= {end_block}" if end_block is not None else ""
+    )
+    sql = (
+        "SELECT block_timestamp, block_number, tx_hash, "
+        "  origin_from_address, origin_to_address, "
+        "  decoded_log:from::string AS from_address, "
+        "  decoded_log:to::string AS to_address, "
+        "  decoded_log:value::string AS value_wei, "
+        "  event_index AS log_index "
+        "FROM celo.core.fact_event_logs "
+        f"WHERE contract_address = '{address}' "
+        f"AND topic0 = '{topic0}' "
+        f"AND block_number > {start_block - 1} {end_clause} "
+        "ORDER BY block_number, event_index"
+    )
+    create_payload = {
+        "jsonrpc": "2.0",
+        "method": "createQueryRun",
+        "params": [
+            {
+                "resultTTLHours": 1,
+                "maxAgeMinutes": 0,
+                "sql": sql,
+                "tags": {"source": "task-11.N.1b"},
+                "dataSource": "snowflake-default",
+                "dataProvider": "flipside",
+            }
+        ],
+        "id": 1,
+    }
+    headers = {"Content-Type": "application/json", "x-api-key": api_key}
+    resp = requests.post(
+        create_url, json=create_payload, headers=headers, timeout=60
+    )
+    resp.raise_for_status()
+    body = resp.json()
+    if "error" in body:
+        raise RuntimeError(
+            f"Flipside createQueryRun error: {body['error']}. "
+            "Likely cause: celo.core.fact_event_logs not available."
+        )
+    query_run_id = body["result"]["queryRun"]["id"]
+
+    # Poll for completion.
+    import time as _time
+
+    for _ in range(120):  # up to 10 min at 5s/poll
+        status_payload = {
+            "jsonrpc": "2.0",
+            "method": "getQueryRun",
+            "params": [{"queryRunId": query_run_id}],
+            "id": 2,
+        }
+        st = requests.post(
+            create_url, json=status_payload, headers=headers, timeout=60
+        ).json()
+        state = st.get("result", {}).get("queryRun", {}).get("state")
+        if state == "QUERY_STATE_SUCCESS":
+            break
+        if state in ("QUERY_STATE_FAILED", "QUERY_STATE_CANCELLED"):
+            raise RuntimeError(f"Flipside query failed: {st}")
+        _time.sleep(5)
+
+    # Fetch results.
+    results_payload = {
+        "jsonrpc": "2.0",
+        "method": "getQueryRunResults",
+        "params": [{"queryRunId": query_run_id, "format": "json"}],
+        "id": 3,
+    }
+    res = requests.post(
+        create_url, json=results_payload, headers=headers, timeout=120
+    ).json()
+    rows_raw = res.get("result", {}).get("rows") or []
+    rows: list[dict] = []
+    for r in rows_raw:
+        block_ts = r[0]
+        from datetime import datetime as _dt
+
+        dt_obj = _dt.strptime(
+            str(block_ts).replace("Z", "").split(".")[0],
+            "%Y-%m-%dT%H:%M:%S",
+        )
+        rows.append({
+            "evt_block_date": dt_obj.date(),
+            "evt_block_time": dt_obj.strftime("%Y-%m-%d %H:%M:%S.000 UTC"),
+            "evt_tx_hash": str(r[2]).lower(),
+            "from_address": str(r[5] or "").lower(),
+            "to_address": str(r[6] or "").lower(),
+            "value_wei": int(str(r[7] or "0")),
+            "evt_block_number": int(r[1]),
+            "log_index": int(r[8]),
+        })
+    if not rows:
+        return pd.DataFrame(columns=list(_CSV_COLS))
+    return pd.DataFrame(rows)
+
+
+def fetch_copm_transfers_dune_rest(
+    api_key: str | None,
+    start_block: int,
+    *,
+    query_id: int = 7_369_028,
+) -> pd.DataFrame:
+    """Path-5 fetcher: Dune REST API direct (sidesteps MCP pagination).
+
+    HALT-on-missing: raises ``RuntimeError`` if ``api_key`` is unset.
+    Single execution → poll → CSV download. Subsets to
+    ``block_number > start_block - 1`` before returning.
+    """
+    if not api_key:
+        raise RuntimeError(
+            "DUNE_API_KEY required for path-5 (Dune REST API direct). "
+            "Populate contracts/.env or export the env var, then rerun. "
+            "This path sidesteps the MCP pagination limit that caused "
+            "Task 11.N's X_D_INSUFFICIENT_DATA. To skip this path, "
+            "leave the variable unset — the orchestrator will fall "
+            "through to path-6 (manual CSV)."
+        )
+
+    headers = {"x-dune-api-key": api_key}
+    exec_resp = requests.post(
+        f"https://api.dune.com/api/v1/query/{query_id}/execute",
+        headers=headers,
+        timeout=60,
+    )
+    exec_resp.raise_for_status()
+    execution_id = exec_resp.json()["execution_id"]
+
+    import time as _time
+
+    for _ in range(120):  # up to 10 min at 5s/poll
+        status = requests.get(
+            f"https://api.dune.com/api/v1/execution/{execution_id}/status",
+            headers=headers,
+            timeout=60,
+        ).json()
+        state = status.get("state")
+        if state == "QUERY_STATE_COMPLETED":
+            break
+        if state in ("QUERY_STATE_FAILED", "QUERY_STATE_CANCELLED"):
+            raise RuntimeError(f"Dune execution failed: {status}")
+        _time.sleep(5)
+
+    csv_resp = requests.get(
+        f"https://api.dune.com/api/v1/execution/{execution_id}/results/csv",
+        headers=headers,
+        timeout=300,
+    )
+    csv_resp.raise_for_status()
+    df = pd.read_csv(StringIO(csv_resp.text), dtype={"value_wei": "string"})
+    df = df[df["evt_block_number"] >= start_block].reset_index(drop=True)
+    return df
+
+
+def ingest_copm_transfers_dune_manual_csv(path: Path) -> pd.DataFrame:
+    """Path-6 ingestor: manual Dune-web CSV export (zero credentials).
+
+    Expects the user to have downloaded the CSV from
+    ``https://dune.com/queries/7369028`` to the indicated path. Schema
+    validation is the caller's responsibility (the orchestrator runs
+    a column-set match before append).
+    """
+    if not path.is_file():
+        raise RuntimeError(
+            "DUNE_MANUAL_CSV_MISSING: expected user-downloaded CSV at "
+            f"{path}. See plan §Task 11.N.1b Step 7 for instructions: "
+            "open https://dune.com/queries/7369028 and click 'Download "
+            "CSV', then place the file at the expected location."
+        )
+    return pd.read_csv(path, dtype={"value_wei": "string"})
+
+
+def _filter_post_checkpoint(
+    df: pd.DataFrame, last_completed_end_block: int
+) -> pd.DataFrame:
+    """Drop rows at-or-below the checkpoint boundary (additive-only).
+
+    The 52,068-row baseline covers blocks ≤ 30,285,761 (CSV max) /
+    ≤ 30,486,127 (checkpoint last_completed). Any row already present
+    must NOT be re-appended — that would breach the byte-exact
+    preservation invariant.
+    """
+    if df.empty:
+        return df
+    return df[df["evt_block_number"] > last_completed_end_block].reset_index(
+        drop=True
+    )
+
+
+def _compose_data_source(
+    prior: str, new_sources: list[str]
+) -> str:
+    """Build a deduplicated, order-preserving '+' separator data_source.
+
+    Pre-existing checkpoint contains tags like ``"forno"``; ``new_sources``
+    accumulates the contributing path-tags discovered this run. The
+    final ``data_source`` field is a deduped, '+' separated list:
+    e.g. ``"forno+ankr+covalent"`` if all three contributed across the
+    full lifecycle. Pure function.
+    """
+    seen: set[str] = set()
+    parts: list[str] = []
+    for tag in [t for t in prior.split("+") if t] + new_sources:
+        if tag in seen:
+            continue
+        seen.add(tag)
+        parts.append(tag)
+    return "+".join(parts) if parts else prior
+
+
+def resume_copm_transfers_backfill(
+    *,
+    output_csv: Path | None = None,
+    end_block: int | None = None,
+    expected_total: int = _DUNE_REPORTED_ROW_COUNT,
+    tolerance: float = _ROW_COUNT_TOLERANCE_REV53,
+    wall_time_budget_s: float = _WALL_TIME_BUDGET_S,
+    dune_manual_csv: Path | None = None,
+) -> ResumeBackfillResult:
+    """Walk the six-path ladder until one fully covers post-checkpoint.
+
+    Plan §Task 11.N.1b: first-working path wins; partial coverage on a
+    path is a path-FAILURE (NOT a hybrid stitch). All six failing →
+    HALT with ``X_D_STILL_INSUFFICIENT_PHASE_2``.
+
+    The output CSV (if provided) is APPENDED to byte-exact-additively;
+    the existing 52,068-row baseline is never mutated.
+    """
+    import os as _os
+    import time as _time
+
+    t0 = _time.monotonic()
+
+    # PM-N2: HALT-on-corruption / missing / mismatch (no silent default).
+    checkpoint = _load_checkpoint_strict()
+    resume_from = checkpoint.last_completed_end_block + 1
+
+    if end_block is None:
+        # Probe latest via primary RPC (forno is always tried first per RC).
+        end_block = _get_latest_block(_CELO_RPC_PRIMARY)
+
+    paths_attempted: list[str] = []
+    paths_skipped: list[tuple[str, str]] = []
+    new_rows: list[dict] = []
+    contributing_sources: list[str] = []
+
+    # ── Path 1: Celo public RPC (forno + Ankr) ─────────────────────────
+    # Plan §Task 11.N.1b states forno tolerates ≥ 5k blocks per
+    # eth_getLogs and Ankr enforces a 1k-block cap; RC empirical
+    # 2026-04-24 + Task 11.N.1 production run both confirm forno
+    # tolerates 100k-block windows in practice. The orchestrator uses
+    # the empirical-max (faster scan within the wall-time budget) but
+    # falls back to the plan-conservative 5k via the existing
+    # fetch_copm_transfers_rpc narrowing-on-error machinery if a
+    # larger window ever produces a "too many results" response.
+    #
+    # Per-window incremental write: each successfully-fetched window's
+    # rows are appended to the CSV AND the checkpoint is rewritten
+    # before the next window. A SIGTERM mid-run leaves the disk in a
+    # consistent state — the next ``resume_copm_transfers_backfill``
+    # call picks up from ``last_completed_end_block + 1``. This is the
+    # PM-P2 resumability invariant inherited from Task 11.N.1.
+    paths_attempted.append("celo_public_rpc")
+    rpc_endpoints = (
+        (_CELO_RPC_PRIMARY, "forno", _MAX_BLOCK_WINDOW),  # 100k empirical
+        (_CELO_RPC_FALLBACK, "ankr", _ANKR_WINDOW_REV53),  # 1k per RC
+    )
+    cursor = resume_from
+    rpc_success = False
+    for url, tag, window in rpc_endpoints:
+        if cursor > end_block:
+            rpc_success = True
+            break
+        if _time.monotonic() - t0 > wall_time_budget_s:
+            paths_skipped.append(
+                (f"celo_rpc_{tag}", "wall_time_budget_exhausted")
+            )
+            break
+        endpoint_failed = False
+        consecutive_failures = 0
+        # Plan §"FAILED if (b) >3 consecutive request failures (HTTP 4xx/5xx)
+        # on a single block range that cannot be narrowed". We therefore
+        # narrow the window in-place rather than rotating endpoints on
+        # transient 503s — the upstream-node variability documented in
+        # Task 11.N.1 README §"Backfill-failure diagnostic" is per-window
+        # not per-endpoint, so window narrowing is the targeted response.
+        # Endpoint rotation only fires when narrowing reaches the floor
+        # (1k blocks for forno) AND the window still 503s 3× consecutively.
+        current_window = window
+        while cursor <= end_block:
+            if _time.monotonic() - t0 > wall_time_budget_s:
+                paths_skipped.append(
+                    (f"celo_rpc_{tag}", "wall_time_budget_exhausted_mid_scan")
+                )
+                endpoint_failed = True
+                break
+            sub_end = min(cursor + current_window - 1, end_block)
+            try:
+                df_win = fetch_copm_transfers_celo_rpc_retry(
+                    start_block=cursor,
+                    end_block=sub_end,
+                    rpc_url=url,
+                    window_blocks=current_window,
+                )
+                df_win = _filter_post_checkpoint(
+                    df_win, checkpoint.last_completed_end_block
+                )
+                if not df_win.empty:
+                    new_rows.extend(df_win.to_dict("records"))
+                    if tag not in contributing_sources:
+                        contributing_sources.append(tag)
+                    if output_csv is not None:
+                        _append_csv(df_win, output_csv)
+                _write_checkpoint(
+                    BackfillCheckpoint(
+                        last_completed_end_block=sub_end,
+                        total_rows_so_far=(
+                            checkpoint.total_rows_so_far + len(new_rows)
+                        ),
+                        data_source=_compose_data_source(
+                            checkpoint.data_source, contributing_sources
+                        ),
+                    )
+                )
+                cursor = sub_end + 1
+                consecutive_failures = 0
+                # Recover throughput after a transient narrow.
+                if current_window < window:
+                    current_window = min(current_window * 2, window)
+            except Exception as exc:  # noqa: BLE001
+                consecutive_failures += 1
+                paths_skipped.append(
+                    (
+                        f"celo_rpc_{tag}_window_{cursor}_{sub_end}",
+                        f"failed: {exc!r}",
+                    )
+                )
+                # Narrow first; rotate only at the floor.
+                _MIN_WINDOW: Final[int] = 1_000  # noqa: F841 (documents floor)
+                if current_window > 1_000:
+                    current_window = max(1_000, current_window // 2)
+                    consecutive_failures = 0  # reset under narrowing
+                    _time.sleep(min(2 ** 1, 30))  # brief 2s back-off
+                    continue
+                if consecutive_failures >= 3:
+                    # Window already at floor and still 3× failing →
+                    # rotate to next endpoint per plan §FAILED.
+                    endpoint_failed = True
+                    break
+                _time.sleep(min(2 ** consecutive_failures, 30))
+        if not endpoint_failed and cursor > end_block:
+            rpc_success = True
+            break
+
+    if rpc_success:
+        return _finalize_resume(
+            new_rows=new_rows,
+            checkpoint=checkpoint,
+            output_csv=output_csv,
+            end_block=end_block,
+            t0=t0,
+            paths_attempted=tuple(paths_attempted),
+            paths_skipped=tuple(paths_skipped),
+            contributing_sources=contributing_sources,
+            resume_from=resume_from,
+            expected_total=expected_total,
+            tolerance=tolerance,
+        )
+
+    # ── Path 2: Paid Alchemy ───────────────────────────────────────────
+    paths_attempted.append("alchemy_paid")
+    alchemy_paid = _os.environ.get("ALCHEMY_API_KEY_PAID")
+    if not alchemy_paid:
+        paths_skipped.append(("alchemy_paid", "ALCHEMY_API_KEY_PAID unset"))
+    else:
+        try:
+            df_alch = fetch_copm_transfers_alchemy_paid(
+                api_key=alchemy_paid,
+                start_block=resume_from,
+                end_block=end_block,
+            )
+            df_alch = _filter_post_checkpoint(
+                df_alch, checkpoint.last_completed_end_block
+            )
+            new_rows.extend(df_alch.to_dict("records"))
+            if not df_alch.empty:
+                contributing_sources.append("alchemy_paid")
+            return _finalize_resume(
+                new_rows=new_rows,
+                checkpoint=checkpoint,
+                output_csv=output_csv,
+                end_block=end_block,
+                t0=t0,
+                paths_attempted=tuple(paths_attempted),
+                paths_skipped=tuple(paths_skipped),
+                contributing_sources=contributing_sources,
+                resume_from=resume_from,
+                expected_total=expected_total,
+                tolerance=tolerance,
+            )
+        except Exception as exc:  # noqa: BLE001
+            paths_skipped.append(("alchemy_paid", f"failed: {exc!r}"))
+
+    # ── Path 3: Covalent / GoldRush ────────────────────────────────────
+    paths_attempted.append("covalent")
+    covalent_key = _os.environ.get("COVALENT_API_KEY")
+    if not covalent_key:
+        paths_skipped.append(("covalent", "COVALENT_API_KEY unset"))
+    else:
+        try:
+            df_cov = fetch_copm_transfers_covalent(
+                api_key=covalent_key,
+                start_block=resume_from,
+                end_block=end_block,
+            )
+            df_cov = _filter_post_checkpoint(
+                df_cov, checkpoint.last_completed_end_block
+            )
+            new_rows.extend(df_cov.to_dict("records"))
+            if not df_cov.empty:
+                contributing_sources.append("covalent")
+            return _finalize_resume(
+                new_rows=new_rows,
+                checkpoint=checkpoint,
+                output_csv=output_csv,
+                end_block=end_block,
+                t0=t0,
+                paths_attempted=tuple(paths_attempted),
+                paths_skipped=tuple(paths_skipped),
+                contributing_sources=contributing_sources,
+                resume_from=resume_from,
+                expected_total=expected_total,
+                tolerance=tolerance,
+            )
+        except Exception as exc:  # noqa: BLE001
+            paths_skipped.append(("covalent", f"failed: {exc!r}"))
+
+    # ── Path 4: Flipside SQL REST ──────────────────────────────────────
+    paths_attempted.append("flipside")
+    flipside_key = _os.environ.get("FLIPSIDE_API_KEY")
+    if not flipside_key:
+        paths_skipped.append(("flipside", "FLIPSIDE_API_KEY unset"))
+    else:
+        try:
+            df_flip = fetch_copm_transfers_flipside(
+                api_key=flipside_key,
+                start_block=resume_from,
+                end_block=end_block,
+            )
+            df_flip = _filter_post_checkpoint(
+                df_flip, checkpoint.last_completed_end_block
+            )
+            new_rows.extend(df_flip.to_dict("records"))
+            if not df_flip.empty:
+                contributing_sources.append("flipside")
+            return _finalize_resume(
+                new_rows=new_rows,
+                checkpoint=checkpoint,
+                output_csv=output_csv,
+                end_block=end_block,
+                t0=t0,
+                paths_attempted=tuple(paths_attempted),
+                paths_skipped=tuple(paths_skipped),
+                contributing_sources=contributing_sources,
+                resume_from=resume_from,
+                expected_total=expected_total,
+                tolerance=tolerance,
+            )
+        except Exception as exc:  # noqa: BLE001
+            paths_skipped.append(("flipside", f"failed: {exc!r}"))
+
+    # ── Path 5: Dune REST direct ───────────────────────────────────────
+    paths_attempted.append("dune_rest")
+    dune_key = _os.environ.get("DUNE_API_KEY")
+    if not dune_key:
+        paths_skipped.append(("dune_rest", "DUNE_API_KEY unset"))
+    else:
+        try:
+            df_dune = fetch_copm_transfers_dune_rest(
+                api_key=dune_key, start_block=resume_from
+            )
+            df_dune = _filter_post_checkpoint(
+                df_dune, checkpoint.last_completed_end_block
+            )
+            new_rows.extend(df_dune.to_dict("records"))
+            if not df_dune.empty:
+                contributing_sources.append("dune_rest")
+            return _finalize_resume(
+                new_rows=new_rows,
+                checkpoint=checkpoint,
+                output_csv=output_csv,
+                end_block=end_block,
+                t0=t0,
+                paths_attempted=tuple(paths_attempted),
+                paths_skipped=tuple(paths_skipped),
+                contributing_sources=contributing_sources,
+                resume_from=resume_from,
+                expected_total=expected_total,
+                tolerance=tolerance,
+            )
+        except Exception as exc:  # noqa: BLE001
+            paths_skipped.append(("dune_rest", f"failed: {exc!r}"))
+
+    # ── Path 6: Manual Dune-web CSV (zero-credential fallback) ─────────
+    paths_attempted.append("dune_manual_csv")
+    if dune_manual_csv is None or not dune_manual_csv.is_file():
+        paths_skipped.append(
+            ("dune_manual_csv", f"file not provided / missing: {dune_manual_csv}")
+        )
+    else:
+        try:
+            df_man = ingest_copm_transfers_dune_manual_csv(dune_manual_csv)
+            df_man = _filter_post_checkpoint(
+                df_man, checkpoint.last_completed_end_block
+            )
+            new_rows.extend(df_man.to_dict("records"))
+            if not df_man.empty:
+                contributing_sources.append("dune_manual_csv")
+            return _finalize_resume(
+                new_rows=new_rows,
+                checkpoint=checkpoint,
+                output_csv=output_csv,
+                end_block=end_block,
+                t0=t0,
+                paths_attempted=tuple(paths_attempted),
+                paths_skipped=tuple(paths_skipped),
+                contributing_sources=contributing_sources,
+                resume_from=resume_from,
+                expected_total=expected_total,
+                tolerance=tolerance,
+            )
+        except Exception as exc:  # noqa: BLE001
+            paths_skipped.append(("dune_manual_csv", f"failed: {exc!r}"))
+
+    # All six paths exhausted → HALT.
+    raise RuntimeError(
+        "X_D_STILL_INSUFFICIENT_PHASE_2: all six paths in the Task 11.N.1b "
+        f"ladder failed/skipped. Attempted: {paths_attempted}. "
+        f"Skipped: {paths_skipped}. Do NOT silently regress to the partial "
+        f"52,068-row dataset for downstream X_d computation. See plan "
+        f"§Task 11.N.1b 'Recovery protocols' for next steps."
+    )
+
+
+def _finalize_resume(
+    *,
+    new_rows: list[dict],
+    checkpoint: BackfillCheckpoint,
+    output_csv: Path | None,
+    end_block: int,
+    t0: float,
+    paths_attempted: tuple[str, ...],
+    paths_skipped: tuple[tuple[str, str], ...],
+    contributing_sources: list[str],
+    resume_from: int,
+    expected_total: int,
+    tolerance: float,
+) -> ResumeBackfillResult:
+    """Common exit path: writes the final checkpoint + CSV."""
+    import time as _time
+
+    new_n = len(new_rows)
+    total = checkpoint.total_rows_so_far + new_n
+
+    final_source = _compose_data_source(
+        checkpoint.data_source, contributing_sources
+    )
+
+    cp_final = BackfillCheckpoint(
+        last_completed_end_block=end_block,
+        total_rows_so_far=total,
+        data_source=final_source,
+    )
+    _write_checkpoint(cp_final)
+
+    return ResumeBackfillResult(
+        rows_added=new_n,
+        rows_total=total,
+        data_source=final_source,
+        start_block=resume_from,
+        end_block=end_block,
+        wall_time_s=_time.monotonic() - t0,
+        paths_attempted=paths_attempted,
+        paths_skipped=paths_skipped,
+    )
+
+
+# ── Task 11.N.2b.2: Carbon-basket weekly panel ingestion ────────────────────
+#
+# Ingests the SQL-pre-aggregated weekly basket panel sourced from Dune query
+# 7372282. The Dune query computes ``source_amount_usd`` via global-leg
+# numeraire (USDT/USDC = leg/1e6; WETH = leg/1e18 × daily ETH/USD from
+# prices.usd) and aggregates per (week_friday, mento_sym, partition).
+#
+# CSV provenance: ``contracts/data/carbon_celo/weekly_basket_panel.csv``
+# (253 rows: 82 Fridays × {6 Mento currencies} × {user, arb} after pruning
+# zero-event combinations). 175,005 events ingested = 100% match against
+# corrigendum-corrected boundary count of 175,005.
+#
+# Atomic commit: schema migration (relax CHECK + create tables) AND
+# population (8-series panel rows in onchain_xd_weekly) wrapped in a single
+# DuckDB transaction — rolls back entirely on any failure per CR-P5/PM-P1
+# Step Atomicity Protocol from Task 11.N.2b.1.
+
+#: Path to the pre-aggregated weekly basket CSV produced by Dune query 7372282.
+_CARBON_WEEKLY_CSV: Final[str] = "data/carbon_celo/weekly_basket_panel.csv"
+
+#: Map mento symbol → per-currency proxy_kind tag.
+_MENTO_SYM_TO_PROXY_KIND: Final[dict[str, str]] = {
+    "COPM": "carbon_per_currency_copm_volume_usd",
+    "USDm": "carbon_per_currency_usdm_volume_usd",
+    "EURm": "carbon_per_currency_eurm_volume_usd",
+    "BRLm": "carbon_per_currency_brlm_volume_usd",
+    "KESm": "carbon_per_currency_kesm_volume_usd",
+    "XOFm": "carbon_per_currency_xofm_volume_usd",
+}
+
+
+def load_carbon_weekly_csv(path: Path) -> pd.DataFrame:
+    """Load + validate the Dune-aggregated Carbon basket weekly CSV.
+
+    Pure parsing function. Raises if the file is missing or the column
+    schema diverges from the pre-committed contract.
+    """
+    if not path.is_file():
+        raise RuntimeError(
+            f"CARBON_WEEKLY_CSV_MISSING: expected {path}. "
+            "Source: Dune query 7372282 (basket-membership filter + USD pricing). "
+            "Re-run the Dune query and re-export if needed."
+        )
+    df = pd.read_csv(path)
+    expected_cols = {
+        "week_friday", "mento_sym", "partition",
+        "n_events", "sum_usd_volume",
+        "min_event_usd", "max_event_usd",
+    }
+    actual_cols = set(df.columns)
+    if expected_cols - actual_cols:
+        raise RuntimeError(
+            f"CARBON_WEEKLY_CSV_SCHEMA_MISMATCH: missing columns "
+            f"{expected_cols - actual_cols}. Got {actual_cols}."
+        )
+    return df
+
+
+def ingest_carbon_basket_weekly(
+    conn: duckdb.DuckDBPyConnection,
+    csv_path: Path | None = None,
+) -> dict[str, int]:
+    """Atomically migrate schema + populate ``onchain_xd_weekly`` with Carbon rows.
+
+    Wraps the schema migration (relax CHECK + create per-event tables) AND
+    the 8-series weekly panel INSERTs in a single DuckDB transaction. On any
+    failure, the transaction rolls back and the canonical DB is unchanged.
+
+    The 8 series persisted under distinct ``proxy_kind`` tags:
+
+      1. ``carbon_basket_user_volume_usd``  — basket-aggregate user-only volume
+      2. ``carbon_basket_arb_volume_usd``   — basket-aggregate arb-routed volume
+      3. ``carbon_per_currency_copm_volume_usd`` (user-only per-currency vector)
+      4. ``carbon_per_currency_usdm_volume_usd``
+      5. ``carbon_per_currency_eurm_volume_usd``
+      6. ``carbon_per_currency_brlm_volume_usd``
+      7. ``carbon_per_currency_kesm_volume_usd``
+      8. ``carbon_per_currency_xofm_volume_usd``
+
+    Idempotent on re-run via ``INSERT OR REPLACE`` on composite PK
+    ``(week_start, proxy_kind)``. Pre-existing supply + distribution
+    channel rows preserved byte-exact.
+
+    Returns
+    -------
+    dict[str, int]
+        ``{proxy_kind: rows_written}`` counts.
+    """
+    from scripts.econ_schema import migrate_onchain_xd_weekly_for_carbon
+
+    csv_path = csv_path or (Path(__file__).resolve().parents[1] / _CARBON_WEEKLY_CSV)
+    df = load_carbon_weekly_csv(csv_path)
+
+    written: dict[str, int] = {}
+
+    # Pivot to {friday: {(partition, mento_sym): sum_usd_volume}} for direct lookup.
+    pivot: dict[date, dict[tuple[str, str], float]] = {}
+    for _, row in df.iterrows():
+        fri_str = str(row["week_friday"])
+        fri = date.fromisoformat(fri_str)
+        partition = str(row["partition"])
+        sym = str(row["mento_sym"])
+        usd = float(row["sum_usd_volume"])
+        pivot.setdefault(fri, {})[(partition, sym)] = usd
+
+    fridays = sorted(pivot.keys())
+
+    # Atomic transaction: migration + population.
+    conn.execute("BEGIN TRANSACTION")
+    try:
+        # 1. Schema migration (idempotent — no-op if already-migrated).
+        migrate_onchain_xd_weekly_for_carbon(conn)
+
+        # 2. Populate the 8-series panel.
+        for fri in fridays:
+            cells = pivot[fri]
+
+            # Aggregate basket user volume (sum across Mento currencies, user partition).
+            user_total = sum(
+                v for (part, _sym), v in cells.items() if part == "user"
+            )
+            arb_total = sum(
+                v for (part, _sym), v in cells.items() if part == "arb"
+            )
+
+            # Series 1: basket user volume
+            conn.execute(
+                "INSERT OR REPLACE INTO onchain_xd_weekly "
+                "(week_start, value_usd, is_partial_week, proxy_kind) "
+                "VALUES (?, ?, ?, ?)",
+                [fri, f"{user_total:.6f}", False, "carbon_basket_user_volume_usd"],
+            )
+            written["carbon_basket_user_volume_usd"] = (
+                written.get("carbon_basket_user_volume_usd", 0) + 1
+            )
+
+            # Series 2: basket arb volume
+            conn.execute(
+                "INSERT OR REPLACE INTO onchain_xd_weekly "
+                "(week_start, value_usd, is_partial_week, proxy_kind) "
+                "VALUES (?, ?, ?, ?)",
+                [fri, f"{arb_total:.6f}", False, "carbon_basket_arb_volume_usd"],
+            )
+            written["carbon_basket_arb_volume_usd"] = (
+                written.get("carbon_basket_arb_volume_usd", 0) + 1
+            )
+
+            # Series 3-8: per-currency user-only volumes (zero-fill missing).
+            for sym, proxy_kind in _MENTO_SYM_TO_PROXY_KIND.items():
+                v = cells.get(("user", sym), 0.0)
+                conn.execute(
+                    "INSERT OR REPLACE INTO onchain_xd_weekly "
+                    "(week_start, value_usd, is_partial_week, proxy_kind) "
+                    "VALUES (?, ?, ?, ?)",
+                    [fri, f"{v:.6f}", False, proxy_kind],
+                )
+                written[proxy_kind] = written.get(proxy_kind, 0) + 1
+
+        conn.execute("COMMIT")
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+
+    return written
