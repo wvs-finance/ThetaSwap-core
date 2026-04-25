@@ -1786,3 +1786,312 @@ Two execution options:
 2. **Inline Execution** — Execute tasks in this session using `executing-plans`, batch with checkpoints.
 
 Which approach?
+
+---
+
+## CORRECTIONS — Rev-5.3.2 (2026-04-25, user-approved disposition path ζ)
+
+**Trigger.** Anti-fishing pathological-HALT at Task 11.O scope: the primary X_d × Y₃ joint coverage measured **56 nonzero weeks** for `proxy_kind = "carbon_basket_user_volume_usd"` against the pre-committed `N_MIN = 75` (Rev-5.3.1 path α value, commit `7afcd2ad6`). Running 11.O at N=56 without an explicit pre-commitment update would constitute silent threshold tuning — the exact failure mode the `feedback_pathological_halt_anti_fishing_checkpoint` discipline forbids. Per protocol (HALT → disposition memo → user-enumerated pivot → CORRECTIONS block → post-hoc 3-way review), the orchestrator authored the disposition memo at `contracts/.scratch/2026-04-25-y3-coverage-halt-disposition.md` enumerating five paths (β / γ / δ / ε / ζ); user selected **path ζ** (γ panel-window swap + δ CPI-source upgrade for both BR and CO) as the only disposition that has any plausible path to recovering `N_MIN = 75` without further relaxation. This Rev-5.3.2 block is the user-approved CORRECTIONS payload, post-fix-up rewrite per the 3-way review (Reality Checker BLOCK on the original Rev-5.3.2 narrowing of δ to δ-BR-only — see RC review report `contracts/.scratch/2026-04-25-rev532-review-reality-checker.md` and the §"Why ζ" honesty note below). Reference commits: prior HALT memo `cefec08a7`; 11.N.2d completion `765b5e203`; Rev-5.3.1 N_MIN-relaxation correction `7afcd2ad6`.
+
+### Why ζ over the alternatives (succinct)
+
+- **β (further N_MIN relaxation 75 → ≤56):** REJECTED — would compound the Rev-5.3.1 80→75 relaxation into "tune until it passes." Anti-fishing-banned by the discipline that already governs `MDES_SD` and the `MDES_FORMULATION_HASH` (immutable, sha256 = `4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa`). Two relaxations on one plan revision exceed reviewer tolerance.
+- **γ alone (window swap only):** RECOVERS coverage from 56 → ~65 weeks; still below `N_MIN = 75` without a second relaxation. Insufficient.
+- **δ alone (CPI source upgrade only):** RECOVERS coverage substantially but leaves Aug-2023→Sep-2024 pre-period unused; below the joint-coverage target unless paired with γ.
+- **ε (run 11.O at N=56 fully disclosed):** REJECTED — scientific-cost too high; below pre-committed power floor; verdict could only be framed as "directional / inconclusive."
+- **ζ (γ + δ-{BR, CO}):** SELECTED — under Rev-5.3.2 (post-fix-up rewrite per RC review) ζ is implemented as `γ + δ-{BR via BCB SGS, CO via the existing DANE table}`; this is the only disposition that has any plausible path to the original Rev-5.3.1 `N_MIN = 75` commitment without further relaxation. **Honesty note:** the projected joint coverage under the documented mix `{EU=Eurostat@2025-12, BR=BCB@2026-03, CO=DANE@2026-03}` is approximately **65 weeks** (RC live-verified at the EU-binding cutoff plus LOCF tail), still **below** the ≥75 gate. The DANE wire-up raises the path-ζ ceiling from 47 → ~65 vs. the gate's 75, but does not by itself clear the gate. The HALT clause at Task 11.N.2d-rev is the protective net for this case: if joint coverage lands < 75 under the actual mix, the orchestrator HALTs to user — never to silent N_MIN drift. Cost: ~1 day of fetcher work (BR + CO wire-up) plus this CORRECTIONS block + 3-way review.
+
+### A. Pre-commitment update — what changes vs. what is preserved
+
+All staleness arithmetic in this section is anchored to the Rev-5.3.2 authoring date **2026-04-25**. "9-month stale" / "2-month stale" / etc. are computed against that date.
+
+| Anchor | Status under Rev-5.3.2 | Source / rationale |
+|---|---|---|
+| `N_MIN` | **PRESERVED** at `75` | Rev-5.3.1 path α value; no further relaxation under ζ |
+| `POWER_MIN` | **PRESERVED** at `0.80` | Rev-4 standard; no change |
+| `MDES_SD` | **PRESERVED** at `0.40` | Rev-5.3 v2 fix-pass anchor; no change |
+| `MDES_FORMULATION_HASH` | **PRESERVED** byte-exact | sha256 = `4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa` (canonical Cohen f²); IMMUTABLE per the §0.3 final-fix-pass anti-fishing guard |
+| `PC1_LOADING_FLOOR` | **PRESERVED** at `0.40` | Diagnostic-only threshold; no change |
+| Rev-4 `decision_hash` | **PRESERVED** byte-exact | `6a5f9d1b05c18defd8b30c4b3cef6af896d6e45a2a26c1c60aa342da0a5a443c` |
+| Y₃ design doc §1, §4, §8, §9 | **PRESERVED** byte-exact | Immutable spec at `contracts/docs/superpowers/specs/2026-04-24-y3-inequality-differential-design.md` |
+| Anti-fishing protocol | **PRESERVED** byte-exact | Halt-disposition-pivot-CORRECTIONS-review chain enforced |
+| `PRIMARY_PANEL_START` | **UPDATED** from `date(2024, 9, 1)` → `date(2023, 8, 1)` | The Rev-5.3 v2 fix-pass `SENSITIVITY_PANEL_START` value is **promoted** to primary; ~13 additional months of pre-period folded into the primary panel |
+| `PRIMARY_PANEL_END` | **PRESERVED** at `date(2026, 4, 24)` | No change |
+| `SENSITIVITY_PANEL_START` semantics | **REFRAMED** | No longer "primary's wider sibling" (γ collapsed it); now functions as an alternative-source single-vendor sensitivity per Task 11.N.2d.1-reframe below |
+| BR (Brazil) WC-CPI source | **UPDATED** from IMF IFS via DBnomics → BCB SGS direct API series 433 (IPCA monthly variation %), per the level-series contract consumed by the BR `fetch_country_wc_cpi_components` dispatch | Pre-flight intelligence: IMF IFS is 9-month stale (cutoff 2025-07-01); BCB SGS is 1-month stale (cutoff ≈2026-03); cumulative-index materialization required to satisfy the level-series contract |
+| CO (Colombia) WC-CPI source | **UPDATED** from IMF IFS via DBnomics → DANE direct (consume the already-landed `dane_ipc_monthly` DuckDB table) | Pre-flight intelligence (Reality Checker live verification, 2026-04-25): `dane_ipc_monthly` is already populated in the canonical structural-econ DuckDB at `contracts/data/structural_econ.duckdb` with **861 rows current through 2026-03-01** (ingested 2026-04-16; schema `(date, ipc_value, monthly_variation_pct, _ingested_at)`). DANE provides headline-only (no expenditure-component split), so all four component slots populate with the headline level — same broadcast pattern as the existing `_fetch_imf_ifs_headline_broadcast` path per design doc §10 row 2. The IMF IFS via DBnomics path is preserved as the alternative-source comparator under Task 11.N.2d.1-reframe (single-source IMF-IFS-only sensitivity). Earlier "DANE direct paths return 404" framing in this row was authored without DuckDB inspection and is corrected here |
+| EU (Eurozone) HICP source | **PRESERVED** | Eurostat HICP via DBnomics already fresh through 2025-12 (~5-month-stale at authoring date — binding country under the Rev-5.3.2 mix; see Task 11.N.2d-rev acceptance arithmetic note for the joint-coverage implication) |
+| KE (Kenya) WC-CPI source | **PRESERVED** | Per design §10 row 1 fallback — KNBS Excel-append fragility; Y₃ continues to drop Kenya gracefully when KNBS data is absent |
+| Y₃ `source_methodology` tag for the Rev-5.3.2 panel | **NEW** value reflecting the mixed-source pattern (a `source_methodology` value tagging the country source mix `{EU=Eurostat, BR=BCB, CO=DANE, KE=fallback}`; literal string finalized at implementation; the schema is described, not the literal — see footnote a) | Composite PK `(week_start, source_methodology)` admits the new tag without mutating any prior row |
+| All-data-in-DuckDB invariant | **REAFFIRMED** | New raw fetches MUST materialize to new DuckDB raw tables before downstream consumption; tables under Rev-5.3.2: `bcb_ipca_monthly` (NEW under Task 11.N.2.BR-bcb-fetcher); `dane_ipc_monthly` (EXISTING and ALREADY POPULATED, consumed by Task 11.N.2.CO-dane-wire — no schema change); `oecd_cpi_monthly` (NEW only if Task 11.N.2.OECD-probe returns GO; diagnostic-only under Rev-5.3.2, NOT consumed) |
+
+**Footnote a (`source_methodology` literal-vs-schema discipline).** The CORRECTIONS block describes the schema of the new tag (a non-`y3_v1` value distinguishing the Rev-5.3.2 mixed-source mix from the prior `y3_v1` panel). The literal string itself is finalized at implementation time and recorded in the Task 11.N.2d-rev verification memo (see Task 11.N.2d-rev acceptance criterion (d) below). Reviewers ack the chosen literal in that memo before any downstream task dispatches.
+
+### B. New / modified plan tasks
+
+The following tasks are **inserted** into Phase 1.5.5 between the existing Task 11.N.2d / 11.N.2d.1 commits and Task 11.O. They preserve the Rev-3.1 task-numbering convention by using compound suffixes; the Rev-5.3.2 task count update is captured in §F below. Existing Tasks 11.N.2d and 11.N.2d.1 are not deleted; their bodies are referenced and supplemented by the reframe-tasks below.
+
+**Dispatch ordering (per RC advisory A4 — `feedback_specialized_agents_per_task` is a sequential orchestrator).** All three Data Engineer tasks (Task 11.N.2.OECD-probe, Task 11.N.2.CO-dane-wire, Task 11.N.2.BR-bcb-fetcher) dispatch to the same Data Engineer subagent under sequential orchestration. Author dispatches them as a serial stream in this order (lightest first, heaviest last):
+
+1. **Task 11.N.2.OECD-probe** (diagnostic-only; ~30 minutes — transcribes RC's already-completed live probe output into the canonical project history).
+2. **Task 11.N.2.CO-dane-wire** (~30 minutes per RC's estimate — one-table wire-up; consume-only).
+3. **Task 11.N.2.BR-bcb-fetcher** (~half-day — new fetcher + cumulative-index utility + new DuckDB raw table + numpy reproduction witness).
+
+Then Task 11.N.2d-rev dispatches (depends on both Task 11.N.2.CO-dane-wire AND Task 11.N.2.BR-bcb-fetcher landing). Then Task 11.N.2d.1-reframe (depends on Task 11.N.2d-rev). Then Task 11.O-scope-update (depends on Task 11.N.2d-rev clearing the joint-coverage gate, OR routing to user-HALT if the gate does not clear).
+
+#### Task 11.N.2.OECD-probe — Diagnostic-only archival of OECD direct SDMX freshness for CO (NEW; diagnostic-only)
+
+**Subagent:** Data Engineer.
+
+**Deliverable:** `contracts/.scratch/2026-04-25-oecd-sdmx-co-cpi-probe.md` — a single scratch memo codifying the Reality Checker's 2026-04-25 live SDMX probe result (OECD direct SDMX returns CO CPI through 2026-03; ~1-month-stale at the authoring date) and listing per-country (CO / BR / KE) coverage cutoff dates returned by OECD direct SDMX, for completeness.
+
+**Acceptance criteria:**
+- Memo lists CO / BR / KE coverage from OECD direct SDMX as observed (cutoff month per country) — RC's 2026-04-25 probe output is the canonical evidence base; memo cites that probe and reproduces the request URL for future verification.
+- Memo includes a side-by-side comparison row vs. the IMF IFS via DBnomics cutoffs, the BCB SGS cutoff (BR comparator), and the DANE cutoff (CO comparator) per `dane_ipc_monthly` — i.e., a four-source freshness matrix.
+- Memo records the freshness threshold "≥ 2026-01-01 for CO" (anchored to the EU Eurostat HICP cutoff at 2025-12-01 plus a 1-month tolerance) as the diagnostic GO yardstick — but the memo's GO/NO-GO has NO operational dispatch consequence under Rev-5.3.2 (the CO upgrade path is Task 11.N.2.CO-dane-wire, not OECD).
+- Memo serves as future-revision intelligence (Rev-5.3.3 or later may consult it if DANE wire-up is later retired); it is NOT a dependency of Task 11.N.2d-rev.
+
+**Reviewer:** Reality Checker (single-pass, archival).
+
+**Dependency:** Rev-5.3.2 CORRECTIONS block landed + 3-way reviewed.
+
+**Status:** Diagnostic-only. Outputs only a `.scratch/` memo for archival. NOT a dispatch dependency for any downstream Rev-5.3.2 task. Implementation effort estimate: ~30 minutes (largely a transcription of RC's already-completed live probe output into the canonical project history).
+
+**Anti-fishing guard:** The probe is exploratory ONLY. If OECD-direct SDMX freshness later motivates a CO source change, that change requires its own CORRECTIONS block + 3-way review (Rev-5.3.3 or later). Probe outcome may not be silently fed into the Task 11.N.2d-rev source mix under Rev-5.3.2.
+
+---
+
+#### Task 11.N.2.CO-dane-wire — Wire existing `dane_ipc_monthly` into the CO branch of `fetch_country_wc_cpi_components` (NEW)
+
+**Subagent:** Data Engineer.
+
+**Deliverable:**
+- Modify the CO branch of `fetch_country_wc_cpi_components` (in `scripts/y3_data_fetchers.py`) so it consumes the existing `dane_ipc_monthly` DuckDB table — read via the canonical `econ_query_api` pattern — rather than the IMF IFS via DBnomics path.
+- The headline-broadcast substitution per Y₃ design doc §10 row 2 still applies: DANE provides a headline level only (no expenditure-component split), so all four component slots are populated with the headline level — the same broadcast pattern as the existing `_fetch_imf_ifs_headline_broadcast` path. The fetcher dispatch at the CO branch is the only change; the consumer contract `fetch_country_wc_cpi_components` returns is preserved-compatible with all downstream callers.
+- The existing `_fetch_imf_ifs_headline_broadcast` path is **retained** as the alternative-source comparator consumed by Task 11.N.2d.1-reframe (single-source IMF-IFS-only sensitivity).
+- `contracts/.scratch/2026-04-25-co-dane-wireup-result.md` — a verification memo recording: (a) the new fetcher code path's smoke-test output (cutoff date returned, row count returned over the primary window); (b) the per-week DANE → weekly LOCF tail diagnostic (number of LOCF-extended weeks beyond the DANE monthly cutoff under the project's existing weekly-anchor LOCF rule); (c) confirmation that the existing `_fetch_imf_ifs_headline_broadcast` path remains available as fallback for the IMF-IFS-only sensitivity at Task 11.N.2d.1-reframe.
+
+**Acceptance criteria:**
+- Failing-test-first per `feedback_strict_tdd`: a failing test asserting the CO branch of `fetch_country_wc_cpi_components` round-trips DANE rows from the canonical DuckDB through the fetcher and returns a level series with cutoff date ≥ 2026-02-01 (i.e., ≤ 2-month stale at authoring date 2026-04-25).
+- Real-data integration test (no DANE-fetch mock — the data is already in DuckDB; per `feedback_real_data_over_mocks`, this is a real-data round-trip).
+- Existing tests under `contracts/scripts/tests/inequality/` remain green; `pytest contracts/scripts/tests/` exits 0 (PM-N4 commit-boundary guard).
+- The `dane_ipc_monthly` table is **consume-only** — no schema mutation, no re-ingestion, no normalization in this task; the table is treated as authoritative read-side state owned by whichever upstream task ingested it.
+- Rev-4 `decision_hash` byte-exact preserved (no schema change to `dane_ipc_monthly`; no new raw tables introduced).
+- Y₃ design doc §10 row 2 broadcast pattern preserved byte-exact (headline-only ⇒ all four component slots populated with the headline level).
+
+**Reviewers:** Code Reviewer + Reality Checker + Senior Developer (per `feedback_implementation_review_agents`).
+
+**Dependency:** Rev-5.3.2 CORRECTIONS block landed + 3-way reviewed. (Independent of Task 11.N.2.BR-bcb-fetcher; both consume the same `fetch_country_wc_cpi_components` consumer contract via separate per-country branches and can land in either order. Sequenced serially as a single-Data-Engineer-subagent stream — see Anti-fishing guard below.)
+
+**Anti-fishing guard:** The DANE table is **consume-only**. The fetcher dispatch change is a one-table wire-up; if DANE table contents change in a future re-ingest, that's a separate concern owned by whichever upstream task ingests `dane_ipc_monthly` (NOT this task). The Y₃ aggregation rule from design doc §4 (60/25/15 WC-CPI weights, equal-weight 1/4 country aggregation) is unchanged. The mixed-source pattern is documented in the new `source_methodology` tag (per §A footnote a) for downstream reproducibility.
+
+---
+
+#### Task 11.N.2.BR-bcb-fetcher — Implement BCB SGS/433 fetcher + cumulative-index utility + raw DuckDB table (NEW)
+
+**Subagent:** Data Engineer.
+
+**Deliverable:**
+- New fetcher path that lands BCB SGS series 433 (IPCA monthly variation %) rows into a NEW additive DuckDB raw table `bcb_ipca_monthly`.
+- New cumulative-index utility that converts the monthly-variation series to a level-series compatible with the existing `fetch_country_wc_cpi_components` contract for BR.
+- Failing-test-first per `feedback_strict_tdd`: a failing test asserting (a) the raw table populates from a real BCB SGS HTTP fetch (no mocks except for the documented HTTP-error scenario per `feedback_real_data_over_mocks`); (b) the cumulative-index utility reproduces the BR level series byte-exact under an independent-reproduction-witness numpy path; (c) the BR-source dispatch in `fetch_country_wc_cpi_components` returns a level series with cutoff date ≥ 2026-02-01 (i.e., ≤ 2-month stale at authoring date 2026-04-25).
+
+**Acceptance criteria:**
+- The BCB SGS fetcher uses `requests`-only HTTP (no new Python dependencies per the project-wide CR-P2 dependency-discipline rule).
+- The raw table `bcb_ipca_monthly` is created via additive schema migration; Rev-4 `decision_hash` byte-exact through migration; primary `onchain_xd_weekly` and `onchain_y3_weekly` rows preserved byte-exact.
+- Idempotent UPSERT semantics on the raw table — re-fetching the same window does not mutate prior rows.
+- The cumulative-index utility's signature is preserved-compatible with `fetch_country_wc_cpi_components`'s consumer contract; downstream callers see a level series exactly like the IMF-IFS-shaped series they were consuming previously, with no schema change.
+- A second-pass numpy reproduction witness check is included in the test (cumulative product of `(1 + variation/100)` reconstructs a level series matching the utility output to within float-comparison tolerance).
+- The BR series cutoff lands at ≥ 2026-02-01 when run on 2026-04-25 (the date authoring this CORRECTIONS block); any earlier cutoff means BCB SGS does not solve the staleness problem and HALT triggers.
+- The verification memo documents the raw `bcb_ipca_monthly` table CHECK clause (if any — sanity bounds on the variation column to catch BCB SGS API drift returning malformed data), preserving the composite-PK + relaxed-CHECK pattern precedent from commit `a724252c6` (Rev-5.2.1 Task 11.N.1 Step 0); per CR advisory 3, this allows future reviewers to reproduce the schema exactly without recourse to git archaeology.
+
+**Reviewers:** Code Reviewer + Reality Checker + Senior Developer (per `feedback_implementation_review_agents`).
+
+**Dependency:** Rev-5.3.2 CORRECTIONS block landed in this plan + 3-way review of the CORRECTIONS itself converged.
+
+**Anti-fishing guard:** The BR source-swap is a methodology change at the panel-construction layer, not at the response-variable layer. The pre-committed Y₃ aggregation rule in design doc §4 (60/25/15 WC-CPI weights, equal-weight 1/4 country aggregation) is unchanged. The mixed-source pattern is fully documented in the new `source_methodology` tag for downstream reproducibility.
+
+---
+
+#### Task 11.N.2d-rev — Re-execute Y₃ ingest at Rev-5.3.2 primary window with mixed sources (NEW)
+
+**Subagent:** Data Engineer.
+
+**Deliverable:**
+- `onchain_y3_weekly` re-populated for the primary window `[2023-08-01, 2026-04-24]` using the mixed-source mix `{EU = Eurostat HICP via DBnomics, BR = BCB SGS series 433 cumulative-index (Task 11.N.2.BR-bcb-fetcher), CO = DANE via the existing `dane_ipc_monthly` DuckDB table (Task 11.N.2.CO-dane-wire), KE = skipped per design §10 row 1 fallback}`.
+- The new rows are tagged with the Rev-5.3.2 `source_methodology` value (literal string finalized at implementation per §A footnote a; the schema admits the new tag via the composite PK `(week_start, source_methodology)`).
+- `contracts/.scratch/2026-04-25-y3-rev532-ingest-result.md` — a verification memo documenting: (a) per-country cutoff dates observed; (b) Y₃ panel row count (per `source_methodology`); (c) joint X_d × Y₃ overlap for each `proxy_kind` in `onchain_xd_weekly`, with primary `carbon_basket_user_volume_usd` highlighted; (d) the methodology tag literal value used (called out explicitly so reviewers can ack the literal before downstream dispatch — per RC advisory A6); (e) a side-by-side row-count comparison vs. the prior Rev-5.3.1 panel state from commit `765b5e203`.
+
+**Acceptance criteria:**
+- **Step 0 (`MDES_FORMULATION_HASH` self-test, failing-test-first):** the first failing test in this task computes `sha256sum` over the canonical `required_power(n, k, mdes_sd)` source location (per MEMORY.md `mdes_formulation_pin`) and asserts byte-exact equality with the pinned hash `4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa` (per RC advisory A3). The verification memo records the path checked and the matched hash.
+- Y₃ panel weeks ≥ **105 weeks** under the new methodology tag (per the arithmetic note below — revised from the prior "≥ 95" figure to reflect the new mix's binding country EU at 2025-12-01).
+- **Joint nonzero X_d × Y₃ overlap for `proxy_kind = "carbon_basket_user_volume_usd"` ≥ 75 weeks** — recovers the pre-committed `N_MIN = 75` from Rev-5.3.1. This is the load-bearing ζ-disposition gate. UNCHANGED from the prior Rev-5.3.2 figure.
+- The methodology tag literal value is recorded in the verification memo and is added to the `econ_query_api.load_onchain_y3_weekly()` admitted-set (additive schema-migration test asserts this).
+- Rev-4 `decision_hash` byte-exact preserved through the new ingest (the table mutation is additive INSERT under a new `source_methodology` tag — prior rows under `y3_v1` are untouched).
+- All prior tests under `contracts/scripts/tests/inequality/` remain green; `pytest contracts/scripts/tests/` exits 0 (PM-N4 commit-boundary guard).
+- If joint overlap lands < 75 weeks: HALT — write a NEW disposition memo at `contracts/.scratch/2026-04-25-y3-rev532-coverage-halt.md`; do NOT proceed to Task 11.O-scope-update; do NOT silently re-relax `N_MIN`. The escalation is to user, not to free-tuning.
+
+**Arithmetic note (informational; sanity-check at execution time, not at acceptance time).**
+
+Under the Rev-5.3.2 mix `{EU=Eurostat@2025-12-01, BR=BCB@2026-03-01, CO=DANE@2026-03-01, KE=skip}`, the binding country is **EU at 2025-12-01**. The panel cutoff = min(BR_cutoff, EU_cutoff, CO_cutoff) = 2025-12-01, snapped to the next Friday-anchor (America/Bogota timezone per project convention) and extended by the project's existing weekly-anchor LOCF tail (per Y₃ design doc §7) of up to ~4 weeks. Window `2023-08-01 → 2025-12-01` is approximately 105 Friday-anchored weeks pre-aggregation; with the LOCF tail, the panel may extend to ~109 weeks.
+
+Joint nonzero X_d × Y₃ for `proxy_kind = "carbon_basket_user_volume_usd"` is bounded above by min(Y₃_end, X_d_end) = 2025-12-01-plus-LOCF (X_d already runs to 2026-04-03). RC's live DuckDB query (review report §"Verification trail" Command 3) reports **65 joint nonzero weeks** at cutoff `2025-12-31` for this proxy_kind — i.e., at the EU-binding cutoff plus tail.
+
+**Risk note (transparency, not optimism).** Under the documented mix, the projected joint coverage is approximately **65 weeks** — still below the load-bearing ≥75 gate. The DANE wire-up (Task 11.N.2.CO-dane-wire) raises the ceiling from path-ζ-as-originally-written's 47 weeks to ~65 weeks, but does not by itself reach 75. The HALT clause above is the protective net for this case. If the gate does not clear under the actual landed mix, two follow-up paths are visible at this writing:
+
+- **(a)** A δ-EU upgrade. Eurostat HICP is published by Eurostat with ~1-month lag; the existing fetcher may be consuming a DBnomics mirror with additional staleness. A direct Eurostat REST probe (separate task, separate revision) would test whether EU CPI through 2026-02 or 2026-03 is recoverable. If yes, joint coverage rises to ~76 weeks under `{CO=DANE, BR=BCB, EU=Eurostat-direct}` per RC's Command 3 sensitivity at cutoff `2026-03-31`.
+- **(b)** Escalation to user. The user is the next decision-maker if (a) is infeasible or undesirable. Anti-fishing protocol forbids silent N_MIN drift; the HALT clause routes to user, never to free-tuning.
+
+This risk note is informational. The plan's job is to reach the truth, not to promise success. The Rev-5.3.2 acceptance criteria do NOT relax in response to this risk; the gate stays at ≥75; the HALT stays in place.
+
+The Technical Writer reviewer should sanity-check this arithmetic at execution time (NOT at acceptance review of this plan revision) and surface any divergence between projected and landed counts when the verification memo lands.
+
+**Reviewers:** Code Reviewer + Reality Checker + Senior Developer (per `feedback_implementation_review_agents`).
+
+**Dependency:** Task 11.N.2.BR-bcb-fetcher AND Task 11.N.2.CO-dane-wire (both fetcher branches must commit before the re-ingest can consume the BR + CO upgrades).
+
+**Anti-fishing guard:** The window swap (Sep-2024 → Aug-2023 start) is the disposition-memo's path γ change. It IS a pre-committed primary-panel modification; the CORRECTIONS block in §A above documents it explicitly. The new `source_methodology` tag preserves the prior `y3_v1` rows for diagnostic comparison (see Task 11.N.2d.1-reframe). The user has explicitly approved this window change as the ζ-disposition path; the change is not a back-door silent panel extension.
+
+---
+
+#### Task 11.N.2d.1-reframe — Reframe of original 11.N.2d.1 from "wider-window sensitivity" to "single-source-fallback sensitivity" (REFRAME of an existing task)
+
+**Subagent:** Data Engineer.
+
+**Deliverable:**
+- A sensitivity Y₃ panel computed against the **IMF-IFS-only** source mix (the pre-Rev-5.3.2 BR source) over the **same primary window** `[2023-08-01, 2026-04-24]`, persisted under a `source_methodology` value with suffix `_imf_only_sensitivity` (literal value finalized at implementation; describe the schema, not the string).
+- `contracts/.scratch/2026-04-25-y3-imf-only-sensitivity-comparison.md` — a comparison memo of (a) primary-vs-sensitivity Y₃ value deviation per week; (b) joint X_d × Y₃ overlap for `proxy_kind = "carbon_basket_user_volume_usd"` under the IMF-IFS-only source mix; (c) any Y₃ value drift > 1 standard deviation between the two methodologies, flagged as a finding (informational; not a blocker).
+
+**Acceptance criteria:**
+- The IMF-IFS-only sensitivity panel persists in `onchain_y3_weekly` with a distinct `source_methodology` value; the composite PK `(week_start, source_methodology)` admits it without mutating the Task 11.N.2d-rev primary rows.
+- Deviation between primary (mixed-source) Y₃ and sensitivity (IMF-only) Y₃ is quantified per week; week-by-week deviation series is included in the comparison memo.
+- The original Task 11.N.2d.1 (wider-window Aug-2023 sensitivity) IS NOW REDUNDANT under Rev-5.3.2 because the Aug-2023 start date is the new PRIMARY window. The original 11.N.2d.1 task body is superseded — it was a sensitivity row pointing at the now-primary window. The reframe replaces it with the source-mix sensitivity, which is the analytically meaningful comparison under ζ.
+- Rev-4 `decision_hash` byte-exact preserved.
+
+**Reviewers:** Code Reviewer + Reality Checker + Senior Developer.
+
+**Dependency:** Task 11.N.2d-rev (primary panel must commit first to provide the comparison baseline).
+
+**Status note:** The original Task 11.N.2d.1 as written in the Rev-5.3 v2 fix-pass plan body is **superseded-as-applied** by this reframe. The body of the original task (Steps 0-3 covering the Aug-2023 → 2026-04-24 wider-window sensitivity panel) is not deleted from the plan — it is preserved as historical record — but its execution under Rev-5.3.2 is replaced by the reframe above. A future reader following the plan executes Task 11.N.2d.1-reframe in place of the original.
+
+---
+
+#### Task 11.N.2d.2-NEW — RESERVED for user-pre-registered imputation methodology (DELIBERATE NON-TASK)
+
+**Subagent:** *(none — deliberate non-task)*
+
+**Deliverable:** *(none)*
+
+**Status:** RESERVED. NOT AUTHORED in Rev-5.3.2.
+
+**Rationale.** The user raised a question about whether past values can be brought forward to make dates comparable across the source mix (e.g., LOCF extension of stale series, AR(p) nowcast, cross-country bridging). Multiple imputation mechanisms exist:
+- **LOCF extension** (last-observation-carried-forward beyond the source cutoff): trivial to implement, but assumes stale-series stationarity over the extension horizon — not warranted for CPI under regime change.
+- **AR(p) nowcast** (fit AR(p) to the stale series, project forward): adds modeling-choice surface area on the response variable.
+- **Cross-country bridging** (project CO CPI from a regression on EU / BR CPI for the missing months): introduces cross-country information into Y₃ that Y₃'s design doc §1 sign convention does NOT contemplate.
+- **Current truncation** (the Rev-5.3.2 primary path under ζ): simple, no imputation, no extra surface area; the panel cutoff IS bounded by the slowest country.
+- **γ backward extension** (the Rev-5.3.2 primary path under ζ for the start date): extends the panel backward into pre-existing data, which is methodologically clean.
+
+Each imputation mechanism (LOCF, AR(p), cross-country) carries non-trivial **anti-fishing surface area on the response variable Y₃** — the response variable is the gate target for Task 11.O, and any imputation that affects Y₃ values mid-plan is mid-stream re-tuning of the response. The Rev-5.3.2 primary path deliberately does NOT pre-commit any imputation method.
+
+**If a future revision needs imputation**, it must satisfy the four conditions enumerated canonically in §C below (method-with-citation / sha256 anchor / side-by-side sensitivity / 3-way review pre-approval). The §B placeholder defers to §C for the authoritative condition list to prevent future-maintenance drift between two locations (per TW peer advisory 6).
+
+Until such a revision exists, primary path uses **truncated panel + γ window extension + δ-{BR, CO} source upgrades ONLY** (BR via BCB SGS in Task 11.N.2.BR-bcb-fetcher; CO via the existing `dane_ipc_monthly` table in Task 11.N.2.CO-dane-wire). Imputation is OFF the primary path under Rev-5.3.2.
+
+The four conditions in §C also explicitly forbid relabeling the existing γ-backward-extension or truncation operations as "imputation" — only the EXACT panel-construction operations PERMITTED under Rev-5.3.2 are: γ backward extension into existing-data territory; truncation at min-country cutoff; idempotent UPSERT under the new `source_methodology` tag. ANY operation that materially changes the response variable Y₃ values for any week present in the prior `y3_v1` panel is forbidden by this revision (per RC advisory A5).
+
+---
+
+#### Task 11.O-scope-update — Update Task 11.O acceptance criteria to consume Rev-5.3.2 Y₃ panel (MODIFY existing Task 11.O)
+
+**Subagent:** Senior Developer (spec-update authoring; author distinct from reviewer pool per RC advisory A2 to keep Technical Writer as an independent reviewer).
+
+**Deliverable:**
+- The existing Task 11.O body (Rev-2 spec authoring via the `structural-econometrics` skill) is updated to (a) reference the new Rev-5.3.2 `source_methodology` literal value as the primary Y₃ source; (b) reference the new primary panel window `[2023-08-01, 2026-04-24]`; (c) update the resolution-matrix MDES-anchor narrative to reflect that the operative `n` for the regression has grown from the prior 56-week-bound (toward the ≥75 gate, conditional on the joint-coverage clearing — see Task 11.N.2d-rev arithmetic note); (d) update the pre-commitment table within the Task 11.O Rev-2 spec to enumerate the BR BCB SGS and CO DANE source upgrades as documented panel-construction methodology choices; (e) preserve the structural-econometrics-skill invocation pattern byte-exact (the spec authoring methodology does not change — only the panel inputs change).
+- **In-place superseded-banner edit (per CR advisory A4):** insert a one-sentence header at the top of the original Task 11.N.2d.1 body (around line 1164 in the upstream pre-Rev-5.3.2 plan body, NOT inside this CORRECTIONS block) reading `**Rev-5.3.2 superseded:** this task body is replaced by Task 11.N.2d.1-reframe; do not execute this body.` This is a one-line in-place annotation — it does not modify the original task's prose, only flags it for the top-to-bottom reader. This is the only edit in this Rev-5.3.2 task scope that touches upstream prior-revision plan text; it is permitted because it is a non-mutating annotation pointing forward to the reframe.
+
+**Acceptance criteria:**
+- Task 11.O body is updated in-place in this plan file to reference the Rev-5.3.2 panel and methodology tag.
+- The superseded-banner annotation is in place at the head of the original Task 11.N.2d.1 body and resolves correctly when followed top-to-bottom.
+- Task 11.O remains BLOCKED on Task 11.N.2d-rev landing, NOT on Task 11.N.2d.1-reframe (the source-mix sensitivity is consumed lazily by Task 11.O's downstream sensitivity-cross-validation step, not by the spec authoring itself).
+- Three-way review (Code Reviewer + Reality Checker + Technical Writer) is dispatched against the updated Task 11.O body PLUS this Rev-5.3.2 CORRECTIONS block as a single review unit; reviewers verify the Rev-5.3.2 panel is methodologically defensible BEFORE Task 11.O dispatches.
+
+**Reviewers:** Code Reviewer + Reality Checker + Technical Writer (spec-review trio per `feedback_three_way_review`; Technical Writer is independent of authoring per RC advisory A2).
+
+**Dependency:** Task 11.N.2d-rev (primary panel landed and verified to recover `N_MIN ≥ 75` — OR HALT-with-disposition-memo if it does not, per the Task 11.N.2d-rev HALT clause; in the HALT case, Task 11.O-scope-update does not dispatch, the HALT routes to user).
+
+**Anti-fishing guard:** Task 11.O Rev-2 spec authoring may NOT proceed against the Rev-5.3.1 panel (`y3_v1`, 56-week joint coverage) under any circumstance — that would be silent N_MIN tuning. Task 11.O dispatches ONLY after the Rev-5.3.2 panel landed AND verified to recover the joint coverage gate.
+
+---
+
+### C. Imputation discussion (explicit non-decision; canonical four-condition list)
+
+The user raised an important question during disposition selection: can past values be brought forward to make dates comparable across the heterogeneous-staleness source mix? Several candidate mechanisms exist (LOCF extension beyond the source cutoff; AR(p) nowcast; cross-country bridging via a regression of stale countries on fresher ones; γ backward extension into pre-existing data; current truncation accepting the slowest-country cutoff as the panel boundary). All but the last two carry non-trivial **anti-fishing surface area on the response variable Y₃**.
+
+Rev-5.3.2 deliberately does NOT pre-commit any imputation method. The primary path is **truncated panel + γ window extension + δ-{BR, CO} source upgrades ONLY** (BR via BCB SGS in Task 11.N.2.BR-bcb-fetcher; CO via the existing `dane_ipc_monthly` table in Task 11.N.2.CO-dane-wire). The Aug-2023 start date is a backward extension into existing-data territory — no new methodology is invoked, just a wider window over already-available source data. The BR + CO source upgrades are clean source-vendor changes with the same definitional contract; no imputation is involved.
+
+**Canonical four-condition list (authoritative; §B Task 11.N.2d.2-NEW references this list).** If a future plan revision (Rev-5.3.3 or later) needs to introduce imputation to push the panel cutoff beyond the current bound, it MUST satisfy ALL FOUR of the following; failing any one of them blocks the introduction:
+
+- (a) The imputation method is specified in the plan body with literature citation (no "we used a reasonable method" — the citation must be reproducible, peer-reviewed, and pre-existing in the field at the time of the revision).
+- (b) A sha256 anchor is committed over the imputation source code (precedent: `MDES_FORMULATION_HASH`); the anchor is recorded in the plan body and verified by the failing-test-first as the first acceptance step (precedent: Task 11.N.2d-rev Step 0).
+- (c) A side-by-side sensitivity comparison vs. the truncated baseline is authored (the Task 11.N.2d.1-reframe pattern is the operational template); the comparison must include per-week Y₃ deviation and any Y₃-deviation > 1 standard-deviation between the two methodologies surfaced as a finding (informational; not a blocker).
+- (d) 3-way review pre-approves before commit (per `feedback_three_way_review`).
+
+**Anti-fishing tightening (per RC advisory A5).** The four-condition list above forbids relabeling existing operations as "imputation" — i.e., a future revision cannot rebrand the γ-backward-extension or the truncation as "imputation" to bypass the four-condition gate. The exact panel-construction operations PERMITTED under Rev-5.3.2 are exhaustively: (i) γ backward extension into existing-data territory; (ii) truncation at min-country cutoff (whichever country binds the panel cutoff under the source mix); (iii) idempotent UPSERT under the new `source_methodology` tag. ANY operation that materially changes the response variable Y₃ values for any week present in the prior `y3_v1` panel is forbidden by this revision and must escalate to a future revision under the four-condition gate.
+
+Until such a revision exists, the imputation question is OFF the primary path. Task 11.N.2d.2-NEW above is the deliberate placeholder documenting this non-decision.
+
+---
+
+### D. All-data-in-DuckDB invariant — explicit additive-table list
+
+The user reaffirmed the all-data-in-DuckDB invariant during disposition selection. Any new raw fetch under Rev-5.3.2 MUST materialize to a NEW additive DuckDB raw table before downstream consumption. The table list below is the authoritative manifest under Rev-5.3.2:
+
+| Raw table | Status | Source | Used by |
+|---|---|---|---|
+| `bcb_ipca_monthly` | **NEW under Task 11.N.2.BR-bcb-fetcher** | BCB SGS direct API series 433 (IPCA monthly variation %) | BR `fetch_country_wc_cpi_components` cumulative-index path under Rev-5.3.2 mixed-source mix |
+| `dane_ipc_monthly` | **EXISTING and ALREADY POPULATED** (consumed by Task 11.N.2.CO-dane-wire — no schema change, consume-only) | DANE direct ingestion landed 2026-04-16 prior to Rev-5.3.2 authoring; canonical structural-econ DuckDB at `contracts/data/structural_econ.duckdb` holds 861 rows current through 2026-03-01; schema `(date, ipc_value, monthly_variation_pct, _ingested_at)`; Reality Checker live-verified 2026-04-25 | CO `fetch_country_wc_cpi_components` headline-broadcast path under Rev-5.3.2 mixed-source mix |
+| `oecd_cpi_monthly` | **NOT CREATED under Rev-5.3.2** | OECD direct SDMX endpoint (CO/BR/KE coverage) | Diagnostic-only: Task 11.N.2.OECD-probe is reclassified as diagnostic-only and produces a `.scratch/` memo, not a DuckDB table. A future Rev-5.3.3 (or later) may introduce this table under its own CORRECTIONS block + 3-way review |
+| Existing raw DuckDB tables (Rev-5.3.1 and earlier) | PRESERVED byte-exact | Various (IMF IFS, Eurostat, Banrep, Yahoo, etc.) | Used by Task 11.N.2d-rev's mixed-source dispatch (notably: IMF IFS via DBnomics is preserved as the alternative-source comparator consumed by Task 11.N.2d.1-reframe) |
+
+The additive-only invariant is enforced via the existing schema-migration test pattern (`test_onchain_duckdb_migration.py` — assert Rev-4 `decision_hash` byte-exact through migration; assert all prior table row counts byte-exact through migration; assert new tables are present with the expected schema).
+
+---
+
+### E. Acceptance criteria for the Rev-5.3.2 CORRECTIONS block ITSELF
+
+Before any task in section B above is dispatched, this CORRECTIONS block MUST pass a 3-way review per `feedback_three_way_review`:
+
+- **Code Reviewer:** Verify (a) no code in the plan body — only behavior, data-source, methodology, and acceptance-criteria prose; (b) the Rev-5.3.2 task list is internally consistent (dependency DAG, acceptance criteria, reviewer assignments); (c) all-data-in-DuckDB invariant respected (additive-table list complete); (d) anti-fishing pre-commitments preserved (N_MIN, POWER_MIN, MDES_SD, MDES_FORMULATION_HASH unchanged); (e) the BR source-swap acceptance criteria specify failing-test-first per `feedback_strict_tdd`.
+- **Reality Checker:** Verify (a) the disposition memo's path-ζ rationale matches this CORRECTIONS block exactly (no silent path drift); (b) the cutoff-date arithmetic in Task 11.N.2d-rev acceptance criteria is reproducible from public BCB SGS / Eurostat / IMF IFS observation (a probe at execution time should not surprise the reviewer); (c) the joint-coverage target of ≥ 75 weeks is consistent with the disposition-memo math (window swap + BR source upgrade → ~80+ weeks per memo §3 ζ row); (d) the imputation discussion in §C explicitly excludes imputation from the primary path and documents the four conditions for any future imputation revision.
+- **Technical Writer:** Verify (a) imputation is explicitly excluded from primary; (b) the new tasks are clearly distinguished from the original Task 11.N.2d / 11.N.2d.1 (no reader confusion about which body executes under Rev-5.3.2); (c) the `source_methodology` literal-value-vs-schema distinction is consistently maintained (the schema is described, not the literal); (d) all data lands in DuckDB per the §D manifest; (e) the prose voice is consistent with the Rev-5.3.1 CORRECTIONS block precedent (second person where directives apply, present tense, precise about preserved-vs-updated anchors).
+
+If any reviewer returns BLOCK: dispatch the orchestrator to address findings; re-dispatch the offending reviewer; bound by Rule 13's 3-cycle cap. Until 3-way convergence, NO task in section B may dispatch.
+
+---
+
+### F. Task count + status reconciliation under Rev-5.3.2
+
+Rev-5.3.1 active task count (per the existing reconciliation block above): **63** active tasks (or **64 total headers** including 4 retired-as-audit). Rev-5.3.2 introduces the following changes:
+
+- **+5 new task IDs with new bodies** (Task 11.N.2.OECD-probe — diagnostic-only; Task 11.N.2.CO-dane-wire — NEW per Rev-5.3.2 fix-up rewrite; Task 11.N.2.BR-bcb-fetcher; Task 11.N.2d-rev; Task 11.N.2d.1-reframe).
+- **+1 new task ID with MODIFY-target deliverable** (Task 11.O-scope-update — modifies the upstream Task 11.O body in-place; not a wholly new body — per TW peer advisory 1).
+- **+1 deliberate non-task** (Task 11.N.2d.2-NEW — RESERVED placeholder; not a dispatched task; it documents an explicit non-decision).
+- **0 retired tasks.** The original Task 11.N.2d.1 is REFRAMED-AS-APPLIED (its body is preserved as historical record with a one-line in-place superseded-banner annotation per Task 11.O-scope-update deliverable; Task 11.N.2d.1-reframe is the operative replacement under Rev-5.3.2).
+- **0 modified tasks at the body level besides Task 11.O.** Task 11.O acceptance criteria are updated in-place per Task 11.O-scope-update; the structural-econometrics-skill invocation methodology is unchanged.
+
+Rev-5.3.2 active task count: **63 + 6 = 69** (excluding the deliberate non-task placeholder); total headers: **64 + 6 + 1 (placeholder) = 71**. Note that the 63-baseline figure inherits a previously-acknowledged +3 accounting drift documented at line 1739 (Rev-5.3.1's banner figure was preserved as-such pending a row-by-row rebuild); per CR advisory 1, Rev-5.3.2 propagates the prior accepted drift unchanged and resolves at the future Rev-5.4 row-by-row refresh per amendment-rider A8 (unchanged by this revision).
+
+---
+
+### G. Reference paths
+
+- Disposition memo (path-ζ user selection): `contracts/.scratch/2026-04-25-y3-coverage-halt-disposition.md`
+- Rev-5.3.2 3-way review reports (BLOCK trigger for fix-up rewrite): Reality Checker `contracts/.scratch/2026-04-25-rev532-review-reality-checker.md` (load-bearing — cited in Trigger paragraph and §A CO-row corrected framing); Code Reviewer `contracts/.scratch/2026-04-25-rev532-review-code-reviewer.md` (PASS-with-advisories); Technical Writer peer `contracts/.scratch/2026-04-25-rev532-review-technical-writer.md` (PASS-with-advisories)
+- Rev-5.3.1 CORRECTIONS block (precedent format): inline above at Task 11.N.2c body, 2026-04-25, commit `7afcd2ad6`
+- Y₃ design doc (immutable; preserved byte-exact): `contracts/docs/superpowers/specs/2026-04-24-y3-inequality-differential-design.md` (commit `23560d31b`)
+- X_d design doc (immutable; preserved byte-exact): `contracts/docs/superpowers/specs/2026-04-24-carbon-basket-xd-design.md`
+- Rev-5.3.1 N_MIN-relaxation rationale memo: `contracts/.scratch/2026-04-25-carbon-basket-calibration-result-rev2.md`
+- Last clean commit before Rev-5.3.2 dispatch: `765b5e203` (Task 11.N.2d primary panel landing)
+- Prior HALT memo (informational): `cefec08a7`
+- MDES_FORMULATION_HASH (immutable, sha256): `4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa`
+- Rev-4 decision_hash (immutable through Rev-5.3.2): `6a5f9d1b05c18defd8b30c4b3cef6af896d6e45a2a26c1c60aa342da0a5a443c`
