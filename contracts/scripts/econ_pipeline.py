@@ -2996,3 +2996,224 @@ def ingest_y3_weekly(
         "countries_landed": len(landed),
         "countries_skipped": len(skipped),
     }
+
+
+# ── Task 11.N.2.BR-bcb-fetcher (Rev-5.3.2): BCB SGS/433 IPCA ingest ─────────
+#
+# Fetches the BCB SGS series 433 (Brazilian IPCA monthly variation %) from
+# the public BCB direct API:
+#
+#   https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados
+#       ?formato=json&dataInicial=dd/mm/yyyy&dataFinal=dd/mm/yyyy
+#
+# No auth required. Response: ``[{"data": "01/03/2026", "valor": "0.88"},
+# ...]`` (date in dd/mm/yyyy; valor as string-encoded float). Series 433 is
+# the headline IPCA monthly variation %, current through 2026-03 at the
+# Rev-5.3.2 authoring date — a 1-month lag, vs. the prior IMF-IFS-via-
+# DBnomics path stuck at 2025-07 (9-month lag).
+#
+# Cumulative-index materialization: BCB returns variation %, but the Y₃
+# pipeline consumer ``y3_compute.compute_weekly_log_change`` expects a
+# level series. We materialize the cumulative index inside this function
+# with I_0 = 100 at the earliest observation in the API response window.
+# The base value choice is methodologically arbitrary (any positive
+# constant works — the cumulative index is a monotone Δlog-preserving
+# transform of the variation series); we pick 100 deterministically.
+#
+# Idempotency: ``INSERT OR REPLACE`` on PK ``date`` ensures a re-run on
+# the same window leaves the table byte-exact. The cumulative index is
+# rebuilt from scratch on each call against the in-window observations —
+# this is correct because the index is base-relative within the call's
+# window, not a global reservoir-level. Downstream ``Δlog`` is invariant
+# to the base-value choice.
+
+_BCB_SGS_433_URL: Final[str] = (
+    "https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados"
+    "?formato=json&dataInicial={start}&dataFinal={end}"
+)
+_BCB_IPCA_CUMULATIVE_BASE: Final[float] = 100.0
+
+
+@dataclass(frozen=True, slots=True)
+class BcbIpcaObservation:
+    """One BCB SGS/433 observation as parsed from the JSON response.
+
+    ``date`` is the published first-of-month (BCB returns ``dd/mm/yyyy``
+    where ``dd`` is always 1 for monthly series). ``pct_change`` is the
+    monthly variation percent (e.g., 0.88 for +0.88% MoM).
+    """
+
+    date: date
+    pct_change: float
+
+
+def parse_bcb_sgs_433_json(payload: list[dict[str, str]]) -> list[BcbIpcaObservation]:
+    """Parse the BCB SGS/433 JSON response into typed observations.
+
+    Pure — takes the raw decoded JSON list, returns parsed rows in
+    encounter order (BCB returns ascending by date, but we do not rely
+    on that — caller sorts). Empty payloads return an empty list.
+    """
+    out: list[BcbIpcaObservation] = []
+    for item in payload:
+        raw_date = (item.get("data") or "").strip()
+        raw_val = (item.get("valor") or "").strip()
+        if not raw_date or not raw_val:
+            continue
+        try:
+            d = datetime.strptime(raw_date, "%d/%m/%Y").date()
+        except ValueError:
+            continue
+        try:
+            v = float(raw_val)
+        except ValueError:
+            continue
+        out.append(BcbIpcaObservation(date=d, pct_change=v))
+    return out
+
+
+def fetch_bcb_sgs_433(
+    start: date,
+    end: date,
+    *,
+    timeout: int = 60,
+) -> list[BcbIpcaObservation]:
+    """Fetch BCB SGS series 433 (IPCA monthly variation %) for ``[start, end]``.
+
+    Uses the BCB direct public API (no API key). Raises on HTTP/JSON
+    failure. Returns an ascending-by-date list of observations.
+    """
+    url = _BCB_SGS_433_URL.format(
+        start=start.strftime("%d/%m/%Y"),
+        end=end.strftime("%d/%m/%Y"),
+    )
+    resp = requests.get(url, timeout=timeout)
+    resp.raise_for_status()
+    payload = resp.json()
+    parsed = parse_bcb_sgs_433_json(payload)
+    parsed.sort(key=lambda o: o.date)
+    return parsed
+
+
+def materialize_ipca_cumulative_index(
+    observations: list[BcbIpcaObservation],
+    *,
+    base: float = _BCB_IPCA_CUMULATIVE_BASE,
+) -> list[tuple[date, float, float]]:
+    """Convert a variation-% series into a cumulative level series.
+
+    Deterministic: the earliest observation in ``observations`` (assumed
+    pre-sorted ascending by date) gets a cumulative index equal to
+    ``base × (1 + pct_change/100)`` so the Δlog from a notional ``base``
+    pre-period seed equals ln(1 + pct_change/100) — i.e., the first
+    observed Δlog is faithful, not synthesised. Subsequent rows compound
+    multiplicatively: ``I_t = I_{t-1} × (1 + var_t/100)``.
+
+    Returns ``[(date, pct_change, cumulative_index), ...]`` in input order.
+
+    Pure — no I/O, no hidden state. The base-value choice is
+    methodologically arbitrary (the index is determined up to a positive
+    multiplicative constant). Documenting the choice here:
+
+        I_0_seed = base = 100.0  (deterministic; no tuning)
+
+    Δlog is invariant under a global rescale of the index, so any positive
+    base produces the same downstream Δlog series — confirmed by
+    ``test_cumulative_index_dlog_matches_pct_change_within_tolerance``.
+    """
+    rows: list[tuple[date, float, float]] = []
+    level = base
+    for obs in observations:
+        level = level * (1.0 + obs.pct_change / 100.0)
+        rows.append((obs.date, obs.pct_change, level))
+    return rows
+
+
+def upsert_bcb_ipca_monthly(
+    conn: duckdb.DuckDBPyConnection,
+    leveled: list[tuple[date, float, float]],
+) -> int:
+    """Idempotent UPSERT of (date, pct_change, cumulative_index) tuples.
+
+    Uses ``INSERT OR REPLACE`` on PK ``date``. Returns the count of rows
+    written (== ``len(leveled)``).
+    """
+    n = 0
+    for d, pct, idx in leveled:
+        conn.execute(
+            "INSERT OR REPLACE INTO bcb_ipca_monthly "
+            "(date, ipca_pct_change, ipca_index_cumulative) VALUES (?, ?, ?)",
+            [d, pct, idx],
+        )
+        n += 1
+    return n
+
+
+def ingest_bcb_ipca_monthly(
+    conn: duckdb.DuckDBPyConnection,
+    *,
+    start: date | None = None,
+    end: date | None = None,
+) -> dict[str, int]:
+    """Fetch + materialize cumulative index + UPSERT BCB IPCA series 433.
+
+    Args:
+        conn: open DuckDB connection (typically the canonical
+            ``contracts/data/structural_econ.duckdb``).
+        start: lower bound (inclusive); defaults to 2024-01-01 — matches
+            the Rev-5.3.2 primary panel start window.
+        end: upper bound (inclusive); defaults to ``date.today()``.
+
+    Workflow:
+        1. Ensure ``bcb_ipca_monthly`` schema exists (idempotent migration).
+        2. HTTP GET BCB SGS/433 for the window.
+        3. Materialize cumulative index (I_0 = 100 at earliest obs).
+        4. Idempotent UPSERT into ``bcb_ipca_monthly``.
+
+    Returns ``{"rows_written": int, "first_date": int|None, "last_date": int|None}``
+    where the date fields are ISO-format strings in the response — useful
+    for caller-side smoke-test gates without a follow-up SELECT.
+
+    Raises ``requests.HTTPError`` / ``requests.RequestException`` on
+    persistent network failure. The caller (typically Task 11.N.2d-rev
+    ``ingest_y3_weekly``) is responsible for HALT-vs-fallback dispatch.
+    """
+    from scripts.econ_schema import migrate_bcb_ipca_monthly
+
+    # Default window: Rev-5.3.2 primary panel window.
+    if start is None:
+        start = date(2024, 1, 1)
+    if end is None:
+        end = date.today()
+
+    # 1. Ensure schema exists. Idempotent.
+    migrate_bcb_ipca_monthly(conn)
+
+    # 2. Fetch.
+    obs = fetch_bcb_sgs_433(start, end)
+
+    if not obs:
+        return {
+            "rows_written": 0,
+            "first_date": None,
+            "last_date": None,
+        }
+
+    # 3. Materialize cumulative index.
+    leveled = materialize_ipca_cumulative_index(obs, base=_BCB_IPCA_CUMULATIVE_BASE)
+
+    # 4. UPSERT under a single transaction so a partial-write failure
+    # rolls back cleanly.
+    conn.execute("BEGIN TRANSACTION")
+    try:
+        n = upsert_bcb_ipca_monthly(conn, leveled)
+        conn.execute("COMMIT")
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+
+    return {
+        "rows_written": n,
+        "first_date": leveled[0][0].isoformat(),
+        "last_date": leveled[-1][0].isoformat(),
+    }

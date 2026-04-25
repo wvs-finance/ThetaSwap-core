@@ -39,6 +39,8 @@ EXPECTED_TABLES: Final[frozenset[str]] = frozenset({
     "onchain_copm_transfers",
     # ── Task 11.N.2d (Rev-5.3.1): Y₃ inequality-differential weekly panel ─
     "onchain_y3_weekly",
+    # ── Task 11.N.2.BR-bcb-fetcher (Rev-5.3.2): BCB SGS/433 IPCA monthly ─
+    "bcb_ipca_monthly",
 })
 
 # ── DDL statements ───────────────────────────────────────────────────────────
@@ -686,6 +688,55 @@ def migrate_onchain_y3_weekly(conn: duckdb.DuckDBPyConnection) -> bool:
     return not already
 
 
+# ── Task 11.N.2.BR-bcb-fetcher (Rev-5.3.2): BCB SGS series 433 IPCA ─────────
+#
+# Additive raw table for the Brazilian CPI source upgrade IMF IFS → BCB SGS
+# direct API. The endpoint
+# ``https://api.bcb.gov.br/dados/serie/bcdata.sgs.433/dados`` returns the
+# monthly IPCA variation % verbatim; the cumulative index column is
+# materialized at ingest time (I_0 = 100 at the earliest observation in
+# the API window — methodologically arbitrary base value, deterministic).
+#
+# The cumulative-index transformation is monotone and Δlog-preserving:
+# Δlog(index_t) = ln(1 + var_t/100), so the downstream Y₃ pipeline
+# consumer (``y3_compute.compute_weekly_log_change``) sees a level series
+# whose log-changes equal the per-month log-variation. Anti-fishing
+# guarded — no smoothing, no seasonal adjustment beyond what BCB
+# publishes (BCB 433 is the headline IPCA, not a cleaned variant).
+#
+# Composite-keying not needed: ``date`` is already PK on a first-of-month
+# convention. Idempotent UPSERT via INSERT OR REPLACE.
+
+_DDL_BCB_IPCA_MONTHLY: Final[str] = """
+CREATE TABLE IF NOT EXISTS bcb_ipca_monthly (
+    date DATE PRIMARY KEY,
+    ipca_pct_change DOUBLE NOT NULL,
+    ipca_index_cumulative DOUBLE NOT NULL,
+    _ingested_at TIMESTAMP NOT NULL DEFAULT current_timestamp
+)
+"""
+
+
+def migrate_bcb_ipca_monthly(conn: duckdb.DuckDBPyConnection) -> bool:
+    """Create the ``bcb_ipca_monthly`` table. Idempotent.
+
+    Returns ``True`` if the table was created on this call, ``False`` if
+    it already existed. Strictly additive — does not touch any other
+    table.
+
+    Step Atomicity Protocol (CR-P5 / PM-P1, propagated from Task 11.N.2b
+    / 11.N.2d): callers MUST run this function first against an in-
+    memory or temporary DuckDB during schema-migration tests; the
+    canonical ``contracts/data/structural_econ.duckdb`` is mutated only
+    after the in-memory smoke probe succeeds (then via
+    :func:`scripts.econ_pipeline.ingest_bcb_ipca_monthly`).
+    """
+    existing = {row[0] for row in conn.execute("SHOW TABLES").fetchall()}
+    already = "bcb_ipca_monthly" in existing
+    conn.execute(_DDL_BCB_IPCA_MONTHLY)
+    return not already
+
+
 # ── Public API ───────────────────────────────────────────────────────────────
 
 
@@ -697,3 +748,5 @@ def init_db(conn: duckdb.DuckDBPyConnection) -> None:
         conn.execute(ddl)
     # Task 11.N.2d (Rev-5.3.1): additive Y₃ table.
     conn.execute(_DDL_ONCHAIN_Y3_WEEKLY)
+    # Task 11.N.2.BR-bcb-fetcher (Rev-5.3.2): additive BCB IPCA table.
+    conn.execute(_DDL_BCB_IPCA_MONTHLY)

@@ -816,6 +816,76 @@ def load_dane_ipc_monthly(
     )
 
 
+# ── Rev-5.3.2 Task 11.N.2.BR-bcb-fetcher: BCB IPCA monthly reader ───────────
+#
+# Pure free function over the ``bcb_ipca_monthly`` raw table populated by
+# :func:`scripts.econ_pipeline.ingest_bcb_ipca_monthly`. Mirrors the
+# ``load_dane_ipc_monthly`` shape established in Task 11.N.2.CO-dane-wire
+# — frozen+slots dataclass, ascending-date order, project-wide
+# ``_date_filter`` semantics. Consume-only: this reader does not
+# materialize the cumulative index — that work happens at ingest time so
+# downstream consumers see a level series ready for ``compute_weekly_log_change``.
+#
+# Live schema (per :func:`scripts.econ_schema.migrate_bcb_ipca_monthly`):
+#     date                       DATE PRIMARY KEY (first-of-month)
+#     ipca_pct_change            DOUBLE NOT NULL
+#     ipca_index_cumulative      DOUBLE NOT NULL  (I_0 = 100 at base obs)
+#     _ingested_at               TIMESTAMP        (audit metadata, not surfaced)
+
+
+@dataclass(frozen=True, slots=True)
+class BcbIpcaMonthly:
+    """One row of the BCB SGS series 433 (Brazilian IPCA) monthly publication.
+
+    ``date`` is first-of-month (BCB convention; the API returns
+    ``dd/mm/yyyy`` strings — always day-1 for monthly series).
+    ``ipca_pct_change`` is the headline IPCA monthly variation in percent
+    (BCB's verbatim publication; positive = inflation).
+    ``ipca_index_cumulative`` is a deterministically-built level series
+    where I_0 = 100 at the earliest observation in the ingest window;
+    Δlog(I_t) ≡ ln(1 + var_t/100). Used by Task 11.N.2.BR-bcb-fetcher to
+    drive the BR branch of ``fetch_country_wc_cpi_components`` in the Y₃
+    inequality-differential pipeline (replacing the IMF-IFS-via-DBnomics
+    path with a direct BCB-source path that lands ≤ 2 months stale
+    instead of ≥ 9).
+    """
+
+    date: date
+    ipca_pct_change: float
+    ipca_index_cumulative: float
+
+
+def load_bcb_ipca_monthly(
+    conn: duckdb.DuckDBPyConnection,
+    start: date | None = None,
+    end: date | None = None,
+) -> tuple[BcbIpcaMonthly, ...]:
+    """Return BCB IPCA monthly rows as frozen dataclasses, ascending by ``date``.
+
+    Reads the ``bcb_ipca_monthly`` table populated by
+    :func:`scripts.econ_pipeline.ingest_bcb_ipca_monthly`. ``[start, end]``
+    inclusive bounds match the project-wide ``_date_filter`` semantics.
+    Both ``ipca_pct_change`` and ``ipca_index_cumulative`` are NOT NULL
+    by schema, so they round-trip as plain ``float`` (no ``None``-fallback
+    branching needed in the constructor).
+    """
+    _check_table(conn, "bcb_ipca_monthly")
+    where, params = _date_filter(start, end, col="date")
+    sql = (
+        f"SELECT date, ipca_pct_change, ipca_index_cumulative "
+        f"FROM bcb_ipca_monthly{where} ORDER BY date"
+    )
+    rows = conn.execute(sql, params).fetchall()
+    return tuple(
+        BcbIpcaMonthly(
+            date=r[0],
+            ipca_pct_change=float(r[1]),
+            ipca_index_cumulative=float(r[2]),
+        )
+        for r in rows
+    )
+
+
 # ── Task 11.M.5: on-chain COPM / cCOP loaders ───────────────────────────────
 #
 # Nine pure loader functions — one per table ingested by

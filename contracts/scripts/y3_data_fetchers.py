@@ -265,20 +265,28 @@ def fetch_country_wc_cpi_components(
         is None, fall back to the IMF-IFS-via-DBnomics path — preserved
         as the single-source-IMF-only sensitivity comparator consumed by
         Task 11.N.2d.1-reframe.
-      * BR/KE: IMF IFS headline CPI via DBnomics — split components
+      * BR (Rev-5.3.2 Task 11.N.2.BR-bcb-fetcher): when ``conn`` is
+        provided, consume the ``bcb_ipca_monthly`` DuckDB table
+        (BCB SGS/433 cumulative-index materialization, ≤ 2-month
+        staleness). When ``conn`` is None, fall back to the
+        IMF-IFS-via-DBnomics path — preserved byte-exact as the
+        single-source-IMF-only sensitivity comparator consumed by
+        Task 11.N.2d.1-reframe.
+      * KE: IMF IFS headline CPI via DBnomics — split components
         are not consistently published on free-tier APIs at monthly
-        cadence for these countries; per design doc §10 row 2
-        substitution-fallback rule, the headline level is broadcast
-        across all four component columns. The 60/25/15 weighted
-        composite then collapses to the headline level for those
-        countries — a well-defined monthly inflation series whose
-        log-changes drive the per-country differential.
+        cadence for KE; per design doc §10 row 2 substitution-fallback
+        rule, the headline level is broadcast across all four component
+        columns. The 60/25/15 weighted composite then collapses to the
+        headline level for KE — a well-defined monthly inflation series
+        whose log-changes drive the per-country differential.
 
     The ``conn`` kwarg is opt-in and country-conditional: only the CO
-    branch consumes it under Rev-5.3.2. Other branches ignore it,
-    preserving backward compatibility for callers that pre-date the
-    DANE wire-up. The ``dane_ipc_monthly`` table is read-only — no
-    schema mutation, no re-ingestion (consume-only contract).
+    and BR branches consume it under Rev-5.3.2. Other branches (EU, KE)
+    ignore it, preserving backward compatibility for callers that pre-
+    date the DANE / BCB wire-ups. The ``dane_ipc_monthly`` table is
+    read-only; the ``bcb_ipca_monthly`` table is populated by
+    :func:`scripts.econ_pipeline.ingest_bcb_ipca_monthly` (consume-only
+    here — this fetcher does not re-ingest).
 
     Raises :class:`Y3FetchError` when the fetch fails or returns no rows.
     """
@@ -286,6 +294,8 @@ def fetch_country_wc_cpi_components(
         return _fetch_eu_hicp_split(start, end)
     if country == "CO" and conn is not None:
         return _fetch_dane_headline_broadcast(conn, start, end)
+    if country == "BR" and conn is not None:
+        return _fetch_bcb_headline_broadcast(conn, start, end)
     return _fetch_imf_ifs_headline_broadcast(country, start, end)
 
 
@@ -386,6 +396,57 @@ def _fetch_dane_headline_broadcast(
             f"DANE ipc table: no rows in [{start}, {end}]"
         )
     levels = [r.ipc_index for r in rows]
+    dates = [r.date for r in rows]
+    return pd.DataFrame(
+        {
+            "date": dates,
+            "food_cpi": levels,
+            "energy_cpi": levels,
+            "housing_cpi": levels,
+            "transport_cpi": levels,
+        }
+    )
+
+
+def _fetch_bcb_headline_broadcast(
+    conn: "duckdb.DuckDBPyConnection",
+    start: date,
+    end: date,
+) -> pd.DataFrame:
+    """BCB IPCA cumulative-index level broadcast across the 4 component columns.
+
+    Rev-5.3.2 Task 11.N.2.BR-bcb-fetcher: the BR branch of
+    :func:`fetch_country_wc_cpi_components` consumes the
+    ``bcb_ipca_monthly`` DuckDB table (populated by
+    :func:`scripts.econ_pipeline.ingest_bcb_ipca_monthly`) via the
+    canonical :func:`scripts.econ_query_api.load_bcb_ipca_monthly` reader.
+    Consume-only here — the fetcher does NOT re-ingest; the caller is
+    responsible for ensuring the table is current via the ingest
+    function before invoking this dispatch.
+
+    BCB SGS/433 publishes a headline IPCA monthly variation only (no
+    expenditure-component split at the monthly cadence on the free-tier
+    direct API); per design doc §10 row 2 substitution-fallback rule,
+    the materialized cumulative-index level is broadcast across all four
+    component slots. The 60/25/15 weighted composite then collapses to
+    the headline cumulative-index level for BR — a well-defined monthly
+    level series whose Δlog drives the per-country differential per
+    design doc §1.
+
+    Same broadcast contract as :func:`_fetch_imf_ifs_headline_broadcast`
+    and :func:`_fetch_dane_headline_broadcast`; same DataFrame shape —
+    the consumer contract is preserved byte-exact.
+    """
+    # Local import avoids a circular import at module-load time
+    # (econ_query_api is consumer-side state; y3_data_fetchers is HTTP).
+    from scripts.econ_query_api import load_bcb_ipca_monthly
+
+    rows = load_bcb_ipca_monthly(conn, start=start, end=end)
+    if not rows:
+        raise Y3FetchError(
+            f"BCB ipca table: no rows in [{start}, {end}]"
+        )
+    levels = [r.ipca_index_cumulative for r in rows]
     dates = [r.date for r in rows]
     return pd.DataFrame(
         {
