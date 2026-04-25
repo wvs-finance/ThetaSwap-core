@@ -10,16 +10,40 @@
 
 ---
 
+## CORRIGENDUM (2026-04-25, post-3-way review fix-up)
+
+The 3-way review of commit `c5cc9b66b` returned NEEDS-WORK on a single load-bearing finding from the Senior Developer (`2026-04-25-y3-rev532-review-senior-developer.md` §5) that was independently confirmed by the Reality Checker (`2026-04-25-y3-rev532-review-reality-checker.md` advisory A1). The original DE narrative below in §0 / §3.2 / §5 attributed the 76-vs-65 joint-coverage gap to "the γ window swap to `start = 2023-08-01` extends the per-country panels backward by ~5 months." That explanation is **mechanically incorrect**:
+
+- The X_d series `carbon_basket_user_volume_usd` only begins on **2024-08-30** (Carbon protocol on Celo first traded that week, per `MEMORY.md::project_duckdb_xd_weekly_state_post_rev531`).
+- Any Y₃ rows added by γ pre-2024-08-30 have **zero X_d counterpart** and therefore contribute **zero** to the joint nonzero count.
+- The γ backward extension cannot be the source of the 76-vs-65 gap on the joint metric.
+
+**Corrected mechanism — LOCF-tail-forward extension:**
+
+- `y3_compute.py:144` hardcodes `+ pd.Timedelta(days=120)` as the LOCF tail (pre-committed in design doc §7).
+- EU's binding 2025-12-01 cutoff + 120 days = **2026-03-31**.
+- The Y₃ panel last Friday-anchor lands at **2026-03-27** (matches v2 panel max exactly).
+- The 11-week gain (65 → 76) lives **entirely** in the post-EU-cutoff window `[2026-01, 2026-03]` (RC's probe-5 cutoff scan: `2025-12-31 → 65 weeks` matches the prior projection byte-exactly; the gain is `+5 + +4 + +2 = +11` over Jan / Feb / Mar 2026).
+
+The 76 figure itself is **correct**; the *explanation* of why 76 emerged was misattributed. RC A3 advised pre-registering a "LOCF-tail-excluded" sensitivity (= 65 weeks, FAIL) in the upcoming Task 11.O Rev-2 spec to prevent silent re-tuning — that is forwarded to the Task 11.O dispatch and is NOT actioned here.
+
+This corrigendum is the canonical correction record per project policy (no `git commit --amend` on published history). The original (incorrect) `γ-backward-extension` text is preserved below in §3.2 with strikethrough so readers see the audit trail. Mirrors the precedent established in `2026-04-25-co-dane-wireup-result.md`.
+
+**Source attribution:** SD §5 + RC A1 (3-way review of commit `c5cc9b66b`).
+
+---
+
 ## Gate verdict — PASS
 
 **Joint nonzero X_d × Y₃ overlap for `proxy_kind = carbon_basket_user_volume_usd` = 76 weeks.**
 
 The pre-committed gate is `≥ 75 weeks` (recovers the Rev-5.3.1 `N_MIN = 75` after path-α relaxation). 76 ≥ 75 ⇒ gate CLEARED.
 
-The plan's risk-note projection of ~65 weeks was conservative. Two factors pushed the actual count above projection:
+The plan's risk-note projection of ~65 weeks was conservative on the joint-coverage metric. The dominant mechanism for the +11-week gain over projection is the **LOCF-tail-forward extension** (per Y₃ design doc §7 and `y3_compute.py:144`'s `+ pd.Timedelta(days=120)` constant). EU's binding 2025-12-01 cutoff plus 120 days = 2026-03-31; the panel's last Friday-anchor lands at 2026-03-27. The 11-week gain (65 → 76) lives entirely in the post-EU-cutoff window `[2026-01, 2026-03]` (RC's probe-5 cutoff scan: at `2025-12-31` the count is exactly 65, byte-exactly matching the prior projection; the gain is `+5 + +4 + +2 = +11` over Jan / Feb / Mar 2026).
 
-1. The **γ window swap** to `start = 2023-08-01` extends the per-country panels backward by ~5 months over the prior `2024-09-01` start. This adds backward-direction coverage that the risk note's EU-binding-only arithmetic did not include explicitly.
-2. The **Friday-anchor + LOCF tail** (per Y₃ design doc §7) extends the panel beyond the EU `2025-12-01` source cutoff to `2026-03-27` (panel max) — i.e., the binding constraint downstream of the EU cutoff is the per-country differential availability, not the raw HICP cutoff alone.
+~~Original (incorrect) explanation: "The γ window swap to `start = 2023-08-01` extends the per-country panels backward by ~5 months over the prior `2024-09-01` start. This adds backward-direction coverage that the risk note's EU-binding-only arithmetic did not include explicitly."~~ — see CORRIGENDUM above (post-3-way review fix-up; SD §5 + RC A1). The γ backward extension cannot contribute to the joint count because X_d (`carbon_basket_user_volume_usd`) only begins on 2024-08-30; pre-2024-08-30 Y₃ rows have zero X_d counterpart.
+
+The Friday-anchor + LOCF tail explanation (per Y₃ design doc §7) is the load-bearing mechanism. The γ window swap contributes to the panel-row count (116 vs the EU-binding-only projection of ~109) but does NOT contribute to the joint-overlap count.
 
 Net result: the panel runs `[2024-01-12, 2026-03-27]` (Friday-anchored), 116 rows; X_d (`carbon_basket_user_volume_usd`) runs `[2024-08-30, 2026-04-03]`; the joint nonzero intersection lands at 76 weeks.
 
@@ -102,6 +126,8 @@ The Rev-5.3.2 panel min date is **2024-01-12** (not 2023-08-01 as the requested 
 
 The Rev-5.3.2 panel weeks count (**116 ≥ 105**) clears the plan's secondary acceptance criterion (`Y₃ panel weeks ≥ 105 weeks under the new methodology tag`).
 
+> **Causation note (post-3-way review corrigendum):** see the CORRIGENDUM block at the top of this memo. The 76-vs-65 *joint-coverage* gap is explained by the LOCF-tail-forward extension (per design doc §7 + `y3_compute.py:144`'s `+120 days` constant), NOT by the γ backward extension. The γ contribution lives only in the panel-row count (116 vs ~109), not in the joint count. Source: SD §5 + RC A1.
+
 ### §3.3 Joint nonzero X_d × Y₃ overlap by `proxy_kind`
 
 Joint = INNER JOIN on `(week_start)` between `onchain_xd_weekly` and `onchain_y3_weekly` (filtered to the Rev-5.3.2 methodology tag); nonzero filter = `CAST(value_usd AS DOUBLE) > 0` AND `y3_value IS NOT NULL`.
@@ -152,7 +178,7 @@ The HALT clause (plan line 1932) does **not** fire under the actual landed mix.
 - `N_MIN` was **NOT** silently relaxed. The Rev-5.3.1 path-α relaxation 80→75 is recorded in `MEMORY.md::rev531_n_min_relaxation_path_alpha`; this task held the 75 gate.
 - The methodology tag literal was finalized at implementation time per plan §A footnote-a (NOT mid-stream renamed to make a panel "fit").
 - The `MDES_FORMULATION_HASH` self-test ran first and PASSED — no calibration drift.
-- The plan's risk-note projection (~65 weeks) was honestly recorded; the actual count (76) exceeds projection because the γ backward extension contributes more than the EU-binding-only arithmetic anticipated. This is a HONEST PASS, not a tuned PASS.
+- The plan's risk-note projection (~65 weeks) was honestly recorded; the actual count (76) exceeds projection because the **LOCF-tail-forward extension** (per design doc §7 + `y3_compute.py:144`'s `+120 days` constant) adds 11 weeks in `[2026-01, 2026-03]` past the EU 2025-12-01 binding cutoff. This is a HONEST PASS, not a tuned PASS. (Causation corrected per CORRIGENDUM at top of memo; SD §5 + RC A1 — the γ backward extension cannot be the source on the joint-coverage metric because X_d only begins on 2024-08-30.)
 - Two failures in `scripts/tests/remittance/test_cleaning_remittance.py` PRE-EXIST this task (intentional `NotImplementedError` in `cleaning.py:487` per remittance Task-9 seam comment); they are not introduced by this commit and are out of scope per `feedback_agent_scope`.
 
 ---
@@ -173,13 +199,13 @@ Decomposition:
 - `ke_skip` — KE intentionally skipped per design (not a runtime fallback, a pre-committed source-mix choice).
 - `_3country_ke_unavailable` — runtime-appended suffix flagging the 3-country aggregate variant.
 
-The `econ_query_api.load_onchain_y3_weekly` reader is parameter-driven (`source_methodology: str = "y3_v1"`) — no admitted-set whitelist exists in code; the new tag is consumable as-is by passing the literal string. This was verified by an ad-hoc DB read at the conclusion of this task. (Per the file-scope discipline, no code change to `econ_query_api.py` was made.)
+The `econ_query_api.load_onchain_y3_weekly` reader was originally parameter-driven (`source_methodology: str = "y3_v1"`) with no admitted-set whitelist. **Post-fix-up state (per SD §4 BLOCKING + CR-A1 in 3-way review):** a `_KNOWN_Y3_METHODOLOGY_TAGS: Final[frozenset[str]]` constant + ValueError validation guard now landed in `econ_query_api.py` per plan line 1929 acceptance criterion. The admitted set contains `{"y3_v1", "y3_v1_3country_ke_unavailable", "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"}`; the bare `"y3_v1"` legacy default is preserved for backward-compat with the Step-7 synthetic-data round-trip test. Production callers consuming the canonical DB MUST pass the Rev-5.3.2 literal explicitly. See `scripts/tests/inequality/test_y3_methodology_admitted_set.py` for the additive schema-migration test.
 
-**Reviewer-ack checkbox** (per RC advisory A6): the foreground orchestrator's CR + RC + SD reviewers MUST confirm this literal in their review reports before Task 11.N.2d.1-reframe and Task 11.O-scope-update dispatch.
+**Reviewer-ack checkbox** (per RC advisory A6): the foreground orchestrator's CR + RC + SD reviewers acked this literal in their review reports.
 
-- [ ] **Code Reviewer ack** — literal accepted.
-- [ ] **Reality Checker ack** — literal accepted.
-- [ ] **Senior Developer ack** — literal accepted.
+- [x] **Code Reviewer ack** — literal accepted (per `2026-04-25-y3-rev532-review-code-reviewer.md`).
+- [x] **Reality Checker ack** — literal accepted (per `2026-04-25-y3-rev532-review-reality-checker.md`).
+- [x] **Senior Developer ack** — literal accepted (per `2026-04-25-y3-rev532-review-senior-developer.md` §8).
 
 ---
 
@@ -191,7 +217,7 @@ This memo is authored by the Rev-5.3.2 Task 11.N.2d-rev Data Engineer subagent. 
 
 The single production-code change is the one-line `conn=conn` kwarg forwarding at `econ_pipeline.py:2905` plus a 4-line preamble comment. No mutation to `y3_compute.py`, `y3_data_fetchers.py`, `econ_schema.py`, `econ_query_api.py`, `carbon_calibration.py`, or any DuckDB table outside `onchain_y3_weekly` (additive insert only).
 
-The actual joint coverage of 76 weeks **exceeds** the plan's risk-note projection of ~65 weeks — the divergence is explained in §3.2 (γ backward extension contributes more than the EU-binding-only arithmetic anticipated). This honest PASS does not relax the gate; the gate stays at ≥ 75 for downstream dispatches.
+The actual joint coverage of 76 weeks **exceeds** the plan's risk-note projection of ~65 weeks — the divergence is explained by the **LOCF-tail-forward extension** described in §3.2 + corrigendum (per design doc §7 + `y3_compute.py:144`'s `+120 days` constant; the γ backward extension does NOT contribute to the joint count, only to the panel-row count). This honest PASS does not relax the gate; the gate stays at ≥ 75 for downstream dispatches.
 
 ---
 

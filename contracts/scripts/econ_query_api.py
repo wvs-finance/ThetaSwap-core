@@ -27,6 +27,43 @@ PRIMARY_RHS: Final[tuple[str, ...]] = (
 
 SUBSAMPLE_SPLITS: Final[tuple[date, date]] = (date(2015, 1, 5), date(2021, 1, 4))
 
+# ── Y₃ methodology admitted-set ──────────────────────────────────────────────
+#
+# Per Task 11.N.2d-rev acceptance criterion (plan line 1929) and the
+# Senior-Developer / Code-Reviewer 3-way review (§4 BLOCKING / CR-A1) of
+# commit ``c5cc9b66b``: the ``onchain_y3_weekly`` reader must enumerate the
+# admitted ``source_methodology`` literal values so that downstream callers
+# typoing the byte-exact stored literal raise ``ValueError`` instead of
+# silently returning an empty tuple.
+#
+# Tags are enumerated below in chronological order (earliest revision first).
+# Each addition to this set is an additive schema-migration and MUST be
+# accompanied by a unit test in ``scripts/tests/inequality/`` exercising the
+# round-trip and validation paths.
+#
+# ``y3_v1`` — pre-Rev-5.3.1 synthetic / unit-test bare tag. Used by the
+#     Step-7 round-trip test in ``test_y3.py`` against in-memory DuckDBs.
+#     Retained for backward-compat with the original Rev-4 / Rev-5.3.0
+#     synthetic-data fixtures; production callers should NOT use this tag.
+#
+# ``y3_v1_3country_ke_unavailable`` — Rev-5.3.1 stored literal in the
+#     canonical ``structural_econ.duckdb`` (commit ``765b5e203``). 59 rows;
+#     KE-unavailable runtime suffix appended by ``ingest_y3_weekly``.
+#
+# ``y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable`` —
+#     Rev-5.3.2 primary panel (commit ``c5cc9b66b``). 116 rows. Mix:
+#     CO=DANE table, BR=BCB SGS series 433, EU=Eurostat HICP via DBnomics,
+#     KE intentionally skipped per design doc §10 row 1. Downstream
+#     Task 11.N.2d.1-reframe and Task 11.O Rev-2 spec must consume this
+#     literal byte-exact.
+_KNOWN_Y3_METHODOLOGY_TAGS: Final[frozenset[str]] = frozenset(
+    {
+        "y3_v1",
+        "y3_v1_3country_ke_unavailable",
+        "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable",
+    }
+)
+
 # Tables that have a date column for coverage analysis
 _DATE_TABLES: Final[dict[str, str]] = {
     "banrep_trm_daily": "date",
@@ -1479,11 +1516,41 @@ def load_onchain_y3_weekly(
     """Return Y₃ weekly rows from ``onchain_y3_weekly`` as frozen dataclasses.
 
     Rows ordered by ``week_start`` ASC. Filtering on ``source_methodology``
-    is mandatory by-default (``'y3_v1'`` returns the primary panel only);
-    callers wanting both primary + sensitivity panels can pass an
-    explicit string per call. Optional ``(start, end)`` filter restricts
-    by ``week_start``.
+    is mandatory by-default; callers MUST pass a tag from
+    ``_KNOWN_Y3_METHODOLOGY_TAGS`` or a ``ValueError`` is raised.
+
+    Admitted methodology tags (Rev-5.3.2):
+
+    * ``'y3_v1'`` — synthetic / unit-test bare tag (legacy default).
+    * ``'y3_v1_3country_ke_unavailable'`` — Rev-5.3.1 stored literal
+      (canonical DB, 59 rows).
+    * ``'y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable'``
+      — Rev-5.3.2 primary panel (canonical DB, 116 rows; the load-bearing
+      production literal for Task 11.N.2d.1-reframe and Task 11.O Rev-2).
+
+    The default ``'y3_v1'`` is preserved for backward-compat with the
+    Step-7 synthetic-data round-trip test in ``test_y3.py``; **production
+    callers reading the canonical ``structural_econ.duckdb`` MUST pass the
+    Rev-5.3.2 literal explicitly** because the canonical DB does not store
+    rows under the bare ``'y3_v1'`` tag.
+
+    Optional ``(start, end)`` filter restricts by ``week_start``.
+
+    Raises:
+        ValueError: ``source_methodology`` is not in
+            ``_KNOWN_Y3_METHODOLOGY_TAGS``. The error message enumerates
+            the admitted set so callers can self-correct.
     """
+    if source_methodology not in _KNOWN_Y3_METHODOLOGY_TAGS:
+        admitted = sorted(_KNOWN_Y3_METHODOLOGY_TAGS)
+        raise ValueError(
+            f"Unknown Y₃ source_methodology={source_methodology!r}. "
+            f"Admitted tags: {admitted}. "
+            "Per plan line 1929 (Task 11.N.2d-rev acceptance criterion), "
+            "the admitted-set is enumerated in "
+            "scripts.econ_query_api._KNOWN_Y3_METHODOLOGY_TAGS to prevent "
+            "silent-empty results from byte-exact-literal typoes."
+        )
     _check_table(conn, "onchain_y3_weekly")
     where, params = _date_filter(start, end, col="week_start")
     if where:
