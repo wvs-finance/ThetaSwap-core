@@ -37,6 +37,8 @@ EXPECTED_TABLES: Final[frozenset[str]] = frozenset({
     "onchain_xd_weekly",
     # ── Task 11.N.1: full COPM transfers (Rev-5.2.1) ────────────────────
     "onchain_copm_transfers",
+    # ── Task 11.N.2d (Rev-5.3.1): Y₃ inequality-differential weekly panel ─
+    "onchain_y3_weekly",
 })
 
 # ── DDL statements ───────────────────────────────────────────────────────────
@@ -630,6 +632,60 @@ def migrate_onchain_xd_weekly_for_carbon(
     return not already_carbon
 
 
+# ── Task 11.N.2d (Rev-5.3.1): Y₃ inequality-differential weekly panel ──────
+#
+# Additive migration. The new ``onchain_y3_weekly`` table persists the
+# regional-pan-EM equal-weighted Y₃ aggregate computed by
+# :mod:`scripts.y3_compute`. Composite primary key (week_start,
+# source_methodology) so the same week can carry both the primary panel
+# row (``source_methodology = 'y3_v1'``) and the sensitivity-panel row
+# (``source_methodology = 'y3_v1_sensitivity'``, populated by Task
+# 11.N.2d.1) without overlap-mutation.
+#
+# Per-country diff columns (copm_diff / brl_diff / kes_diff / eur_diff)
+# are nullable so the 3-country fallback path (Kenya WC-CPI ETL fail
+# per design doc §10 row 1) can persist a NULL kes_diff column under
+# ``source_methodology = 'y3_v1_3country_kenya_unavailable'``.
+#
+# This DDL is purely additive — no existing tables touched; Rev-4
+# ``decision_hash`` byte-exact preserved.
+
+_DDL_ONCHAIN_Y3_WEEKLY: Final[str] = """
+CREATE TABLE IF NOT EXISTS onchain_y3_weekly (
+    week_start DATE NOT NULL,
+    y3_value DOUBLE NOT NULL,
+    copm_diff DOUBLE,
+    brl_diff DOUBLE,
+    kes_diff DOUBLE,
+    eur_diff DOUBLE,
+    source_methodology VARCHAR NOT NULL DEFAULT 'y3_v1',
+    _ingested_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    PRIMARY KEY (week_start, source_methodology)
+)
+"""
+
+
+def migrate_onchain_y3_weekly(conn: duckdb.DuckDBPyConnection) -> bool:
+    """Create the ``onchain_y3_weekly`` table. Idempotent.
+
+    Returns ``True`` if the table was created on this call, ``False``
+    if it already existed. Strictly additive — does not touch any
+    other table.
+
+    Step Atomicity Protocol (CR-P5 / PM-P1, propagated from Task
+    11.N.2b.1 / 11.N.2b.2 / 11.N.2c): callers MUST run this function
+    first against an in-memory or temporary DuckDB during Task 11.N.2d
+    Step 7 schema-migration tests; the canonical
+    ``contracts/data/structural_econ.duckdb`` is mutated only after the
+    in-memory smoke probe succeeds (then via
+    :func:`scripts.econ_pipeline.ingest_y3_weekly`).
+    """
+    existing = {row[0] for row in conn.execute("SHOW TABLES").fetchall()}
+    already = "onchain_y3_weekly" in existing
+    conn.execute(_DDL_ONCHAIN_Y3_WEEKLY)
+    return not already
+
+
 # ── Public API ───────────────────────────────────────────────────────────────
 
 
@@ -639,3 +695,5 @@ def init_db(conn: duckdb.DuckDBPyConnection) -> None:
         conn.execute(ddl)
     for ddl in _ONCHAIN_DDL:
         conn.execute(ddl)
+    # Task 11.N.2d (Rev-5.3.1): additive Y₃ table.
+    conn.execute(_DDL_ONCHAIN_Y3_WEEKLY)

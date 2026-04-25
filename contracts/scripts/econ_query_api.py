@@ -1297,3 +1297,76 @@ def load_onchain_daily_flow(
         )
         for r in rows
     )
+
+
+# ── Task 11.N.2d (Rev-5.3.1): Y₃ inequality-differential weekly loader ──────
+
+
+@dataclass(frozen=True, slots=True)
+class OnchainY3Weekly:
+    """One Friday-anchored row from ``onchain_y3_weekly``.
+
+    Per design doc §8 contract:
+      * ``week_start`` is the Friday-anchored America/Bogota week start.
+      * ``y3_value`` is the equal-weighted aggregate
+        ``Y3 = (1/N) × Σ Δ_country`` across the contributing countries
+        (N=4 in the standard panel; N=3 under the Kenya-fallback path
+        documented by ``source_methodology = 'y3_v1_3country_kenya_unavailable'``).
+      * ``copm_diff``/``brl_diff``/``kes_diff``/``eur_diff`` carry the
+        per-country differentials Δ_country = R_equity + Δlog(WC_CPI);
+        nullable so the 3-country fallback row variant can store NULL
+        for the unavailable country.
+      * ``source_methodology`` tags the methodology variant — primary
+        panel is ``'y3_v1'``; Task 11.N.2d.1 sensitivity panel uses
+        ``'y3_v1_sensitivity'``; fallback variants append a country-flag.
+    """
+
+    week_start: date
+    y3_value: float
+    copm_diff: float | None
+    brl_diff: float | None
+    kes_diff: float | None
+    eur_diff: float | None
+    source_methodology: str
+
+
+def load_onchain_y3_weekly(
+    conn: duckdb.DuckDBPyConnection,
+    source_methodology: str = "y3_v1",
+    *,
+    start: date | None = None,
+    end: date | None = None,
+) -> tuple[OnchainY3Weekly, ...]:
+    """Return Y₃ weekly rows from ``onchain_y3_weekly`` as frozen dataclasses.
+
+    Rows ordered by ``week_start`` ASC. Filtering on ``source_methodology``
+    is mandatory by-default (``'y3_v1'`` returns the primary panel only);
+    callers wanting both primary + sensitivity panels can pass an
+    explicit string per call. Optional ``(start, end)`` filter restricts
+    by ``week_start``.
+    """
+    _check_table(conn, "onchain_y3_weekly")
+    where, params = _date_filter(start, end, col="week_start")
+    if where:
+        where = where + " AND source_methodology = ?"
+    else:
+        where = " WHERE source_methodology = ?"
+    params = [*params, source_methodology]
+    sql = (
+        "SELECT week_start, y3_value, copm_diff, brl_diff, kes_diff, "
+        "eur_diff, source_methodology "
+        f"FROM onchain_y3_weekly{where} ORDER BY week_start"
+    )
+    rows = conn.execute(sql, params).fetchall()
+    return tuple(
+        OnchainY3Weekly(
+            week_start=r[0],
+            y3_value=float(r[1]),
+            copm_diff=(None if r[2] is None else float(r[2])),
+            brl_diff=(None if r[3] is None else float(r[3])),
+            kes_diff=(None if r[4] is None else float(r[4])),
+            eur_diff=(None if r[5] is None else float(r[5])),
+            source_methodology=r[6],
+        )
+        for r in rows
+    )

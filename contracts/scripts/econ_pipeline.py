@@ -2814,3 +2814,185 @@ def ingest_carbon_basket_weekly(
         raise
 
     return written
+
+
+# ── Task 11.N.2d (Rev-5.3.1): Y₃ inequality-differential ingestion ──────────
+#
+# Atomic ingest of the Y₃ panel into ``onchain_y3_weekly``. The function
+# is idempotent (UPSERT keyed on ``(week_start, source_methodology)``)
+# and runs the full fetch → compute → persist sequence in a single
+# DuckDB transaction. Per the Step Atomicity Protocol, the schema
+# migration runs inside the same transaction so a partial-fetch
+# failure leaves the canonical DB unmutated.
+
+
+def ingest_y3_weekly(
+    conn: "duckdb.DuckDBPyConnection",
+    *,
+    start: date | None = None,
+    end: date | None = None,
+    source_methodology: str = "y3_v1",
+) -> dict[str, int]:
+    """Compute the Y₃ weekly panel and write it to ``onchain_y3_weekly``.
+
+    Inputs:
+        conn: open DuckDB connection (typically the canonical
+            ``contracts/data/structural_econ.duckdb``).
+        start, end: optional override of the panel window. Defaults to
+            ``(PRIMARY_PANEL_START, PRIMARY_PANEL_END)`` per design doc §9.
+        source_methodology: ``'y3_v1'`` (primary) or ``'y3_v1_sensitivity'``
+            (Task 11.N.2d.1). Adds the country-fallback flag suffix when
+            Kenya is unavailable.
+
+    Free-tier data sources (no API key required):
+        Equity indices via Yahoo Finance, WC-CPI components via DBnomics
+        (Eurostat HICP for EU, IMF IFS for CO/BR/KE).
+
+    Returns ``{"y3_rows_written": int, "countries_landed": int}``.
+
+    Recovery semantics (design doc §10):
+        * Per-country equity / WC-CPI fetch failures degrade gracefully —
+          the country drops out and the aggregate becomes a 3-country
+          (or 2-country) equal-weight mean. Source methodology gains a
+          ``_<n>country_<missing>_unavailable`` suffix to flag the
+          variant downstream.
+        * If fewer than 1 country lands, raises :class:`Y3FetchError`
+          (caller decides next action — usually HALT per task body).
+    """
+    from scripts.y3_compute import (
+        PRIMARY_PANEL_END,
+        PRIMARY_PANEL_START,
+        Y3Panel,
+        compute_per_country_differential,
+        compute_wc_cpi_weighted,
+        compute_weekly_log_change,
+        compute_weekly_log_return,
+        compute_y3_aggregate,
+        interpolate_monthly_to_weekly_locf,
+    )
+    from scripts.y3_data_fetchers import (
+        ALL_COUNTRIES,
+        Y3FetchError,
+        fetch_country_equity,
+        fetch_country_wc_cpi_components,
+    )
+
+    if start is None:
+        start = PRIMARY_PANEL_START
+    if end is None:
+        end = PRIMARY_PANEL_END
+
+    per_country_diffs: dict[str, pd.Series] = {}
+    landed: list[str] = []
+    skipped: list[str] = []
+
+    for country in ALL_COUNTRIES:
+        # 1) Equity weekly log-return.
+        try:
+            eq = fetch_country_equity(country, start, end)
+        except Y3FetchError:
+            skipped.append(country)
+            continue
+
+        eq.index = pd.to_datetime(eq["date"])
+        weekly_eq = compute_weekly_log_return(eq["equity_close"])
+        if weekly_eq.empty:
+            skipped.append(country)
+            continue
+
+        # 2) WC-CPI components → composite → weekly LOCF → weekly Δlog.
+        try:
+            comp = fetch_country_wc_cpi_components(country, start, end)
+        except Y3FetchError:
+            skipped.append(country)
+            continue
+
+        wc_monthly = compute_wc_cpi_weighted(comp)
+        wc_weekly = interpolate_monthly_to_weekly_locf(
+            wc_monthly, friday_anchor_tz="America/Bogota"
+        )
+        wc_logchange = compute_weekly_log_change(wc_weekly)
+        if wc_logchange.empty:
+            skipped.append(country)
+            continue
+
+        # 3) Per-country differential.
+        diff = compute_per_country_differential(weekly_eq, wc_logchange)
+        if diff.empty:
+            skipped.append(country)
+            continue
+
+        per_country_diffs[country] = diff
+        landed.append(country)
+
+    if not landed:
+        raise Y3FetchError(
+            "Y₃ ingest: zero countries landed; HALT (Y3_PANEL_INSUFFICIENT)"
+        )
+
+    # 4) Aggregate.
+    panel: Y3Panel = compute_y3_aggregate(per_country_diffs)
+
+    # 5) Methodology variant flag for fallbacks.
+    final_methodology = source_methodology
+    if skipped:
+        # Order skipped consistently for a stable methodology string.
+        flag = "_".join(sorted(c.lower() for c in skipped))
+        final_methodology = (
+            f"{source_methodology}_{len(landed)}country_{flag}_unavailable"
+        )
+
+    # 6) Persist (idempotent UPSERT).
+    written = 0
+    conn.execute("BEGIN TRANSACTION")
+    try:
+        # Ensure schema exists (idempotent, additive).
+        from scripts.econ_schema import migrate_onchain_y3_weekly
+
+        migrate_onchain_y3_weekly(conn)
+
+        country_to_col = {
+            "CO": "copm_diff",
+            "BR": "brl_diff",
+            "KE": "kes_diff",
+            "EU": "eur_diff",
+        }
+        # Filter Friday anchors to the requested [start, end] window.
+        for i, week in enumerate(panel.weeks):
+            if not (start <= week <= end):
+                continue
+            row_vals: dict[str, float | None] = {
+                "copm_diff": None,
+                "brl_diff": None,
+                "kes_diff": None,
+                "eur_diff": None,
+            }
+            for c in landed:
+                vals = panel.per_country_diffs[c]
+                row_vals[country_to_col[c]] = vals[i]
+            conn.execute(
+                "INSERT OR REPLACE INTO onchain_y3_weekly "
+                "(week_start, y3_value, copm_diff, brl_diff, kes_diff, "
+                " eur_diff, source_methodology) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                [
+                    week,
+                    float(panel.y3_value[i]),
+                    row_vals["copm_diff"],
+                    row_vals["brl_diff"],
+                    row_vals["kes_diff"],
+                    row_vals["eur_diff"],
+                    final_methodology,
+                ],
+            )
+            written += 1
+        conn.execute("COMMIT")
+    except Exception:
+        conn.execute("ROLLBACK")
+        raise
+
+    return {
+        "y3_rows_written": written,
+        "countries_landed": len(landed),
+        "countries_skipped": len(skipped),
+    }
