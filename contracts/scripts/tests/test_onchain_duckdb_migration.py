@@ -41,7 +41,7 @@ import hashlib
 import json
 import shutil
 from collections.abc import Iterator
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Final
 
@@ -1125,3 +1125,497 @@ def test_r5_load_onchain_copm_transfers_full_dataset(migrated_db: Path) -> None:
             "log_index",
         ):
             assert hasattr(r, attr), f"frozen-dataclass missing {attr}"
+
+
+# ── (Step N2b.1) Task 11.N.2b.1 schema migration — Carbon-basket pre-commit ───
+#
+# Pre-committed Step-N2b.1 contract (7 assertions, each a separate test
+# function). All assertions run against an IN-MEMORY DuckDB; the canonical
+# ``contracts/data/structural_econ.duckdb`` MUST remain byte-exact unchanged
+# through the entire test cycle — this is the load-bearing additive-only
+# invariant that lets 11.N.2b.1 author the schema-migration code path
+# WITHOUT executing it against the canonical DB. Production migration is
+# deferred to Task 11.N.2b.2 Step 5 (atomic-commit-after-population).
+#
+# Assertions:
+#
+#   (S1-N2b.1-a) ``scripts.econ_schema.migrate_onchain_xd_weekly_for_carbon``
+#                exists and is callable. (Pre-Step-4 RED was AttributeError.)
+#
+#   (S1-N2b.1-b) After running against an in-memory DB seeded with the
+#                Rev-5.2.1 2-value CHECK on ``onchain_xd_weekly``, the
+#                migration relaxes the CHECK to admit ALL TEN ``proxy_kind``
+#                values (2 pre-existing + 8 new Carbon-basket values per
+#                plan §937).
+#
+#   (S1-N2b.1-c) The two new tables exist with probe-confirmed dtypes
+#                from Dune-MCP LIMIT-100 probes (queries 7371827 + 7371828):
+#                ``onchain_carbon_tokenstraded`` + ``onchain_carbon_arbitrages``.
+#                Array-typed Bancor fields stored as JSON-encoded VARCHAR
+#                per gate-decision memo §3.2 DDL DEVIATION (plan-§927
+#                scalar pre-commit superseded by probe-observed
+#                ``array(uint256)`` / ``array(varbinary)`` semantics).
+#
+#   (S1-N2b.1-d) Invalid ``proxy_kind`` values (e.g. ``'foo_bar_baz'``)
+#                still rejected by the relaxed CHECK — over-permissive bug
+#                guard.
+#
+#   (S1-N2b.1-e) Composite PK ``(week_start, proxy_kind)`` continues to
+#                allow the pre-existing supply + distribution channels AND
+#                the new Carbon basket-aggregate row to coexist for the
+#                same Friday.
+#
+#   (S1-N2b.1-f) **CANONICAL DB CHECKSUM UNCHANGED** — sha256 of
+#                ``contracts/data/structural_econ.duckdb`` is byte-exact
+#                identical before and after the entire test-cycle.
+#
+#   (S1-N2b.1-g) Rev-4 ``decision_hash`` preserved byte-exact through the
+#                schema migration (additive-only with respect to
+#                LOCKED_DECISIONS).
+#
+# Plan reference: 2026-04-20-remittance-surprise-implementation.md,
+# §"Task 11.N.2b.1: Carbon-basket pre-commitment + Dune-credit-budget probe".
+# Memo reference: contracts/.scratch/2026-04-25-carbon-basket-gate-decision-memo.md.
+
+# Pre-committed full set of admitted ``proxy_kind`` values per plan §937.
+# Two pre-existing + eight new = ten total.
+_N2B1_ADMITTED_PROXY_KINDS: Final[frozenset[str]] = frozenset({
+    "net_primary_issuance_usd",
+    "b2b_to_b2c_net_flow_usd",
+    "carbon_basket_user_volume_usd",
+    "carbon_basket_arb_volume_usd",
+    "carbon_per_currency_copm_volume_usd",
+    "carbon_per_currency_usdm_volume_usd",
+    "carbon_per_currency_eurm_volume_usd",
+    "carbon_per_currency_brlm_volume_usd",
+    "carbon_per_currency_kesm_volume_usd",
+    "carbon_per_currency_xofm_volume_usd",
+})
+
+# Pre-committed columns for the two new Carbon tables — mirror the
+# probe-confirmed Dune schema. ``tokenstraded`` columns match the plan-§915
+# DDL with the addition of ``contract_address`` and the rename of
+# ``tx_hash`` → ``evt_tx_hash`` to match Dune's decoded namespace
+# convention. ``arbitrages`` columns log the DDL deviation: array-typed
+# Bancor fields stored as JSON-encoded VARCHAR per memo §3.2.
+_N2B1_TOKENSTRADED_COLUMNS: Final[frozenset[str]] = frozenset({
+    "contract_address",
+    "evt_tx_hash",
+    "evt_index",
+    "evt_block_number",
+    "evt_block_time",
+    "evt_block_date",
+    "evt_tx_from",
+    "trader",
+    "sourceToken",
+    "targetToken",
+    "sourceAmount",
+    "targetAmount",
+    "tradingFeeAmount",
+    "byTargetAmount",
+    "source_amount_usd",  # populated by Python aggregation layer in 11.N.2b.2
+    "_ingested_at",
+})
+_N2B1_ARBITRAGES_COLUMNS: Final[frozenset[str]] = frozenset({
+    "contract_address",
+    "evt_tx_hash",
+    "evt_index",
+    "evt_block_number",
+    "evt_block_time",
+    "evt_block_date",
+    "evt_tx_from",
+    "caller",
+    "platformIds",
+    "protocolAmounts",
+    "rewardAmounts",
+    "sourceAmounts",
+    "sourceTokens",
+    "tokenPath",
+    "_ingested_at",
+})
+
+
+def _seed_legacy_xd_weekly(conn: duckdb.DuckDBPyConnection) -> None:
+    """Seed an in-memory DB with the Rev-5.2.1 ``onchain_xd_weekly`` schema.
+
+    This represents the canonical DB's CURRENT state at Task 11.N.2b.1
+    author time: composite PK ``(week_start, proxy_kind)`` + 2-value CHECK
+    on ``proxy_kind``. The migration must transform this into the relaxed
+    10-value CHECK while preserving every existing row byte-exact.
+    """
+    conn.execute(
+        """
+        CREATE TABLE onchain_xd_weekly (
+            week_start DATE NOT NULL,
+            value_usd VARCHAR NOT NULL,
+            is_partial_week BOOLEAN NOT NULL,
+            proxy_kind VARCHAR NOT NULL
+              CHECK (proxy_kind IN (
+                'net_primary_issuance_usd',
+                'b2b_to_b2c_net_flow_usd'
+              )),
+            _ingested_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+            PRIMARY KEY (week_start, proxy_kind)
+        )
+        """
+    )
+    # Seed two rows representative of canonical DB state: 1 supply row,
+    # 1 distribution row on the same Friday. Migration must preserve
+    # both byte-exact.
+    conn.execute(
+        "INSERT INTO onchain_xd_weekly "
+        "(week_start, value_usd, is_partial_week, proxy_kind) "
+        "VALUES (?, ?, ?, ?)",
+        [date(2025, 10, 31), "111.111111", False, "net_primary_issuance_usd"],
+    )
+    conn.execute(
+        "INSERT INTO onchain_xd_weekly "
+        "(week_start, value_usd, is_partial_week, proxy_kind) "
+        "VALUES (?, ?, ?, ?)",
+        [date(2025, 10, 31), "222.222222", False, "b2b_to_b2c_net_flow_usd"],
+    )
+
+
+def test_n2b1_a_migration_function_exists() -> None:
+    """(S1-N2b.1-a) ``migrate_onchain_xd_weekly_for_carbon`` is exposed."""
+    from scripts import econ_schema
+
+    assert hasattr(econ_schema, "migrate_onchain_xd_weekly_for_carbon"), (
+        "scripts.econ_schema.migrate_onchain_xd_weekly_for_carbon missing — "
+        "Step 4 not yet implemented."
+    )
+    fn = getattr(econ_schema, "migrate_onchain_xd_weekly_for_carbon")
+    assert callable(fn), "migrate_onchain_xd_weekly_for_carbon is not callable"
+
+
+def test_n2b1_b_relaxed_check_admits_all_ten_proxy_kinds() -> None:
+    """(S1-N2b.1-b) Migration relaxes CHECK to admit all 10 proxy_kind values."""
+    from scripts.econ_schema import migrate_onchain_xd_weekly_for_carbon
+
+    conn = duckdb.connect(":memory:")
+    try:
+        _seed_legacy_xd_weekly(conn)
+
+        # Pre-migration: only 2 values admitted; new Carbon values rejected.
+        with pytest.raises(duckdb.ConstraintException):
+            conn.execute(
+                "INSERT INTO onchain_xd_weekly "
+                "(week_start, value_usd, is_partial_week, proxy_kind) "
+                "VALUES (?, ?, ?, ?)",
+                [
+                    date(2025, 11, 7),
+                    "333.000000",
+                    False,
+                    "carbon_basket_user_volume_usd",
+                ],
+            )
+
+        # Run migration.
+        migrate_onchain_xd_weekly_for_carbon(conn)
+
+        # Post-migration: every admitted value MUST insert successfully on a
+        # distinct Friday so the composite PK never collides during the
+        # smoke loop.
+        base_friday = date(2025, 11, 7)
+        for i, pk in enumerate(sorted(_N2B1_ADMITTED_PROXY_KINDS)):
+            friday = base_friday + timedelta(weeks=i)
+            conn.execute(
+                "INSERT INTO onchain_xd_weekly "
+                "(week_start, value_usd, is_partial_week, proxy_kind) "
+                "VALUES (?, ?, ?, ?)",
+                [friday, f"{i}.000000", False, pk],
+            )
+
+        # Assert all 10 values present in the table.
+        kinds_in_table = {
+            r[0]
+            for r in conn.execute(
+                "SELECT DISTINCT proxy_kind FROM onchain_xd_weekly"
+            ).fetchall()
+        }
+        assert _N2B1_ADMITTED_PROXY_KINDS.issubset(kinds_in_table), (
+            f"Migration did not admit every expected proxy_kind. "
+            f"Missing: {_N2B1_ADMITTED_PROXY_KINDS - kinds_in_table}"
+        )
+
+        # Pre-existing rows preserved byte-exact.
+        legacy = conn.execute(
+            "SELECT week_start, value_usd, is_partial_week, proxy_kind "
+            "FROM onchain_xd_weekly "
+            "WHERE proxy_kind IN ('net_primary_issuance_usd', "
+            "                     'b2b_to_b2c_net_flow_usd') "
+            "  AND week_start = ? "
+            "ORDER BY proxy_kind",
+            [date(2025, 10, 31)],
+        ).fetchall()
+        assert legacy == [
+            (date(2025, 10, 31), "222.222222", False,
+             "b2b_to_b2c_net_flow_usd"),
+            (date(2025, 10, 31), "111.111111", False,
+             "net_primary_issuance_usd"),
+        ], f"Pre-existing rows mutated by migration: {legacy}"
+    finally:
+        conn.close()
+
+
+def test_n2b1_c_new_carbon_tables_have_probe_confirmed_schema() -> None:
+    """(S1-N2b.1-c) Two new Carbon tables created with probe-verified dtypes.
+
+    Plan-§915 DDL pre-commitment for ``onchain_carbon_arbitrages`` was
+    based on a scalar-field assumption that does not hold against the
+    actual Dune ``carbon_defi_celo.bancorarbitrage_evt_arbitrageexecuted``
+    schema (the event is multi-hop with array-typed source/path fields).
+    The migration uses JSON-encoded VARCHAR for those array fields per
+    gate-decision memo §3.2.
+    """
+    from scripts.econ_schema import migrate_onchain_xd_weekly_for_carbon
+
+    conn = duckdb.connect(":memory:")
+    try:
+        _seed_legacy_xd_weekly(conn)
+        migrate_onchain_xd_weekly_for_carbon(conn)
+
+        tables = {
+            r[0]
+            for r in conn.execute(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema = 'main'"
+            ).fetchall()
+        }
+        assert "onchain_carbon_tokenstraded" in tables, (
+            "onchain_carbon_tokenstraded table missing after migration"
+        )
+        assert "onchain_carbon_arbitrages" in tables, (
+            "onchain_carbon_arbitrages table missing after migration"
+        )
+
+        # Column set check for each table.
+        for table, expected_cols in (
+            ("onchain_carbon_tokenstraded", _N2B1_TOKENSTRADED_COLUMNS),
+            ("onchain_carbon_arbitrages", _N2B1_ARBITRAGES_COLUMNS),
+        ):
+            cols = {
+                r[0]
+                for r in conn.execute(
+                    "SELECT column_name FROM information_schema.columns "
+                    "WHERE table_name = ? AND table_schema = 'main'",
+                    [table],
+                ).fetchall()
+            }
+            missing = expected_cols - cols
+            assert not missing, (
+                f"{table} missing columns: {missing}; got cols: {cols}"
+            )
+
+        # Dtype spot-checks per probe verification.
+        type_rows = conn.execute(
+            "SELECT column_name, data_type FROM information_schema.columns "
+            "WHERE table_name = 'onchain_carbon_tokenstraded' "
+            "  AND table_schema = 'main'"
+        ).fetchall()
+        types = {col: dtype for (col, dtype) in type_rows}
+        # uint256 → HUGEINT (signed 128-bit) per 11.M.5 commit af98bb659
+        # precedent. Caveat in memo §3.1: HUGEINT max < uint256 max, so
+        # the production ingest layer must guard against overflow on
+        # whale trades (LIMIT-100 max sourceAmount = 9.43e18, well within
+        # range).
+        assert types.get("sourceAmount") == "HUGEINT", (
+            f"sourceAmount must be HUGEINT; got {types.get('sourceAmount')}"
+        )
+        assert types.get("targetAmount") == "HUGEINT", (
+            f"targetAmount must be HUGEINT; got {types.get('targetAmount')}"
+        )
+        assert types.get("evt_block_number") == "BIGINT", (
+            f"evt_block_number must be BIGINT; got {types.get('evt_block_number')}"
+        )
+        # Address fields: VARBINARY (20-byte; Dune decoded namespace native).
+        assert types.get("sourceToken") == "BLOB", (
+            f"sourceToken must be VARBINARY/BLOB; got {types.get('sourceToken')}"
+        )
+        assert types.get("targetToken") == "BLOB", (
+            f"targetToken must be VARBINARY/BLOB; got {types.get('targetToken')}"
+        )
+        assert types.get("byTargetAmount") == "BOOLEAN", (
+            f"byTargetAmount must be BOOLEAN; got {types.get('byTargetAmount')}"
+        )
+
+        # Arbitrages array fields: JSON-encoded VARCHAR per DDL deviation
+        # logged in gate-decision memo §3.2.
+        arb_type_rows = conn.execute(
+            "SELECT column_name, data_type FROM information_schema.columns "
+            "WHERE table_name = 'onchain_carbon_arbitrages' "
+            "  AND table_schema = 'main'"
+        ).fetchall()
+        arb_types = {col: dtype for (col, dtype) in arb_type_rows}
+        for arr_field in (
+            "platformIds",
+            "protocolAmounts",
+            "rewardAmounts",
+            "sourceAmounts",
+            "sourceTokens",
+            "tokenPath",
+        ):
+            assert arb_types.get(arr_field) == "VARCHAR", (
+                f"{arr_field} must be VARCHAR (JSON-encoded array per "
+                f"gate-decision memo §3.2); got {arb_types.get(arr_field)}"
+            )
+    finally:
+        conn.close()
+
+
+def test_n2b1_d_invalid_proxy_kind_still_rejected() -> None:
+    """(S1-N2b.1-d) Relaxed CHECK is not over-permissive."""
+    from scripts.econ_schema import migrate_onchain_xd_weekly_for_carbon
+
+    conn = duckdb.connect(":memory:")
+    try:
+        _seed_legacy_xd_weekly(conn)
+        migrate_onchain_xd_weekly_for_carbon(conn)
+
+        with pytest.raises(duckdb.ConstraintException):
+            conn.execute(
+                "INSERT INTO onchain_xd_weekly "
+                "(week_start, value_usd, is_partial_week, proxy_kind) "
+                "VALUES (?, ?, ?, ?)",
+                [date(2025, 12, 5), "0.0", False, "foo_bar_baz_invalid"],
+            )
+
+        # Carbon-basket primary key value still admitted (positive control).
+        conn.execute(
+            "INSERT INTO onchain_xd_weekly "
+            "(week_start, value_usd, is_partial_week, proxy_kind) "
+            "VALUES (?, ?, ?, ?)",
+            [date(2025, 12, 5), "100.0", False, "carbon_basket_user_volume_usd"],
+        )
+    finally:
+        conn.close()
+
+
+def test_n2b1_e_composite_pk_admits_all_channels_same_friday() -> None:
+    """(S1-N2b.1-e) Three+ channels coexist for the same Friday post-migration."""
+    from scripts.econ_schema import migrate_onchain_xd_weekly_for_carbon
+
+    conn = duckdb.connect(":memory:")
+    try:
+        _seed_legacy_xd_weekly(conn)
+        migrate_onchain_xd_weekly_for_carbon(conn)
+
+        friday = date(2025, 12, 12)
+        for v, pk in (
+            ("100.0", "net_primary_issuance_usd"),
+            ("200.0", "b2b_to_b2c_net_flow_usd"),
+            ("300.0", "carbon_basket_user_volume_usd"),
+            ("50.0", "carbon_basket_arb_volume_usd"),
+        ):
+            conn.execute(
+                "INSERT INTO onchain_xd_weekly "
+                "(week_start, value_usd, is_partial_week, proxy_kind) "
+                "VALUES (?, ?, ?, ?)",
+                [friday, v, False, pk],
+            )
+
+        rows = conn.execute(
+            "SELECT proxy_kind, value_usd FROM onchain_xd_weekly "
+            "WHERE week_start = ? ORDER BY proxy_kind",
+            [friday],
+        ).fetchall()
+        assert len(rows) == 4, (
+            f"Composite PK must admit 4 channels for the same Friday; got {rows}"
+        )
+
+        # PK still enforces per-(week_start, proxy_kind) uniqueness.
+        with pytest.raises(duckdb.ConstraintException):
+            conn.execute(
+                "INSERT INTO onchain_xd_weekly "
+                "(week_start, value_usd, is_partial_week, proxy_kind) "
+                "VALUES (?, ?, ?, ?)",
+                [friday, "999.0", False, "carbon_basket_user_volume_usd"],
+            )
+    finally:
+        conn.close()
+
+
+def test_n2b1_f_canonical_db_checksum_unchanged_through_full_test_cycle(
+    tmp_path: Path,
+) -> None:
+    """(S1-N2b.1-f) Canonical DB byte-exact identical before and after.
+
+    This is the load-bearing additive-only invariant for Task 11.N.2b.1:
+    the schema-migration code path is committed to ``scripts.econ_schema``
+    but is NOT executed against canonical ``contracts/data/structural_econ.duckdb``
+    until Task 11.N.2b.2 Step 5 (atomic-commit-after-population). Any
+    in-test invocation against the canonical path is a regression.
+    """
+    assert _REAL_DB_PATH.is_file(), f"missing {_REAL_DB_PATH}"
+
+    def _sha256(path: Path) -> str:
+        h = hashlib.sha256()
+        with path.open("rb") as fh:
+            for chunk in iter(lambda: fh.read(64 * 1024), b""):
+                h.update(chunk)
+        return h.hexdigest()
+
+    before = _sha256(_REAL_DB_PATH)
+
+    # Run the migration's full test cycle against an in-memory DB,
+    # mirroring the four assertions above. Canonical path must NOT be
+    # touched.
+    from scripts.econ_schema import migrate_onchain_xd_weekly_for_carbon
+
+    conn = duckdb.connect(":memory:")
+    try:
+        _seed_legacy_xd_weekly(conn)
+        migrate_onchain_xd_weekly_for_carbon(conn)
+        # Smoke-test all 10 proxy_kind values insert.
+        base_friday = date(2026, 1, 2)
+        for i, pk in enumerate(sorted(_N2B1_ADMITTED_PROXY_KINDS)):
+            conn.execute(
+                "INSERT INTO onchain_xd_weekly "
+                "(week_start, value_usd, is_partial_week, proxy_kind) "
+                "VALUES (?, ?, ?, ?)",
+                [base_friday + timedelta(weeks=i), f"{i}.0", False, pk],
+            )
+    finally:
+        conn.close()
+
+    # Sanity: also verify that an exported temp file from the in-memory DB
+    # is NOT the canonical file.
+    sentinel = tmp_path / "n2b1_inmemory_sentinel.duckdb"
+    conn2 = duckdb.connect(str(sentinel))
+    try:
+        _seed_legacy_xd_weekly(conn2)
+        migrate_onchain_xd_weekly_for_carbon(conn2)
+    finally:
+        conn2.close()
+    assert sentinel.resolve() != _REAL_DB_PATH.resolve(), (
+        "sentinel migration leaked into canonical DB path"
+    )
+
+    after = _sha256(_REAL_DB_PATH)
+    assert before == after, (
+        f"Canonical structural_econ.duckdb checksum drifted through Task "
+        f"11.N.2b.1 — Step Atomicity Protocol violated.\n"
+        f"  before: {before}\n"
+        f"  after:  {after}"
+    )
+
+
+def test_n2b1_g_rev4_decision_hash_preserved() -> None:
+    """(S1-N2b.1-g) Rev-4 ``decision_hash`` byte-exact through the migration.
+
+    The migration affects only DuckDB schema; LOCKED_DECISIONS and the
+    nb1_panel_fingerprint.json must remain identical.
+    """
+    from scripts.cleaning import LOCKED_DECISIONS, _compute_decision_hash
+
+    got = _compute_decision_hash(LOCKED_DECISIONS)
+    assert got == _EXPECTED_DECISION_HASH, (
+        f"Rev-4 decision_hash drifted through Task 11.N.2b.1: "
+        f"got {got}, expected {_EXPECTED_DECISION_HASH}"
+    )
+
+    with _FINGERPRINT_PATH.open() as fh:
+        fingerprint = json.load(fh)
+    assert fingerprint["decision_hash"] == _EXPECTED_DECISION_HASH, (
+        "nb1_panel_fingerprint.json decision_hash drifted through Task 11.N.2b.1"
+    )

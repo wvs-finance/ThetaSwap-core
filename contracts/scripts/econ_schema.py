@@ -429,6 +429,207 @@ _ONCHAIN_DDL: Final[tuple[str, ...]] = (
 )
 
 
+# ── Task 11.N.2b.1: Carbon-basket schema migration ──────────────────────────
+#
+# The Rev-5.2.1 ``onchain_xd_weekly`` CHECK constraint admits exactly two
+# ``proxy_kind`` values: ``'net_primary_issuance_usd'`` (supply channel,
+# Task 11.N) and ``'b2b_to_b2c_net_flow_usd'`` (distribution channel,
+# Task 11.N.1b). Task 11.N.2b.1 (Rev 5.3) extends the admitted set with
+# eight new Carbon-basket values per plan §937:
+#
+#   - 'carbon_basket_user_volume_usd'             (basket-aggregate primary)
+#   - 'carbon_basket_arb_volume_usd'              (Arb Fast Lane diagnostic)
+#   - 'carbon_per_currency_copm_volume_usd'       (per-currency PCA cross-val)
+#   - 'carbon_per_currency_usdm_volume_usd'
+#   - 'carbon_per_currency_eurm_volume_usd'
+#   - 'carbon_per_currency_brlm_volume_usd'
+#   - 'carbon_per_currency_kesm_volume_usd'
+#   - 'carbon_per_currency_xofm_volume_usd'
+#
+# The migration also creates two new per-event tables for Carbon DeFi
+# Celo events:
+#
+#   - ``onchain_carbon_tokenstraded`` — from Dune
+#     ``carbon_defi_celo.carboncontroller_evt_tokenstraded``
+#   - ``onchain_carbon_arbitrages``    — from Dune
+#     ``carbon_defi_celo.bancorarbitrage_evt_arbitrageexecuted``
+#
+# DDL DEVIATION (gate-decision memo §3.2): the plan-§927 pre-commitment
+# treated the BancorArbitrage event as scalar (single ``sourceToken``,
+# ``sourceAmount``, ``tokenPath``). Dune-MCP LIMIT-100 probe (query
+# ``7371828``) shows the event is multi-hop with array-typed source/path
+# fields:
+#
+#   sourceTokens     array(varbinary)
+#   sourceAmounts    array(uint256)
+#   tokenPath        array(varbinary)
+#   protocolAmounts  array(uint256)
+#   rewardAmounts    array(uint256)
+#   platformIds      array(integer)
+#
+# These six array fields are stored as JSON-encoded VARCHAR following the
+# 11.M.5 commit ``af98bb659`` text-preserving precedent for text-shaped
+# event data. uint256 array fields cannot be stored as ``HUGEINT[]``
+# without overflow risk on whale trades — VARCHAR JSON is the safe
+# canonical-text round-trip representation.
+#
+# uint256 scalar fields in ``onchain_carbon_tokenstraded`` (sourceAmount,
+# targetAmount, tradingFeeAmount) use HUGEINT per the same 11.M.5
+# precedent. HUGEINT max (2^127 − 1 ≈ 1.7e38) > any observed Carbon trade
+# magnitude in the LIMIT-100 probe (max sourceAmount = 9.43e18, well
+# within range). Production ingest in 11.N.2b.2 must guard against
+# uint256-max overflow on whale trades (memo §3.1).
+#
+# Address fields (``sourceToken``, ``targetToken``, ``trader``,
+# ``evt_tx_from``, ``contract_address``, ``caller``) use VARBINARY (no
+# length attribute on DuckDB; Dune decoded namespace returns 20-byte
+# addresses verbatim).
+#
+# Step Atomicity Protocol (CR-P5 / PM-P1): this migration is committed
+# to source code in Task 11.N.2b.1 but is NOT executed against the
+# canonical ``contracts/data/structural_econ.duckdb`` until Task
+# 11.N.2b.2 Step 5 (atomic-commit-after-population). The Task 11.N.2b.1
+# tests run against an in-memory DuckDB only.
+
+_DDL_ONCHAIN_XD_WEEKLY_CARBON: Final[str] = """
+CREATE TABLE onchain_xd_weekly_new (
+    week_start DATE NOT NULL,
+    value_usd VARCHAR NOT NULL,
+    is_partial_week BOOLEAN NOT NULL,
+    proxy_kind VARCHAR NOT NULL
+      CHECK (proxy_kind IN (
+        'net_primary_issuance_usd',
+        'b2b_to_b2c_net_flow_usd',
+        'carbon_basket_user_volume_usd',
+        'carbon_basket_arb_volume_usd',
+        'carbon_per_currency_copm_volume_usd',
+        'carbon_per_currency_usdm_volume_usd',
+        'carbon_per_currency_eurm_volume_usd',
+        'carbon_per_currency_brlm_volume_usd',
+        'carbon_per_currency_kesm_volume_usd',
+        'carbon_per_currency_xofm_volume_usd'
+      )),
+    _ingested_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    PRIMARY KEY (week_start, proxy_kind)
+)
+"""
+
+# DuckDB does not track a CHECK clause's literal text in a way that
+# survives table rebuilds without quoting drift, so the migration
+# detects the post-state by checking for the presence of one of the new
+# Carbon-basket values in the existing CHECK clause text.
+_CARBON_PROXY_KIND_SENTINEL: Final[str] = "carbon_basket_user_volume_usd"
+
+_DDL_ONCHAIN_CARBON_TOKENSTRADED: Final[str] = """
+CREATE TABLE IF NOT EXISTS onchain_carbon_tokenstraded (
+    contract_address VARBINARY NOT NULL,
+    evt_tx_hash VARCHAR(66) NOT NULL,
+    evt_index BIGINT NOT NULL,
+    evt_block_number BIGINT NOT NULL,
+    evt_block_time TIMESTAMP NOT NULL,
+    evt_block_date DATE NOT NULL,
+    evt_tx_from VARBINARY,
+    trader VARBINARY NOT NULL,
+    sourceToken VARBINARY NOT NULL,
+    targetToken VARBINARY NOT NULL,
+    sourceAmount HUGEINT NOT NULL,
+    targetAmount HUGEINT NOT NULL,
+    tradingFeeAmount HUGEINT NOT NULL,
+    byTargetAmount BOOLEAN NOT NULL,
+    -- Populated by Python aggregation layer in Task 11.N.2b.2 Step 3.
+    -- VARCHAR text-preserving per 11.M.5 commit `af98bb659`.
+    source_amount_usd VARCHAR,
+    _ingested_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    PRIMARY KEY (evt_tx_hash, evt_index)
+)
+"""
+
+_DDL_ONCHAIN_CARBON_ARBITRAGES: Final[str] = """
+CREATE TABLE IF NOT EXISTS onchain_carbon_arbitrages (
+    contract_address VARBINARY NOT NULL,
+    evt_tx_hash VARCHAR(66) NOT NULL,
+    evt_index BIGINT NOT NULL,
+    evt_block_number BIGINT NOT NULL,
+    evt_block_time TIMESTAMP NOT NULL,
+    evt_block_date DATE NOT NULL,
+    evt_tx_from VARBINARY,
+    caller VARBINARY NOT NULL,
+    -- Array-typed fields stored as JSON-encoded VARCHAR per
+    -- gate-decision memo §3.2 DDL DEVIATION (plan-§927 scalar
+    -- pre-commit superseded by probe-confirmed array semantics).
+    platformIds VARCHAR NOT NULL,
+    protocolAmounts VARCHAR NOT NULL,
+    rewardAmounts VARCHAR NOT NULL,
+    sourceAmounts VARCHAR NOT NULL,
+    sourceTokens VARCHAR NOT NULL,
+    tokenPath VARCHAR NOT NULL,
+    _ingested_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
+    PRIMARY KEY (evt_tx_hash, evt_index)
+)
+"""
+
+
+def migrate_onchain_xd_weekly_for_carbon(
+    conn: duckdb.DuckDBPyConnection,
+) -> bool:
+    """Relax ``onchain_xd_weekly.proxy_kind`` CHECK + create Carbon tables.
+
+    DuckDB cannot drop a column-level CHECK constraint in place — the
+    migration uses the same shadow-table rebuild pattern as
+    :func:`scripts.econ_pipeline.migrate_fred_daily_allow_dff` (commit
+    ``a724252c6``). Steps:
+
+      1. Detect post-state via ``duckdb_constraints()`` lookup; if the
+         CHECK already includes ``'carbon_basket_user_volume_usd'``,
+         return ``False`` (no-op idempotency).
+      2. Create ``onchain_xd_weekly_new`` with the relaxed 10-value CHECK.
+      3. Copy every row from the existing ``onchain_xd_weekly``.
+      4. Drop the old table; rename the shadow.
+      5. Create ``onchain_carbon_tokenstraded`` + ``onchain_carbon_arbitrages``
+         (idempotent ``CREATE TABLE IF NOT EXISTS``).
+
+    Returns ``True`` if a migration was performed, ``False`` if the
+    table already permits the Carbon-basket proxy_kind values.
+
+    Byte-exact preserving for pre-existing rows: every ``onchain_xd_weekly``
+    row carrying ``'net_primary_issuance_usd'`` or ``'b2b_to_b2c_net_flow_usd'``
+    survives the migration unchanged in week_start, value_usd,
+    is_partial_week, proxy_kind, and _ingested_at columns.
+
+    Step Atomicity Protocol (CR-P5 / PM-P1): callers MUST run this
+    function against an in-memory or temporary DuckDB during Task
+    11.N.2b.1; the canonical ``contracts/data/structural_econ.duckdb``
+    is untouched until Task 11.N.2b.2 Step 5 atomic commit.
+    """
+    existing = conn.execute(
+        "SELECT constraint_text FROM duckdb_constraints() "
+        "WHERE table_name = 'onchain_xd_weekly' "
+        "  AND constraint_type = 'CHECK'"
+    ).fetchall()
+    already_carbon = any(
+        _CARBON_PROXY_KIND_SENTINEL in (row[0] or "") for row in existing
+    )
+
+    if not already_carbon:
+        # Shadow-table rebuild for the relaxed CHECK.
+        conn.execute(_DDL_ONCHAIN_XD_WEEKLY_CARBON)
+        conn.execute(
+            "INSERT INTO onchain_xd_weekly_new "
+            "(week_start, value_usd, is_partial_week, proxy_kind, _ingested_at) "
+            "SELECT week_start, value_usd, is_partial_week, proxy_kind, _ingested_at "
+            "FROM onchain_xd_weekly"
+        )
+        conn.execute("DROP TABLE onchain_xd_weekly")
+        conn.execute("ALTER TABLE onchain_xd_weekly_new RENAME TO onchain_xd_weekly")
+
+    # Idempotent: ``CREATE TABLE IF NOT EXISTS`` is safe to run on
+    # fresh + already-migrated DBs alike.
+    conn.execute(_DDL_ONCHAIN_CARBON_TOKENSTRADED)
+    conn.execute(_DDL_ONCHAIN_CARBON_ARBITRAGES)
+
+    return not already_carbon
+
+
 # ── Public API ───────────────────────────────────────────────────────────────
 
 
