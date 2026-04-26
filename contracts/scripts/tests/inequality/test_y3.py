@@ -283,7 +283,14 @@ def test_step7_onchain_y3_weekly_table_exists_inmemory() -> None:
 
 
 def test_step7_load_onchain_y3_weekly_returns_frozen_dataclass() -> None:
-    """``load_onchain_y3_weekly`` returns a tuple of ``OnchainY3Weekly`` rows."""
+    """``load_onchain_y3_weekly`` returns a tuple of ``OnchainY3Weekly`` rows.
+
+    Rev-5.3.2 Task 11.O Step 0: this synthetic-data round-trip uses the
+    SYNTHETIC-TEST-ONLY ``"y3_v1"`` literal and MUST pass it explicitly via
+    ``source_methodology="y3_v1"``. The public-loader default was flipped to
+    the Rev-5.3.2 v2 primary literal to close the SD-RR-A1 silent-empty-tuple
+    footgun; this test cannot rely on the legacy default any longer.
+    """
     import dataclasses
 
     import duckdb
@@ -312,7 +319,9 @@ def test_step7_load_onchain_y3_weekly_returns_frozen_dataclass() -> None:
         ],
     )
 
-    rows = load_onchain_y3_weekly(conn)
+    # Explicit ``source_methodology="y3_v1"`` per Rev-5.3.2 Task 11.O Step 0;
+    # the bare default no longer returns ``"y3_v1"`` rows.
+    rows = load_onchain_y3_weekly(conn, source_methodology="y3_v1")
     assert isinstance(rows, tuple)
     assert len(rows) == 1
     r = rows[0]

@@ -1522,7 +1522,9 @@ class OnchainY3Weekly:
 
 def load_onchain_y3_weekly(
     conn: duckdb.DuckDBPyConnection,
-    source_methodology: str = "y3_v1",
+    source_methodology: str = (
+        "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"
+    ),
     *,
     start: date | None = None,
     end: date | None = None,
@@ -1535,18 +1537,30 @@ def load_onchain_y3_weekly(
 
     Admitted methodology tags (Rev-5.3.2):
 
-    * ``'y3_v1'`` — synthetic / unit-test bare tag (legacy default).
+    * ``'y3_v1'`` — **SYNTHETIC TESTS ONLY** (in-memory DuckDB round-trip in
+      ``scripts/tests/inequality/test_y3.py::test_step7_load_onchain_y3_weekly_returns_frozen_dataclass``).
+      The canonical ``structural_econ.duckdb`` does **not** store any rows
+      under this bare tag; the canonical Rev-5.3.1 stored literal is
+      ``'y3_v1_3country_ke_unavailable'`` (the suffix is appended at ingest
+      time by ``ingest_y3_weekly``). Retained in the admitted-set so the
+      synthetic round-trip test can pass it explicitly without tripping the
+      validation guard. Production callers MUST NOT pass this literal.
     * ``'y3_v1_3country_ke_unavailable'`` — Rev-5.3.1 stored literal
       (canonical DB, 59 rows).
     * ``'y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable'``
       — Rev-5.3.2 primary panel (canonical DB, 116 rows; the load-bearing
       production literal for Task 11.N.2d.1-reframe and Task 11.O Rev-2).
+      **This is the default** as of Rev-5.3.2 Task 11.O Step 0 — production
+      callers reading ``structural_econ.duckdb`` without an explicit tag
+      receive this primary panel.
 
-    The default ``'y3_v1'`` is preserved for backward-compat with the
-    Step-7 synthetic-data round-trip test in ``test_y3.py``; **production
-    callers reading the canonical ``structural_econ.duckdb`` MUST pass the
-    Rev-5.3.2 literal explicitly** because the canonical DB does not store
-    rows under the bare ``'y3_v1'`` tag.
+    Default-arg rationale (Rev-5.3.2 Task 11.O Step 0; addresses SD-RR-A1):
+    flipped from the legacy ``'y3_v1'`` to the v2 primary literal because no
+    rows in the canonical DuckDB are stored under the bare ``'y3_v1'`` tag —
+    a default-arg call against the canonical DB previously returned an empty
+    tuple (silent-empty footgun). The flip makes default callers receive
+    the operative production panel; the synthetic Step-7 round-trip test in
+    ``test_y3.py`` now passes ``source_methodology="y3_v1"`` explicitly.
 
     Optional ``(start, end)`` filter restricts by ``week_start``.
 
