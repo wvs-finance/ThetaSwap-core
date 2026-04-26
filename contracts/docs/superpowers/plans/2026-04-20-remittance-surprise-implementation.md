@@ -2108,3 +2108,259 @@ Rev-5.3.2 active task count: **63 + 6 = 69** (excluding the deliberate non-task 
 - Prior HALT memo (informational): `cefec08a7`
 - MDES_FORMULATION_HASH (immutable, sha256): `4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa`
 - Rev-4 decision_hash (immutable through Rev-5.3.2): `6a5f9d1b05c18defd8b30c4b3cef6af896d6e45a2a26c1c60aa342da0a5a443c`
+
+---
+
+## CORRECTIONS — Rev-5.3.3 (2026-04-25, post-Phase-5b gate-FAIL — α + β parallel-track pivot, notebook migration)
+
+**Trigger.** Rev-5.3.2 Task 11.O Rev-2 Phase 5b shipped the Analytics Reporter primary-estimation deliverable at commit `799cbc280` with **gate verdict T3b = FAIL**: β̂_X_d = `−2.799 × 10⁻⁸` (sign-flipped from the pre-registered `β > 0`); 90% one-sided lower bound = `−4.621 × 10⁻⁸` (≤ 0 ⇒ T3b FAIL); T1 exogeneity REJECTS (the published β̂ is a *predictive-regression* coefficient, not a structural causal estimand); a single observation at `2026-03-06` (Cook's D = 0.888, studentized residual = −3.13) drives ~50% of |β̂|, with the sign-flip robust to drop-one removal. The 4-reviewer gate (Code Reviewer + Reality Checker + Senior Developer + Model QA Specialist) all returned PASS-class verdicts at commits `6b1200dcb` (RC + Model QA) and `f38f1aad3` (CR + SD), closing the Rev-2 mean-β estimation cleanly with the FAIL standing on the analytical merits — the same analytical-discipline-vindication pattern as the closed `project_fx_vol_cpi_notebook_complete` (FX-vol-CPI Colombia notebook). Per `feedback_pathological_halt_anti_fishing_checkpoint`, the orchestrator HALTed and authored the disposition memo at `contracts/.scratch/2026-04-25-task110-rev2-gate-fail-disposition.md` (commit `c1eec8da5`) enumerating five pivot paths (α / β / γ / δ / ε); user selected **α + β parallel tracks** with two binding clarifications carried over into this Rev-5.3.3 block:
+
+- **α = Rev-3 ζ-group convex-payoff extensions** (per Rev-2 spec §10.6: ζ.1 quantile β̂(τ); ζ.2 GARCH(1,1)-X conditional-variance; ζ.3 lower-tail conditional regression; ζ.4 option-implied volatility surface). The convex-payoff insufficiency caveat from Rev-2 spec §11.A REMAINS LOAD-BEARING: mean-β was always *necessary-but-insufficient* for convex-instrument pricing, and the Rev-2 FAIL is **orthogonal** (not antagonistic) to the convex-payoff fitness test that ζ-group is designed to run. Rev-3 spec authoring is the analytically-correct path forward IF the convex-instrument product purpose holds.
+- **β = brainstorm-α reframed as a payments / consumption pivot grounded in actual Mento user-base evidence** — NOT a speculative hypothesis sweep. Per user clarification, β must be GROUNDED IN ACTUAL Mento user-base documentation (MiniPay, Valora, GoodDollar, peer-to-peer payments corridors, retail-consumption use cases, etc.) BEFORE any structural-econometric spec is authored. No spec authored against speculation; no data exploration on candidate X_d variables before the user-base evidence is in hand. This is anti-fishing discipline at the hypothesis-formation stage. The Trend Researcher subagent has been dispatched (background `agentId = a7cd002b89b23e0ac`) to gather and synthesize Mento ecosystem usage evidence; the deliverable is an evidence-grounded report under `contracts/.scratch/2026-04-25-mento-userbase-research.md`.
+
+**Notebook-migration directive.** Per user instruction, ALL future analytical work in both tracks (α and β) is migrated to a 3-notebook structure under `notebooks/abrigo_y3_x_d/` following the FX-vol-CPI Colombia precedent: NB1 data EDA + panel fingerprint, NB2 primary estimation, NB3 specification tests + sensitivity analysis. The discipline is the citation-block + trio-checkpoint pattern enforced by `feedback_notebook_citation_block` (every test / decision / spec-choice preceded by a 4-part markdown block: reference / why used / relevance to results / connection to product) and `feedback_notebook_trio_checkpoint` (Analytics Reporter HALTs after every (why-markdown, code-cell, interpretation-markdown) trio for human review; bulk authoring is forbidden). This Rev-5.3.3 block is the user-approved CORRECTIONS payload that adds the super-task pointers for both tracks, reaffirms anti-fishing invariants, and updates the task-count tally. Reference commits: `799cbc280` (Phase 5b primary estimates); `6b1200dcb` + `f38f1aad3` (4-reviewer gate close-out); `c1eec8da5` (disposition memo).
+
+### Why α + β parallel over α-only or β-only (succinct)
+
+- **α-only (Rev-3 ζ-group only):** REJECTED as sole path — runs convex-payoff identification against the **same X_d hypothesis** that just FAILed at the mean-β level with T1 exogeneity REJECTed. The ζ-group is product-correct in scope (convex pricing requires distributional evidence) but it inherits the predictive-not-structural diagnostic from Rev-2 unless the X_d hypothesis is independently re-grounded. Running ζ-group alone is product-incomplete.
+- **β-only (payments / consumption pivot only):** REJECTED as sole path — abandons the convex-payoff calibration roadmap that the §10.6 ζ-group precisely enumerates. Rev-2 §11.A is explicit that mean-β identification is *first-stage*; closing the convex-instrument gap requires the ζ-group regardless of what the next-generation X_d hypothesis turns out to be. β-only would forfeit the calibration handoff that is already pre-registered.
+- **α + β parallel (SELECTED):** Rev-3 ζ-group exercises the convex-payoff calibration machinery against the existing (Rev-2) X_d while β re-grounds the next-generation X_d hypothesis in actual Mento user-base evidence. Results inform each other: ζ-group's distributional findings constrain what convex-payoff product the β-grounded X_d eventually feeds; β's user-base evidence constrains what hypothesis the ζ-group is ultimately calibrated against. Neither track blocks the other; both surface independent analytical evidence.
+- **γ / δ / ε (rejected):** γ (per-currency Mento focus) was anti-fishing-flagged MEDIUM-HIGH in the disposition memo — switching to per-currency AFTER seeing the basket-aggregate FAIL is suggestive of cherry-picking; admitted only with explicit per-currency pre-commitment which user did not select. δ (EXIT) was rejected on the merits: convex-payoff calibration roadmap is too valuable to abandon. ε (interactive structural-econometrics skill flow) is partially folded INTO α and β as the spec-authoring methodology — see §C super-task constraints.
+
+### A. Trigger + path-α+β rationale
+
+This Rev-5.3.3 block is authored on **2026-04-25** (same calendar day as the Phase 5b FAIL verdict commit `799cbc280` and the disposition memo commit `c1eec8da5`). All staleness arithmetic in subsequent sections is anchored to this authoring date. The disposition memo's Option α is implemented under §C as Task 11.O.ζ-α (Rev-3 ζ-group super-task pointing to a sub-plan); Option β is implemented under §C as Tasks 11.P.MR-β (Mento user-base research, COMPLETED), 11.P.MR-β.1 (cCOP-vs-COPM provenance audit + memory corrigendum, NEW), 11.P.spec-β (β hypothesis spec authoring), and 11.P.exec-β (β analytical execution), each pointing to its own sub-plan. The notebook-migration directive is implemented under §C as Task 11.O.NB-α (Rev-2 analytical work migrated to notebooks) and is reaffirmed across all execution super-tasks via §D's notebook discipline.
+
+The Rev-5.3.2 mean-β regression at the 14-row resolution-matrix scope IS the published baseline for the major plan and it does NOT change under Rev-5.3.3 — Rev-5.3.2 shipped a clean FAIL verdict with full reviewer convergence; that is the analytical close-out for the mean-β scope. Rev-5.3.3 ADDS the next-stage tracks; it does not retroactively alter Rev-5.3.2's published estimates, panel, or methodology tag.
+
+**Trend Researcher findings landed (post-original-Rev-5.3.3-author).** The Trend Researcher subagent completed dispatch and returned its evidence-grounded report at `contracts/.scratch/2026-04-25-mento-userbase-research.md`. Four headline findings reframe both tracks of this CORRECTIONS block and are load-bearing on the Task 11.O.ζ-α and Task 11.P.spec-β scope updates below: **(Finding 1)** MiniPay (12.6M-15M wallets) is a SWAP RAIL not a USDm holdings story — 87% of MiniPay P2P transactions are < $5; USDt dominates the swap rail; the macro-hedge signal in MiniPay aggregate ≈ zero; **(Finding 2)** Carbon DeFi protocol contracts account for ~52% of cCOP Transfer events and exhibit a UTC 13-17 diurnal signature consistent with PROFESSIONAL NA-HOURS MARKET-MAKER ACTIVITY, not Colombian retail hedge demand — the Rev-2 X_d series was measuring global-liquidity-sensitive arbitrage, NOT retail hedge demand, and the FAIL verdict (β̂ < 0; T1 exogeneity REJECTS; ρ(X_d, fed_funds) = `−0.614`) is fully consistent with the macro-substitution literature (BIS WP 1219 / WP 1340); **(Finding 3)** cCOP and COPM are DIFFERENT TOKENS with DIFFERENT ISSUERS — the address `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` referenced throughout the Rev-2 X_d series is **Mento-native cCOP** (per Celo forum source), which is what the `onchain_copm_transfers` DuckDB table actually tracks; project memory `project_mento_canonical_naming_2026` carries a NAMING error on the COPM entry, while the underlying data is correct (and Mento-native, matching the new scope); **(Finding 4)** Trend Researcher observed three prompt-injection attempts in WebFetch / WebSearch output and correctly ignored them — defensive behavior recorded as audit-trail disclosure for the Rev-5.3.3 record.
+
+**User scope-tightening directive (2026-04-25).** Per user statement received the same calendar day as the TR report landing: "We're not taking into account [Minteo COPM] anymore. We're only focusing on Mento and what kind of hedges we can build from Mento. That's it." This directive is recorded as a NEW pre-commitment in §B (item 6 below) and constrains BOTH Track α (Task 11.O.ζ-α) and Track β (Task 11.P.spec-β / Task 11.P.exec-β) to **Mento-native stablecoins ONLY** (cCOP, USDm, EURm, BRLm, KESm, XOFm). The Minteo-fintech COPM (a separate B2B/API/BDO-audited fiat-backed token issued outside the Mento system) is OUT OF SCOPE for Abrigo as of this revision. Memory anchor: `project_abrigo_mento_native_only.md` at `~/.claude/projects/-home-jmsbpp-apps-ThetaSwap-thetaSwap-core-dev--git-modules-lib-angstrom/memory/`. Combined with TR Finding 3, the directive is consistent with what the Rev-2 X_d data was actually measuring (Mento-native cCOP); Rev-5.3.3 closes the naming ambiguity and constrains forward scope to Mento-native instruments only.
+
+### B. Pre-commitment update (no relaxations; all extensions)
+
+| Anchor | Status under Rev-5.3.3 | Source / rationale |
+| --- | --- | --- |
+| `N_MIN` | **PRESERVED** at `75` | Rev-5.3.1 path-α value; preserved through Rev-5.3.2; preserved through Rev-5.3.3 |
+| `POWER_MIN` | **PRESERVED** at `0.80` | Identical anchor through all revisions |
+| `MDES_SD` | **PRESERVED** at `0.40` | Identical anchor; free-tuning upward to chase target power is anti-fishing-banned per `project_mdes_formulation_pin` |
+| `MDES_FORMULATION_HASH` | **PRESERVED** byte-exact at sha256 `4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa` | Pinned per `project_mdes_formulation_pin`; immutable through Rev-5.3.3 |
+| Rev-4 `decision_hash` | **PRESERVED** byte-exact at `6a5f9d1b05c18defd8b30c4b3cef6af896d6e45a2a26c1c60aa342da0a5a443c` | Immutable through Rev-5.3.3 |
+| Rev-2 spec invariants (functional form, control set, methodology literals) | **PRESERVED** byte-exact | Rev-2 spec §3-§9 untouched; Rev-3 ζ-group extensions are NEW spec content authored under their own pre-registration in a sub-plan, not amendments to Rev-2 |
+| 14-row resolution-matrix scope (Rev-2 mean-β regression) | **PRESERVED** as published baseline | Rev-5.3.2 Phase 5b deliverable at commit `799cbc280` is the analytical close-out for mean-β scope; Rev-5.3.3 does not retroactively re-litigate any 14-row estimate |
+| Anti-fishing protocol (HALT → disposition memo → user-enumerated pivot → CORRECTIONS block → post-hoc 3-way review) | **PRESERVED** byte-exact | Halt-disposition-pivot-CORRECTIONS-review chain enforced for both Rev-3 ζ-group authoring and β hypothesis authoring |
+| Convex-payoff insufficiency caveat (Rev-2 spec §11.A) | **REAFFIRMED LOAD-BEARING** | Mean-β identification was always *necessary-but-insufficient* for convex-instrument pricing; the §10.6 ζ-group roadmap is where convex-payoff calibration fitness gets tested; Rev-3 authoring under Task 11.O.ζ-α executes that pre-registered handoff |
+| All-data-in-DuckDB invariant | **REAFFIRMED** | Any new raw fetches under Rev-5.3.3 (notably any Mento user-base research data that materializes into a queryable form) MUST land in a new additive DuckDB raw table before downstream consumption; sub-plans MUST enumerate any new tables in their own §D-equivalent manifests |
+| Notebook discipline (`feedback_notebook_citation_block` + `feedback_notebook_trio_checkpoint`) | **NEWLY ADOPTED** as binding for ALL Rev-5.3.3 analytical work in both α and β tracks | Migration of analytical work from script-form to 3-notebook-form per FX-vol-CPI Colombia precedent; trio-checkpoint forbids bulk authoring |
+
+**Pre-commitment ADDITIONS (not relaxations):**
+
+1. **Notebook migration is binding for both tracks.** All analytical work (α and β) is authored in the 3-notebook structure under `notebooks/abrigo_y3_x_d/` (or sub-track-namespaced subdirectories where appropriate). Script-form authoring is forbidden for any new analytical deliverable under Rev-5.3.3 except for tightly-scoped Data Engineer helpers (data fetchers, DuckDB ingest functions) where notebook-form is operationally inappropriate.
+2. **Track α and Track β are PARALLEL.** Neither blocks the other; results inform each other. The Rev-3 ζ-group (α) and the β hypothesis (β) can converge in any order; sub-plans MUST NOT introduce cross-track blocking dependencies.
+3. **β hypothesis MUST be grounded in actual Mento user-base evidence BEFORE spec authoring.** No structural-econometric spec is authored against a speculative X_d hypothesis. Trend Researcher's report (Task 11.P.MR-β) is the upstream blocker for Task 11.P.spec-β. The β hypothesis spec authoring follows the user-driven structural-econometrics skill flow (the Option ε pattern from the disposition memo, folded into the β track here).
+4. **Rev-3 ζ-group spec authoring is INTERACTIVE per the user's earlier deferral.** The Rev-3 spec is authored via the user-driven structural-econometrics skill flow (the Option ε pattern), NOT autonomously by an agent. Task 11.O.ζ-α's sub-plan documents the interactive authoring methodology; the orchestrator dispatches the agent for Phase 5a/5b execution per ζ row only AFTER the user closes the spec authoring loop with three-way review convergence.
+5. **Convex-payoff caveat (Rev-2 §11.A) governs Rev-3 product claims.** Until the ζ-group ships PASS verdicts on the convex-payoff identification rows, Abrigo's product framing CANNOT make convex-instrument pricing claims grounded in any Rev-3 evidence. The Rev-2 §11 product-pivot map (linear-hedge-only at PASS; pivot at FAIL) governs Rev-2 scope; the equivalent Rev-3 product-pivot map is authored in the Rev-3 ζ-group sub-plan.
+6. **Abrigo scope is Mento-native stablecoins ONLY.** Per the user scope-tightening directive recorded above and the project memory anchor `project_abrigo_mento_native_only.md`, Abrigo's product scope is restricted to Mento-native stablecoins: cCOP, USDm, EURm, BRLm, KESm, XOFm (and any future Mento-issued stablecoin asset). Minteo-fintech COPM and other third-party fiat-backed tokens issued outside the Mento system are OUT OF SCOPE for hedge-instrument design, X_d hypothesis formation, ζ-group convex-payoff testing, and β-track payments / consumption hypothesis authoring. This pre-commitment is byte-exact and immutable through Rev-5.3.3; relaxation requires its own CORRECTIONS block with explicit user authorization.
+7. **Rev-2 X_d series identity is formally Mento-native cCOP, NOT Minteo-fintech COPM.** Per TR Finding 3, the address `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` referenced as the Rev-2 X_d series root is **Mento-native cCOP** (Celo forum source). The DuckDB table `onchain_copm_transfers` is misnamed in the project memory `project_mento_canonical_naming_2026` (its COPM entry carries a NAMING error); the underlying data is CORRECT — it tracks Mento-native cCOP, which matches the Rev-5.3.3 Mento-native-only scope. A memory corrigendum is required to align project memory with the data; the corrigendum work is scoped under NEW Task 11.P.MR-β.1 below. No data changes are required (the Rev-5.3.2 published estimates remain byte-exact); only naming clarification.
+
+### C. New super-tasks added to the major plan (with sub-plan pointers)
+
+Per user directive, substantial work goes into super-tasks that POINT TO SUB-PLANS rather than authored inline in the major plan. Each super-task entry below records ID, deliverable summary, sub-plan pointer (where the full task body / acceptance criteria live), high-level acceptance summary, reviewer assignments, and dependencies. Sub-plans are authored separately under `contracts/docs/superpowers/sub-plans/` and follow the same `feedback_three_way_review` discipline (CR + RC + TW for spec; CR + RC + Senior Developer for execution; Model QA Specialist added for econometric depth on β execution). The six super-tasks below (5 originally drafted + Task 11.P.MR-β.1 added in the post-author fix-up) are inserted into the major plan AFTER the Rev-5.3.2 task chain (post Task 11.O / Task 11.O-scope-update closure at commit `799cbc280`) and BEFORE Phase 2b dispatches in any track.
+
+#### Task 11.O.NB-α — Rev-2 analytical work migrated to notebooks (super-task)
+
+**Deliverable.** The Rev-5.3.2 Phase 5b analytical work currently shipped as script-form (commit `799cbc280`) is re-authored in 3-notebook form under `notebooks/abrigo_y3_x_d/`:
+
+- `01_data_eda.ipynb` — Y₃ inequality-differential panel load + X_d fingerprint + joint-coverage diagnostics (matches FX-vol-CPI Colombia NB1 precedent at `contracts/notebooks/fx_vol_cpi_surprise/Colombia/`).
+- `02_estimation.ipynb` — Rev-2 mean-β primary estimation: 14-row resolution-matrix OLS+HAC(4) regression with the published Rev-5.3.2 panel `(source_methodology = y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable, window [2023-08-01, 2026-04-24])`.
+- `03_tests_and_sensitivity.ipynb` — Specification tests T1 (exogeneity) / T2 (Levene) / T3a (placebo) / T3b (gate) / T4-T7 + 14-row sensitivity ladder + forest plot + anti-fishing material-mover spotlight gate.
+
+Supporting scaffolding under `notebooks/abrigo_y3_x_d/`: `env.py` (path constants, version pins, seed helper, DuckDB connection helper); `references.bib` (citation-block source-of-truth, unified across α and β); `_nbconvert_template/` (PDF rendering template); `estimates/` (Rev-5.3.2 published JSON outputs cross-referenced from notebook execution); `figures/` (forest plot + diagnostic figures); `pdf/` (rendered notebook PDFs); `README.md` (Jinja2 auto-rendered summary mirroring the FX-vol-CPI Colombia README pattern).
+
+**Sub-plan pointer.** Full task body, sub-task decomposition, citation-block discipline mapping, trio-checkpoint cadence, and acceptance criteria are authored in `contracts/docs/superpowers/sub-plans/2026-04-25-rev2-notebook-migration.md` (TO BE AUTHORED — this Rev-5.3.3 block is the forward-pointer; sub-plan authoring happens after this CORRECTIONS block converges 3-way review).
+
+**Acceptance summary.** Three notebooks execute end-to-end via `nbconvert --execute` against the published Rev-5.3.2 DuckDB state and reproduce the published 14-row estimates byte-exact (no re-estimation drift); all decision points carry the `feedback_notebook_citation_block` 4-part markdown block; the README auto-renders from a Jinja2 template fed by `gate_verdict.json` + estimates JSON; the gate verdict displays as **FAIL** consistent with Rev-5.3.2 Phase 5b. No new estimates are introduced under this task — it is a *re-presentation* of the published Rev-5.3.2 deliverable in notebook form.
+
+**Subagent.** Analytics Reporter, per `feedback_notebook_trio_checkpoint`. Bulk authoring is FORBIDDEN; the agent HALTs after every (why-markdown, code-cell, interpretation-markdown) trio for user review before proceeding to the next trio. Data Engineer dispatch is allowed only for the supporting scaffolding (`env.py`, DuckDB helpers, `_nbconvert_template/` setup) where notebook-form is inappropriate.
+
+**Reviewers.** Per-trio human review (user, in-loop) during authoring + post-notebook 3-way review (CR + RC + TW) on the assembled notebook deliverable per `feedback_three_way_review`. The post-notebook 3-way review acceptance is binary (PASS / BLOCK); BLOCK triggers the standard fix-up rewrite with the 3-cycle cap.
+
+**Dependency.** Rev-5.3.3 plan revision landed (this CORRECTIONS block converged 3-way review). No upstream Rev-5.3.2 task is re-opened; the notebook migration consumes the published Rev-5.3.2 estimates and DuckDB state as fixed inputs.
+
+#### Task 11.O.ζ-α — Rev-3 ζ-group convex-payoff extensions (super-task)
+
+**Deliverable.** Rev-3 ζ-group spec + execution artifacts covering the four ζ rows enumerated in Rev-2 spec §10.6:
+
+- ζ.1 — Quantile regression β̂(τ) at τ ∈ {0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95} (Koenker-Bassett 1978).
+- ζ.2 — GARCH(1,1)-X with X_d in the conditional-variance equation; estimating `σ²_t(Y₃) = ω + α·ε²_{t-1} + β·σ²_{t-1} + δ·X_d,t`.
+- ζ.3 — Lower-tail conditional moment regression `E[Y₃ | Y₃ < q_τ, X_d]` at τ ∈ {0.05, 0.10}.
+- ζ.4 — Option-implied volatility surface fitting linking β̂ from this Rev-2 to actual / synthetic option premia under Black-Scholes basics + Heston / Bates extensions.
+
+Each ζ row gets pre-registration discipline equivalent to Rev-2's 14-row matrix: pre-committed sign hypothesis, pre-committed FAIL sensitivities, anti-fishing-locked thresholds, CORRECTIONS-block discipline on any threshold modification. Execution artifacts are authored in the 3-notebook structure (NB1 data EDA + ζ-row fingerprint; NB2 ζ-row primary estimation; NB3 ζ-row specification tests + sensitivity).
+
+**Sub-plan pointer.** Full Rev-3 spec authoring methodology (interactive structural-econometrics skill flow), per-ζ-row task decomposition, pre-registration discipline, Phase 5a/5b dispatch cadence, acceptance criteria, and reviewer assignment are authored in `contracts/docs/superpowers/sub-plans/2026-04-25-rev3-zeta-group.md` (TO BE AUTHORED).
+
+**Authoring constraint.** The Rev-3 spec is authored INTERACTIVELY per the user's earlier deferral (the Option ε pattern from the disposition memo): user runs the structural-econometrics skill flow with the orchestrator; the spec is authored under `contracts/docs/superpowers/specs/2026-04-25-rev3-zeta-group-spec.md` (path finalized in the sub-plan). Autonomous-A spec authoring by an agent is FORBIDDEN for the Rev-3 spec; the user-driven flow is the binding methodology.
+
+**Acceptance summary.** Each ζ row passes its own pre-committed gate at execution time (e.g., ζ.1 quantile sign-hypothesis gate at the relevant τ; ζ.2 δ̂ > 0 with HAC-bootstrap CI excluding zero; ζ.3 lower-tail compression gate; ζ.4 surface-fit RMSE bound). Convex-payoff insufficiency caveat (Rev-2 §11.A) is the load-bearing context: ζ-group results determine whether Abrigo can make convex-payoff product claims, NOT whether the mean-β FAIL is rescued. The mean-β FAIL stands; ζ-group is a separate stage of product validity.
+
+**Scope constraint under Rev-5.3.3 — Mento-native ONLY.** Per pre-commitment 6 (§B), the ζ-group convex-payoff testing is scoped to **Mento-native stablecoins ONLY** (cCOP, USDm, EURm, BRLm, KESm, XOFm). Mixed Mento + non-Mento basket constructions are OUT OF SCOPE; ζ-group hypotheses, gate definitions, and sensitivity rows MUST be expressed against Mento-native instruments. The Rev-3 spec authoring under this task MUST cite pre-commitment 6 explicitly in its scope section.
+
+**Reframe foundation under Rev-5.3.3 — TR Finding 2.** Per TR Finding 2 (Carbon DeFi protocol contracts ≈ 52% of cCOP Transfer events; UTC 13-17 NA-hours diurnal signature consistent with professional MM activity; ρ(X_d, fed_funds) = `−0.614`), the Rev-2 mean-β FAIL is fully consistent with the Carbon-DeFi-MM-as-X_d interpretation rather than retail-hedge-demand-as-X_d. The ζ-group is therefore now testing whether **tail-only hedge demand exists in Mento-native cCOP / USDm / etc.** — i.e., whether convex-payoff demand is observable in the residual signal AFTER the Carbon-DeFi-MM partition is acknowledged. The Rev-3 spec MUST acknowledge TR Finding 2 in its hypothesis-formation section and pre-register whether ζ rows operate against the unpartitioned Rev-2 X_d (testing tail behavior of the same global-liquidity-sensitive series) or against a Carbon-DeFi-MM-residualized X_d (testing tail behavior of the retail-only residual). The choice is a spec-level pre-commitment; Rev-5.3.3 does NOT pre-empt it but flags TR Finding 2 as the load-bearing analytical-framing input.
+
+**Subagent.** TW or Senior Developer for spec authoring per the structural-econometrics skill flow (user-in-loop); Analytics Reporter for ζ-row execution per `feedback_notebook_trio_checkpoint` (HALT every trio).
+
+**Reviewers.** CR + RC + TW for the Rev-3 spec per `feedback_three_way_review`; CR + RC + Senior Developer + Model QA Specialist for ζ-row execution (Model QA added for econometric depth on quantile regression / GARCH-X / conditional-moment estimation).
+
+**Dependency.** Rev-5.3.3 plan revision landed. User direction on starting the interactive ε-flow (the structural-econometrics skill invocation) is the upstream gate; orchestrator does NOT pre-emptively author the Rev-3 spec. Independent of Track β; either track may converge first.
+
+#### Task 11.P.MR-β — Mento user-base research (super-task — COMPLETED)
+
+**Deliverable.** Evidence-grounded report on the actual Mento ecosystem user base — MiniPay, Valora, GoodDollar, peer-to-peer payments corridors, retail-consumption use cases, geography, transaction patterns, principal counterparties, observed user motives where documented. The report enumerates concrete signals (with sources) that constrain what an honest payments / consumption X_d hypothesis can be: who is actually using Mento basket assets on Celo, in what volumes, for what purposes, and what the on-chain signature of those uses looks like at the Carbon DeFi `carboncontroller` event log and adjacent contracts.
+
+**Output path.** `contracts/.scratch/2026-04-25-mento-userbase-research.md` (delivered).
+
+**Subagent.** Trend Researcher (`agentId = a7cd002b89b23e0ac`). The research is upstream of any β spec authoring; no spec is authored against speculation.
+
+**Acceptance summary.** Report cites primary sources (Mento Labs documentation, MiniPay analytics, Valora analytics, GoodDollar analytics, on-chain analytics dashboards, Mento community channels where applicable) and synthesizes the user-base evidence into a finite list of hypotheses that the β spec can pre-commit to. Speculative claims are flagged as such; evidence-grounded claims are explicitly marked with citation. Reality Checker performs a single-pass advisory review (non-blocking, archival) verifying citation fidelity and identifying any uncited speculation that leaked into the report.
+
+**Reviewers.** Reality Checker (single-pass advisory; non-blocking; archival). The Trend Researcher is the authoring subagent and the report is treated as a research input to Task 11.P.spec-β, not as an authoritative spec or plan artifact in its own right.
+
+**Dependency.** None at the dispatch level. β spec authoring (Task 11.P.spec-β) is gated on this report's completion + the downstream provenance audit (Task 11.P.MR-β.1) below.
+
+**Status.** **COMPLETED** — research output landed at `contracts/.scratch/2026-04-25-mento-userbase-research.md`. Four headline findings (summarized in §A above) reframe both Track α and Track β scope; downstream Task 11.P.MR-β.1 (NEW; provenance audit + memory corrigendum) is now BLOCKING for Task 11.P.spec-β.
+
+#### Task 11.P.MR-β.1 — cCOP-vs-COPM provenance audit + memory corrigendum (super-task — NEW under Rev-5.3.3)
+
+**Deliverable.** Three artifacts addressing the cCOP-vs-COPM naming clarification surfaced by TR Finding 3:
+
+- **(a)** A formal audit of the DuckDB table `onchain_copm_transfers` documenting which contract address it tracks at the schema level (it tracks `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606`, which is **Mento-native cCOP** per Celo forum source — NOT Minteo-fintech COPM as the table name suggests). The audit deliverable either renames the table to a Mento-native-aligned identifier (preferred) or adds explicit schema-doc comments clarifying that the table tracks Mento-native cCOP and that the historical "COPM" naming was a project-memory error. Decision between rename vs. doc-only is left to the Data Engineer subagent and the spec-review trio per the sub-plan.
+- **(b)** A memory corrigendum at `~/.claude/projects/-home-jmsbpp-apps-ThetaSwap-thetaSwap-core-dev--git-modules-lib-angstrom/memory/project_mento_canonical_naming_2026.md` correcting the COPM entry. The corrigendum cites TR Finding 3 + the Celo forum source + the address `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` and explicitly states that the address resolves to Mento-native cCOP, not Minteo-fintech COPM.
+- **(c)** Spec-doc updates noting the naming clarification in the X_d design doc at `contracts/docs/superpowers/specs/2026-04-24-carbon-basket-xd-design.md` (immutable in body; clarification adds an addendum-style note WITHOUT modifying the byte-exact pre-registered content) and any other plan / spec docs that reference COPM in a way that suggests Minteo-fintech rather than Mento-native cCOP. NO data changes are introduced by this task; the Rev-5.3.2 published estimates and DuckDB table contents remain byte-exact.
+
+**Sub-plan pointer.** Full task body, audit methodology, table-rename-vs-doc decision criteria, corrigendum text, and spec-doc-addendum scope are authored in `contracts/docs/superpowers/sub-plans/2026-04-25-ccop-provenance-audit.md` (TO BE AUTHORED, after this Rev-5.3.3 block converges 3-way review).
+
+**Acceptance summary.** Audit deliverable (a) explicitly documents at the schema level which contract address `onchain_copm_transfers` tracks, with citation to TR Finding 3 + the Celo forum source. Corrigendum (b) lands in project memory with explicit cross-reference to the address and the source. Spec-doc updates (c) are addendum-style only (no byte-exact modification of pre-registered content); the Rev-2 published estimates and the `decision_hash` remain byte-exact. The downstream β spec (Task 11.P.spec-β) MUST cite this corrigendum in its hypothesis-formation section.
+
+**Subagent.** Data Engineer (DuckDB schema audit + naming clarification + memory corrigendum text). No analytical / econometric work is involved; this is a naming / documentation / schema-doc clarification task.
+
+**Reviewers.** CR + RC + Senior Developer per `feedback_implementation_review_agents` (the corrigendum is implementation-adjacent rather than spec-authoring; it touches schema docs, memory, and addendum-style spec doc updates without altering pre-registered analytical content).
+
+**Dependency.** Task 11.P.MR-β COMPLETED (already done; see status above). This task is BLOCKING for Task 11.P.spec-β (the β spec cannot author a Mento-native-only hypothesis grounded in `project_mento_canonical_naming_2026` until the corrigendum lands and the table-naming clarification ships).
+
+**Status.** PENDING — to be dispatched after this Rev-5.3.3 CORRECTIONS block converges 3-way review.
+
+#### Task 11.P.spec-β — β hypothesis spec authoring (super-task)
+
+**Deliverable.** Structural-econometric spec for the reframed payments / consumption X_d hypothesis. The spec is authored AFTER Task 11.P.MR-β returns; the X_d hypothesis pre-registered in the spec is GROUNDED in the Trend Researcher's evidence-cited findings (one of the finite hypothesis options enumerated in the research report, or an explicit synthesis of multiple). Spec follows the same structural-econometric pattern as Rev-2 (functional form, control set, identification claims, gate definitions, sensitivity ladder, anti-fishing pre-registration, acceptance criteria) but with a NEW X_d definition grounded in Mento user-base evidence rather than the Carbon DeFi basket-volume X_d.
+
+**Sub-plan pointer.** Full β spec authoring methodology (interactive structural-econometrics skill flow per Option ε), pre-registration discipline, sensitivity matrix design, gate definitions, and reviewer assignment are authored in `contracts/docs/superpowers/sub-plans/2026-04-25-beta-spec.md` (TO BE AUTHORED, after Task 11.P.MR-β completes).
+
+**Authoring constraint.** GROUNDED in the Mento user-base evidence (NOT speculation). User-driven structural-econometrics skill flow per the ε deferral; autonomous-A spec authoring by an agent is FORBIDDEN. The spec MUST cite the Trend Researcher's evidence-grounded findings explicitly in its hypothesis-formation section; speculative or evidence-thin hypotheses are anti-fishing-banned at the spec stage.
+
+**Acceptance summary.** Spec passes 3-way review (CR + RC + TW) per `feedback_three_way_review`; pre-registration is byte-exact and immutable post-converge; gate definitions are explicit; sensitivity matrix is pre-committed before any data exploration on the new X_d variables.
+
+**Scope constraint under Rev-5.3.3 — Mento-native ONLY.** Per pre-commitment 6 (§B), the β spec is constrained to **Mento-native stablecoins ONLY** (cCOP, USDm, EURm, BRLm, KESm, XOFm). Candidate retail-only X_d proxies the spec MAY pre-commit to (subject to TR-evidence grounding and the spec-review trio) include: cCOP holder-count delta on Celo; cCOP merchant transaction count POST-Carbon-DeFi-MM-filter (using the partition rule from `project_carbon_user_arb_partition_rule`); MiniPay Mento-Broker swap volume into Colombian / Brazilian / Kenyan / Eurozone / West-African corridors. Mixed Mento + non-Mento basket constructions are OUT OF SCOPE. Mixed Mento-fintech (Minteo COPM) instruments are OUT OF SCOPE.
+
+**Reframe foundation under Rev-5.3.3 — TR Findings 1, 2, 3.** The β spec's hypothesis-formation section MUST explicitly cite TR Findings 1, 2, and 3 (summarized in §A above). The two candidate β-track hypothesis families surfaced by TR are: **(H1)** the retail-hedge thesis is FALSIFIED at the basket-aggregate level — X_d as currently constructed is an inverse-fed-funds proxy for NA-hours MM capacity (per Finding 2); the β spec might pre-register a STRUCTURAL-RECOGNITION test for H1 with appropriate gate definition; **(H2)** the retail-hedge thesis is PRESERVED with partition surgery — replace the current X_d with retail-only proxies (cCOP holder-count delta; cCOP merchant tx count post-Carbon-DeFi-MM filter; MiniPay Mento-Broker corridor swap volume per Finding 1); the β spec pre-registers a fresh sign hypothesis on the partitioned X_d. The spec MAY pre-commit to H1, H2, or an evidence-grounded synthesis; the choice is a spec-level pre-registration that the spec-review trio gates. Finding 1's ≈zero-aggregate-signal observation is the DOWNWARD adjustment the β spec MUST internalize on the MiniPay-aggregate-as-X_d hypothesis path; corridor-disaggregated MiniPay flows remain available as a partitioned candidate.
+
+**Subagent.** TW or Senior Developer for spec authoring per the structural-econometrics skill flow (user-in-loop); Analytics Reporter for any preliminary EDA *only after the spec converges 3-way review* (no pre-spec exploration on candidate X_d variables — that would be p-hacking on the new hypothesis).
+
+**Reviewers.** CR + RC + TW per `feedback_three_way_review` (spec-review trio).
+
+**Dependency.** Task 11.P.MR-β COMPLETED + Task 11.P.MR-β.1 (cCOP-vs-COPM provenance audit + memory corrigendum) COMPLETED. The β spec cannot author a Mento-native-only retail-only hypothesis grounded in correctly-named DuckDB tables until the provenance-audit-and-corrigendum task lands.
+
+#### Task 11.P.exec-β — β analytical execution (super-task)
+
+**Deliverable.** Notebook-form execution of the β spec under `notebooks/abrigo_y3_x_d/beta/` (or a parallel namespace finalized in the sub-plan): NB1 data EDA + β-X_d fingerprint + joint-coverage diagnostics; NB2 primary estimation per the β spec's pre-committed regression; NB3 specification tests + sensitivity analysis + gate verdict + forest plot. Supporting scaffolding (any new DuckDB raw tables, fetcher helpers, etc.) is authored under the cross-track `notebooks/abrigo_y3_x_d/` scaffolding where shared, or under the `beta/` sub-namespace where β-specific.
+
+**Sub-plan pointer.** Full β execution task decomposition (NB1 / NB2 / NB3 trio cadence; Phase 5a / 5b dispatch pattern; per-trio acceptance; Data Engineer helper boundaries; integration-test guard set per `feedback_strict_tdd`), reviewer assignments, and acceptance criteria are authored in `contracts/docs/superpowers/sub-plans/2026-04-25-beta-execution.md` (TO BE AUTHORED, after Task 11.P.spec-β converges).
+
+**Acceptance summary.** β spec's pre-committed gate verdict ships in the assembled NB3 with full citation-block discipline; T1-T7-equivalent specification tests run per the β spec; sensitivity ladder is exhausted per pre-registration; forest plot ships; anti-fishing material-mover spotlight gate runs; gate verdict (PASS or FAIL) is the analytical close-out for β scope. β execution is INDEPENDENT of α (Rev-3 ζ-group) execution; results inform each other but neither blocks the other.
+
+**Subagent.** Data Engineer (for fetcher / DuckDB / scaffolding helpers) + Analytics Reporter (for notebook authoring per `feedback_notebook_trio_checkpoint` HALT-every-trio discipline).
+
+**Reviewers.** CR + RC + Senior Developer + Model QA Specialist (Model QA added for panel-econometrics depth on the β specification, especially if the β spec introduces panel structure / cross-currency aggregation / time-series methodology beyond the Rev-2 scope).
+
+**Dependency.** Task 11.P.spec-β converged (3-way review PASS). Independent of Track α; either may converge first.
+
+### D. Notebook discipline reaffirmation
+
+The trio-checkpoint discipline applies to ALL notebook work in α and β tracks, with no exceptions. Specifically:
+
+- **Citation block (4-part) precedes every test / decision / spec-choice.** The four parts are: (1) reference (citation: paper / textbook / project memory / prior decision); (2) why used (the analytical-method-fit rationale for choosing this method here, NOT a generic textbook description); (3) relevance to results (what this method's output specifically contributes to the gate verdict / sensitivity row / specification test outcome); (4) connection to product (how this analytical choice connects to Abrigo's convex-instrument-pricing / inequality-hedge product purpose). Per `feedback_notebook_citation_block`, this block is NON-NEGOTIABLE for estimation and sensitivity notebooks.
+- **HALT after every (why-markdown, code-cell, interpretation-markdown) trio.** The Analytics Reporter authoring a notebook stops after each complete trio for explicit user review; the next dispatch only happens after the user closes the loop on the prior trio. Bulk authoring is forbidden per `feedback_notebook_trio_checkpoint`. This applies to NB1 / NB2 / NB3 in both α and β tracks.
+- **No bulk authoring.** The Analytics Reporter MUST NOT author multiple trios in one dispatch; sub-plans MUST encode the trio cadence as the agent-dispatch unit.
+- **User reviews each trio before next dispatch.** The orchestrator does NOT pre-empt user review; it dispatches the next trio only after explicit user approval of the prior trio.
+
+The 3-notebook structure precedent from FX-vol-CPI Colombia (`contracts/notebooks/fx_vol_cpi_surprise/Colombia/`) is the authoring template:
+
+- **NB1 — data EDA + panel fingerprint.** Load all upstream data inputs from DuckDB; compute panel fingerprint (row counts per `source_methodology` / window / proxy_kind); diagnose joint coverage; produce panel diagnostic plots; emit a panel-fingerprint JSON consumed by NB2 and NB3.
+- **NB2 — primary estimation.** Execute the spec's pre-committed primary regression(s); emit per-row estimates JSON consumed by NB3; produce the headline-coefficient table.
+- **NB3 — specification tests + sensitivity analysis.** Run T1-T7 specification tests per the spec; exhaust the pre-committed sensitivity ladder; produce the forest plot; run the anti-fishing material-mover spotlight gate; emit the final gate-verdict JSON; auto-render the README from a Jinja2 template fed by the gate-verdict + estimates JSONs.
+
+The README auto-render pattern (Jinja2 template + machine-readable verdict JSON → human-readable summary) is preserved across α and β tracks. Each track's README is authored under its own notebook subdirectory and points back to the top-level major-plan / Rev-5.3.3 cross-references.
+
+### E. Cross-track scaffolding
+
+The shared scaffolding is established at `notebooks/abrigo_y3_x_d/` and consumed by both Track α (Tasks 11.O.NB-α, 11.O.ζ-α) and Track β (Task 11.P.exec-β):
+
+| Scaffolding artifact | Purpose | Cross-track use |
+| --- | --- | --- |
+| `env.py` | Path constants, version pins, seed helper, DuckDB connection helper, plot-style helper | All α + β notebooks import from this single source-of-truth |
+| `references.bib` | BibTeX source-of-truth for all citation blocks | All α + β citation blocks resolve against this single bibliography |
+| `_nbconvert_template/` | PDF rendering template (preserves citation blocks + figures with proper LaTeX-style formatting) | Both α + β notebooks render to PDF via this shared template |
+| `estimates/` | Per-track JSON outputs from primary estimation + gate verdict | Track-namespaced subdirectories (e.g., `estimates/rev2_meanbeta/`, `estimates/rev3_zeta/`, `estimates/beta_payments/`) |
+| `figures/` | Per-track diagnostic + forest-plot figures | Track-namespaced subdirectories |
+| `pdf/` | Rendered notebook PDFs | Track-namespaced subdirectories |
+| `README.md` (top-level) | Cross-track index pointing to per-track READMEs + major-plan cross-references | Single top-level entry-point auto-rendered from per-track verdict JSONs |
+
+Sub-plans (the six Rev-5.3.3 super-task sub-plans, including Task 11.P.MR-β.1 added in the post-author fix-up) MUST enumerate scaffolding additions / modifications in their own §E-equivalent sections; new scaffolding artifacts MUST be added to the table above in a future Rev-5.3.4 (or later) CORRECTIONS block before consumption by a downstream track.
+
+### F. Task count + status reconciliation under Rev-5.3.3
+
+Rev-5.3.2 active task count (per the existing reconciliation block above): **69** active tasks (excluding the 1 deliberate non-task placeholder from Task 11.N.2d.2-NEW; total headers under Rev-5.3.2 = 71 inclusive of placeholder + retired-as-audit). Rev-5.3.3 introduces the following changes:
+
+- **+6 new task IDs with super-task bodies pointing to sub-plans** (Task 11.O.NB-α — Rev-2 notebook migration; Task 11.O.ζ-α — Rev-3 ζ-group convex-payoff extensions; Task 11.P.MR-β — Mento user-base research, status COMPLETED; Task 11.P.MR-β.1 — cCOP-vs-COPM provenance audit + memory corrigendum, NEW under Rev-5.3.3; Task 11.P.spec-β — β hypothesis spec authoring; Task 11.P.exec-β — β analytical execution).
+- **+0 modified tasks at the body level.** The Rev-5.3.2 14-row resolution-matrix scope (mean-β regression) is the published baseline and is not retroactively modified by Rev-5.3.3. Task 11.O / Task 11.O-scope-update / Task 11.O.NB-α form a chain where the Rev-5.3.2 published deliverable (script-form) is the upstream input to the notebook migration (Task 11.O.NB-α); the Rev-5.3.2 task bodies are not re-opened. Scope-amendments to Task 11.O.ζ-α and Task 11.P.spec-β under Rev-5.3.3 are SCOPE-CONSTRAINT additions (Mento-native-only + TR-Findings-grounding) layered onto the existing super-task bodies; they do not modify the super-task IDs or upstream Rev-5.3.2 acceptance criteria.
+- **+0 retired tasks.** Rev-5.3.2 task chain is preserved byte-exact.
+- **+0 new placeholder non-tasks.** All six new super-tasks are dispatched super-tasks (each points to a sub-plan that decomposes its own sub-tasks; sub-task counts live in the corresponding sub-plans, not in the major plan tally).
+
+Rev-5.3.3 active task count: **69 + 6 = 75** (excluding the deliberate non-task placeholder from Rev-5.3.2); total headers in the major plan: **71 + 6 = 77**. The previously-acknowledged +3 accounting drift documented at line 1739 (Rev-5.3.1's banner figure preserved as-such pending a row-by-row rebuild) propagates unchanged through Rev-5.3.3 and resolves at the future Rev-5.4 row-by-row refresh per amendment-rider A8 (unchanged by this revision). Sub-plan task counts (the per-sub-task decompositions inside each of the six Rev-5.3.3 super-tasks' sub-plans) are accounted for inside those sub-plans and are NOT folded into the major-plan tally — the major plan tracks super-tasks; sub-plans track sub-tasks. This separation is the user-directed structure: "the plans might not be isolated, and there must be a major plan, which is the one that we constructed earlier" — major plan = super-tasks; sub-plans = sub-task detail.
+
+### G. Reference paths
+
+- HALT-disposition memo (path α + β user selection): `contracts/.scratch/2026-04-25-task110-rev2-gate-fail-disposition.md` (commit `c1eec8da5`)
+- Rev-2 spec (Phase 5b primary spec; convex-payoff caveat §11.A; ζ-group roadmap §10.6; pivot map §11.C): `contracts/.scratch/2026-04-25-task110-rev2-spec-A-autonomous.md`
+- Rev-2 Phase 5b primary estimates commit (gate verdict T3b = FAIL; published baseline): `799cbc280`
+- 4-reviewer gate close-out commits: `6b1200dcb` (RC + Model QA PASS-class) + `f38f1aad3` (CR + SD PASS-class)
+- Trend Researcher Mento user-base research output (DELIVERED; load-bearing for Tasks 11.P.MR-β.1, 11.O.ζ-α scope-amendment, 11.P.spec-β scope-amendment): `contracts/.scratch/2026-04-25-mento-userbase-research.md`. Four headline findings: (1) MiniPay = swap rail, USDt-dominated, ≈0 macro-hedge signal at aggregate; (2) Carbon DeFi MM ≈ 52% of cCOP Transfer events with NA-hours diurnal signature, BIS-WP-1219/1340-consistent macro-substitution interpretation; (3) cCOP ≠ COPM, address `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` is Mento-native cCOP per Celo forum source; (4) audit-trail disclosure — three prompt-injection attempts in WebFetch / WebSearch output observed and correctly ignored by the Trend Researcher subagent.
+- Sub-plan forward-pointers (TO BE AUTHORED, post Rev-5.3.3 3-way review convergence):
+  - Task 11.O.NB-α sub-plan: `contracts/docs/superpowers/sub-plans/2026-04-25-rev2-notebook-migration.md`
+  - Task 11.O.ζ-α sub-plan: `contracts/docs/superpowers/sub-plans/2026-04-25-rev3-zeta-group.md`
+  - Task 11.P.MR-β.1 sub-plan: `contracts/docs/superpowers/sub-plans/2026-04-25-ccop-provenance-audit.md`
+  - Task 11.P.spec-β sub-plan: `contracts/docs/superpowers/sub-plans/2026-04-25-beta-spec.md`
+  - Task 11.P.exec-β sub-plan: `contracts/docs/superpowers/sub-plans/2026-04-25-beta-execution.md`
+- Rev-5.3.2 CORRECTIONS block (precedent format; immediately above this block): inline above at 2026-04-25, commit chain `c5cc9b66b` + `2a0377057`
+- Rev-3 spec target path (TO BE AUTHORED, post Task 11.O.ζ-α spec authoring): `contracts/docs/superpowers/specs/2026-04-25-rev3-zeta-group-spec.md`
+- β spec target path (TO BE AUTHORED, post Task 11.P.spec-β spec authoring): `contracts/docs/superpowers/specs/2026-04-25-beta-spec.md`
+- Notebook scaffolding root (TO BE CREATED under Task 11.O.NB-α): `notebooks/abrigo_y3_x_d/`
+- FX-vol-CPI Colombia notebook precedent (3-notebook structure + README auto-render pattern): `contracts/notebooks/fx_vol_cpi_surprise/Colombia/` (see project memory `project_fx_vol_cpi_notebook_complete`)
+- Project memory anchors load-bearing on Rev-5.3.3:
+  - `feedback_no_code_in_specs_or_plans` (code-agnostic body discipline)
+  - `feedback_three_way_review` (spec/plan review discipline)
+  - `feedback_implementation_review_agents` (CR + RC + SD on implementation-adjacent corrigendum work; Task 11.P.MR-β.1 reviewer assignment)
+  - `feedback_specialized_agents_per_task` (every task dispatches a specialized subagent)
+  - `feedback_notebook_citation_block` (4-part citation discipline)
+  - `feedback_notebook_trio_checkpoint` (HALT every trio; bulk authoring forbidden)
+  - `feedback_strict_tdd` (failing-test-first; integration-test guards)
+  - `feedback_pathological_halt_anti_fishing_checkpoint` (HALT-disposition-pivot-CORRECTIONS-review chain)
+  - `project_fx_vol_econ_complete_findings` (analytical-discipline-vindication pattern; predictive-not-structural diagnostic)
+  - `project_abrigo_convex_instruments_inequality` (product purpose: convex (option-like) inequality-hedge instruments)
+  - `project_mdes_formulation_pin` (MDES_FORMULATION_HASH immutability; free-tuning anti-fishing-banned)
+  - `project_abrigo_mento_native_only` (NEW under Rev-5.3.3 — Abrigo scope is Mento-native stablecoins ONLY; Minteo-fintech COPM out of scope; user scope-tightening directive 2026-04-25; load-bearing for §A trigger paragraph 4 + §B pre-commitment 6 + Tasks 11.O.ζ-α / 11.P.spec-β scope-amendments)
+  - `project_mento_canonical_naming_2026` (CORRIGENDUM TARGET under Rev-5.3.3 — the COPM entry of this memory carries a NAMING error; the data the entry references is correct (Mento-native cCOP at address `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` per TR Finding 3) but the memory's "COPM" labeling is wrong; corrigendum scoped under NEW Task 11.P.MR-β.1)
+  - `project_carbon_user_arb_partition_rule` (load-bearing for the H2 partitioned-X_d candidate hypothesis in Task 11.P.spec-β; partition rule = `trader = 0x8c05ea30…` field)
+- Audit-trail disclosure (per TR Finding 4): the Trend Researcher subagent observed three prompt-injection attempts embedded in third-party content returned via WebFetch / WebSearch during Mento-user-base research; the agent correctly ignored the injection attempts and disclosed them in its report. This is recorded here as defensive-behavior audit-trail evidence; no remediation action is required of the Rev-5.3.3 plan.
+- MDES_FORMULATION_HASH (immutable through Rev-5.3.3, sha256): `4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa`
+- Rev-4 decision_hash (immutable through Rev-5.3.3): `6a5f9d1b05c18defd8b30c4b3cef6af896d6e45a2a26c1c60aa342da0a5a443c`
