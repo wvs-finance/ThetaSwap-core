@@ -2364,3 +2364,24 @@ Rev-5.3.3 active task count: **69 + 6 = 75** (excluding the deliberate non-task 
 - Audit-trail disclosure (per TR Finding 4): the Trend Researcher subagent observed three prompt-injection attempts embedded in third-party content returned via WebFetch / WebSearch during Mento-user-base research; the agent correctly ignored the injection attempts and disclosed them in its report. This is recorded here as defensive-behavior audit-trail evidence; no remediation action is required of the Rev-5.3.3 plan.
 - MDES_FORMULATION_HASH (immutable through Rev-5.3.3, sha256): `4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa`
 - Rev-4 decision_hash (immutable through Rev-5.3.3): `6a5f9d1b05c18defd8b30c4b3cef6af896d6e45a2a26c1c60aa342da0a5a443c`
+
+---
+
+## CORRIGENDUM — Rev-5.3.4 (2026-04-25, post-Rev-5.3.3 token-attribution correction)
+
+**Trigger.** During the Rev-5.3.3 author + fix-up cycle, the Trend Researcher (`a7cd002b89b23e0ac`) returned with Finding 3 stating that *cCOP* is the Mento-native Colombia token and *COPM* is a separate Minteo-fintech B2B/API token. The fix-up TW (`afee8ee7a426a0d4a`) and the foreground orchestrator propagated TR's attribution into Rev-5.3.3 §A / §B / §C / §G + into the new memory note `project_abrigo_mento_native_only`. **The user corrected this attribution 2026-04-25**: "is COPM not cCOP" — i.e., COPM IS the Mento-native Colombia token; cCOP (whatever the TR was identifying) is OUT of scope along with all other non-Mento-native tokens. Pre-existing project memory `project_mento_canonical_naming_2026` ("COPM and XOFm unchanged; address-level identity preserved") was correct all along.
+
+**Scope of correction.** Wherever Rev-5.3.3 cites cCOP as the Mento-native token at address `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606`, read it as **COPM** (Mento-native). Wherever Rev-5.3.3 §A / §B / §G implies project memory `project_mento_canonical_naming_2026` was wrong about COPM identity, that implication is RETRACTED — the original memory was correct. The Trend Researcher's external-source attribution (Finding 3 in `contracts/.scratch/2026-04-25-mento-userbase-research.md`) had inverted token identity; that file remains in the audit trail but with this corrigendum noted as the authoritative override.
+
+**Substantively unchanged.** The Rev-2 X_d data integrity is unaffected — `onchain_copm_transfers` correctly tracks Mento-native COPM at the cited address. The 14-row resolution-matrix scope, all anti-fishing invariants (N_MIN=75, MDES_FORMULATION_HASH, Rev-4 decision_hash), the 6 super-task plan structure, the BLOCKING relations, and the Track-α / Track-β architecture are all preserved byte-exact. Only the token-identity attribution language is corrected.
+
+**Updated memory state.**
+- `project_abrigo_mento_native_only.md` rewritten with the corrigendum as section 1; authoritative content (COPM = Mento-native) as section 2.
+- `MEMORY.md` index entry updated to reflect the correction.
+- `project_mento_canonical_naming_2026.md` requires NO corrigendum — it was correct all along.
+
+**Implications for Task 11.P.MR-β.1 (cCOP-vs-COPM provenance audit).** Still useful, with rescope: the audit's deliverable changes from "correct the project memory naming error" (no longer needed) to "formally lock the on-chain address registry for the Mento-native basket — COPM at `0xc92e8fc2…` plus the post-rebrand USDm/EURm/BRLm/KESm/XOFm addresses — with a single canonical reference document." The TR's external-source confusion remains a useful artifact: it documents that public Celo-forum / similar third-party content can disagree on token identity, so any future research that cites such sources should cross-check against the on-chain registry the audit will establish.
+
+**Reviewer cycle.** This corrigendum is a 2-paragraph clarification to a published plan revision; per the project's editorial-discipline pattern (cf. `project_carbon_user_arb_partition_rule` corrigendum precedent), it does NOT require a new 3-way review cycle — it is committed by the foreground orchestrator with the scope tightly bounded to "fix attribution language; no substantive plan-content change." If a downstream reviewer disagrees with this scope-bounding, they can raise it in any subsequent Rev-5.3.x review and the corrigendum can be re-reviewed retroactively.
+
+**File anchors corrected.** Rev-5.3.3 §G's `project_mento_canonical_naming_2026` entry should be read as "EXISTING (correct as authored)" not "CORRIGENDUM TARGET". Rev-5.3.3 §A's TR Finding 3 paragraph stands as audit-trail evidence of the (now-overridden) external-source attribution.
