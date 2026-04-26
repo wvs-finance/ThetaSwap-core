@@ -2832,6 +2832,7 @@ def ingest_y3_weekly(
     start: date | None = None,
     end: date | None = None,
     source_methodology: str = "y3_v1",
+    source_mode: str = "primary",
 ) -> dict[str, int]:
     """Compute the Y₃ weekly panel and write it to ``onchain_y3_weekly``.
 
@@ -2843,6 +2844,21 @@ def ingest_y3_weekly(
         source_methodology: ``'y3_v1'`` (primary) or ``'y3_v1_sensitivity'``
             (Task 11.N.2d.1). Adds the country-fallback flag suffix when
             Kenya is unavailable.
+        source_mode: ``'primary'`` (default) or ``'imf_only_sensitivity'``.
+
+            * ``'primary'`` — forwards ``conn=conn`` to
+              :func:`scripts.y3_data_fetchers.fetch_country_wc_cpi_components`
+              so the Rev-5.3.2 source upgrades activate (CO → DANE,
+              BR → BCB).
+            * ``'imf_only_sensitivity'`` — forwards ``conn=None`` so CO
+              and BR fall back to the IMF-IFS-via-DBnomics path (the
+              pre-Rev-5.3.2 dispatch). EU continues to route to
+              Eurostat HICP (no IMF-IFS series exists for EU at
+              month-CPI cadence on free-tier APIs; the EU branch in
+              the fetcher is unconditional). KE is skipped per
+              design §10 row 1. This is the load-bearing dispatch for
+              Task 11.N.2d.1-reframe (single-source-fallback
+              comparison panel).
 
     Free-tier data sources (no API key required):
         Equity indices via Yahoo Finance, WC-CPI components via DBnomics
@@ -2858,7 +2874,21 @@ def ingest_y3_weekly(
           variant downstream.
         * If fewer than 1 country lands, raises :class:`Y3FetchError`
           (caller decides next action — usually HALT per task body).
+
+    Raises:
+        ValueError: ``source_mode`` is not one of ``'primary'`` or
+            ``'imf_only_sensitivity'``. The error message names the
+            admitted set so callers can self-correct.
     """
+    if source_mode not in ("primary", "imf_only_sensitivity"):
+        raise ValueError(
+            f"Unknown source_mode={source_mode!r}; admitted set is "
+            f"{{'primary', 'imf_only_sensitivity'}}. The 'primary' mode "
+            f"forwards conn=conn (activating Rev-5.3.2 CO→DANE / BR→BCB "
+            f"upgrades); the 'imf_only_sensitivity' mode forwards "
+            f"conn=None (CO/BR fall back to IMF-IFS — Task 11.N.2d.1-"
+            f"reframe sensitivity dispatch)."
+        )
     from scripts.y3_compute import (
         PRIMARY_PANEL_END,
         PRIMARY_PANEL_START,
@@ -2905,8 +2935,17 @@ def ingest_y3_weekly(
         # dispatch in ``fetch_country_wc_cpi_components`` activates the
         # CO → DANE and BR → BCB source upgrades. Without this kwarg the
         # fetcher falls back to the IMF-IFS path for all countries.
+        #
+        # Rev-5.3.2 Task 11.N.2d.1-reframe: ``source_mode`` selects which
+        # connection is forwarded. ``'primary'`` (default) forwards the
+        # live ``conn`` (CO/BR get DANE/BCB). ``'imf_only_sensitivity'``
+        # forwards ``conn=None`` (CO/BR fall back to IMF-IFS — the
+        # single-source-fallback comparator panel).
+        wc_conn = conn if source_mode == "primary" else None
         try:
-            comp = fetch_country_wc_cpi_components(country, start, end, conn=conn)
+            comp = fetch_country_wc_cpi_components(
+                country, start, end, conn=wc_conn
+            )
         except Y3FetchError:
             skipped.append(country)
             continue

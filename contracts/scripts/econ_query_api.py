@@ -56,11 +56,25 @@ SUBSAMPLE_SPLITS: Final[tuple[date, date]] = (date(2015, 1, 5), date(2021, 1, 4)
 #     KE intentionally skipped per design doc §10 row 1. Downstream
 #     Task 11.N.2d.1-reframe and Task 11.O Rev-2 spec must consume this
 #     literal byte-exact.
+#
+# ``y3_v2_imf_only_sensitivity_3country_ke_unavailable`` — Rev-5.3.2
+#     Task 11.N.2d.1-reframe single-source-fallback sensitivity panel.
+#     Mix: CO=IMF-IFS via DBnomics, BR=IMF-IFS via DBnomics, EU=Eurostat
+#     HICP via DBnomics (unchanged — no IMF-IFS series for EU at month-
+#     CPI cadence on free-tier APIs), KE intentionally skipped per
+#     design doc §10 row 1. Functional difference vs primary: CO and BR
+#     fall back to their pre-Rev-5.3.2 IMF-IFS sources (cutoff
+#     2025-07-01) instead of fresh DANE/BCB (cutoff 2026-03-01). The
+#     panel is bound above by min(IMF-IFS-CO, IMF-IFS-BR, Eurostat-EU)
+#     plus the LOCF tail; joint X_d × Y₃ overlap under this mix is
+#     expected far below the load-bearing 75-week gate — that is the
+#     diagnostic point of the comparison.
 _KNOWN_Y3_METHODOLOGY_TAGS: Final[frozenset[str]] = frozenset(
     {
         "y3_v1",
         "y3_v1_3country_ke_unavailable",
         "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable",
+        "y3_v2_imf_only_sensitivity_3country_ke_unavailable",
     }
 )
 
