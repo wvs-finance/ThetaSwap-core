@@ -1,0 +1,18 @@
+PRE: total_lines=105,230
+PRE: full_file_sha256                 = 57cc91a2e5b3ef387168810f2d06455f04b3e5a13165d1d4f64630674943119e
+PRE: first_77427_lines_sha256         = 42219ffd72b02fc0ed1212bca7d52fe76c234c781149ada14996da25cd453c01
+  path-1 endpoint forno FAILED: HTTPError('503 Server Error: Service Unavailable for url: https://forno.celo.org/')
+GAP-FILL: src=ankr fetched_rows=5,024 elapsed=152.8s expected=5024
+POST: appended=5,024  total_lines=110,254
+POST: first_77427_lines_sha256        = 42219ffd72b02fc0ed1212bca7d52fe76c234c781149ada14996da25cd453c01
+      byte-exact preservation of pre-existing 77,427 lines? True
+{
+  "rows_appended": 5024,
+  "rows_total": 110253,
+  "gap_start_block": 30285762,
+  "gap_end_block": 30486127,
+  "data_source": "forno+ankr",
+  "elapsed_s": 152.78,
+  "src": "ankr",
+  "byte_exact_77427_preserved": true
+}

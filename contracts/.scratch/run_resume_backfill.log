@@ -1,0 +1,13 @@
+{
+  "rows_added": 27803,
+  "rows_total": 105229,
+  "data_source": "forno+ankr",
+  "start_block": 54388128,
+  "end_block": 65207786,
+  "wall_time_s": 404.96,
+  "paths_attempted": [
+    "celo_public_rpc"
+  ],
+  "paths_skipped_count": 0,
+  "wall_clock_total_s": 404.97
+}

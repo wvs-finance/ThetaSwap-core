@@ -135,3 +135,51 @@ A 33-task / 4-phase structural-econometric pipeline answers the question: do Col
 - `contracts/notebooks/fx_vol_cpi_surprise/Colombia/estimates/gate_verdict.json` — final scientific verdict (FAIL)
 - `contracts/docs/superpowers/specs/2026-04-17-econ-notebook-design.md` — Rev 4 spec (pre-committed, reviewer-accepted)
 - `contracts/docs/superpowers/plans/2026-04-17-econ-notebook-implementation.md` — 33-task implementation plan
+
+## Abrigo Phase-A.0 Active Work (Y₃ × X_d structural econometrics) — IN PROGRESS as of 2026-04-26
+
+The active analytical work is the Abrigo macro-hedge structural econometrics under the Phase-A.0 plan. Rev-2 mean-β regression closed with **gate verdict T3b = FAIL** (β̂ = −2.7987e−8, n = 76, T1 REJECTS predictive-not-structural). Per spec §11.A convex-payoff insufficiency caveat, mean-β was always first-stage / linear-hedge calibration only; Rev-3 ζ-group (quantile / GARCH-X / lower-tail / option-implied vol) is where convex-instrument fitness gets tested.
+
+User-picked α + β parallel tracks per HALT-disposition:
+- **α-track** = Rev-2 notebook migration (Task 11.O.NB-α; 31 dispatch units across 3 notebooks + README) + Rev-3 ζ-group convex-payoff extensions (Task 11.O.ζ-α; held for user-driven structural-econometrics interactive flow per ε deferral)
+- **β-track** = Mento user-base research (Task 11.P.MR-β COMPLETED) → cCOP-vs-COPM provenance audit (Task 11.P.MR-β.1; BLOCKING for spec) → β hypothesis spec (Task 11.P.spec-β) → β execution (Task 11.P.exec-β)
+
+User scope-tightening 2026-04-25: **Mento-native ONLY**. The Mento-native Colombia token is **COPM** at `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` (per Rev-5.3.4 CORRIGENDUM; cCOP and Minteo-fintech tokens are out of scope).
+
+### Active plan + sub-plans
+
+- `contracts/docs/superpowers/plans/2026-04-20-remittance-surprise-implementation.md` — major plan (canonical source of truth); Rev-5.3.4 latest
+- `contracts/docs/superpowers/sub-plans/2026-04-25-rev2-notebook-migration.md` — α-track NB-α sub-plan (467 lines, 31 dispatch units, converged)
+- `contracts/docs/superpowers/sub-plans/2026-04-25-ccop-provenance-audit.md` — β-track MR-β.1 sub-plan (319 lines, 5 sub-tasks, converged)
+
+### Active design docs (immutable)
+
+- `contracts/docs/superpowers/specs/2026-04-24-y3-inequality-differential-design.md` — Y₃ design (4-country panel, 60/25/15 WC-CPI weights)
+- `contracts/docs/superpowers/specs/2026-04-24-carbon-basket-xd-design.md` — X_d design (Carbon basket user volume)
+
+### Active analytical artifacts (Rev-2 baseline; binding for migration)
+
+- `contracts/.scratch/2026-04-25-task110-rev2-spec-A-autonomous.md` — Track A Rev-2 spec (655 lines, 14-row resolution matrix, §10.6 ζ-group roadmap, §11.A convex-payoff caveat)
+- `contracts/.scratch/2026-04-25-task110-rev2-data/` — 14 panel parquets (Phase 5a Data Engineer output)
+- `contracts/.scratch/2026-04-25-task110-rev2-analysis/{estimates,spec_tests,sensitivity,summary}.md` — Phase 5b Analytics Reporter outputs
+- `contracts/.scratch/2026-04-25-task110-rev2-analysis/gate_verdict.json` — machine-readable FAIL verdict
+- `contracts/.scratch/2026-04-25-task110-rev2-gate-fail-disposition.md` — HALT-disposition memo (5 pivot paths α/β/γ/δ/ε)
+
+### Active research
+
+- `contracts/.scratch/2026-04-25-mento-userbase-research.md` — Trend Researcher Mento ecosystem evidence (Findings 1-4; note: TR's Finding 3 cCOP/COPM attribution was inverted; Rev-5.3.4 corrigendum is authoritative override)
+
+### Notebook scaffolding (in flight under Task 11.O.NB-α)
+
+- `contracts/notebooks/abrigo_y3_x_d/` — env.py (parents-fix landed at `865402c2c`), references.bib, _nbconvert_template/, estimates/, figures/, pdf/
+
+### Anti-fishing invariants (immutable through Rev-5.3.x)
+
+- `N_MIN = 75`, `POWER_MIN = 0.80`, `MDES_SD = 0.40` SD-units of Y₃
+- `MDES_FORMULATION_HASH = 4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa` (sha256-pinned)
+- Rev-4 `decision_hash = 6a5f9d1b05c18defd8b30c4b3cef6af896d6e45a2a26c1c60aa342da0a5a443c`
+- Rev-2 published 14-row resolution matrix is binding for migration (no re-estimation drift permitted)
+
+### Stale `.scratch/` archived
+
+Pre-Phase-A.0 scratch documents (2026-04-11 through 2026-04-19; 70 files including FX-vol-spec-review-* and tier1-* iterations) moved to `contracts/.scratch/archive-2026-04-pre-rev533/`. Active scratch is 2026-04-20 onwards.

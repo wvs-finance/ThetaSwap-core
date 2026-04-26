@@ -1,0 +1,12 @@
+PRE: onchain_copm_transfers rows = 52,068
+PRE: onchain_xd_weekly per proxy_kind = [('b2b_to_b2c_net_flow_usd', 16), ('net_primary_issuance_usd', 84)]
+INGEST: rows pulled from CSV = 110,253
+X_d compute: rows written to onchain_xd_weekly = 163
+POST: onchain_copm_transfers rows = 110,253
+POST: onchain_xd_weekly per proxy_kind = [('b2b_to_b2c_net_flow_usd', 79), ('net_primary_issuance_usd', 84)]
+{
+  "transfers_total": 110253,
+  "xd_weekly_distribution": 79,
+  "xd_weekly_supply": 84,
+  "wall_time_s": 2.49
+}
