@@ -1,0 +1,18 @@
+{
+  "beta_x_d": -2.7987050503705652e-08,
+  "ci_lower_05": -6.375446223099476e-08,
+  "ci_lower_one_sided_90": -5.235928043574299e-08,
+  "ci_upper_95": 7.780361223583439e-09,
+  "df_estimated": 7.422997538034885,
+  "estimator": "ols-with-student-t-innovations",
+  "gate_verdict_under_t": "FAIL",
+  "n": 76,
+  "p_one_sided": 0.9086644206440821,
+  "p_two_sided": 0.1826711587118357,
+  "panel_id": "panel_row_11_student_t",
+  "se_under_t": 1.9040804634404174e-08,
+  "t_stat": -1.4698459986894048,
+  "window_end": "2026-03-13",
+  "window_start": "2024-09-27",
+  "z90_one_sided": 1.28
+}
