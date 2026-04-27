@@ -1,0 +1,929 @@
+{
+  "anchor_2026_03_06": {
+    "cook_d": 0.8875931847978026,
+    "date": "2026-03-06",
+    "dffits": -2.859197330171119,
+    "leverage": 0.42003569741866786,
+    "studentized_residual_external": -3.35970898320059,
+    "studentized_residual_internal": -3.1311905954933943
+  },
+  "cook_d_threshold_50pct_F": 0.9271478713584772,
+  "full_table": [
+    {
+      "cook_d": 0.8875931847978026,
+      "dffits": -2.859197330171119,
+      "leverage": 0.42003569741866786,
+      "studentized_residual_external": -3.35970898320059,
+      "studentized_residual_internal": -3.1311905954933943,
+      "week_start": "2026-03-06"
+    },
+    {
+      "cook_d": 0.182352320958085,
+      "dffits": -1.2740451040389127,
+      "leverage": 0.15781980978643492,
+      "studentized_residual_external": -2.9431104199771516,
+      "studentized_residual_internal": -2.790116864924564,
+      "week_start": "2025-04-04"
+    },
+    {
+      "cook_d": 0.12872109416173388,
+      "dffits": -1.010505497886873,
+      "leverage": 0.7041743394581771,
+      "studentized_residual_external": -0.6549626049159589,
+      "studentized_residual_internal": -0.6577300419202764,
+      "week_start": "2026-02-06"
+    },
+    {
+      "cook_d": 0.11406156351967557,
+      "dffits": 0.9878212379122104,
+      "leverage": 0.14579594545627703,
+      "studentized_residual_external": 2.3910378450613123,
+      "studentized_residual_internal": 2.312185879937052,
+      "week_start": "2025-04-18"
+    },
+    {
+      "cook_d": 0.07336403913985232,
+      "dffits": -0.7730035205499459,
+      "leverage": 0.21127576043543006,
+      "studentized_residual_external": -1.4935481530421266,
+      "studentized_residual_internal": -1.4802135235631617,
+      "week_start": "2025-11-21"
+    },
+    {
+      "cook_d": 0.06884453490455492,
+      "dffits": 0.763327467761648,
+      "leverage": 0.10550239607383266,
+      "studentized_residual_external": 2.222640991679614,
+      "studentized_residual_internal": 2.1609173572092275,
+      "week_start": "2025-04-25"
+    },
+    {
+      "cook_d": 0.04830609545617441,
+      "dffits": 0.6183810129605365,
+      "leverage": 0.5715036959017326,
+      "studentized_residual_external": 0.535451531251226,
+      "studentized_residual_internal": 0.5382821515339135,
+      "week_start": "2024-09-27"
+    },
+    {
+      "cook_d": 0.04830609545617437,
+      "dffits": -0.6183810129605362,
+      "leverage": 0.5715036959017332,
+      "studentized_residual_external": -0.535451531251225,
+      "studentized_residual_internal": -0.5382821515339125,
+      "week_start": "2024-10-04"
+    },
+    {
+      "cook_d": 0.04115626484529335,
+      "dffits": 0.5927949207192914,
+      "leverage": 0.05928677934807752,
+      "studentized_residual_external": 2.3613163174635354,
+      "studentized_residual_internal": 2.2856654553710474,
+      "week_start": "2026-01-23"
+    },
+    {
+      "cook_d": 0.030774139248515683,
+      "dffits": -0.5075691861233947,
+      "leverage": 0.05834475028568062,
+      "studentized_residual_external": -2.039108439071646,
+      "studentized_residual_internal": -1.9933475378403414,
+      "week_start": "2026-02-27"
+    },
+    {
+      "cook_d": 0.030543443972464716,
+      "dffits": 0.4943191131375286,
+      "leverage": 0.19620025127714563,
+      "studentized_residual_external": 1.000533320604723,
+      "studentized_residual_internal": 1.000525471471693,
+      "week_start": "2025-02-14"
+    },
+    {
+      "cook_d": 0.029198531325006143,
+      "dffits": 0.48657209245809535,
+      "leverage": 0.10971578736903054,
+      "studentized_residual_external": 1.3860438499188668,
+      "studentized_residual_internal": 1.3767505893345253,
+      "week_start": "2025-11-07"
+    },
+    {
+      "cook_d": 0.028400881721006306,
+      "dffits": 0.48309547748966236,
+      "leverage": 0.07574283695792874,
+      "studentized_residual_external": 1.6875575820753563,
+      "studentized_residual_internal": 1.6650854804849418,
+      "week_start": "2026-01-09"
+    },
+    {
+      "cook_d": 0.018893686173032748,
+      "dffits": -0.38752651945988453,
+      "leverage": 0.21075103504542977,
+      "studentized_residual_external": -0.7499349262100776,
+      "studentized_residual_internal": -0.7523596480016753,
+      "week_start": "2026-03-13"
+    },
+    {
+      "cook_d": 0.017327033212778883,
+      "dffits": -0.3752145597616415,
+      "leverage": 0.06384386610677437,
+      "studentized_residual_external": -1.4367931105526257,
+      "studentized_residual_internal": -1.4256786697971442,
+      "week_start": "2025-12-19"
+    },
+    {
+      "cook_d": 0.015576796760192087,
+      "dffits": 0.36229409881767116,
+      "leverage": 0.027597988020221877,
+      "studentized_residual_external": 2.1505298428539183,
+      "studentized_residual_internal": 2.095406485202524,
+      "week_start": "2025-01-31"
+    },
+    {
+      "cook_d": 0.015524217511817548,
+      "dffits": 0.3540202912465657,
+      "leverage": 0.0717128603995151,
+      "studentized_residual_external": 1.2737107059197972,
+      "studentized_residual_internal": 1.2679218824919083,
+      "week_start": "2024-11-22"
+    },
+    {
+      "cook_d": 0.014956143722374811,
+      "dffits": 0.34608494096911363,
+      "leverage": 0.10055157579418508,
+      "studentized_residual_external": 1.0350859045959995,
+      "studentized_residual_internal": 1.0345428905610792,
+      "week_start": "2025-10-17"
+    },
+    {
+      "cook_d": 0.012624605374097318,
+      "dffits": -0.316949332811306,
+      "leverage": 0.13632255515424602,
+      "studentized_residual_external": -0.797777478874956,
+      "studentized_residual_internal": -0.7999186630053778,
+      "week_start": "2025-09-12"
+    },
+    {
+      "cook_d": 0.012367855775339632,
+      "dffits": 0.3143496666787079,
+      "leverage": 0.09769791067197996,
+      "studentized_residual_external": 0.9553144515426071,
+      "studentized_residual_internal": 0.9559287931259965,
+      "week_start": "2026-01-16"
+    },
+    {
+      "cook_d": 0.011455357576034194,
+      "dffits": -0.3015811818123853,
+      "leverage": 0.15742629622816326,
+      "studentized_residual_external": -0.6977013290435293,
+      "studentized_residual_internal": -0.7003491889835389,
+      "week_start": "2025-10-10"
+    },
+    {
+      "cook_d": 0.00947830160198092,
+      "dffits": -0.2791474105618275,
+      "leverage": 0.026340027356716984,
+      "studentized_residual_external": -1.6971848679839558,
+      "studentized_residual_internal": -1.6741940835821354,
+      "week_start": "2024-12-20"
+    },
+    {
+      "cook_d": 0.009460924246361973,
+      "dffits": -0.27456638049465637,
+      "leverage": 0.0936211953109162,
+      "studentized_residual_external": -0.8543093083368197,
+      "studentized_residual_internal": -0.8560114144228709,
+      "week_start": "2026-01-02"
+    },
+    {
+      "cook_d": 0.009194559049125701,
+      "dffits": -0.27147197274815504,
+      "leverage": 0.06122853190827651,
+      "studentized_residual_external": -1.0629871549134011,
+      "studentized_residual_internal": -1.0619729732685879,
+      "week_start": "2024-11-29"
+    },
+    {
+      "cook_d": 0.009148077176134788,
+      "dffits": 0.2714483328515751,
+      "leverage": 0.0479130744851242,
+      "studentized_residual_external": 1.2100364688645457,
+      "studentized_residual_internal": 1.2059274592386018,
+      "week_start": "2025-10-24"
+    },
+    {
+      "cook_d": 0.006131714235770034,
+      "dffits": 0.22082489148780052,
+      "leverage": 0.07541046344013297,
+      "studentized_residual_external": 0.7732264612018107,
+      "studentized_residual_internal": 0.77552290480646,
+      "week_start": "2026-02-20"
+    },
+    {
+      "cook_d": 0.0056225557347254545,
+      "dffits": 0.21259843231594386,
+      "leverage": 0.032889742324391624,
+      "studentized_residual_external": 1.1528367623719056,
+      "studentized_residual_internal": 1.1500577194584427,
+      "week_start": "2025-11-28"
+    },
+    {
+      "cook_d": 0.0055984334067277035,
+      "dffits": 0.21075575921227876,
+      "leverage": 0.09187760038855144,
+      "studentized_residual_external": 0.6625929691559556,
+      "studentized_residual_internal": 0.665343048678159,
+      "week_start": "2024-10-18"
+    },
+    {
+      "cook_d": 0.00545800084366031,
+      "dffits": -0.2082566074769588,
+      "leverage": 0.0739146441775226,
+      "studentized_residual_external": -0.7371554020648691,
+      "studentized_residual_internal": -0.7396428371742035,
+      "week_start": "2024-11-15"
+    },
+    {
+      "cook_d": 0.005424813647962552,
+      "dffits": 0.2071303598156405,
+      "leverage": 0.1609986084625876,
+      "studentized_residual_external": 0.47283981527092017,
+      "studentized_residual_internal": 0.47556259135411827,
+      "week_start": "2026-01-30"
+    },
+    {
+      "cook_d": 0.005278606639558963,
+      "dffits": 0.20405145041991474,
+      "leverage": 0.47003549020115226,
+      "studentized_residual_external": 0.21666948663087685,
+      "studentized_residual_internal": 0.21820400198550655,
+      "week_start": "2025-04-11"
+    },
+    {
+      "cook_d": 0.0045440959527982,
+      "dffits": 0.19009545642321135,
+      "leverage": 0.057251204044388146,
+      "studentized_residual_external": 0.7713960621378675,
+      "studentized_residual_internal": 0.7737032497555024,
+      "week_start": "2025-11-14"
+    },
+    {
+      "cook_d": 0.004139191847619494,
+      "dffits": -0.18213354578874957,
+      "leverage": 0.028732731739280253,
+      "studentized_residual_external": -1.058938796994428,
+      "studentized_residual_internal": -1.0579951797772815,
+      "week_start": "2025-07-11"
+    },
+    {
+      "cook_d": 0.003783170933896678,
+      "dffits": -0.17461341529404595,
+      "leverage": 0.01986511226556232,
+      "studentized_residual_external": -1.2265210864529772,
+      "studentized_residual_internal": -1.2219976981441099,
+      "week_start": "2025-02-28"
+    },
+    {
+      "cook_d": 0.0034875961159253578,
+      "dffits": -0.1662726901069926,
+      "leverage": 0.06772774833500306,
+      "studentized_residual_external": -0.6168917802645659,
+      "studentized_residual_internal": -0.6197209050680889,
+      "week_start": "2024-12-13"
+    },
+    {
+      "cook_d": 0.0034748856773140716,
+      "dffits": -0.16665279963211954,
+      "leverage": 0.028800000183351746,
+      "studentized_residual_external": -0.9677667692511213,
+      "studentized_residual_internal": -0.9682184308886582,
+      "week_start": "2025-07-25"
+    },
+    {
+      "cook_d": 0.00344715159917554,
+      "dffits": 0.16516255312628422,
+      "leverage": 0.09369988444970548,
+      "studentized_residual_external": 0.5136627561387522,
+      "studentized_residual_internal": 0.5164659272707324,
+      "week_start": "2025-03-14"
+    },
+    {
+      "cook_d": 0.0026697311172280626,
+      "dffits": -0.14601080424567803,
+      "leverage": 0.02373743824224861,
+      "studentized_residual_external": -0.9363783994029267,
+      "studentized_residual_internal": -0.9372277713189453,
+      "week_start": "2025-05-23"
+    },
+    {
+      "cook_d": 0.0026332218197567515,
+      "dffits": -0.14425780200253188,
+      "leverage": 0.10607456629609699,
+      "studentized_residual_external": -0.4187784501496665,
+      "studentized_residual_internal": -0.421341008694203,
+      "week_start": "2024-10-25"
+    },
+    {
+      "cook_d": 0.0025260843092512497,
+      "dffits": -0.14160077070509838,
+      "leverage": 0.04102485027829895,
+      "studentized_residual_external": -0.6846140242997246,
+      "studentized_residual_internal": -0.687304343325291,
+      "week_start": "2024-11-08"
+    },
+    {
+      "cook_d": 0.0023466263505761103,
+      "dffits": 0.1366907256720105,
+      "leverage": 0.026785625647849552,
+      "studentized_residual_external": 0.8239339706025048,
+      "studentized_residual_internal": 0.8258864198468525,
+      "week_start": "2025-07-04"
+    },
+    {
+      "cook_d": 0.0022336240300710446,
+      "dffits": 0.13319502688729262,
+      "leverage": 0.03345152896554479,
+      "studentized_residual_external": 0.7159650827872442,
+      "studentized_residual_internal": 0.7185448198375025,
+      "week_start": "2025-08-08"
+    },
+    {
+      "cook_d": 0.002189210798914359,
+      "dffits": 0.1319555813201583,
+      "leverage": 0.027919220775620552,
+      "studentized_residual_external": 0.7786231209253524,
+      "studentized_residual_internal": 0.7808872211822425,
+      "week_start": "2025-05-16"
+    },
+    {
+      "cook_d": 0.0020375854894313615,
+      "dffits": -0.12687707240403795,
+      "leverage": 0.09485416272165967,
+      "studentized_residual_external": -0.3919351650787651,
+      "studentized_residual_internal": -0.3943973560509145,
+      "week_start": "2025-06-27"
+    },
+    {
+      "cook_d": 0.001956542452385742,
+      "dffits": 0.12433908579879459,
+      "leverage": 0.08552654968165121,
+      "studentized_residual_external": 0.40657694146224654,
+      "studentized_residual_internal": 0.40909550330345024,
+      "week_start": "2025-01-17"
+    },
+    {
+      "cook_d": 0.0018994156187013324,
+      "dffits": -0.12299669241204166,
+      "leverage": 0.02116781006642133,
+      "studentized_residual_external": -0.8363914589383424,
+      "studentized_residual_internal": -0.8382453490830113,
+      "week_start": "2025-05-30"
+    },
+    {
+      "cook_d": 0.0015163652991424265,
+      "dffits": -0.10940936490625526,
+      "leverage": 0.10667692621213384,
+      "studentized_residual_external": -0.31660919690261624,
+      "studentized_residual_internal": -0.31872486163639246,
+      "week_start": "2025-05-02"
+    },
+    {
+      "cook_d": 0.0012907820311178933,
+      "dffits": -0.10107808424842665,
+      "leverage": 0.03531638831733336,
+      "studentized_residual_external": -0.5282765229336875,
+      "studentized_residual_internal": -0.5310993349898369,
+      "week_start": "2025-08-29"
+    },
+    {
+      "cook_d": 0.001243217336430168,
+      "dffits": -0.0990121359882693,
+      "leverage": 0.2675550950554763,
+      "studentized_residual_external": -0.16382089638987826,
+      "studentized_residual_internal": -0.16500586861123018,
+      "week_start": "2024-11-01"
+    },
+    {
+      "cook_d": 0.001117045343511441,
+      "dffits": -0.09407287837781537,
+      "leverage": 0.025324619165707645,
+      "studentized_residual_external": -0.583610328331141,
+      "studentized_residual_internal": -0.586460722950914,
+      "week_start": "2025-06-20"
+    },
+    {
+      "cook_d": 0.0010685603002997066,
+      "dffits": -0.09183205260698908,
+      "leverage": 0.09286058063358611,
+      "studentized_residual_external": -0.2870222826153301,
+      "studentized_residual_internal": -0.288978700177005,
+      "week_start": "2025-12-26"
+    },
+    {
+      "cook_d": 0.0009433150199585241,
+      "dffits": 0.08640033987220744,
+      "leverage": 0.027336988718803405,
+      "studentized_residual_external": 0.5153725870182918,
+      "studentized_residual_internal": 0.518178311909058,
+      "week_start": "2025-02-21"
+    },
+    {
+      "cook_d": 0.0009377384456255707,
+      "dffits": 0.08618485260955222,
+      "leverage": 0.022109836725584704,
+      "studentized_residual_external": 0.573169687409328,
+      "studentized_residual_internal": 0.5760207461167322,
+      "week_start": "2025-03-21"
+    },
+    {
+      "cook_d": 0.0009140217804019807,
+      "dffits": 0.08498165276941272,
+      "leverage": 0.04310609840046324,
+      "studentized_residual_external": 0.4003941362513044,
+      "studentized_residual_internal": 0.4028893628936742,
+      "week_start": "2025-05-09"
+    },
+    {
+      "cook_d": 0.0008529973197220229,
+      "dffits": -0.08207570708367158,
+      "leverage": 0.05018027742024671,
+      "studentized_residual_external": -0.35708260592911123,
+      "studentized_residual_internal": -0.35939571054085456,
+      "week_start": "2025-10-03"
+    },
+    {
+      "cook_d": 0.0008247988572812438,
+      "dffits": 0.08068337484899264,
+      "leverage": 0.06954563886433815,
+      "studentized_residual_external": 0.2951186415361448,
+      "studentized_residual_internal": 0.2971198082927791,
+      "week_start": "2024-12-06"
+    },
+    {
+      "cook_d": 0.0007920141402862434,
+      "dffits": 0.0791149970895021,
+      "leverage": 0.03465148440425446,
+      "studentized_residual_external": 0.41758026075597426,
+      "studentized_residual_internal": 0.42013862123392,
+      "week_start": "2025-08-15"
+    },
+    {
+      "cook_d": 0.0006892590360638075,
+      "dffits": 0.07378037183079518,
+      "leverage": 0.04012229814870932,
+      "studentized_residual_external": 0.3608742470186263,
+      "studentized_residual_internal": 0.3632045485917484,
+      "week_start": "2025-12-05"
+    },
+    {
+      "cook_d": 0.0005867161429297573,
+      "dffits": -0.06802201472447345,
+      "leverage": 0.1223607684910338,
+      "studentized_residual_external": -0.18217400547749202,
+      "studentized_residual_internal": -0.18348304064403204,
+      "week_start": "2026-02-13"
+    },
+    {
+      "cook_d": 0.0005744932955447867,
+      "dffits": -0.06731896536539347,
+      "leverage": 0.08080666479989033,
+      "studentized_residual_external": -0.22704778787358684,
+      "studentized_residual_internal": -0.22864795327218712,
+      "week_start": "2025-12-12"
+    },
+    {
+      "cook_d": 0.0005501445729341249,
+      "dffits": 0.06590236135996412,
+      "leverage": 0.040337766955985885,
+      "studentized_residual_external": 0.32144320655709124,
+      "studentized_residual_internal": 0.32358373650450417,
+      "week_start": "2025-06-06"
+    },
+    {
+      "cook_d": 0.00039129875534846877,
+      "dffits": -0.05554252943040184,
+      "leverage": 0.18693907809053895,
+      "studentized_residual_external": -0.11583429227997433,
+      "studentized_residual_internal": -0.11668384253146627,
+      "week_start": "2025-06-13"
+    },
+    {
+      "cook_d": 0.00039079737306779244,
+      "dffits": 0.05551273670348693,
+      "leverage": 0.10100045914702219,
+      "studentized_residual_external": 0.16561920625492144,
+      "studentized_residual_internal": 0.1668164490375031,
+      "week_start": "2024-10-11"
+    },
+    {
+      "cook_d": 0.0003904920610226657,
+      "dffits": -0.05552369992916869,
+      "leverage": 0.028175563187891016,
+      "studentized_residual_external": -0.32608889062276447,
+      "studentized_residual_internal": -0.32825299907537164,
+      "week_start": "2025-08-01"
+    },
+    {
+      "cook_d": 0.0003750136354692098,
+      "dffits": -0.054381325643506465,
+      "leverage": 0.08880562682310561,
+      "studentized_residual_external": -0.17419475035436763,
+      "studentized_residual_internal": -0.17545017088848608,
+      "week_start": "2025-07-18"
+    },
+    {
+      "cook_d": 0.0003052506750700034,
+      "dffits": -0.049089040805769237,
+      "leverage": 0.023219776538653654,
+      "studentized_residual_external": -0.3183859958955489,
+      "studentized_residual_internal": -0.32051083905307803,
+      "week_start": "2025-03-28"
+    },
+    {
+      "cook_d": 0.0002904647657141493,
+      "dffits": 0.04787249637053392,
+      "leverage": 0.033925882514978314,
+      "studentized_residual_external": 0.2554616550193356,
+      "studentized_residual_internal": 0.2572357758990251,
+      "week_start": "2025-10-31"
+    },
+    {
+      "cook_d": 0.00019618740572179867,
+      "dffits": -0.03934416374369973,
+      "leverage": 0.022604653820637276,
+      "studentized_residual_external": -0.2587119694578533,
+      "studentized_residual_internal": -0.2605054172049899,
+      "week_start": "2025-02-07"
+    },
+    {
+      "cook_d": 0.00014716142522090795,
+      "dffits": -0.03406243223222326,
+      "leverage": 0.06900932332123191,
+      "studentized_residual_external": -0.12511069511374617,
+      "studentized_residual_internal": -0.1260261785675346,
+      "week_start": "2024-12-27"
+    },
+    {
+      "cook_d": 8.836879651841797e-05,
+      "dffits": 0.026395628322353152,
+      "leverage": 0.03971289440657804,
+      "studentized_residual_external": 0.129797635949614,
+      "studentized_residual_internal": 0.1307462501138823,
+      "week_start": "2025-01-24"
+    },
+    {
+      "cook_d": 6.707263598904106e-05,
+      "dffits": -0.02299581442169167,
+      "leverage": 0.03435389809758821,
+      "studentized_residual_external": -0.12191854736323299,
+      "studentized_residual_internal": -0.12281139517977754,
+      "week_start": "2025-09-19"
+    },
+    {
+      "cook_d": 6.519988247357812e-05,
+      "dffits": -0.022672616067409647,
+      "leverage": 0.032063229291662707,
+      "studentized_residual_external": -0.12457230422249367,
+      "studentized_residual_internal": -0.12548397391597707,
+      "week_start": "2025-09-05"
+    },
+    {
+      "cook_d": 5.0496549755044296e-05,
+      "dffits": 0.01995273026268357,
+      "leverage": 0.02877848091199842,
+      "studentized_residual_external": 0.1159117724317731,
+      "studentized_residual_internal": 0.1167618752944003,
+      "week_start": "2025-01-10"
+    },
+    {
+      "cook_d": 4.7199869168201035e-05,
+      "dffits": 0.01928967099634777,
+      "leverage": 0.043548570037948583,
+      "studentized_residual_external": 0.0904001875029578,
+      "studentized_residual_internal": 0.0910667634346312,
+      "week_start": "2025-03-07"
+    },
+    {
+      "cook_d": 4.098218138653847e-05,
+      "dffits": 0.017974555344464425,
+      "leverage": 0.031043128669795195,
+      "studentized_residual_external": 0.10042171558805622,
+      "studentized_residual_internal": 0.10116074289371466,
+      "week_start": "2025-08-22"
+    },
+    {
+      "cook_d": 3.691707496466958e-06,
+      "dffits": 0.005394412962143979,
+      "leverage": 0.03487435798810391,
+      "studentized_residual_external": 0.028378079874099085,
+      "studentized_residual_internal": 0.02858890040708184,
+      "week_start": "2025-09-26"
+    }
+  ],
+  "high_leverage_rows": [
+    {
+      "cook_d": 0.8875931847978026,
+      "dffits": -2.859197330171119,
+      "leverage": 0.42003569741866786,
+      "studentized_residual_external": -3.35970898320059,
+      "week_start": "2026-03-06"
+    },
+    {
+      "cook_d": 0.182352320958085,
+      "dffits": -1.2740451040389127,
+      "leverage": 0.15781980978643492,
+      "studentized_residual_external": -2.9431104199771516,
+      "week_start": "2025-04-04"
+    },
+    {
+      "cook_d": 0.12872109416173388,
+      "dffits": -1.010505497886873,
+      "leverage": 0.7041743394581771,
+      "studentized_residual_external": -0.6549626049159589,
+      "week_start": "2026-02-06"
+    },
+    {
+      "cook_d": 0.11406156351967557,
+      "dffits": 0.9878212379122104,
+      "leverage": 0.14579594545627703,
+      "studentized_residual_external": 2.3910378450613123,
+      "week_start": "2025-04-18"
+    },
+    {
+      "cook_d": 0.07336403913985232,
+      "dffits": -0.7730035205499459,
+      "leverage": 0.21127576043543006,
+      "studentized_residual_external": -1.4935481530421266,
+      "week_start": "2025-11-21"
+    },
+    {
+      "cook_d": 0.06884453490455492,
+      "dffits": 0.763327467761648,
+      "leverage": 0.10550239607383266,
+      "studentized_residual_external": 2.222640991679614,
+      "week_start": "2025-04-25"
+    },
+    {
+      "cook_d": 0.04830609545617441,
+      "dffits": 0.6183810129605365,
+      "leverage": 0.5715036959017326,
+      "studentized_residual_external": 0.535451531251226,
+      "week_start": "2024-09-27"
+    },
+    {
+      "cook_d": 0.04830609545617437,
+      "dffits": -0.6183810129605362,
+      "leverage": 0.5715036959017332,
+      "studentized_residual_external": -0.535451531251225,
+      "week_start": "2024-10-04"
+    },
+    {
+      "cook_d": 0.04115626484529335,
+      "dffits": 0.5927949207192914,
+      "leverage": 0.05928677934807752,
+      "studentized_residual_external": 2.3613163174635354,
+      "week_start": "2026-01-23"
+    },
+    {
+      "cook_d": 0.030774139248515683,
+      "dffits": -0.5075691861233947,
+      "leverage": 0.05834475028568062,
+      "studentized_residual_external": -2.039108439071646,
+      "week_start": "2026-02-27"
+    },
+    {
+      "cook_d": 0.030543443972464716,
+      "dffits": 0.4943191131375286,
+      "leverage": 0.19620025127714563,
+      "studentized_residual_external": 1.000533320604723,
+      "week_start": "2025-02-14"
+    },
+    {
+      "cook_d": 0.029198531325006143,
+      "dffits": 0.48657209245809535,
+      "leverage": 0.10971578736903054,
+      "studentized_residual_external": 1.3860438499188668,
+      "week_start": "2025-11-07"
+    },
+    {
+      "cook_d": 0.028400881721006306,
+      "dffits": 0.48309547748966236,
+      "leverage": 0.07574283695792874,
+      "studentized_residual_external": 1.6875575820753563,
+      "week_start": "2026-01-09"
+    },
+    {
+      "cook_d": 0.018893686173032748,
+      "dffits": -0.38752651945988453,
+      "leverage": 0.21075103504542977,
+      "studentized_residual_external": -0.7499349262100776,
+      "week_start": "2026-03-13"
+    },
+    {
+      "cook_d": 0.017327033212778883,
+      "dffits": -0.3752145597616415,
+      "leverage": 0.06384386610677437,
+      "studentized_residual_external": -1.4367931105526257,
+      "week_start": "2025-12-19"
+    },
+    {
+      "cook_d": 0.015524217511817548,
+      "dffits": 0.3540202912465657,
+      "leverage": 0.0717128603995151,
+      "studentized_residual_external": 1.2737107059197972,
+      "week_start": "2024-11-22"
+    },
+    {
+      "cook_d": 0.014956143722374811,
+      "dffits": 0.34608494096911363,
+      "leverage": 0.10055157579418508,
+      "studentized_residual_external": 1.0350859045959995,
+      "week_start": "2025-10-17"
+    },
+    {
+      "cook_d": 0.012624605374097318,
+      "dffits": -0.316949332811306,
+      "leverage": 0.13632255515424602,
+      "studentized_residual_external": -0.797777478874956,
+      "week_start": "2025-09-12"
+    },
+    {
+      "cook_d": 0.012367855775339632,
+      "dffits": 0.3143496666787079,
+      "leverage": 0.09769791067197996,
+      "studentized_residual_external": 0.9553144515426071,
+      "week_start": "2026-01-16"
+    },
+    {
+      "cook_d": 0.011455357576034194,
+      "dffits": -0.3015811818123853,
+      "leverage": 0.15742629622816326,
+      "studentized_residual_external": -0.6977013290435293,
+      "week_start": "2025-10-10"
+    },
+    {
+      "cook_d": 0.009460924246361973,
+      "dffits": -0.27456638049465637,
+      "leverage": 0.0936211953109162,
+      "studentized_residual_external": -0.8543093083368197,
+      "week_start": "2026-01-02"
+    },
+    {
+      "cook_d": 0.009194559049125701,
+      "dffits": -0.27147197274815504,
+      "leverage": 0.06122853190827651,
+      "studentized_residual_external": -1.0629871549134011,
+      "week_start": "2024-11-29"
+    },
+    {
+      "cook_d": 0.006131714235770034,
+      "dffits": 0.22082489148780052,
+      "leverage": 0.07541046344013297,
+      "studentized_residual_external": 0.7732264612018107,
+      "week_start": "2026-02-20"
+    },
+    {
+      "cook_d": 0.0055984334067277035,
+      "dffits": 0.21075575921227876,
+      "leverage": 0.09187760038855144,
+      "studentized_residual_external": 0.6625929691559556,
+      "week_start": "2024-10-18"
+    },
+    {
+      "cook_d": 0.00545800084366031,
+      "dffits": -0.2082566074769588,
+      "leverage": 0.0739146441775226,
+      "studentized_residual_external": -0.7371554020648691,
+      "week_start": "2024-11-15"
+    },
+    {
+      "cook_d": 0.005424813647962552,
+      "dffits": 0.2071303598156405,
+      "leverage": 0.1609986084625876,
+      "studentized_residual_external": 0.47283981527092017,
+      "week_start": "2026-01-30"
+    },
+    {
+      "cook_d": 0.005278606639558963,
+      "dffits": 0.20405145041991474,
+      "leverage": 0.47003549020115226,
+      "studentized_residual_external": 0.21666948663087685,
+      "week_start": "2025-04-11"
+    },
+    {
+      "cook_d": 0.0045440959527982,
+      "dffits": 0.19009545642321135,
+      "leverage": 0.057251204044388146,
+      "studentized_residual_external": 0.7713960621378675,
+      "week_start": "2025-11-14"
+    },
+    {
+      "cook_d": 0.0034875961159253578,
+      "dffits": -0.1662726901069926,
+      "leverage": 0.06772774833500306,
+      "studentized_residual_external": -0.6168917802645659,
+      "week_start": "2024-12-13"
+    },
+    {
+      "cook_d": 0.00344715159917554,
+      "dffits": 0.16516255312628422,
+      "leverage": 0.09369988444970548,
+      "studentized_residual_external": 0.5136627561387522,
+      "week_start": "2025-03-14"
+    },
+    {
+      "cook_d": 0.0026332218197567515,
+      "dffits": -0.14425780200253188,
+      "leverage": 0.10607456629609699,
+      "studentized_residual_external": -0.4187784501496665,
+      "week_start": "2024-10-25"
+    },
+    {
+      "cook_d": 0.0020375854894313615,
+      "dffits": -0.12687707240403795,
+      "leverage": 0.09485416272165967,
+      "studentized_residual_external": -0.3919351650787651,
+      "week_start": "2025-06-27"
+    },
+    {
+      "cook_d": 0.001956542452385742,
+      "dffits": 0.12433908579879459,
+      "leverage": 0.08552654968165121,
+      "studentized_residual_external": 0.40657694146224654,
+      "week_start": "2025-01-17"
+    },
+    {
+      "cook_d": 0.0015163652991424265,
+      "dffits": -0.10940936490625526,
+      "leverage": 0.10667692621213384,
+      "studentized_residual_external": -0.31660919690261624,
+      "week_start": "2025-05-02"
+    },
+    {
+      "cook_d": 0.001243217336430168,
+      "dffits": -0.0990121359882693,
+      "leverage": 0.2675550950554763,
+      "studentized_residual_external": -0.16382089638987826,
+      "week_start": "2024-11-01"
+    },
+    {
+      "cook_d": 0.0010685603002997066,
+      "dffits": -0.09183205260698908,
+      "leverage": 0.09286058063358611,
+      "studentized_residual_external": -0.2870222826153301,
+      "week_start": "2025-12-26"
+    },
+    {
+      "cook_d": 0.0008247988572812438,
+      "dffits": 0.08068337484899264,
+      "leverage": 0.06954563886433815,
+      "studentized_residual_external": 0.2951186415361448,
+      "week_start": "2024-12-06"
+    },
+    {
+      "cook_d": 0.0005867161429297573,
+      "dffits": -0.06802201472447345,
+      "leverage": 0.1223607684910338,
+      "studentized_residual_external": -0.18217400547749202,
+      "week_start": "2026-02-13"
+    },
+    {
+      "cook_d": 0.0005744932955447867,
+      "dffits": -0.06731896536539347,
+      "leverage": 0.08080666479989033,
+      "studentized_residual_external": -0.22704778787358684,
+      "week_start": "2025-12-12"
+    },
+    {
+      "cook_d": 0.00039129875534846877,
+      "dffits": -0.05554252943040184,
+      "leverage": 0.18693907809053895,
+      "studentized_residual_external": -0.11583429227997433,
+      "week_start": "2025-06-13"
+    },
+    {
+      "cook_d": 0.00039079737306779244,
+      "dffits": 0.05551273670348693,
+      "leverage": 0.10100045914702219,
+      "studentized_residual_external": 0.16561920625492144,
+      "week_start": "2024-10-11"
+    },
+    {
+      "cook_d": 0.0003750136354692098,
+      "dffits": -0.054381325643506465,
+      "leverage": 0.08880562682310561,
+      "studentized_residual_external": -0.17419475035436763,
+      "week_start": "2025-07-18"
+    },
+    {
+      "cook_d": 0.00014716142522090795,
+      "dffits": -0.03406243223222326,
+      "leverage": 0.06900932332123191,
+      "studentized_residual_external": -0.12511069511374617,
+      "week_start": "2024-12-27"
+    }
+  ],
+  "leverage_threshold_4_over_n": 0.05263157894736842,
+  "n_observations": 76,
+  "n_parameters": 8,
+  "no_observation_dropped": true,
+  "rev2_pre_commitment": "retain_all_76_weeks"
+}
