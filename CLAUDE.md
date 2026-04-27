@@ -127,6 +127,28 @@ forge fmt --check                          # Check formatting
    - Single Uniswap AMM pool configuration at a time
    - No cross-pair price consistency guarantees
 
+## Abrigo Operating Framework: (Y, M, X) Triples for Permissionless Convex Hedges
+
+**Highest-level goal**: minimize income inequality, framed in post-Keynesian terms — distribution is institutionally determined, not equilibrium-given. The product family contributes to this goal by altering the institutional structure that currently blocks wage earners from accumulating productive capital.
+
+**Instrument family**: permissionless on-chain perpetual convex instruments, settled on **Panoptic** (perpetual options written on Uniswap v3/v4 LP positions). The denomination of any given hedge — Mento-native (COPm, BRLm, KESm, EURm, USDm), USDC, ETH, sectoral basket tokens, or any Panoptic-eligible pair — is a *parameter of each iteration*, selected to fit the target population. Mento-native is one valid denomination family among many, not a framework-level constraint.
+
+**Transmission channel — wage → productive capital via premium-funded ratchet (self-LBM)**: the perpetual hedge functions as a self liquidity-bootstrapping mechanism for the *holder*. A wage earner pays a small recurring premium out of wage income; the instrument's accumulated convex payoff and roll yield convert over time into productive-capital exposure. The hedge's existence is what *creates* the capital position — absent the instrument, the wage earner never crosses the wage/capital boundary because the macro risks (X) along the path are unbearable from a pure-savings start. This is the premium-funded ratchet design, not up-front capital protection.
+
+**Operating unit of work — (Y, M, X) triples**:
+
+- **Y** = outcome variable on which a target population's exposure to the wage→capital transition is measured. Examples: realized volatility of a household consumption basket; cross-sectional differential between productive-capital returns and wage-indexed CPI; entrepreneurship-failure indicators.
+- **M** = the Panoptic pool configuration that hosts the hedge — the underlying token pair, the strike/range geometry of the deployed position, and the payoff shape (long-gamma covered call, range LP, perpetual put, straddle, etc.). M choice is constrained by Panoptic's pool mechanics: the (Y, X) pair must admit a continuous on-chain reference price representable as a Panoptic position. Off-Panoptic venues (custom v4 hooks, Carbon DeFi, Bunni-v2) are out of scope for the framework.
+- **X** = the *major risk* that currently blocks the target population's wage→capital transition. First-cut iteration question is always: "what kills wage earners' attempts to enter productive-capital ownership for *this* population?" X identification is empirical and must precede M selection.
+
+**Iteration order (default — target-population dominant)**: fix the population → fix Y on a candidate inequality/transition-exposure measure → enumerate X candidates from the empirical risk surface → for each surviving X, search Panoptic-eligible M for tradability. The (Y, X) pair only graduates to instrument design once a Panoptic position with viable convex pricing exists. Closed iterations (gate verdict FAIL) inform the X-search prior for the next population, not silent re-runs of the same (Y, X) at different thresholds — Phase-A.0 anti-fishing invariants carry forward.
+
+**Active iteration (as of 2026-04-27)**:
+- Target population: LATAM wage earners attempting transition to entrepreneurship.
+- Denomination: TBD (no longer locked to COPm/Mento-native).
+- X identification: in flight.
+- Y, M: deferred until X is named.
+
 ## FX-vol-on-CPI-surprise Notebook Pipeline (Colombia, 2008-2026) — CLOSED 2026-04-19
 
 A 33-task / 4-phase structural-econometric pipeline answers the question: do Colombian CPI AR(1) surprises cause a statistically detectable increase in weekly COP/USD realized volatility? The pre-committed Rev 4 spec fixes a one-sided T3b gate on β̂_CPI in an OLS of RV^(1/3) on CPI surprise plus six controls; reconciliation with a co-primary GARCH(1,1)-X and a PPI-decomposition block is required. Three frozen notebooks emit five artifacts and a machine-readable verdict. The project closed with `gate_verdict = "FAIL"` (β̂_CPI = −0.000685, 90% CI = [−0.003635, 0.002265], n = 947; reconciliation AGREE; all thirteen primary + sensitivity rows plotted in a pre-registered forest). The anti-fishing protocol halted §9 material-mover spotlight under T3b-FAIL; A1 (monthly cadence) and A4 (release-day-excluded) are preserved in §8 as pivot candidates, not rescue claims.
@@ -145,6 +167,8 @@ User-picked α + β parallel tracks per HALT-disposition:
 - **β-track** = Mento user-base research (Task 11.P.MR-β COMPLETED) → cCOP-vs-COPM provenance audit (Task 11.P.MR-β.1; BLOCKING for spec) → β hypothesis spec (Task 11.P.spec-β) → β execution (Task 11.P.exec-β)
 
 User scope-tightening 2026-04-25: **Mento-native ONLY**. The Mento-native Colombia token is **COPM** at `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` (per Rev-5.3.4 CORRIGENDUM; cCOP and Minteo-fintech tokens are out of scope).
+
+**SUPERSEDED 2026-04-27** — see "Abrigo Operating Framework" section above. The framework generalizes denomination as a per-iteration parameter; Mento-native is one valid family among many, not a global constraint. The `0xc92e8fc2…` COPM attribution above is also stale per Rev-5.3.5 β-corrigendum: canonical Mento V2 `StableTokenCOP` is `0x8A567e2aE79CA692Bd748aB832081C45de4041eA`; `0xc92e8fc2…` is Minteo-fintech (out of Mento-native scope). Both lines preserved for historical accuracy of what governed Phase-A.0 Rev-2 work; neither binds active iterations as of 2026-04-27.
 
 ### Active plan + sub-plans
 
