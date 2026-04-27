@@ -1,3 +1,98 @@
+# CORRIGENDUM — Two-Layer Token-Identity Inversion (Authoritative Override of Finding 3)
+
+**Date**: 2026-04-26
+**Authoring lineage**: Task 11.P.MR-β.1 sub-task 4 dispatch (Data Engineer agent) under Rev-5.3.5 β-rescoped MR-β.1 sub-plan §C sub-task 4 + §I sub-task 4 rescope
+**Placement**: Prefix block (file top, before TR's original H1 + body). Per sub-plan §C-4 the prefix placement is preferred so future readers encounter the corrigendum *before* reading Finding 3's body.
+**Append-only discipline**: No edits applied to the original TR body below (Findings 1, 2, 3, 4, §1-§8, source list, confidence table, gap inventory). The corrigendum is a structurally separate block per `feedback_pathological_halt_anti_fishing_checkpoint` anti-fishing-on-memory-edits discipline.
+**Authoritative override target**: `contracts/docs/superpowers/specs/2026-04-25-mento-native-address-registry.md` (sub-task 3 deliverable; CR + RC + SD trio convergence at commit `2a0dcf8fe`; RC fix-up re-review PASS at commit `1d30f6fc4`). Finding 3's token-address attribution below is OVERRIDDEN by that registry. The body of Finding 3 is preserved intact for audit-trail purposes; the corrected attribution is encoded in the registry spec doc.
+
+---
+
+## Layer 1 — Rev-5.3.3 cCOP-vs-COPM ticker inversion (corrected 2026-04-25)
+
+**What Finding 3 stated.** TR's §3 "COPM / cCOP — Colombia-Specific Findings" presented the two tokens as: *cCOP* = Mento-native (Celo Colombia DAO + Mento protocol, address `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606`), and *COPM* = Minteo-fintech (separate fiat-backed token with BDO audit, distinct address). This attribution made cCOP the Mento-native token and COPM the Minteo-fintech token.
+
+**What the user corrected on 2026-04-25 (verbatim).** "is COPM not cCOP" — the user explicitly inverted Finding 3's attribution: COPM is the Mento-native ticker (not cCOP), and the Mento-native scope per `project_abrigo_mento_native_only` therefore tracks **COPM**, not cCOP. cCOP, where it appears in the literature TR surveyed, is the *non-Mento-native* token (out of scope per the 2026-04-25 user-directive Mento-native-only re-scope).
+
+**What this corrected.** All references in Finding 3, the H1 2025 Celo forum statistics, the Carbon DeFi attribution discussion, the disambiguation table, and §5 reframe candidate H2 that label `cCOP` as the Mento-native subject and `COPM` as a separate Minteo token must be read with the tickers swapped: where TR wrote "cCOP" intending the Mento-native Colombia token, read "COPM"; where TR wrote "COPM" intending the Minteo-fintech token, read "cCOP" (or the relevant non-Mento token name).
+
+**Audit-trail anchor.** Major plan Rev-5.3.3 CORRECTIONS block + project memory `project_mento_canonical_naming_2026.md` codified the COPM-as-Mento-native attribution. `project_abrigo_mento_native_only.md` (2026-04-25) made COPM the in-scope Colombia token and cCOP out-of-scope.
+
+---
+
+## Layer 2 — Rev-5.3.4 address-level inversion (corrected 2026-04-26)
+
+**What Rev-5.3.4 stated after Layer 1 was corrected.** Rev-5.3.4 carried forward the assumption that the address `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` is the canonical Mento-native COPM address (i.e., that the Layer-1 inversion was purely a ticker swap and the address was correct). Project memory `project_mento_canonical_naming_2026.md` and `project_abrigo_mento_native_only.md` both encoded `0xc92e8fc2…` as COPM at Mento-native scope.
+
+**What MR-β.1 sub-tasks 1-2 disconfirmed on 2026-04-26.** Three independent evidence streams fired the HALT-VERIFY:
+- **Sub-task 1 inventory** (`contracts/.scratch/2026-04-25-mento-native-address-inventory.md` lines 260-431, DE commit `3611b0716`): canonical Mento V2/V3 deployment manifests + Mento docs + Celo Token List entries + Reality Checker spot-check (commit `3286dfe66`) resolved `0x8A567e2aE79CA692Bd748aB832081C45de4041eA` as the Mento V2 `StableTokenCOP` proxy (Mento-native COPm), and resolved `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` as the Celo Token List entry "COP Minteo" (Minteo-fintech token, OUT of Mento-native scope per `project_abrigo_mento_native_only`).
+- **Sub-task 2 DuckDB audit** (`contracts/.scratch/2026-04-25-duckdb-address-audit.md`): the existing on-chain panels labeled `0xc92e8fc2…` as `COPM` and built X_d series against it; this label is the address-level inversion that propagated downstream into Rev-2 Carbon-basket flows attributed to "COPM."
+- **Empirical probe** (Dune + Mento V3 deployment docs verification 2026-04-26): independently corroborated the registry assignment.
+
+**HALT-VERIFY trio convergence + user path-β pick.** The inversion was disposition-memo'd at `contracts/.scratch/2026-04-26-mr-beta-1-1-halt-resolution-beta.md`; user picked path β at trio convergence (commits `00790855b` → `29e2c7710` → `b4a6a50e6`).
+
+**Authoritative correction.** Per the registry spec doc, the canonical Mento-native Colombia token (COPm/COPM at the Mento-native naming-2026 standard) is **`0x8A567e2aE79CA692Bd748aB832081C45de4041eA`**, NOT `0xc92e8fc2…`. The address `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` is **Minteo-fintech "COP Minteo"** (Celo Token List), which is OUT of Mento-native scope.
+
+**Downstream impact for TR §3 / §5 / §7 / §8 below.** Wherever the body of this report cites `0xc92e8fc2…` as if it were the Mento-native Colombia token (regardless of whether labeled cCOP or COPM under the Layer-1-corrected ticker), the registry spec doc OVERRIDES that attribution. Carbon DeFi flow analyses (Findings 1.3 Carbon DeFi attribution, §3.1 disambiguation table address row, §3.2 cCOP usage stats sourced to Celo forum H1 2025, §5 reframe candidates) need address re-resolution against the registry before being cited downstream.
+
+**Audit-trail anchor.** Major plan Rev-5.3.5 CORRECTIONS block (`contracts/docs/superpowers/plans/2026-04-20-remittance-surprise-implementation.md`); MR-β.1 sub-plan §I CORRECTIONS (`contracts/docs/superpowers/sub-plans/2026-04-25-ccop-provenance-audit.md`); disposition memo (`contracts/.scratch/2026-04-26-mr-beta-1-1-halt-resolution-beta.md`).
+
+---
+
+## Authoritative override target
+
+The canonical token-and-address identity reference going forward is:
+
+- **`contracts/docs/superpowers/specs/2026-04-25-mento-native-address-registry.md`** — sub-task 3 deliverable, CR + RC + SD trio convergence at commit `2a0dcf8fe`, RC fix-up re-review PASS at commit `1d30f6fc4`.
+
+Any attribution in Finding 3 below that conflicts with the registry's address-and-ticker mapping is OVERRIDDEN by the registry. Finding 3's body is preserved verbatim for audit-trail and historical-research-trace purposes; it is NOT a current source of truth for token-address identity.
+
+---
+
+## Other findings unaffected
+
+The corrigendum applies ONLY to Finding 3's token-and-address attribution (and any §1.3 / §3 / §5.4 derivative claims that depend on Finding 3's address mapping). The following remain useful research evidence and are NOT overridden:
+
+- **Finding 1** — MiniPay (Opera × Celo) dominates the Mento user surface, but its USDm/COPM exposure is a small minority of activity (USDT-dominated; ≈0 macro-hedge signal at the aggregate level). Source-grounded in Opera press releases and Decrypt 2025-12. Independent of token-address attribution.
+- **Finding 2** — MiniPay transactions are dominantly small-value retail payments (87% P2P <$5; median fee ~$0.001; implied avg ≈ $1/tx), not macro-hedge demand. Source-grounded in Opera press 2025-09-16. Independent of token-address attribution.
+- **Finding 4** — Documented Mento basket users in LATAM are predominantly inflation-hedgers and remittance senders; macro-correlation literature in §4 (BIS WP 1340, BIS WP 1219, ECB / IMF / Chainalysis 2025) is independent of the COPM/cCOP attribution layer.
+- **§4 macro-relevance literature** — Fed funds → stablecoin substitution; BIS WP 1340 1% inflow → 40bp parity widening; predictive-regression caveat. These are macro-channel claims independent of which Colombian peso token is in scope.
+- **§2.2 Carbon DeFi diurnal NA-hours signature** — UTC 13-17 peak with ~1.9× peak/trough ratio is grounded in `project_carbon_defi_attribution_celo` and `project_carbon_user_arb_partition_rule`. The *interpretation* (52%+ MM share of Transfer events on the Mento-native Colombia token) needs to be re-resolved against the registry's COPM address before being cited downstream — but the diurnal-MM-signature finding itself stands independent of token-identity correction.
+
+The audit-trail disclosure in TR's preamble of three prompt-injection attempts encountered during web research also remains useful research-process evidence and is unaffected by this corrigendum.
+
+---
+
+## Future-research safeguard cross-reference
+
+A standalone safeguard memo documenting the systemic risk patterns that produced this two-layer inversion (and prescribing process safeguards for future token-identity research dispatches) will be authored under Task 11.P.MR-β.1 **sub-task 5** dispatch:
+
+- **`contracts/.scratch/2026-04-25-future-research-token-identity-safeguard.md`** — to be authored under sub-task 5 dispatch (forward pointer; file does not yet exist at the time of this corrigendum block).
+
+Future readers of this corrigendum should consult the safeguard memo for the systemic-risk analysis (registry-first token-identity discipline; HALT-VERIFY triggers; address-vs-ticker disambiguation protocol; deployment-manifest-as-source-of-truth rule).
+
+---
+
+## Audit trail
+
+Cross-references for full disposition lineage:
+
+- **Disposition memo (path-β user pick)**: `contracts/.scratch/2026-04-26-mr-beta-1-1-halt-resolution-beta.md`
+- **Major plan Rev-5.3.5 CORRECTIONS block**: `contracts/docs/superpowers/plans/2026-04-20-remittance-surprise-implementation.md`
+- **MR-β.1 sub-plan §I CORRECTIONS + §C-4 corrigendum spec**: `contracts/docs/superpowers/sub-plans/2026-04-25-ccop-provenance-audit.md`
+- **Sub-task 1 §β-rescope inventory** (canonical address resolution): `contracts/.scratch/2026-04-25-mento-native-address-inventory.md` (lines 260-431; DE commit `3611b0716`; RC spot-check commit `3286dfe66`)
+- **Sub-task 2 DuckDB audit** (downstream-panel address-label propagation trace): `contracts/.scratch/2026-04-25-duckdb-address-audit.md`
+- **Sub-task 3 registry spec** (authoritative override target; trio-converged): `contracts/docs/superpowers/specs/2026-04-25-mento-native-address-registry.md` (commit `2a0dcf8fe`; RC re-review PASS `1d30f6fc4`)
+- **Project memory β-corrigenda**: `project_mento_canonical_naming_2026.md`, `project_abrigo_mento_native_only.md`
+
+---
+
+## End of corrigendum block
+
+The original TR research document (Date 2026-04-25, Author Product Trend Researcher sub-agent) follows below verbatim. **Read Finding 3 and any §1.3 / §3 / §5 derivative claims through the override lens of this corrigendum and the registry spec doc cited above.**
+
+---
+
 # Mento Ecosystem User-Base Research — Evidence-Grounded Findings for X_d Reframe
 
 **Date**: 2026-04-25
