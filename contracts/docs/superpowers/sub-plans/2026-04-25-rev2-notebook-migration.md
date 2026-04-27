@@ -465,3 +465,48 @@ The sub-plan is COMPLETE (Task 11.O.NB-α closed) when ALL of the following hold
   - `contracts/docs/superpowers/sub-plans/2026-04-25-beta-spec.md` (Track β spec authoring; TO BE AUTHORED after MR-β.1 completes)
   - `contracts/docs/superpowers/sub-plans/2026-04-25-beta-execution.md` (Track β analytical execution; TO BE AUTHORED after β spec converges)
 - **This sub-plan does NOT block any sibling sub-plan.** Track α Rev-2 notebook migration (this document) and Track β execution are independent at the dispatch level. Track α Rev-3 ζ-group is a separate stage of α and may begin after this sub-plan converges 3-way review (or in parallel, at user discretion).
+
+---
+
+## CORRECTIONS — Rev-5.3.5 β-resolution interpretation reframe (2026-04-26)
+
+**Trigger.** MR-β.1 sub-task 1 HALT-VERIFY → user picked path β → Rev-2's X_d ingestion was scope-mismatched (Minteo-fintech `0xc92e8fc2…` is OUT of Mento-native scope; `0x8A567e2a…` is the canonical Mento V2 `StableTokenCOP`). Authoritative disposition: `contracts/.scratch/2026-04-26-mr-beta-1-1-halt-resolution-beta.md`. Major-plan anchor: Rev-5.3.5 CORRECTIONS in `contracts/docs/superpowers/plans/2026-04-20-remittance-surprise-implementation.md`.
+
+**Numbers stay byte-exact. Only interpretation-cell framing changes.**
+
+### Affected dispatch units
+
+NB-α's 31 dispatch units carry forward unchanged for byte-exact migration of Rev-2 panels, gate verdicts (β̂ = −2.7987e−8, n = 76, T3b FAIL), T1–T7 spec tests, Phase 5b sensitivity rows, and all artifact paths. Anti-fishing invariants (N_MIN=75, POWER_MIN=0.80, MDES_SD=0.40, MDES_FORMULATION_HASH = `4940360dcd2987…cefa`, decision_hash = `6a5f9d1b05c1…443c`) preserved byte-exact.
+
+What changes: every `interpretation-markdown` cell whose framing currently states or implies "Mento-native hedge thesis tested and failed" must be reframed to **"Minteo-fintech X_d was scope-mismatched; Rev-2 closes scope-mismatch (NOT Mento-hedge-fail)."**
+
+### Rescoped interpretation framing (concrete language)
+
+For every interpretation cell where the original Rev-2 framing was applicable, the dispatched Analytics Reporter applies one of the following framings:
+
+- **For NB1 §0 panel-fingerprint validation cells** — frame the panel as recording the X_d series ingested for Rev-2 (i.e., `0xc92e8fc2…` Minteo-fintech transfers, 110,253 events, 76 weeks). Cross-reference the β-corrigenda in `project_mento_canonical_naming_2026` and `project_abrigo_mento_native_only`. State explicitly that this panel is preserved as historical scope-mismatched X_d; the in-scope Mento-native COPm address is `0x8A567e2a…` (β-track Rev-3 territory).
+- **For NB2 estimation-row interpretation cells** — frame each row's β̂ + HAC SE + 90% one-sided lower bound + n + T3b verdict as **"the regression of Y₃ on Minteo-fintech X_d series."** State explicitly that the gate FAIL on T3b reflects Minteo-fintech-X_d's predictive-not-structural relationship with Y₃, NOT a test of Mento-native hedge demand. The sign-flip (β̂ < 0), the ρ(X_d, fed_funds) = −0.614 confounder, and T1 REJECTS predictive-not-structural are now coherent under the Minteo-fintech-payments-rail interpretation.
+- **For NB3 sensitivity-row interpretation cells** — same reframe as NB2; sensitivity rows preserved byte-exact; framing flipped from "Mento-hedge-tested-and-failed" to "Minteo-fintech-scope-mismatched-close-out."
+- **For README auto-rendered summary** — the Jinja2 template's interpretation paragraphs are reframed under the same rule. The product-facing summary states: Rev-2 closes as scope-mismatch; β-track Rev-3 (against `0x8A567e2a…` Mento-native COPm) is the actual test of Mento-native hedge demand.
+
+### Citation-block discipline reaffirmed
+
+The 4-part `feedback_notebook_citation_block` discipline is unchanged. Every test/decision/spec choice in interpretation cells is preceded by reference / why used / relevance to results / connection to simulator markdown. Under β-reframe, a NEW citation reference is added wherever the interpretation cell touches scope: the disposition memo at `contracts/.scratch/2026-04-26-mr-beta-1-1-halt-resolution-beta.md` is cited as the authoritative scope-mismatch source.
+
+### Trio-checkpoint discipline reaffirmed
+
+The `feedback_notebook_trio_checkpoint` HALT-after-each-trio discipline is unchanged. Analytics Reporter HALTS after every (why-markdown, code-cell, interpretation-markdown) trio for human review; bulk authoring is anti-fishing-banned. Under β-reframe, the trio's interpretation cell is the only point where reframing applies; the why-markdown and code-cell are byte-exact migration artifacts.
+
+### Out-of-scope reaffirmed under Rev-5.3.5
+
+NB-α does NOT:
+- Re-estimate any Rev-2 row (anti-fishing-immutable).
+- Re-bin, re-threshold, or re-evaluate any gate verdict.
+- Ingest β-track Rev-3 X_d data (that is Task 11.P.spec-β / Task 11.P.exec-β scope).
+- Mutate any DuckDB row (consume-only invariant).
+- Author any new Solidity, Python, or schema migration.
+- Conflate the Rev-2 (Minteo-scope) interpretation with the future Rev-3 (Mento-native scope) interpretation — these are distinct analytical exercises.
+
+### Reviewer cycle for this CORRECTIONS block
+
+Bundled into the same post-hoc 3-way review (CR + RC + TW) that is dispatched on the major-plan Rev-5.3.5 CORRECTIONS block + the MR-β.1 sub-plan §I CORRECTIONS block + the disposition memo. Single review trio covers the full β-resolution disposition. Convergence is required before NB-α dispatch unit 1 (the env.py-gated NB1 §0 panel-fingerprint validation) can re-dispatch under the rescoped framing.

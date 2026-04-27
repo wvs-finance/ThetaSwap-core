@@ -317,3 +317,63 @@ This CORRECTIONS block records the resolution trail. The corrections are editori
 ### Resolution status
 
 All three RC NEEDS-WORK findings (R-1, R-2, R-3) are resolved. Two RC advisories (R-4, R-5) are resolved at lightweight. Three CR advisories (A, B, C) are resolved. Two TW advisories (A1, A4) are resolved; four TW advisories (A2, A3, A5, A6) are DECLINED with documented reason. The sub-plan is ready for **RC-only single-pass re-review** per the post-fix-up plan; CR's PASS-w-adv and TW peer's PASS-w-adv stand.
+
+---
+
+## I. CORRECTIONS — Rev-5.3.5 β-resolution (2026-04-26, post-HALT-VERIFY)
+
+**Trigger.** MR-β.1 sub-task 1's first dispatched DE deliverable (`contracts/.scratch/2026-04-25-mento-native-address-inventory.md` at commit `3611b0716`) fired a HALT-VERIFY GATE on the canonical Mento-native Colombian-peso address. RC spot-check at commit `3286dfe66` returned **PASS** with non-binding β-advisory; foreground orchestrator ran a Dune empirical probe (query `7378788`) confirming β-track Rev-3 data feasibility. **User picked path β.** Authoritative disposition memo: `contracts/.scratch/2026-04-26-mr-beta-1-1-halt-resolution-beta.md`. Major-plan anchor: Rev-5.3.5 CORRECTIONS block (`contracts/docs/superpowers/plans/2026-04-20-remittance-surprise-implementation.md`).
+
+**Outcome.** `0x8A567e2aE79CA692Bd748aB832081C45de4041eA` is the canonical Mento V2 `StableTokenCOP` (Mento-native COPm). `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` is Minteo-fintech (Mento-native scope OUT). Project memory `project_mento_canonical_naming_2026` and `project_abrigo_mento_native_only` both carry β-corrigendum blocks at top.
+
+### Sub-task rescopes under β
+
+**Sub-task 1 (re-dispatch under rescoped framing).** The DE's existing inventory at commit `3611b0716` is preserved as a research artifact and consumed (NOT overwritten) by the rescoped re-dispatch. The rescoped deliverable enumerates **both** addresses with explicit scope tags:
+
+- `0x8A567e2aE79CA692Bd748aB832081C45de4041eA` — **IN scope**, canonical Mento-native COPm; provenance: Mento V3 deployments docs (`StableTokenCOP`), Dune project `celocolombianpeso` decoded as `StableTokenV2`, Celo Token List entry "Mento Colombian Peso" (chainId 42220), 285,390 transfer events 2024-10-31 → 2026-04-26 (live), `evt_exchangeupdated` + `evt_validatorsupdated` events present (Mento-protocol-specific governance; dispositive of Mento-protocol-native status).
+- `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` — **OUT of Mento-native scope**, Minteo-fintech COPM-Minteo (audit-trail preservation only); provenance: Celo Token List entry "COP Minteo" (chainId 42220), 110,253 transfer events 2024-09-17 → 2026-04-25 ingested in `onchain_copm_transfers`. Was the Rev-2 X_d source; Rev-2 closes scope-mismatch.
+
+The other five Mento-native tokens (USDm/EURm/BRLm/KESm/XOFm) are unchanged — their addresses remain authoritative as in `project_mento_canonical_naming_2026`. Sub-task 1's rescoped acceptance: enumeration of all six in-scope Mento-native tokens + the one out-of-scope Minteo entry; provenance citations preserved; HALT-VERIFY discrepancies surfaced (none expected post-disposition; if any, HALT to user).
+
+**Sub-task 2 (rescope under DEFERRED-via-scope-mismatch tag).** The DIRECT/DERIVATIVE/DEFERRED coverage scheme is preserved. Every `onchain_*` table sourced from `0xc92e8fc2…` events — `onchain_copm_transfers`, `onchain_copm_daily_transfers`, `onchain_copm_burns`, `onchain_copm_mints`, `onchain_copm_freeze_thaw`, `onchain_copm_time_patterns`, `onchain_copm_address_activity_top400`, `onchain_copm_transfers_top100_edges`, `onchain_copm_transfers_sample`, `onchain_copm_ccop_daily_flow` — is now tagged **DEFERRED-via-scope-mismatch**. The `proxy_kind` value `carbon_per_currency_copm_volume_usd` in `onchain_xd_weekly` is also DEFERRED-via-scope-mismatch.
+
+The `onchain_carbon_*` tables (`onchain_carbon_arbitrages`, `onchain_carbon_tokenstraded`) remain DIRECT in scope; their coverage of Mento-basket internal flows uses the `0xc92e8fc2…` address as one of the basket-counter-sides under the (now-corrected) prior assumption. The audit memo records this as a follow-up question: do the carbon basket queries need to swap `0xc92e8fc2…` → `0x8A567e2a…` for Mento-basket trading attribution? **Out of scope for sub-task 2 acceptance**; in scope for Task 11.P.spec-β identification design (β-spec must decide whether COPm trading on Carbon — if any — feeds the X_d signal).
+
+The pre-flight enumeration query (`SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'onchain_%' ORDER BY 1`) is still REQUIRED. Coverage completeness verification (count of tagged = count of returned) is unchanged. No table is dropped, renamed, or migrated; the rescope is annotation-only.
+
+**Sub-task 3 (registry doc rescope).** The canonical address-registry spec doc (`contracts/docs/superpowers/specs/2026-04-25-mento-native-address-registry.md`) scopes only Mento-native tokens in the per-token body sections: COPm at `0x8A567e2a…`, USDm, EURm, BRLm, KESm, XOFm. The body sections do NOT enumerate `0xc92e8fc2…`.
+
+A new explicit appendix section **"Out-of-scope third-party tokens (audit-trail preservation)"** is added, containing one entry: COPM-Minteo at `0xc92e8fc2…`, with provenance citations + cross-reference to the DEFERRED-via-scope-mismatch tag in sub-task 2 + cross-reference to the Rev-5.3.5 CORRECTIONS block in the major plan. The appendix is preservation-only; it is NOT a registry of in-scope tokens.
+
+The DuckDB cross-reference table within the registry doc enumerates DIRECT and DERIVATIVE tables tracking Mento-native addresses (i.e., `onchain_carbon_*` if scoped to `0x8A567e2a…`-side flows under future ingestion; nothing in current DuckDB tracks `0x8A567e2a…` yet — "0 events ingested" remains true at Rev-5.3.5 disposition time). The DEFERRED section enumerates all `0xc92e8fc2…`-derived tables with the scope-mismatch reason.
+
+The `onchain_copm_ccop_daily_flow` explicit disambiguation entry per RC R-2 is **strengthened** under β: the table tracks Minteo-COPM daily flow (it's all out-of-scope under β); the `_ccop_` slug fragment is a pre-rebrand legacy artifact meaningless under the post-rebrand corrected naming; future-revision rename recommendation = drop the `_ccop_` fragment and re-slug as `onchain_copm_minteo_daily_flow` (NOT executed under this sub-plan; recorded for future rev).
+
+**Sub-task 4 (TR corrigendum strengthened).** The TR research file (`contracts/.scratch/2026-04-25-mento-userbase-research.md`) corrigendum block is sharpened with both inversion layers documented:
+
+1. **Layer 1 — Rev-5.3.3 cCOP-vs-COPM inversion** (TR's Finding 3 "cCOP = Mento-native, COPM = Minteo" attribution). Corrected by user 2026-04-25: "is COPM not cCOP."
+2. **Layer 2 — Rev-5.3.4 address-level inversion** (after correcting Layer 1, the rescoped framing claimed `0xc92e8fc2…` is the Mento-native COPM address). Corrected by user + empirical Dune evidence 2026-04-26: `0x8A567e2a…` is the Mento-native COPm address; `0xc92e8fc2…` is Minteo-fintech.
+
+The corrigendum block cross-references the Rev-5.3.5 CORRECTIONS block in the major plan and the disposition memo at `contracts/.scratch/2026-04-26-mr-beta-1-1-halt-resolution-beta.md` for empirical evidence. The TR's body content (Findings 1, 2, 4) is preserved unchanged; Finding 3 is fully overridden by the registry doc + corrigendum.
+
+**Sub-task 5 (future-research safeguard memo strengthened).** The safeguard note now cites the **two-layer inversion precedent** as a worked example: third-party sources can disagree on token identity AT ANY GRAIN — both at the ticker / project-name level AND at the contract-address level. The mandatory triangulation procedure for any future research that touches Mento-native token identity:
+
+1. Mento Labs official deployment docs (https://docs.mento.org/mento/protocol/deployments) for `StableTokenCOP` etc. — authoritative on contract addresses.
+2. Dune decoded-table catalog (`searchTablesByContractAddress`) for project-name confirmation — authoritative on which contract is decoded as a Mento `StableTokenV2`.
+3. Celo Token List (https://raw.githubusercontent.com/celo-org/celo-token-list/main/celo.tokenlist.json) for community-attested token registry entries — useful disambiguation evidence but NOT authoritative when (1) and (2) disagree.
+4. Cross-check against `project_mento_canonical_naming_2026` post-β-corrigendum.
+
+Failure to triangulate before propagating a token-identity claim into specs / plans / code / memory is an anti-fishing-banned shortcut.
+
+### Anti-fishing-invariant integrity preserved
+
+- Consume-only DuckDB invariants preserved (no rows mutated, no schema migrations, no table renames).
+- N_MIN = 75 unchanged; β-track Rev-3 must independently clear this on `0x8A567e2a…` data (78 weeks of activity already on-chain → likely cleared, to be verified at β-spec authoring time).
+- POWER_MIN = 0.80 unchanged; MDES_SD = 0.40 unchanged.
+- MDES_FORMULATION_HASH = `4940360dcd2987…cefa` unchanged.
+- decision_hash = `6a5f9d1b05c1…443c` unchanged (Rev-2 published estimates byte-exact preserved).
+- Address registry post-converge byte-exact-immutability invariant preserved (the registry doc, once it lands at sub-task 3 acceptance, is byte-exact-immutable; future address additions land as new appendix sections).
+
+### Reviewer cycle for this CORRECTIONS block
+
+Per `feedback_pathological_halt_anti_fishing_checkpoint` + `feedback_three_way_review`: post-hoc 3-way review (CR + RC + TW) on the disposition. The review scope is THIS CORRECTIONS block + the major-plan Rev-5.3.5 CORRECTIONS block + the disposition memo + the project-memory β-corrigenda. The review trio convenes immediately post-commit; convergence is required before MR-β.1 sub-task 1 re-dispatch under the rescoped framing.
