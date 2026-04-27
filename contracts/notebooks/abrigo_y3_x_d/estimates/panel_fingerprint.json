@@ -1,0 +1,1007 @@
+{
+  "column_count_per_panel": {
+    "row_01_primary": 13,
+    "row_02_bootstrap_recon": 13,
+    "row_03_locf_tail_excluded": 13,
+    "row_04_imf_only_sensitivity": 13,
+    "row_05_lag_sensitivity": 13,
+    "row_06_parsimonious_controls": 10,
+    "row_07_arb_only": 13,
+    "row_08_per_currency_copm": 13,
+    "row_09_y3_bond_diagnostic": 14,
+    "row_10_population_weighted": 14,
+    "row_11_student_t": 13,
+    "row_12_hac12_bandwidth": 13,
+    "row_13_first_differenced": 13,
+    "row_14_wc_cpi_weights_sens": 13
+  },
+  "cross_row_consistency_flag": [
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_02_bootstrap_recon"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_03_locf_tail_excluded"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_04_imf_only_sensitivity"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_05_lag_sensitivity"
+    },
+    {
+      "column_set_equal": false,
+      "n_cols_a": 13,
+      "n_cols_b": 10,
+      "note": "column_sets differ by spec-row methodology; symmetric_difference = ['banrep_rate_surprise', 'fed_funds_weekly', 'us_cpi_surprise']",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_06_parsimonious_controls"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_07_arb_only"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_08_per_currency_copm"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_09_y3_bond_diagnostic DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_09_y3_bond_diagnostic"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_10_population_weighted DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_10_population_weighted"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_11_student_t"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_12_hac12_bandwidth"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_13_first_differenced"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_01_primary",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_02_bootstrap_recon",
+      "panel_b": "row_03_locf_tail_excluded"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_02_bootstrap_recon",
+      "panel_b": "row_04_imf_only_sensitivity"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_02_bootstrap_recon",
+      "panel_b": "row_05_lag_sensitivity"
+    },
+    {
+      "column_set_equal": false,
+      "n_cols_a": 13,
+      "n_cols_b": 10,
+      "note": "column_sets differ by spec-row methodology; symmetric_difference = ['banrep_rate_surprise', 'fed_funds_weekly', 'us_cpi_surprise']",
+      "panel_a": "row_02_bootstrap_recon",
+      "panel_b": "row_06_parsimonious_controls"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_02_bootstrap_recon",
+      "panel_b": "row_07_arb_only"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_02_bootstrap_recon",
+      "panel_b": "row_08_per_currency_copm"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_09_y3_bond_diagnostic DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_02_bootstrap_recon",
+      "panel_b": "row_09_y3_bond_diagnostic"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_10_population_weighted DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_02_bootstrap_recon",
+      "panel_b": "row_10_population_weighted"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_02_bootstrap_recon",
+      "panel_b": "row_11_student_t"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_02_bootstrap_recon",
+      "panel_b": "row_12_hac12_bandwidth"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_02_bootstrap_recon",
+      "panel_b": "row_13_first_differenced"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_02_bootstrap_recon",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_03_locf_tail_excluded",
+      "panel_b": "row_04_imf_only_sensitivity"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_03_locf_tail_excluded",
+      "panel_b": "row_05_lag_sensitivity"
+    },
+    {
+      "column_set_equal": false,
+      "n_cols_a": 13,
+      "n_cols_b": 10,
+      "note": "column_sets differ by spec-row methodology; symmetric_difference = ['banrep_rate_surprise', 'fed_funds_weekly', 'us_cpi_surprise']",
+      "panel_a": "row_03_locf_tail_excluded",
+      "panel_b": "row_06_parsimonious_controls"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_03_locf_tail_excluded",
+      "panel_b": "row_07_arb_only"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_03_locf_tail_excluded",
+      "panel_b": "row_08_per_currency_copm"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_09_y3_bond_diagnostic DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_03_locf_tail_excluded",
+      "panel_b": "row_09_y3_bond_diagnostic"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_10_population_weighted DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_03_locf_tail_excluded",
+      "panel_b": "row_10_population_weighted"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_03_locf_tail_excluded",
+      "panel_b": "row_11_student_t"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_03_locf_tail_excluded",
+      "panel_b": "row_12_hac12_bandwidth"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_03_locf_tail_excluded",
+      "panel_b": "row_13_first_differenced"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_03_locf_tail_excluded",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_04_imf_only_sensitivity",
+      "panel_b": "row_05_lag_sensitivity"
+    },
+    {
+      "column_set_equal": false,
+      "n_cols_a": 13,
+      "n_cols_b": 10,
+      "note": "column_sets differ by spec-row methodology; symmetric_difference = ['banrep_rate_surprise', 'fed_funds_weekly', 'us_cpi_surprise']",
+      "panel_a": "row_04_imf_only_sensitivity",
+      "panel_b": "row_06_parsimonious_controls"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_04_imf_only_sensitivity",
+      "panel_b": "row_07_arb_only"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_04_imf_only_sensitivity",
+      "panel_b": "row_08_per_currency_copm"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_09_y3_bond_diagnostic DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_04_imf_only_sensitivity",
+      "panel_b": "row_09_y3_bond_diagnostic"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_10_population_weighted DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_04_imf_only_sensitivity",
+      "panel_b": "row_10_population_weighted"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_04_imf_only_sensitivity",
+      "panel_b": "row_11_student_t"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_04_imf_only_sensitivity",
+      "panel_b": "row_12_hac12_bandwidth"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_04_imf_only_sensitivity",
+      "panel_b": "row_13_first_differenced"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_04_imf_only_sensitivity",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    },
+    {
+      "column_set_equal": false,
+      "n_cols_a": 13,
+      "n_cols_b": 10,
+      "note": "column_sets differ by spec-row methodology; symmetric_difference = ['banrep_rate_surprise', 'fed_funds_weekly', 'us_cpi_surprise']",
+      "panel_a": "row_05_lag_sensitivity",
+      "panel_b": "row_06_parsimonious_controls"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_05_lag_sensitivity",
+      "panel_b": "row_07_arb_only"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_05_lag_sensitivity",
+      "panel_b": "row_08_per_currency_copm"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_09_y3_bond_diagnostic DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_05_lag_sensitivity",
+      "panel_b": "row_09_y3_bond_diagnostic"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_10_population_weighted DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_05_lag_sensitivity",
+      "panel_b": "row_10_population_weighted"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_05_lag_sensitivity",
+      "panel_b": "row_11_student_t"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_05_lag_sensitivity",
+      "panel_b": "row_12_hac12_bandwidth"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_05_lag_sensitivity",
+      "panel_b": "row_13_first_differenced"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_05_lag_sensitivity",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    },
+    {
+      "column_set_equal": false,
+      "n_cols_a": 10,
+      "n_cols_b": 13,
+      "note": "column_sets differ by spec-row methodology; symmetric_difference = ['banrep_rate_surprise', 'fed_funds_weekly', 'us_cpi_surprise']",
+      "panel_a": "row_06_parsimonious_controls",
+      "panel_b": "row_07_arb_only"
+    },
+    {
+      "column_set_equal": false,
+      "n_cols_a": 10,
+      "n_cols_b": 13,
+      "note": "column_sets differ by spec-row methodology; symmetric_difference = ['banrep_rate_surprise', 'fed_funds_weekly', 'us_cpi_surprise']",
+      "panel_a": "row_06_parsimonious_controls",
+      "panel_b": "row_08_per_currency_copm"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 10,
+      "n_cols_b": 14,
+      "note": "row_09_y3_bond_diagnostic DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_06_parsimonious_controls",
+      "panel_b": "row_09_y3_bond_diagnostic"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 10,
+      "n_cols_b": 14,
+      "note": "row_10_population_weighted DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_06_parsimonious_controls",
+      "panel_b": "row_10_population_weighted"
+    },
+    {
+      "column_set_equal": false,
+      "n_cols_a": 10,
+      "n_cols_b": 13,
+      "note": "column_sets differ by spec-row methodology; symmetric_difference = ['banrep_rate_surprise', 'fed_funds_weekly', 'us_cpi_surprise']",
+      "panel_a": "row_06_parsimonious_controls",
+      "panel_b": "row_11_student_t"
+    },
+    {
+      "column_set_equal": false,
+      "n_cols_a": 10,
+      "n_cols_b": 13,
+      "note": "column_sets differ by spec-row methodology; symmetric_difference = ['banrep_rate_surprise', 'fed_funds_weekly', 'us_cpi_surprise']",
+      "panel_a": "row_06_parsimonious_controls",
+      "panel_b": "row_12_hac12_bandwidth"
+    },
+    {
+      "column_set_equal": false,
+      "n_cols_a": 10,
+      "n_cols_b": 13,
+      "note": "column_sets differ by spec-row methodology; symmetric_difference = ['banrep_rate_surprise', 'fed_funds_weekly', 'us_cpi_surprise']",
+      "panel_a": "row_06_parsimonious_controls",
+      "panel_b": "row_13_first_differenced"
+    },
+    {
+      "column_set_equal": false,
+      "n_cols_a": 10,
+      "n_cols_b": 13,
+      "note": "column_sets differ by spec-row methodology; symmetric_difference = ['banrep_rate_surprise', 'fed_funds_weekly', 'us_cpi_surprise']",
+      "panel_a": "row_06_parsimonious_controls",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_07_arb_only",
+      "panel_b": "row_08_per_currency_copm"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_09_y3_bond_diagnostic DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_07_arb_only",
+      "panel_b": "row_09_y3_bond_diagnostic"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_10_population_weighted DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_07_arb_only",
+      "panel_b": "row_10_population_weighted"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_07_arb_only",
+      "panel_b": "row_11_student_t"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_07_arb_only",
+      "panel_b": "row_12_hac12_bandwidth"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_07_arb_only",
+      "panel_b": "row_13_first_differenced"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_07_arb_only",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_09_y3_bond_diagnostic DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_08_per_currency_copm",
+      "panel_b": "row_09_y3_bond_diagnostic"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 13,
+      "n_cols_b": 14,
+      "note": "row_10_population_weighted DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_08_per_currency_copm",
+      "panel_b": "row_10_population_weighted"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_08_per_currency_copm",
+      "panel_b": "row_11_student_t"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_08_per_currency_copm",
+      "panel_b": "row_12_hac12_bandwidth"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_08_per_currency_copm",
+      "panel_b": "row_13_first_differenced"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_08_per_currency_copm",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 14,
+      "n_cols_b": 14,
+      "note": "BOTH_DEFERRED_EMPTY (spec \u00a710 \u03b5.2 + \u03b5.3); column-set comparison N/A",
+      "panel_a": "row_09_y3_bond_diagnostic",
+      "panel_b": "row_10_population_weighted"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 14,
+      "n_cols_b": 13,
+      "note": "row_09_y3_bond_diagnostic DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_09_y3_bond_diagnostic",
+      "panel_b": "row_11_student_t"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 14,
+      "n_cols_b": 13,
+      "note": "row_09_y3_bond_diagnostic DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_09_y3_bond_diagnostic",
+      "panel_b": "row_12_hac12_bandwidth"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 14,
+      "n_cols_b": 13,
+      "note": "row_09_y3_bond_diagnostic DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_09_y3_bond_diagnostic",
+      "panel_b": "row_13_first_differenced"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 14,
+      "n_cols_b": 13,
+      "note": "row_09_y3_bond_diagnostic DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_09_y3_bond_diagnostic",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 14,
+      "n_cols_b": 13,
+      "note": "row_10_population_weighted DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_10_population_weighted",
+      "panel_b": "row_11_student_t"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 14,
+      "n_cols_b": 13,
+      "note": "row_10_population_weighted DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_10_population_weighted",
+      "panel_b": "row_12_hac12_bandwidth"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 14,
+      "n_cols_b": 13,
+      "note": "row_10_population_weighted DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_10_population_weighted",
+      "panel_b": "row_13_first_differenced"
+    },
+    {
+      "column_set_equal": null,
+      "n_cols_a": 14,
+      "n_cols_b": 13,
+      "note": "row_10_population_weighted DEFERRED_EMPTY; column-set comparison N/A",
+      "panel_a": "row_10_population_weighted",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_11_student_t",
+      "panel_b": "row_12_hac12_bandwidth"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_11_student_t",
+      "panel_b": "row_13_first_differenced"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_11_student_t",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_12_hac12_bandwidth",
+      "panel_b": "row_13_first_differenced"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_12_hac12_bandwidth",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    },
+    {
+      "column_set_equal": true,
+      "n_cols_a": 13,
+      "n_cols_b": 13,
+      "note": "column_sets identical (structural uniformity)",
+      "panel_a": "row_13_first_differenced",
+      "panel_b": "row_14_wc_cpi_weights_sens"
+    }
+  ],
+  "date_max_per_panel": {
+    "row_01_primary": "2026-03-13",
+    "row_02_bootstrap_recon": "2026-03-13",
+    "row_03_locf_tail_excluded": "2025-12-26",
+    "row_04_imf_only_sensitivity": "2025-10-24",
+    "row_05_lag_sensitivity": "2026-03-13",
+    "row_06_parsimonious_controls": "2026-03-13",
+    "row_07_arb_only": "2025-07-04",
+    "row_08_per_currency_copm": "2025-09-26",
+    "row_09_y3_bond_diagnostic": null,
+    "row_10_population_weighted": null,
+    "row_11_student_t": "2026-03-13",
+    "row_12_hac12_bandwidth": "2026-03-13",
+    "row_13_first_differenced": "2026-03-13",
+    "row_14_wc_cpi_weights_sens": "2026-03-13"
+  },
+  "date_min_per_panel": {
+    "row_01_primary": "2024-09-27",
+    "row_02_bootstrap_recon": "2024-09-27",
+    "row_03_locf_tail_excluded": "2024-09-27",
+    "row_04_imf_only_sensitivity": "2024-09-27",
+    "row_05_lag_sensitivity": "2024-09-27",
+    "row_06_parsimonious_controls": "2024-09-27",
+    "row_07_arb_only": "2024-08-30",
+    "row_08_per_currency_copm": "2024-10-04",
+    "row_09_y3_bond_diagnostic": null,
+    "row_10_population_weighted": null,
+    "row_11_student_t": "2024-09-27",
+    "row_12_hac12_bandwidth": "2024-09-27",
+    "row_13_first_differenced": "2024-09-27",
+    "row_14_wc_cpi_weights_sens": "2024-09-27"
+  },
+  "n_rows_per_panel": {
+    "row_01_primary": 76,
+    "row_02_bootstrap_recon": 76,
+    "row_03_locf_tail_excluded": 65,
+    "row_04_imf_only_sensitivity": 56,
+    "row_05_lag_sensitivity": 76,
+    "row_06_parsimonious_controls": 76,
+    "row_07_arb_only": 45,
+    "row_08_per_currency_copm": 47,
+    "row_09_y3_bond_diagnostic": 0,
+    "row_10_population_weighted": 0,
+    "row_11_student_t": 76,
+    "row_12_hac12_bandwidth": 76,
+    "row_13_first_differenced": 76,
+    "row_14_wc_cpi_weights_sens": 76
+  },
+  "non_null_fraction_per_column": {
+    "row_01_primary": {
+      "banrep_rate_surprise": 1.0,
+      "brl_diff": 1.0,
+      "copm_diff": 1.0,
+      "eur_diff": 1.0,
+      "fed_funds_weekly": 1.0,
+      "intervention_dummy": 1.0,
+      "kes_diff": 0.0,
+      "oil_return": 1.0,
+      "us_cpi_surprise": 1.0,
+      "vix_avg": 1.0,
+      "week_start": 1.0,
+      "x_d": 1.0,
+      "y3_value": 1.0
+    },
+    "row_02_bootstrap_recon": {
+      "banrep_rate_surprise": 1.0,
+      "brl_diff": 1.0,
+      "copm_diff": 1.0,
+      "eur_diff": 1.0,
+      "fed_funds_weekly": 1.0,
+      "intervention_dummy": 1.0,
+      "kes_diff": 0.0,
+      "oil_return": 1.0,
+      "us_cpi_surprise": 1.0,
+      "vix_avg": 1.0,
+      "week_start": 1.0,
+      "x_d": 1.0,
+      "y3_value": 1.0
+    },
+    "row_03_locf_tail_excluded": {
+      "banrep_rate_surprise": 1.0,
+      "brl_diff": 1.0,
+      "copm_diff": 1.0,
+      "eur_diff": 1.0,
+      "fed_funds_weekly": 1.0,
+      "intervention_dummy": 1.0,
+      "kes_diff": 0.0,
+      "oil_return": 1.0,
+      "us_cpi_surprise": 1.0,
+      "vix_avg": 1.0,
+      "week_start": 1.0,
+      "x_d": 1.0,
+      "y3_value": 1.0
+    },
+    "row_04_imf_only_sensitivity": {
+      "banrep_rate_surprise": 1.0,
+      "brl_diff": 1.0,
+      "copm_diff": 1.0,
+      "eur_diff": 1.0,
+      "fed_funds_weekly": 1.0,
+      "intervention_dummy": 1.0,
+      "kes_diff": 0.0,
+      "oil_return": 1.0,
+      "us_cpi_surprise": 1.0,
+      "vix_avg": 1.0,
+      "week_start": 1.0,
+      "x_d": 1.0,
+      "y3_value": 1.0
+    },
+    "row_05_lag_sensitivity": {
+      "banrep_rate_surprise": 1.0,
+      "brl_diff": 1.0,
+      "copm_diff": 1.0,
+      "eur_diff": 1.0,
+      "fed_funds_weekly": 1.0,
+      "intervention_dummy": 1.0,
+      "kes_diff": 0.0,
+      "oil_return": 1.0,
+      "us_cpi_surprise": 1.0,
+      "vix_avg": 1.0,
+      "week_start": 1.0,
+      "x_d": 1.0,
+      "y3_value": 1.0
+    },
+    "row_06_parsimonious_controls": {
+      "brl_diff": 1.0,
+      "copm_diff": 1.0,
+      "eur_diff": 1.0,
+      "intervention_dummy": 1.0,
+      "kes_diff": 0.0,
+      "oil_return": 1.0,
+      "vix_avg": 1.0,
+      "week_start": 1.0,
+      "x_d": 1.0,
+      "y3_value": 1.0
+    },
+    "row_07_arb_only": {
+      "banrep_rate_surprise": 1.0,
+      "brl_diff": 1.0,
+      "copm_diff": 1.0,
+      "eur_diff": 1.0,
+      "fed_funds_weekly": 1.0,
+      "intervention_dummy": 1.0,
+      "kes_diff": 0.0,
+      "oil_return": 1.0,
+      "us_cpi_surprise": 1.0,
+      "vix_avg": 1.0,
+      "week_start": 1.0,
+      "x_d": 1.0,
+      "y3_value": 1.0
+    },
+    "row_08_per_currency_copm": {
+      "banrep_rate_surprise": 1.0,
+      "brl_diff": 1.0,
+      "copm_diff": 1.0,
+      "eur_diff": 1.0,
+      "fed_funds_weekly": 1.0,
+      "intervention_dummy": 1.0,
+      "kes_diff": 0.0,
+      "oil_return": 1.0,
+      "us_cpi_surprise": 1.0,
+      "vix_avg": 1.0,
+      "week_start": 1.0,
+      "x_d": 1.0,
+      "y3_value": 1.0
+    },
+    "row_09_y3_bond_diagnostic": {
+      "banrep_rate_surprise": 0.0,
+      "brl_diff": 0.0,
+      "copm_diff": 0.0,
+      "deferred_reason": 0.0,
+      "eur_diff": 0.0,
+      "fed_funds_weekly": 0.0,
+      "intervention_dummy": 0.0,
+      "kes_diff": 0.0,
+      "oil_return": 0.0,
+      "us_cpi_surprise": 0.0,
+      "vix_avg": 0.0,
+      "week_start": 0.0,
+      "x_d": 0.0,
+      "y3_value": 0.0
+    },
+    "row_10_population_weighted": {
+      "banrep_rate_surprise": 0.0,
+      "brl_diff": 0.0,
+      "copm_diff": 0.0,
+      "deferred_reason": 0.0,
+      "eur_diff": 0.0,
+      "fed_funds_weekly": 0.0,
+      "intervention_dummy": 0.0,
+      "kes_diff": 0.0,
+      "oil_return": 0.0,
+      "us_cpi_surprise": 0.0,
+      "vix_avg": 0.0,
+      "week_start": 0.0,
+      "x_d": 0.0,
+      "y3_value": 0.0
+    },
+    "row_11_student_t": {
+      "banrep_rate_surprise": 1.0,
+      "brl_diff": 1.0,
+      "copm_diff": 1.0,
+      "eur_diff": 1.0,
+      "fed_funds_weekly": 1.0,
+      "intervention_dummy": 1.0,
+      "kes_diff": 0.0,
+      "oil_return": 1.0,
+      "us_cpi_surprise": 1.0,
+      "vix_avg": 1.0,
+      "week_start": 1.0,
+      "x_d": 1.0,
+      "y3_value": 1.0
+    },
+    "row_12_hac12_bandwidth": {
+      "banrep_rate_surprise": 1.0,
+      "brl_diff": 1.0,
+      "copm_diff": 1.0,
+      "eur_diff": 1.0,
+      "fed_funds_weekly": 1.0,
+      "intervention_dummy": 1.0,
+      "kes_diff": 0.0,
+      "oil_return": 1.0,
+      "us_cpi_surprise": 1.0,
+      "vix_avg": 1.0,
+      "week_start": 1.0,
+      "x_d": 1.0,
+      "y3_value": 1.0
+    },
+    "row_13_first_differenced": {
+      "banrep_rate_surprise": 1.0,
+      "brl_diff": 1.0,
+      "copm_diff": 1.0,
+      "eur_diff": 1.0,
+      "fed_funds_weekly": 1.0,
+      "intervention_dummy": 1.0,
+      "kes_diff": 0.0,
+      "oil_return": 1.0,
+      "us_cpi_surprise": 1.0,
+      "vix_avg": 1.0,
+      "week_start": 1.0,
+      "x_d": 1.0,
+      "y3_value": 1.0
+    },
+    "row_14_wc_cpi_weights_sens": {
+      "banrep_rate_surprise": 1.0,
+      "brl_diff": 1.0,
+      "copm_diff": 1.0,
+      "eur_diff": 1.0,
+      "fed_funds_weekly": 1.0,
+      "intervention_dummy": 1.0,
+      "kes_diff": 0.0,
+      "oil_return": 1.0,
+      "us_cpi_surprise": 1.0,
+      "vix_avg": 1.0,
+      "week_start": 1.0,
+      "x_d": 1.0,
+      "y3_value": 1.0
+    }
+  }
+}
