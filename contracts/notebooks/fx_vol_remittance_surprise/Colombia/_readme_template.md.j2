@@ -1,0 +1,98 @@
+{#
+Required Jinja context for the Task-24 renderer (render_readme.py):
+  primary.{beta_fmt, se_fmt, ci_lo_fmt, ci_hi_fmt, n, hac_lag, date_min, date_max}
+  garch.{beta_fmt, se_fmt, ci_lo_fmt, ci_hi_fmt, n}
+  event_study.{beta_fmt, se_fmt, ci_lo_fmt, ci_hi_fmt, n}
+  sens.s{1..13}.{verdict, ci_pos}   — 13 pre-registered sensitivity rows (Rev-1 spec §6)
+  gate_verdict.{gate_verdict, t1_verdict, t2_verdict, t3a_verdict, t3b_verdict,
+                t4_verdict, t5_verdict, t6_verdict, t7_verdict,
+                event_concordance, bootstrap_hac_agreement,
+                sensitivity_ci_excludes_zero_count, material_movers_count, pkl_degraded}
+  point_params.{reconciliation, spec_hash, panel_fingerprint}
+  nb1_pdf_relpath, nb2_pdf_relpath, nb3_pdf_relpath
+  spec_relpath   — relative path to Rev-1 spec from README.md location
+#}
+# FX-vol-on-Remittance-surprise — Colombia 2008-2026 (Phase-A.0)
+
+**Gate Verdict: {{ gate_verdict.gate_verdict }}** — β̂_Rem = {{ primary.beta_fmt }} (HAC({{ primary.hac_lag }}) SE = {{ primary.se_fmt }}, 90% CI = [{{ primary.ci_lo_fmt }}, {{ primary.ci_hi_fmt }}], n = {{ primary.n }}).
+
+Primary Column-6 OLS of weekly RV^(1/3) on the AR(1)-filtered remittance surprise plus six controls, estimated on the Colombian weekly panel from {{ primary.date_min }} to {{ primary.date_max }}. The two-sided T3b gate rule `|β̂_Rem / SE(β̂_Rem)| > 1.645` at α = 0.10 is the pre-committed primary; the above headline is a single deterministic summary of that test outcome. Three-way verdict enum: PASS / FAIL / INCONCLUSIVE (the latter separates underpowered null from mechanism absence via the 0.20-SD MDES rule, spec §4.5).
+
+## Anti-fishing framing
+
+This exercise tests a distinct macro mechanism (external-inflow channel) from the prior CPI-surprise Rev-4 exercise (inflation channel). It is **NOT a rescue** of the CPI-FAIL verdict (2026-04-19). Provenance: `REMITTANCE_VOLATILITY_SWAP.md` mtime 2026-04-02 predates the CPI-FAIL by 17 days, establishing the remittance channel as a pre-existing candidate mechanism (Rev-1 spec §10; design doc §"Why this is not a rescue of CPI-FAIL").
+
+## Primary Results
+
+| Specification | β̂ | SE | 90% CI lower | 90% CI upper | n |
+|---|---|---|---|---|---|
+| Primary (Column 6, HAC({{ primary.hac_lag }})) | {{ primary.beta_fmt }} | {{ primary.se_fmt }} | {{ primary.ci_lo_fmt }} | {{ primary.ci_hi_fmt }} | {{ primary.n }} |
+| GARCH-X φ̂_Rem (mean-equation) | {{ garch.beta_fmt }} | {{ garch.se_fmt }} | {{ garch.ci_lo_fmt }} | {{ garch.ci_hi_fmt }} | {{ garch.n }} |
+| Event-study (Petro-Trump Jan-2025 window) | {{ event_study.beta_fmt }} | {{ event_study.se_fmt }} | {{ event_study.ci_lo_fmt }} | {{ event_study.ci_hi_fmt }} | {{ event_study.n }} |
+
+All confidence intervals are two-sided 90% normal-approximation whiskers (±1.645·SE) on the primary point estimate. Coverage is HAC(Bartlett, Andrews-1991) robust on the OLS blocks and QMLE on the GARCH-X block; event-study uses panel-pre-event SD (52-week window preceding event date) as denominator.
+
+## Reconciliation
+
+| Check | Verdict |
+|---|---|
+| GARCH-X vs OLS primary directional concordance (sign + CI-contains-zero + significance category) | {{ point_params.reconciliation }} |
+| Event-study vs OLS primary joint-concordance (sign + non-zero at α=0.10) | {{ gate_verdict.event_concordance }} |
+| Bootstrap vs HAC 90% CI agreement (NB2 §3.5) | {{ gate_verdict.bootstrap_hac_agreement }} |
+
+The reconciliation column summarises whether the three top-level estimators (OLS primary, GARCH-X, event-study) agree on sign and order of magnitude for the remittance-surprise loading. Directional concordance is the Rev-4-inherited `reconcile()` semantics; numerical-intersection is NOT used under heteroskedasticity (Rev-1 spec §4.3, resolution matrix row 9).
+
+## Forest Plot
+
+![NB3 §8 sensitivity forest plot — primary anchor + 13 pre-registered sensitivity rows](figures/forest_plot.png)
+
+Fourteen specifications are plotted with 90% HAC CI whiskers: the primary Column-6 anchor at the top (divider below), then the 13 pre-registered sensitivity rows S1–S13 (A1-R monthly, A4 release-day-excluded, release-day-only, pre/post-2015, Dec-Jan-excluded, SARIMA-seasonal, current-vintage, quarterly corridor reconstruction, alternate log(RV) LHS, GARCH-X variance-equation, Petro-Trump event-dummied, event-study co-primary).
+
+**Pre-registered anti-fishing protocol** (Rev-1 spec §6): under a PASS gate, material-mover §9 spotlight in NB3 is emitted; under FAIL or INCONCLUSIVE, §9 cells emit placeholders referencing the sensitivity-row pre-registration and assert that no post-hoc spotlight is performed. This prevents specification-search bias (Simonsohn, Simmons & Nelson 2020; Ankel-Peters, Brodeur & Connolly 2024) — the FAIL verdict is an informative scientific output, not a trigger for further rescue attempts.
+
+## Sensitivity Summary
+
+| Row | Name | Verdict | 90% CI position vs zero |
+|---|---|---|---|
+| S1 | A1-R monthly-cadence re-aggregation | {{ sens.s1.verdict }} | {{ sens.s1.ci_pos }} |
+| S2 | A4 release-day-excluded weekly | {{ sens.s2.verdict }} | {{ sens.s2.ci_pos }} |
+| S6 | Dec-Jan excluded (Colombian seasonality) | {{ sens.s6.verdict }} | {{ sens.s6.ci_pos }} |
+| S7 | SARIMA(1,0,0)(1,0,0)_12 seasonal-AR residual | {{ sens.s7.verdict }} | {{ sens.s7.ci_pos }} |
+| S10 | Alternate LHS log(RV) (Bollerslev-Zhou 2002) | {{ sens.s10.verdict }} | {{ sens.s10.ci_pos }} |
+| S11 | GARCH-X variance-equation placement | {{ sens.s11.verdict }} | {{ sens.s11.ci_pos }} |
+| S13 | Event-study co-primary (Petro-Trump) | {{ sens.s13.verdict }} | {{ sens.s13.ci_pos }} |
+
+Summary count: **{{ gate_verdict.sensitivity_ci_excludes_zero_count }} / 13** pre-registered sensitivity rows have a 90% CI that excludes zero. Aggregation rule (Rev-1 spec §6): this count is diagnostic, not gating — the primary T3b two-sided gate is the sole gate.
+
+## Per-Test Gate Table
+
+| Test | Verdict | Role |
+|---|---|---|
+| T1 Mincer-Zarnowitz exogeneity of primary RHS | {{ gate_verdict.t1_verdict }} | Auxiliary gate |
+| T2 Levene release-week variance-homogeneity | {{ gate_verdict.t2_verdict }} | Auxiliary gate |
+| T3a two-sided β̂_Rem ≠ 0 (|t| > 1.645) | {{ gate_verdict.t3a_verdict }} | Diagnostic |
+| T3b two-sided T3b gate + MDES rule (PRIMARY) | {{ gate_verdict.t3b_verdict }} | Primary gate |
+| T4 Ljung-Box Q(lags 4,8,12) | {{ gate_verdict.t4_verdict }} | Diagnostic |
+| T5 Jarque-Bera residual normality | {{ gate_verdict.t5_verdict }} | Diagnostic |
+| T6 Breusch-Pagan + White heteroscedasticity | {{ gate_verdict.t6_verdict }} | Diagnostic |
+| T7 Specification-curve robustness | {{ gate_verdict.t7_verdict }} | Auxiliary gate |
+
+Material movers from NB3 §9 (emitted only under T3b PASS): {{ gate_verdict.material_movers_count }}. PKL degraded (NB2→NB3 version drift): {{ gate_verdict.pkl_degraded }}.
+
+Aggregation rule (Rev-1 spec §4.4 + §4.5): T3b FAIL ⇒ final FAIL regardless of other tests. T3b INCONCLUSIVE (|β̂/SE|<1.645 ∧ |β̂/SD_Y|<0.20) ⇒ final INCONCLUSIVE — distinct from FAIL. T3b PASS plus all of (T1, T2, T7) PASS ⇒ final PASS. Diagnostic tests (T3a, T4, T5, T6) are recorded for auditability and do not gate the final verdict.
+
+## Reports
+
+- [NB1 Data EDA PDF]({{ nb1_pdf_relpath }}) — *pending `just notebooks` generation*
+- [NB2 Estimation PDF]({{ nb2_pdf_relpath }}) — *pending `just notebooks` generation*
+- [NB3 Tests and Sensitivity PDF]({{ nb3_pdf_relpath }}) — *pending `just notebooks` generation*
+
+PDFs are produced by the `just notebooks` recipe; until that recipe has run in a given worktree, the three links above resolve to missing files (the `pdf/` directory ships empty in a clean clone). The JSON handoff artifacts (`nb1_panel_fingerprint.json`, `nb2_params_point.json`, `nb2_params_full.pkl`, `gate_verdict_remittance.json`) live under `estimates/` and are always present.
+
+---
+
+*Spec hash: `{{ point_params.spec_hash }}`*
+
+*Panel fingerprint (Rev-4-extended): `{{ point_params.panel_fingerprint }}`*
+
+*Rev-1 spec: [`2026-04-20-remittance-surprise-trm-rv-spec-rev1.md`]({{ spec_relpath }})*

@@ -1,0 +1,57 @@
+# HAND-AUTHORED TEST FIXTURE — NOT REAL BanRep DATA.
+#
+# This CSV is the golden fixture for the Task-10 AR(1) surprise constructor unit
+# tests (`contracts/scripts/tests/remittance/test_surprise_constructor.py`). Each
+# row is a synthetic monthly remittance observation designed to exercise a
+# well-defined code path in `surprise_constructor.construct_ar1_surprise` without
+# depending on the (as-yet-uncommitted) Task-11 real BanRep fixture.
+#
+# Reference-period span: 2006-01-31 through 2008-01-31 (25 month-ends).
+# Release-date pattern : reference_period + 45 days (approximates BanRep's
+#                        canonical ~45-day publication lag; see Rev-1 spec §4.6).
+# Value series         : 1000 + 50*sin(2*pi*i/12) + 10*i in USD-millions units,
+#                        rounded to 2 decimals. Sinusoidal + linear trend gives
+#                        the AR(1) fit non-trivial structure (phi ≈ 0.83) while
+#                        remaining hand-auditable.
+#
+# Vintage structure (for `vintage_policy` test):
+#   * 2006-04-30 reference_period appears TWICE —
+#       - first-print  : release_date 2006-06-14, value 1080.00
+#       - revised      : release_date 2006-12-11, value 1085.00  (+5.00)
+#   * 2006-10-31 reference_period appears TWICE —
+#       - first-print  : release_date 2006-12-15, value 1040.00
+#       - revised      : release_date 2007-06-13, value 1045.00  (+5.00)
+# `vintage_policy = "real-time"` uses the earlier release_date (first-print).
+# `vintage_policy = "current-vintage"` uses the later release_date (revised).
+#
+# Real BanRep-derived data for the Rev-4 sample window (2008-2026) arrives in
+# Task 11 at `contracts/data/banrep_remittance_aggregate_monthly.csv` with
+# per-row provenance in `banrep_remittance_aggregate_monthly.SOURCE.md`.
+reference_period,release_date,value
+2006-01-31,2006-03-17,1000.00
+2006-02-28,2006-04-14,1035.00
+2006-03-31,2006-05-15,1063.30
+2006-04-30,2006-06-14,1080.00
+2006-04-30,2006-12-11,1085.00
+2006-05-31,2006-07-15,1083.30
+2006-06-30,2006-08-14,1075.00
+2006-07-31,2006-09-14,1060.00
+2006-08-31,2006-10-15,1045.00
+2006-09-30,2006-11-14,1036.70
+2006-10-31,2006-12-15,1040.00
+2006-10-31,2007-06-13,1045.00
+2006-11-30,2007-01-14,1056.70
+2006-12-31,2007-02-14,1085.00
+2007-01-31,2007-03-17,1120.00
+2007-02-28,2007-04-14,1155.00
+2007-03-31,2007-05-15,1183.30
+2007-04-30,2007-06-14,1200.00
+2007-05-31,2007-07-15,1203.30
+2007-06-30,2007-08-14,1195.00
+2007-07-31,2007-09-14,1180.00
+2007-08-31,2007-10-15,1165.00
+2007-09-30,2007-11-14,1156.70
+2007-10-31,2007-12-15,1160.00
+2007-11-30,2008-01-14,1176.70
+2007-12-31,2008-02-14,1205.00
+2008-01-31,2008-03-16,1240.00

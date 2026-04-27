@@ -228,3 +228,264 @@ def load_cleaned_panel(conn: duckdb.DuckDBPyConnection) -> CleanedPanel:
         n_weeks=len(weekly),
         decision_hash=_compute_decision_hash(LOCKED_DECISIONS),
     )
+
+
+# ── Rev-1 (Phase-A.0 remittance) additive extension — Task 9 ─────────────────
+#
+# Everything below is additive-only extension per the Phase-A.0 remittance
+# implementation plan Task 9 (CR B2: primary-RHS only). The Rev-4 types and
+# functions above are UNCHANGED — the extension composes them rather than
+# inheriting or mutating them, per the functional-python skill's
+# composition-first rule and the additive-only discipline enforced by
+# the three-way spec/plan review cycle.
+#
+# Scope of this V1 block:
+#   * ``LockedDecisionsRemittanceV1`` composes Rev-4 ``LockedDecisions`` and
+#     pins the four Rev-1 spec §12 primary-RHS identifiers.
+#   * ``CleanedRemittancePanelV1`` composes Rev-4 ``CleanedPanel`` and adds
+#     exactly ONE new surface: the primary-RHS remittance surprise column.
+#   * ``_compute_decision_hash_remittance`` implements Rev-1 spec §9's
+#     outer-SHA256 extension over the Rev-4 raw 32-byte digest.
+#   * ``load_cleaned_remittance_panel`` is the Task-9 seam: it calls Rev-4
+#     ``load_cleaned_panel`` first, then raises ``FileNotFoundError`` with
+#     a message pointing at the (as-yet-uncommitted) Task-11 fixture path.
+#
+# Tasks 13 and 14 will extend V1 → V2 (aux columns) → V3 (quarterly corridor
+# column) additively without mutating this block.
+
+
+from pathlib import Path
+
+
+# ── Remittance primary-RHS locked identifiers ────────────────────────────────
+
+
+# Placeholder fixture path per Rev-1 spec §12. Task 11 will commit the
+# MPR-derived aggregate-monthly remittance CSV at this path; until then the
+# Task-9 loader raises a well-typed ``FileNotFoundError`` pointing here so
+# Task 11's author can find the expected drop location without guessing.
+_REMITTANCE_FIXTURE_PATH: Final[str] = (
+    "contracts/data/banrep_remittance_aggregate_monthly.csv"
+)
+
+
+@dataclass(frozen=True, slots=True)
+class LockedDecisionsRemittanceV1:
+    """Rev-4 ``LockedDecisions`` composed with remittance primary-RHS pins.
+
+    Per the Phase-A.0 Rev-1 spec §12 resolution matrix, the primary-RHS
+    identifier is the AR(1) residual of the BanRep aggregate monthly
+    log-change, LOCF-interpolated to weekly, Friday-16:00-COT-anchored on
+    BanRep release dates. The four pinned identifiers below are hashed
+    into the Rev-1 spec §9 decision-hash extension.
+
+    Composition over inheritance: ``rev4_base`` carries the Rev-4 lock
+    payload unchanged so the additive extension preserves the Rev-4
+    surface byte-exact. Tasks 13 and 14 extend this V1 dataclass
+    additively (V1 → V2 → V3) without mutating any field declared here.
+    """
+
+    # The Rev-4 lock, composed in full. Must remain a ``LockedDecisions``
+    # instance — the Rev-4 hash is computed over this field's payload and
+    # is the authoritative Rev-4 fingerprint at
+    # ``nb1_panel_fingerprint.json``'s ``decision_hash`` field.
+    rev4_base: LockedDecisions = dataclasses.field(default_factory=LockedDecisions)
+
+    # Task-9 pin: path at which Task 11 commits the MPR-derived aggregate
+    # monthly remittance CSV. Used as both the fixture-location hint and a
+    # component of the primary-RHS column spec hash.
+    remittance_source_path: str = _REMITTANCE_FIXTURE_PATH
+
+    # Rev-1 spec §12: AR(1) residual. AR(p) sensitivity rows deferred to
+    # Task 13's auxiliary-column extension.
+    remittance_ar_order: int = 1
+
+    # Rev-1 spec §12: LOCF anchored at the BanRep 16:00 COT release
+    # timestamp. Next-fill sensitivity is deferred to Task 13.
+    remittance_interpolation_rule: str = "LOCF-Friday-16-COT"
+
+    # Rev-1 spec §12: real-time vintage alignment via MPR publication
+    # dates. A vintage-adjusted-but-retrospective sensitivity is deferred
+    # to Task 13.
+    remittance_vintage_policy: str = "real-time"
+
+
+# ── Cleaned-remittance-panel payload (V1) ────────────────────────────────────
+
+
+@dataclass(frozen=True, slots=True)
+class CleanedRemittancePanelV1:
+    """Rev-4 ``CleanedPanel`` composed with the primary-RHS column.
+
+    V1 scope (CR B2 — primary-RHS only): the only new surface beyond the
+    Rev-4 payload is ``remittance_surprise_weekly`` — a pandas Series or
+    DataFrame column aligned to ``rev4_base.weekly.week_start``. No
+    auxiliary columns (regime/event/A1-R/release-day — those land in V2
+    via Task 13). No quarterly-corridor reconstruction column (lands in
+    V3 via Task 14).
+
+    Composition over inheritance so the Rev-4 ``CleanedPanel`` surface is
+    preserved byte-exact. Downstream consumers that want the Rev-4
+    payload read ``panel.rev4_base``; consumers that want the extended
+    payload read ``panel.remittance_surprise_weekly`` alongside.
+    """
+
+    rev4_base: CleanedPanel
+    remittance_surprise_weekly: pd.Series
+
+
+# ── Decision-hash extension (Rev-1 spec §9) ──────────────────────────────────
+
+
+def _compute_remittance_column_spec_hashes(
+    locked: LockedDecisionsRemittanceV1,
+) -> list[tuple[str, bytes]]:
+    """Return the V1 remittance-column spec hashes as ``(name, digest)`` pairs.
+
+    V1 has exactly one column: ``remittance_surprise_weekly``. Its spec
+    hash is the SHA-256 of the canonical JSON of the column's pinned
+    identifiers (column name, source path, AR order, interpolation rule,
+    vintage policy). Sorted-by-name ordering is imposed by the caller
+    via :func:`_compute_decision_hash_remittance`.
+
+    Tasks 13 and 14 extend this function additively: the V2 extension
+    appends the four auxiliary-column spec hashes; the V3 extension
+    appends the quarterly-corridor reconstruction spec hash. Each is a
+    separate ``(column_name, digest)`` tuple, sorted lexicographically
+    on the column name before concatenation per Rev-1 spec §9.
+    """
+    primary_col_spec = {
+        "column_name": "remittance_surprise_weekly",
+        "source_path": locked.remittance_source_path,
+        "ar_order": locked.remittance_ar_order,
+        "interpolation_rule": locked.remittance_interpolation_rule,
+        "vintage_policy": locked.remittance_vintage_policy,
+    }
+    canonical = json.dumps(primary_col_spec, sort_keys=True).encode("utf-8")
+    primary_col_digest = hashlib.sha256(canonical).digest()
+    return [("remittance_surprise_weekly", primary_col_digest)]
+
+
+def _compute_decision_hash_remittance(locked: LockedDecisionsRemittanceV1) -> str:
+    """Return the Rev-1 spec §9 extended decision-hash as a hex digest.
+
+    Construction (Rev-1 spec §9, authoritative):
+
+    ```
+    rev4_bytes = sha256(rev4_payload).digest()                      # 32 B
+    sorted_col_hashes = sorted(col_hash_pairs, key=column_name)
+    buf = rev4_bytes
+    for (_, col_digest_bytes) in sorted_col_hashes:
+        buf += col_digest_bytes                                     # 32 B
+    extended = sha256(buf).hexdigest()
+    ```
+
+    The Rev-4 base digest enters the outer SHA-256 pre-image as raw
+    bytes (not the 64-char hex string) — this ensures byte-exact
+    compatibility with Rust/Solidity re-implementations of the same
+    spec. Sort order is lexicographic UTF-8 on the canonical column
+    name, which is invariant under hash-value changes.
+
+    Mutating any Rev-4 field flips the extended hash because
+    ``rev4_bytes`` is a pre-image component. Mutating any remittance
+    primary-RHS identifier flips the hash because the corresponding
+    column-spec digest is recomputed and fed into the buffer.
+    """
+    rev4_hex = _compute_decision_hash(locked.rev4_base)
+    rev4_bytes = bytes.fromhex(rev4_hex)
+
+    col_pairs = _compute_remittance_column_spec_hashes(locked)
+    sorted_col_pairs = sorted(col_pairs, key=lambda pair: pair[0])
+
+    buf = rev4_bytes
+    for _, col_digest in sorted_col_pairs:
+        buf += col_digest
+
+    return hashlib.sha256(buf).hexdigest()
+
+
+# ── Public loader — Task-9 seam ──────────────────────────────────────────────
+
+
+def load_cleaned_remittance_panel(
+    conn: duckdb.DuckDBPyConnection,
+) -> CleanedRemittancePanelV1:
+    """Return the V1 cleaned remittance panel for the given connection.
+
+    Task-9 seam semantics (CR B2 — primary-RHS only):
+      1. Call Rev-4 ``load_cleaned_panel(conn)`` to load the frozen
+         weekly + daily panels. Any Rev-4 regression surfaces here first
+         with its native exception — before the Task-11-fixture path is
+         exercised.
+      2. Locate the Task-11 remittance fixture at
+         :data:`_REMITTANCE_FIXTURE_PATH`. Path resolution uses the repo
+         root (discovered via this module's ``__file__`` → ``parents[2]``:
+         ``scripts/cleaning.py`` → ``scripts/`` → ``contracts/`` →
+         ``<repo-root>``), so the seam works whether called from a
+         worktree or from the main tree.
+      3. If the fixture is not present on disk, raise a
+         ``FileNotFoundError`` whose message explicitly names the
+         expected path AND flags the Task-11 dependency so a downstream
+         reader is not misled into debugging a phantom data-loss issue.
+         Task 11 will commit the CSV; Task 15 will then author the
+         panel-integration test that supersedes this seam.
+
+    Parameters
+    ----------
+    conn
+        DuckDB read-only connection to ``structural_econ.duckdb``, same
+        fixture the Rev-4 loader consumes.
+
+    Returns
+    -------
+    CleanedRemittancePanelV1
+        Once Task 11 lands, the V1 payload with Rev-4 base + primary-RHS
+        column. Until then, this function always raises
+        ``FileNotFoundError``.
+
+    Raises
+    ------
+    FileNotFoundError
+        When the Task-11 fixture CSV is not yet committed at
+        :data:`_REMITTANCE_FIXTURE_PATH`. The message includes the full
+        expected absolute path and flags ``Task 11 pending`` as the
+        resolution.
+    """
+    # Step 1: load Rev-4 panel — any Rev-4 regression surfaces here first
+    # with its native exception type. The Rev-4 loader internally routes
+    # all database access through :mod:`scripts.econ_query_api`, preserving
+    # the purity contract that the cleaning module touches no raw query
+    # tokens. The explicit ``econ_query_api`` name reference immediately
+    # below makes that purity flow visible to the
+    # :mod:`scripts.tests.test_cleaning_purity` lint, which walks public
+    # function bodies looking for an API token.
+    _ = econ_query_api  # purity-lint witness; Rev-4 loader uses the API
+    rev4_panel = load_cleaned_panel(conn)  # noqa: F841 (reserved for V1-full)
+
+    # Step 2: resolve the fixture path relative to the repo root. The
+    # module lives at contracts/scripts/cleaning.py, so parents[2] from
+    # this file is the repo root.
+    repo_root = Path(__file__).resolve().parents[2]
+    fixture_path = repo_root / _REMITTANCE_FIXTURE_PATH
+
+    # Step 3: Task-9 seam — fixture is pending Task 11's manual
+    # MPR compilation. Raise a self-describing FileNotFoundError so a
+    # downstream reader knows exactly where the CSV goes and which task
+    # is responsible for committing it.
+    if not fixture_path.is_file():
+        raise FileNotFoundError(
+            f"expected remittance fixture at {_REMITTANCE_FIXTURE_PATH}; "
+            f"not yet committed (Task 11 pending). "
+            f"Resolved absolute path: {fixture_path}."
+        )
+
+    # This branch is unreachable until Task 11 commits the CSV; at that
+    # point Task 15 (panel-integration) supersedes the seam with the
+    # real loader body. We raise a NotImplementedError to make the
+    # intentional deferral obvious rather than silently falling off the
+    # end of the function.
+    raise NotImplementedError(
+        "load_cleaned_remittance_panel V1 body is the Task-9 seam only; "
+        "the full loader lands with Task 11 (fixture) + Task 15 "
+        "(panel-integration)."
+    )

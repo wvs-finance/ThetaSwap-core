@@ -1,0 +1,23 @@
+{
+  "beta_x_d": -2.7987050503705652e-08,
+  "decision_hash": "6a5f9d1b05c18defd8b30c4b3cef6af896d6e45a2a26c1c60aa342da0a5a443c",
+  "estimator": "ols_hac4",
+  "gate_passes": false,
+  "gate_verdict": "FAIL",
+  "hac_bandwidth": 4,
+  "k_regressors_design": 8,
+  "k_regressors_for_power": 13,
+  "lower_90_one_sided": -4.6206859818053154e-08,
+  "mdes_formulation_hash": "4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa",
+  "mdes_sd": 0.4,
+  "n": 76,
+  "p_one_sided": 0.9753610889502945,
+  "p_two_sided": 0.04927782209941108,
+  "power": 0.8689122648203158,
+  "se_hac4": 1.4234226026833985e-08,
+  "source_methodology": "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable",
+  "t_stat": -1.9661799981920483,
+  "window_end": "2026-03-13",
+  "window_start": "2024-09-27",
+  "z90_one_sided": 1.28
+}

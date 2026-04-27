@@ -1,0 +1,253 @@
+{
+  "row_01_primary": {
+    "controls": [
+      "vix_avg",
+      "oil_return",
+      "us_cpi_surprise",
+      "banrep_rate_surprise",
+      "fed_funds_weekly",
+      "intervention_dummy"
+    ],
+    "dt_max": "2026-03-13",
+    "dt_min": "2024-09-27",
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 76,
+    "n_x_d_nonzero": 76,
+    "notes": "Gate-bearing primary: user-vol \u00d7 y3_v2 76-wk \u00d7 full 6-ctrl \u00d7 OLS+HAC(4) \u00d7 t",
+    "x_d_kind": "carbon_basket_user_volume_usd",
+    "y3_methodology": "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"
+  },
+  "row_02_bootstrap_recon": {
+    "controls": [
+      "vix_avg",
+      "oil_return",
+      "us_cpi_surprise",
+      "banrep_rate_surprise",
+      "fed_funds_weekly",
+      "intervention_dummy"
+    ],
+    "dt_max": "2026-03-13",
+    "dt_min": "2024-09-27",
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 76,
+    "n_x_d_nonzero": 76,
+    "notes": "Same panel as Row 1; estimator differs (Politis-Romano stationary block bootstrap, mean block 4)",
+    "x_d_kind": "carbon_basket_user_volume_usd",
+    "y3_methodology": "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"
+  },
+  "row_03_locf_tail_excluded": {
+    "controls": [
+      "vix_avg",
+      "oil_return",
+      "us_cpi_surprise",
+      "banrep_rate_surprise",
+      "fed_funds_weekly",
+      "intervention_dummy"
+    ],
+    "dt_max": "2025-12-26",
+    "dt_min": "2024-09-27",
+    "locf_tail_cutoff": "2025-12-31",
+    "n_null_y3": 0,
+    "n_obs": 65,
+    "n_x_d_nonzero": 65,
+    "notes": "Pre-registered FAIL: LOCF-tail-excluded (week_start <= 2025-12-31); 65 < N_MIN=75",
+    "x_d_kind": "carbon_basket_user_volume_usd",
+    "y3_methodology": "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"
+  },
+  "row_04_imf_only_sensitivity": {
+    "controls": [
+      "vix_avg",
+      "oil_return",
+      "us_cpi_surprise",
+      "banrep_rate_surprise",
+      "fed_funds_weekly",
+      "intervention_dummy"
+    ],
+    "dt_max": "2025-10-24",
+    "dt_min": "2024-09-27",
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 56,
+    "n_x_d_nonzero": 56,
+    "notes": "Pre-registered FAIL on both N_MIN (56<75) and POWER_MIN (0.7301<0.80)",
+    "x_d_kind": "carbon_basket_user_volume_usd",
+    "y3_methodology": "y3_v2_imf_only_sensitivity_3country_ke_unavailable"
+  },
+  "row_05_lag_sensitivity": {
+    "controls": [
+      "vix_avg",
+      "oil_return",
+      "us_cpi_surprise",
+      "banrep_rate_surprise",
+      "fed_funds_weekly",
+      "intervention_dummy"
+    ],
+    "dt_max": "2026-03-13",
+    "dt_min": "2024-09-27",
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 76,
+    "n_x_d_nonzero": 76,
+    "notes": "Same row-set as Row 1; X_d{t-1} substitution applied at fit time (Analytics Reporter shifts column)",
+    "x_d_kind": "carbon_basket_user_volume_usd",
+    "y3_methodology": "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"
+  },
+  "row_06_parsimonious_controls": {
+    "controls": [
+      "vix_avg",
+      "oil_return",
+      "intervention_dummy"
+    ],
+    "dt_max": "2026-03-13",
+    "dt_min": "2024-09-27",
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 76,
+    "n_x_d_nonzero": 76,
+    "notes": "Parsimonious 3-ctrl: VIX, oil_return, intervention_dummy. Collinearity diagnostic (T7).",
+    "x_d_kind": "carbon_basket_user_volume_usd",
+    "y3_methodology": "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"
+  },
+  "row_07_arb_only": {
+    "controls": [
+      "vix_avg",
+      "oil_return",
+      "us_cpi_surprise",
+      "banrep_rate_surprise",
+      "fed_funds_weekly",
+      "intervention_dummy"
+    ],
+    "dt_max": "2025-07-04",
+    "dt_min": "2024-08-30",
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 45,
+    "n_x_d_nonzero": 45,
+    "notes": "Diagnostic only: arb-volume X_d (BancorArbitrage trader filter); under-N at 45",
+    "x_d_kind": "carbon_basket_arb_volume_usd",
+    "y3_methodology": "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"
+  },
+  "row_08_per_currency_copm": {
+    "controls": [
+      "vix_avg",
+      "oil_return",
+      "us_cpi_surprise",
+      "banrep_rate_surprise",
+      "fed_funds_weekly",
+      "intervention_dummy"
+    ],
+    "dt_max": "2025-09-26",
+    "dt_min": "2024-10-04",
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 47,
+    "n_x_d_nonzero": 47,
+    "notes": "Per-currency COPM diagnostic; under-N at 47; per-country narrative cross-check",
+    "x_d_kind": "carbon_per_currency_copm_volume_usd",
+    "y3_methodology": "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"
+  },
+  "row_09_y3_bond_diagnostic": {
+    "controls": [],
+    "deferred": true,
+    "dt_max": null,
+    "dt_min": null,
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 0,
+    "n_x_d_nonzero": 0,
+    "notes": "DEFERRED per spec \u00a710 \u03b5.2. Y\u2083-bond rich-side construct (10Y sovereign-bond yield-change replacing R_equity) requires a bond-data fetcher infrastructure that is not yet in DuckDB. Empty schema-typed parquet emitted to honor the 14-row deliverable contract; Analytics Reporter must skip with 'deferred' tag.",
+    "x_d_kind": null,
+    "y3_methodology": null
+  },
+  "row_10_population_weighted": {
+    "controls": [],
+    "deferred": true,
+    "dt_max": null,
+    "dt_min": null,
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 0,
+    "n_x_d_nonzero": 0,
+    "notes": "DEFERRED per spec \u00a710 \u03b5.3. Population-weighted Y\u2083 aggregation (replacing 1/4 equal-weight with CO/BR/EU shares) requires extending the y3_compute aggregator with a weight-vector argument. Out-of-scope per spec \u00a714. Empty schema-typed parquet emitted; Analytics Reporter must skip with 'deferred' tag.",
+    "x_d_kind": null,
+    "y3_methodology": null
+  },
+  "row_11_student_t": {
+    "controls": [
+      "vix_avg",
+      "oil_return",
+      "us_cpi_surprise",
+      "banrep_rate_surprise",
+      "fed_funds_weekly",
+      "intervention_dummy"
+    ],
+    "dt_max": "2026-03-13",
+    "dt_min": "2024-09-27",
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 76,
+    "n_x_d_nonzero": 76,
+    "notes": "Same panel as Row 1; Student-t innovation refit applied at fit time",
+    "x_d_kind": "carbon_basket_user_volume_usd",
+    "y3_methodology": "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"
+  },
+  "row_12_hac12_bandwidth": {
+    "controls": [
+      "vix_avg",
+      "oil_return",
+      "us_cpi_surprise",
+      "banrep_rate_surprise",
+      "fed_funds_weekly",
+      "intervention_dummy"
+    ],
+    "dt_max": "2026-03-13",
+    "dt_min": "2024-09-27",
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 76,
+    "n_x_d_nonzero": 76,
+    "notes": "Same panel as Row 1; HAC truncation 12 instead of 4",
+    "x_d_kind": "carbon_basket_user_volume_usd",
+    "y3_methodology": "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"
+  },
+  "row_13_first_differenced": {
+    "controls": [
+      "vix_avg",
+      "oil_return",
+      "us_cpi_surprise",
+      "banrep_rate_surprise",
+      "fed_funds_weekly",
+      "intervention_dummy"
+    ],
+    "dt_max": "2026-03-13",
+    "dt_min": "2024-09-27",
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 76,
+    "n_x_d_nonzero": 76,
+    "notes": "Same row-set as Row 1; \u0394log(X_d) and \u0394Y3 transforms applied at fit time (drops first row -> n=75)",
+    "x_d_kind": "carbon_basket_user_volume_usd",
+    "y3_methodology": "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"
+  },
+  "row_14_wc_cpi_weights_sens": {
+    "controls": [
+      "vix_avg",
+      "oil_return",
+      "us_cpi_surprise",
+      "banrep_rate_surprise",
+      "fed_funds_weekly",
+      "intervention_dummy"
+    ],
+    "dt_max": "2026-03-13",
+    "dt_min": "2024-09-27",
+    "locf_tail_cutoff": null,
+    "n_null_y3": 0,
+    "n_obs": 76,
+    "n_x_d_nonzero": 76,
+    "notes": "Same panel as Row 1; alternative WC-CPI weights {50/30/20, 70/20/10} are re-aggregations of per-country diff components \u2014 not in this Phase-5a scope; this artifact carries the per-country diffs (copm_diff, brl_diff, eur_diff) so the Analytics Reporter can re-aggregate at fit time without a new fetcher",
+    "x_d_kind": "carbon_basket_user_volume_usd",
+    "y3_methodology": "y3_v2_co_dane_br_bcb_eu_eurostat_ke_skip_3country_ke_unavailable"
+  }
+}

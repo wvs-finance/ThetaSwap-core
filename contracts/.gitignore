@@ -30,3 +30,8 @@ __pycache__/
 contracts/notebooks/fx_vol_cpi_surprise/**/estimates/*.pkl
 contracts/notebooks/fx_vol_cpi_surprise/**/pdf/
 contracts/notebooks/fx_vol_cpi_surprise/**/_nbconvert_template/**/*.aux
+
+# fx_vol_remittance_surprise notebook artifacts (scoped, not global)
+contracts/notebooks/fx_vol_remittance_surprise/**/estimates/*.pkl
+contracts/notebooks/fx_vol_remittance_surprise/**/pdf/
+contracts/notebooks/fx_vol_remittance_surprise/**/_nbconvert_template/**/*.aux
