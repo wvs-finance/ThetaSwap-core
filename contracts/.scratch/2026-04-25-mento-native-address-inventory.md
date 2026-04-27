@@ -254,3 +254,178 @@ Per sub-plan §C sub-task 1 reviewer assignment: Reality Checker single-pass adv
 - Downstream consumer: sub-task 2 (DuckDB table-to-address audit) and sub-task 3 (canonical address-registry spec doc, byte-exact-immutable post-converge under §B-3)
 
 **End of inventory memo.**
+
+---
+
+## §β-rescope (Rev-5.3.5, 2026-04-26)
+
+**Anchors.** The HALT-VERIFY GATE raised in §"CRITICAL HALT-VERIFY GATE: Colombian-peso address ambiguity" above was resolved by the user under disposition β. This section appends the rescoped Mento-native address inventory; the prior content of this memo is preserved unchanged in the audit trail per `feedback_pathological_halt_anti_fishing_checkpoint` anti-fishing-on-memory-edits append-only-or-section-replace-with-corrigendum discipline.
+
+**Disposition source documents (cite in this order for re-verification):**
+- Major plan Rev-5.3.5 CORRECTIONS block: `contracts/docs/superpowers/plans/2026-04-20-remittance-surprise-implementation.md` (file end)
+- HALT-resolution disposition memo: `contracts/.scratch/2026-04-26-mr-beta-1-1-halt-resolution-beta.md` (disposition commit `00790855b`)
+- 3-way review trio (post-disposition): `contracts/.scratch/2026-04-26-rev535-beta-disposition-review-{code-reviewer,reality-checker,technical-writer}.md`
+- RC re-review on fix-up bundle: trio convergence at commit `b4a6a50e6`
+- Prior-dispatch DE deliverable (this file's pre-§β-rescope content): commit `3611b0716`
+
+**Per-key disposition.** `0x8A567e2aE79CA692Bd748aB832081C45de4041eA` is canonical Mento-native COPm (Mento V2 `StableTokenCOP`); `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` is the Minteo-fintech "COP Minteo" token, **out of Mento-native scope** per `project_abrigo_mento_native_only`. Resolution α and γ from the prior HALT-VERIFY block are SUPERSEDED.
+
+---
+
+### §β-rescope.1 — In-scope Mento-native address inventory (post-disposition)
+
+**Count = 6 tokens. Total supply field deliberately omitted from every entry per RC R-3 immutability hygiene (sub-plan §B-3 + sub-task 1 acceptance).** Auditors needing live circulating supply must query DuckDB / Celoscan / Dune at consumption time; this memo is the byte-exact-immutable address-identity registry, not a supply dashboard.
+
+#### 1. COPm — Mento Colombian Peso (NEW canonical Mento-native, post-β disposition)
+
+| Field | Value |
+|---|---|
+| Canonical post-rebrand ticker | COPm (lowercase final m) |
+| Pre-rebrand legacy ticker | unchanged (no pre-rebrand legacy variant; deployed natively as Mento V2 `StableTokenCOP`) |
+| Contract address (Celo, chainId 42220) | `0x8A567e2aE79CA692Bd748aB832081C45de4041eA` |
+| First-observed-on-chain | 2024-10-31 16:35:48 UTC (Dune query 7378788, β-feasibility probe; activity through 2026-04-26 21:12:59 UTC at disposition time; 285,390 transfers; 5,015 distinct senders; 16,918 distinct receivers; 78 weeks of activity) |
+| Mento Reserve relationship | Reserve-collateralized; canonical Mento V2 `StableTokenCOP` (Mento-protocol governance events `evt_exchangeupdated`, `evt_validatorsupdated`, `evt_brokerupdated`, `evt_initialized` decoded under Dune project `celocolombianpeso`) |
+| Basket-membership status | NEW in-scope under Rev-5.3.5; β-track Rev-3 ingestion plumbing pointed at this address is authored under Task 11.P.spec-β + Task 11.P.exec-β (NOT under MR-β.1; sub-plan §G-3 reaffirms editorial-only scope) |
+| Provenance citations (primary on-chain) | Dune query 7378788 (β-feasibility probe, 0.012 credits free-tier) — recorded in disposition memo §3.2; RC re-review queries 7379527 (joint-coverage feasibility) + 7379530 (governance-event verification); Dune project `celocolombianpeso` decoded as `StableTokenV2` |
+| Provenance citations (secondary docs) | Mento V3 deployments docs (working URL post-RC-3 verification): `https://docs.mento.org/mento-v3/build/deployments/addresses.md` — `StableTokenCOP` canonical address. The legacy URL `https://docs.mento.org/mento/protocol/deployments` 404s and is superseded |
+| Provenance citations (token registry) | Celo Token List (chainId 42220) WebFetch retrieved 2026-04-26: `name = "Mento Colombian Peso"`, `symbol = "COPm"`, `decimals = 18`; URL `https://raw.githubusercontent.com/celo-org/celo-token-list/main/celo.tokenlist.json` |
+| RC-3 cross-strengthening | All six Mento StableTokens share implementation `0x434563B0604BE100F04B7Ae485BcafE3c9D8850E` (RC re-review independent finding) |
+
+#### 2. USDm — Mento Dollar
+
+| Field | Value |
+|---|---|
+| Canonical post-rebrand ticker | USDm |
+| Pre-rebrand legacy ticker | cUSD |
+| Contract address (Celo, chainId 42220) | `0x765DE816845861e75A25fCA122bb6898B8B1282a` |
+| First-observed-on-chain | 2020-04-22 20:21:03 UTC (block `2961`); ~835.6M transfers cumulative as of 2026-04-26 (DE re-dispatch Dune query 7379578 against `mento_celo.stabletoken_evt_transfer`) |
+| Mento Reserve relationship | Reserve-collateralized; one of the two original Mento V1 basket stables (cUSD + cEUR) |
+| Basket-membership status | Active; consumed under `onchain_xd_weekly` proxy_kind `carbon_per_currency_usdm_volume_usd` (82 weeks pre-aggregated). β-track Rev-3 will continue to consume USDm at the same address (no β-disposition impact) |
+| Provenance citations (primary on-chain) | DE re-dispatch Dune query 7379578 (`free` tier, 0.906 credits) — first-transfer + cumulative-volume probe |
+| Provenance citations (secondary docs) | Mento V3 deployments docs at `https://docs.mento.org/mento-v3/build/deployments/addresses.md`; Task 11.N.2b.1 gate-decision memo §1 (prior Celoscan verification, status OK) |
+| Provenance citations (token registry) | Celo Token List 2026-04-26: `name = "Mento Dollar"`, `symbol = "USDm"`, `decimals = 18` |
+
+#### 3. EURm — Mento Euro
+
+| Field | Value |
+|---|---|
+| Canonical post-rebrand ticker | EURm |
+| Pre-rebrand legacy ticker | cEUR |
+| Contract address (Celo, chainId 42220) | `0xD8763CBa276a3738E6DE85b4b3bF5FDed6D6cA73` |
+| First-observed-on-chain | 2021-03-25 15:38:05 UTC (block `5,822,108`); ~19.3M transfers cumulative as of 2026-04-26 (DE re-dispatch Dune query 7379585 against `mento_celo.stabletokeneur_evt_transfer`) |
+| Mento Reserve relationship | Reserve-collateralized; second of the two original Mento V1 basket stables (deployed alongside cUSD; first transfer ~11 months after cUSD genesis) |
+| Basket-membership status | Active; consumed under `onchain_xd_weekly` proxy_kind `carbon_per_currency_eurm_volume_usd` (82 weeks pre-aggregated) |
+| Provenance citations (primary on-chain) | DE re-dispatch Dune query 7379585 (`free` tier, 0.075 credits) — UNION-ALL probe over per-token decoded tables |
+| Provenance citations (secondary docs) | Mento V3 deployments docs; Task 11.N.2b.1 gate-decision memo §1 |
+| Provenance citations (token registry) | Celo Token List 2026-04-26: `name = "Mento Euro"`, `symbol = "EURm"`, `decimals = 18` |
+
+#### 4. BRLm — Mento Brazilian Real
+
+| Field | Value |
+|---|---|
+| Canonical post-rebrand ticker | BRLm |
+| Pre-rebrand legacy ticker | cREAL |
+| Contract address (Celo, chainId 42220) | `0xe8537a3d056DA446677B9E9d6c5dB704EaAb4787` |
+| First-observed-on-chain | 2021-12-15 21:45:22 UTC (block `10,405,343`); ~6.4M transfers cumulative as of 2026-04-26 (DE re-dispatch Dune query 7379585 against `mento_celo.stabletokenbrl_evt_transfer`) |
+| Mento Reserve relationship | Reserve-collateralized; first second-generation Mento basket stable (post-cUSD/cEUR; deployed ~8 months after cEUR) |
+| Basket-membership status | Active; consumed under `onchain_xd_weekly` proxy_kind `carbon_per_currency_brlm_volume_usd` (82 weeks pre-aggregated) |
+| Provenance citations (primary on-chain) | DE re-dispatch Dune query 7379585 — UNION-ALL probe |
+| Provenance citations (secondary docs) | Mento V3 deployments docs; Task 11.N.2b.1 gate-decision memo §1 (Celoscan label "Mento Brazilian Real, EIP-1967 proxy") |
+| Provenance citations (token registry) | Celo Token List 2026-04-26: `name = "Mento Brazilian Real"`, `symbol = "BRLm"`, `decimals = 18` |
+
+#### 5. KESm — Mento Kenyan Shilling
+
+| Field | Value |
+|---|---|
+| Canonical post-rebrand ticker | KESm |
+| Pre-rebrand legacy ticker | cKES |
+| Contract address (Celo, chainId 42220) | `0x456a3D042C0DbD3db53D5489e98dFb038553B0d0` |
+| First-observed-on-chain | 2024-05-21 14:10:00 UTC (block `25,725,915`); ~3.2M transfers cumulative as of 2026-04-26 (DE re-dispatch Dune query 7379585 against `ckes_mento_celo.stabletokenv2_evt_transfer`) |
+| Mento Reserve relationship | Reserve-collateralized; Africa-tier Mento basket stable (StableTokenV2 implementation) |
+| Basket-membership status | Active; consumed under `onchain_xd_weekly` proxy_kind `carbon_per_currency_kesm_volume_usd` (82 weeks pre-aggregated) |
+| Provenance citations (primary on-chain) | DE re-dispatch Dune query 7379585 — UNION-ALL probe |
+| Provenance citations (secondary docs) | Mento V3 deployments docs |
+| Provenance citations (token registry) | Celo Token List 2026-04-26: `name = "Mento Kenyan Shilling"`, `symbol = "KESm"`, `decimals = 18` |
+
+#### 6. XOFm — Mento West African CFA franc
+
+| Field | Value |
+|---|---|
+| Canonical post-rebrand ticker | XOFm |
+| Pre-rebrand legacy ticker | unchanged (deployed under tail-`m` from genesis; `eXOF` was an external-marketplace alias never used in `project_mento_canonical_naming_2026`) |
+| Contract address (Celo, chainId 42220) | `0x73F93dcc49cB8A239e2032663e9475dd5ef29A08` |
+| First-observed-on-chain | 2023-10-16 15:12:02 UTC (block `21,960,106`); ~2.4M transfers cumulative as of 2026-04-26 (DE re-dispatch Dune query 7379590 against `erc20_celo.evt_transfer` filtered to the proxy address; XOFm uses a `StableTokenXOFProxy` decoded structure that does not expose its own `evt_transfer` table) |
+| Mento Reserve relationship | Reserve-collateralized; Africa-tier Mento basket stable (proxy → StableTokenV2 implementation) |
+| Basket-membership status | Active; consumed under `onchain_xd_weekly` proxy_kind `carbon_per_currency_xofm_volume_usd` (82 weeks pre-aggregated) |
+| Provenance citations (primary on-chain) | DE re-dispatch Dune query 7379590 (`free` tier, 1.866 credits) — `erc20_celo.evt_transfer` filter on proxy address |
+| Provenance citations (secondary docs) | Mento V3 deployments docs |
+| Provenance citations (token registry) | Celo Token List 2026-04-26: `name = "Mento West African CFA franc"`, `symbol = "XOFm"`, `decimals = 18` |
+
+---
+
+### §β-rescope.2 — Out-of-scope third-party token (audit-trail preservation)
+
+**Count = 1 token.** Recorded for the registry's exclusion list under sub-task 3 + audit-trail preservation; `onchain_copm_transfers` (110,253 events) and the `carbon_per_currency_copm_volume_usd` proxy_kind in `onchain_xd_weekly` remain in DuckDB unchanged (sub-task 2 will tag these tables `DEFERRED-via-scope-mismatch` per disposition memo §4.4).
+
+#### 7. COPM-Minteo — out-of-scope (Minteo-fintech, third-party)
+
+| Field | Value |
+|---|---|
+| Ticker (Celo Token List) | COPM (uppercase final M) — distinct from Mento-native COPm |
+| Celo Token List name | "COP Minteo" |
+| Contract address (Celo, chainId 42220) | `0xC92E8Fc2947E32F2B574CCA9F2F12097A71d5606` |
+| Scope tag | OUT OF Mento-native scope per `project_abrigo_mento_native_only` (β-corrigendum at file top) and Rev-5.3.5 CORRECTIONS block in major plan |
+| Brief provenance | Celo Token List entry "COP Minteo" / `COPM` / 18 decimals at chainId 42220; Rev-2 X_d data source — 110,253 transfers ingested into `onchain_copm_transfers` (covering 2024-09-17 → 2026-04-25) and 147 mint events totalling ~4.94B units; the Rev-2 `carbon_per_currency_copm_volume_usd` proxy_kind in `onchain_xd_weekly` was computed against this address |
+| Audit-trail status | Rev-2 published estimates (β̂ = −2.7987e−8, n = 76, T3b FAIL, MDES_FORMULATION_HASH `4940360dcd2987…cefa`, decision_hash `6a5f9d1b05c1…443c`) remain byte-exact immutable per Rev-5.3.x anti-fishing invariants. Re-interpretation under β: Rev-2 closes as **scope-mismatch** (measured the wrong address), NOT as "Mento-hedge-thesis-tested-and-failed" |
+| Reserve / basket / issuance fields | NOT APPLICABLE — Mento-protocol fields are not enumerated for an out-of-scope third-party token |
+
+---
+
+### §β-rescope.3 — HALT-VERIFY discipline reaffirmation
+
+**This dispatch HALT-clears under β.** Every Mento-native address recorded in §β-rescope.1 byte-matches `project_mento_canonical_naming_2026` β-corrigendum block at the file top:
+- COPm `0x8A567e2aE79CA692Bd748aB832081C45de4041eA` — matches β-corrigendum (NEW Mento-native canonical address)
+- USDm `0x765DE816845861e75A25fCA122bb6898B8B1282a` — matches pre-existing memory entry (case-folded)
+- EURm `0xD8763CBa276a3738E6DE85b4b3bF5FDed6D6cA73` — matches pre-existing memory entry (case-folded)
+- BRLm `0xe8537a3d056DA446677B9E9d6c5dB704EaAb4787` — matches pre-existing memory entry (case-folded)
+- KESm `0x456a3D042C0DbD3db53D5489e98dFb038553B0d0` — matches pre-existing memory entry
+- XOFm `0x73F93dcc49cB8A239e2032663e9475dd5ef29A08` — matches pre-existing memory entry
+
+**The prior HALT-VERIFY GATE remains in the audit trail unchanged** (the §"CRITICAL HALT-VERIFY GATE: Colombian-peso address ambiguity" block above is preserved verbatim per anti-fishing-on-memory-edits append-only discipline). The disposition resolution sits in this §β-rescope appendix; the prior gate-firing content stays as the empirical evidence that triggered the gate.
+
+**No anti-fishing invariant relaxed.** N_MIN = 75, POWER_MIN = 0.80, MDES_SD = 0.40, MDES_FORMULATION_HASH = `4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa`, decision_hash = `6a5f9d1b05c18defd8b30c4b3cef6af896d6e45a2a26c1c60aa342da0a5a443c`, Rev-2 14-row resolution matrix all unchanged. The disposition is a **scope correction**, not a threshold relaxation.
+
+**RC-8 forward-looking joint-coverage note (deferred to β-spec, not actionable here).** The 78-week activity window for COPm `0x8A567e2a…` (2024-10-31 → 2026-04-26 live) is X_d-only-conditioned. Joint with the live Y₃ panel (panel max date 2026-03-27 per `project_y3_inequality_differential_design`), the chronological joint window is approximately **73 weeks — 2 weeks short of N_MIN=75**. This does NOT block this MR-β.1 sub-task 1 deliverable (Rev-2 closes scope-mismatch on byte-exact-immutable estimates; the disposition is independent of β-track Rev-3's joint-N feasibility). It is recorded here as a forward-looking constraint that β-spec MUST address at authoring time, with two natural resolutions: (a) refresh the Y₃ panel forward by ≥3 weeks before β-spec data freeze, OR (b) document the joint-N shortfall and pre-commit to a relaxation-or-defer disposition under the established `feedback_pathological_halt_anti_fishing_checkpoint` discipline (no silent threshold tuning). Cross-reference: disposition memo §4.2.
+
+---
+
+### §β-rescope.4 — Audit-trail cross-references
+
+- This memo: `contracts/.scratch/2026-04-25-mento-native-address-inventory.md`
+- Disposition memo: `contracts/.scratch/2026-04-26-mr-beta-1-1-halt-resolution-beta.md` (commit `00790855b`)
+- Prior-dispatch DE deliverable (HALT-VERIFY-firing memo, content preserved above): commit `3611b0716`
+- RC sub-task 1 spot-check (single-pass advisory): `contracts/.scratch/2026-04-25-subtask-mr-beta-1-1-rc-spot-check.md` (commit `3286dfe66`) — empirical β-advisory
+- 3-way review trio on disposition (CR + RC + TW): `contracts/.scratch/2026-04-26-rev535-beta-disposition-review-{code-reviewer,reality-checker,technical-writer}.md`
+- RC re-review on fix-up bundle (trio convergence): commit `b4a6a50e6`
+- Major plan Rev-5.3.5 CORRECTIONS block: `contracts/docs/superpowers/plans/2026-04-20-remittance-surprise-implementation.md` (file-end CORRECTIONS section)
+- MR-β.1 sub-plan §I CORRECTIONS Rev-5.3.5: `contracts/docs/superpowers/sub-plans/2026-04-25-ccop-provenance-audit.md`
+- NB-α sub-plan CORRECTIONS Rev-5.3.5: `contracts/docs/superpowers/sub-plans/2026-04-25-rev2-notebook-migration.md`
+- Project memory β-corrigenda: `project_mento_canonical_naming_2026` (β-corrigendum block at file top), `project_abrigo_mento_native_only` (β-corrigendum extension)
+- Live DuckDB at re-dispatch authoring time: `contracts/data/structural_econ.duckdb` at git HEAD `865402c2c`+ (no row mutations under MR-β.1 per sub-plan §G-3)
+
+**Dune queries cited (re-dispatch + disposition):**
+- 7378788 — β-feasibility activity probe on `0x8A567e2a…` (disposition memo §3.2; 285K transfers, 78 weeks, 5K senders, 16K receivers)
+- 7379527 — RC re-review joint-coverage feasibility (RC re-review)
+- 7379530 — RC re-review governance-event verification (RC re-review)
+- 7379578 — DE re-dispatch USDm first-transfer probe via `mento_celo.stabletoken_evt_transfer` (this memo §β-rescope.1 entry 2)
+- 7379585 — DE re-dispatch UNION-ALL probe for EURm/BRLm/KESm via per-token decoded tables (this memo §β-rescope.1 entries 3-5)
+- 7379590 — DE re-dispatch XOFm first-transfer probe via `erc20_celo.evt_transfer` filter (this memo §β-rescope.1 entry 6)
+
+**RC spot-check on this re-dispatch deliverable (single-pass advisory per RC R-4 in MR-β.1 sub-plan §H CORRECTIONS).** The RC's verification scope on this §β-rescope appendix:
+1. All seven enumerated addresses (6 in-scope + 1 out-of-scope) byte-match `project_mento_canonical_naming_2026` β-corrigendum block (case-folded comparison).
+2. The 6 in-scope tokens carry primary on-chain provenance (Dune query IDs cited) + secondary docs provenance (Mento V3 docs working URL) + token-registry provenance (Celo Token List entry verbatim).
+3. The supply field is absent from every entry per RC R-3 immutability hygiene.
+4. The §"CRITICAL HALT-VERIFY GATE" prior content is preserved verbatim above (no silent overwrite).
+5. The COPM-Minteo out-of-scope entry records audit-trail preservation language without enumerating Mento-protocol fields (Reserve / basket / issuance NOT APPLICABLE).
+
+**End of §β-rescope appendix.**
