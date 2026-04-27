@@ -182,7 +182,7 @@ Per RC R-2 in sub-plan §H CORRECTIONS, this table receives explicit narrative t
 - `ccop_unique_senders` UINTEGER — daily distinct sender count for the `ccop` token.
 - `source_query_ids` VARCHAR — Dune query ID provenance (audit-time value: single distinct ID `7366593`).
 
-**Null-pattern probe.** 585 total rows; `copm_*` columns 100% non-null (585/585); `ccop_usdt_inflow_usd` and `ccop_usdt_outflow_usd` 92.5% non-null (541/585); `ccop_unique_senders` 100% non-null. The asymmetric null pattern (`copm_*` vs. `ccop_usdt_*` vs. `ccop_unique_senders`) confirms the table is a join of ≥2 separate sub-queries on `date`, not a single-source filter.
+**Null-pattern probe.** 585 total rows; `copm_*` columns 100% non-null (585/585); all three `ccop_*` columns (`ccop_usdt_inflow_usd`, `ccop_usdt_outflow_usd`, `ccop_unique_senders`) 92.5% non-null (541/585). The asymmetric null pattern between `copm_*` (100%) and `ccop_*` (92.5%) confirms the table is a join of ≥2 separate sub-queries on `date`, not a single-source filter — and the uniform 92.5% non-null rate across all three `ccop_*` columns confirms they share the same source sub-query (Dune query `7366593` USDT-paired historical-cCOP). [Corrected per RC sub-task 2 spot-check 2026-04-26: prior version of this paragraph mis-stated `ccop_unique_senders` as 100% non-null; live re-probe confirms 541/585 = 92.5%, which strengthens rather than weakens the paired-source conclusion. Scope tag DEFERRED-via-scope-mismatch and structural conclusion are unaffected.]
 
 **Sample rows** (most-recent 3, abbreviated):
 
