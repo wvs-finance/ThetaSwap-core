@@ -75,7 +75,9 @@ This re-explains the three Rev-2 anomalies cleanly:
 
 ### 4.2 β-track Rev-3 ingestion plumbing
 
-β-track Rev-3 needs new ingestion plumbing pointed at `0x8A567e2a…`. The existing scripts (`econ_pipeline.py`, `econ_schema.py`, `query_api.py`) reference the old address; they are **NOT mutated** under MR-β.1 (per §B-2 invariant: no schema migrations under this sub-plan). The β-spec sub-plan (Task 11.P.spec-β) and β-execution sub-plan (Task 11.P.exec-β) are the appropriate venues for new ingestion plumbing — those sub-plans have not yet been authored on disk and will be authored post-MR-β.1 convergence.
+β-track Rev-3 needs new ingestion plumbing pointed at `0x8A567e2a…`. The existing scripts (`econ_pipeline.py`, `econ_schema.py`, `query_api.py`) reference the old address; they are **NOT mutated** under MR-β.1 (per §G-3 out-of-scope reaffirmation: "Author or modify any code, schema-migration script, or notebook" — the sub-plan body is editorial-only). The β-spec sub-plan (Task 11.P.spec-β) and β-execution sub-plan (Task 11.P.exec-β) are the appropriate venues for new ingestion plumbing — those sub-plans have not yet been authored on disk and will be authored post-MR-β.1 convergence.
+
+**RC-8 forward-looking note (joint-coverage feasibility, deferred to β-spec).** The 78-week activity window for `0x8A567e2a…` (2024-10-31 → 2026-04-26 live) is X_d-only-conditioned. Joint with the live Y₃ panel (panel max date 2026-03-27 per `project_y3_inequality_differential_design`), the chronological joint window is approximately **73 weeks — 2 weeks short of N_MIN=75**. This does NOT block this disposition (Rev-2 closes scope-mismatch on byte-exact-immutable estimates; the disposition is independent of β-track Rev-3's joint-N feasibility). It is recorded here as a forward-looking constraint that β-spec MUST address at authoring time, with two natural resolutions: (a) refresh the Y₃ panel forward by ≥3 weeks before β-spec data freeze, OR (b) document the joint-N shortfall and pre-commit to a relaxation-or-defer disposition under the established `feedback_pathological_halt_anti_fishing_checkpoint` discipline (no silent threshold tuning). RC-8 verified via independent Dune query 7379527 + DuckDB Y₃ panel max-date probe 2026-04-26.
 
 ### 4.3 α-track NB-α notebook migration
 
@@ -129,13 +131,19 @@ The disposition is a **scope correction**, not a threshold relaxation. Rev-2's g
 
 ## 8. References
 
-- DE deliverable: `contracts/.scratch/2026-04-25-mento-native-address-inventory.md` (commit `3611b0716`)
-- RC spot-check: `contracts/.scratch/2026-04-25-subtask-mr-beta-1-1-rc-spot-check.md` (commit `3286dfe66`)
-- Rev-2 disposition memo: `contracts/.scratch/2026-04-25-task110-rev2-gate-fail-disposition.md`
-- MR-β.1 sub-plan: `contracts/docs/superpowers/sub-plans/2026-04-25-ccop-provenance-audit.md`
-- NB-α sub-plan: `contracts/docs/superpowers/sub-plans/2026-04-25-rev2-notebook-migration.md`
-- Major plan: `contracts/docs/superpowers/plans/2026-04-20-remittance-surprise-implementation.md`
+**Authoritative on-chain identity sources (cite in this order for re-verification):**
+- Mento V3 deployment docs (StableTokenCOP canonical address): https://docs.mento.org/mento-v3/build/deployments/addresses.md (RC-3 verified 2026-04-26 via working URL after WebFetch fallback; the prior memo URL `https://docs.mento.org/mento/protocol/deployments` 404s and is superseded)
+- Celo Token List (chainId 42220, two-distinct-entry confirmation): https://raw.githubusercontent.com/celo-org/celo-token-list/main/celo.tokenlist.json
+- Dune project: `celocolombianpeso` (24 decoded tables; contract decoded as `StableTokenV2` with Mento-protocol-specific governance events `evt_exchangeupdated`, `evt_validatorsupdated`, `evt_brokerupdated`, `evt_initialized`)
 - Dune query 7378788 (β-feasibility probe, ~0.012 credits free-tier)
-- Dune project: `celocolombianpeso` (decoded `StableTokenV2` contract, 24 tables)
-- Mento V3 docs: https://docs.mento.org/mento/protocol/deployments
-- Celo Token List (chainId 42220): https://raw.githubusercontent.com/celo-org/celo-token-list/main/celo.tokenlist.json
+- RC-3 bonus finding (cross-strengthening): all six Mento StableTokens share implementation `0x434563B0604BE100F04B7Ae485BcafE3c9D8850E`
+
+**Rev-5.3.5 disposition audit-trail:**
+- DE deliverable: `contracts/.scratch/2026-04-25-mento-native-address-inventory.md` (commit `3611b0716`)
+- RC spot-check (sub-task 1, 2026-04-25): `contracts/.scratch/2026-04-25-subtask-mr-beta-1-1-rc-spot-check.md` (commit `3286dfe66`)
+- 3-way review trio (post-disposition, 2026-04-26): CR + RC + TW review files at `contracts/.scratch/2026-04-26-rev535-beta-disposition-review-{code-reviewer,reality-checker,technical-writer}.md`
+- Disposition commit: `00790855b`
+- Rev-2 disposition memo (superseded by this scope-mismatch reframe): `contracts/.scratch/2026-04-25-task110-rev2-gate-fail-disposition.md`
+- MR-β.1 sub-plan: `contracts/docs/superpowers/sub-plans/2026-04-25-ccop-provenance-audit.md` (§I CORRECTIONS Rev-5.3.5)
+- NB-α sub-plan: `contracts/docs/superpowers/sub-plans/2026-04-25-rev2-notebook-migration.md` (CORRECTIONS Rev-5.3.5)
+- Major plan: `contracts/docs/superpowers/plans/2026-04-20-remittance-surprise-implementation.md` (Rev-5.3.5 CORRECTIONS at file end)

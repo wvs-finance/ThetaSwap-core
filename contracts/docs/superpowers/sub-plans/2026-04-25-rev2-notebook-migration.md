@@ -474,11 +474,23 @@ The sub-plan is COMPLETE (Task 11.O.NB-α closed) when ALL of the following hold
 
 **Numbers stay byte-exact. Only interpretation-cell framing changes.**
 
+### §B pre-commitment 6 retraction (post-CR-trio-finding §3.1, 2026-04-26)
+
+**§B pre-commitment 6 (line 35) is RETRACTED under Rev-5.3.5.** The pre-commitment's claim that `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` is "Mento-native cCOP basket-volume series" is false: the address is **Minteo-fintech COPM-Minteo** (out of Mento-native scope per the major-plan Rev-5.3.5 CORRECTIONS block + `project_abrigo_mento_native_only` β-corrigendum + `project_mento_canonical_naming_2026` β-corrigendum + the disposition memo's empirical Dune evidence). The Mento-native COPm address is `0x8A567e2aE79CA692Bd748aB832081C45de4041eA` (Mento V2 `StableTokenCOP`).
+
+The pre-commitment's "no block on Rev-2 re-presentation" clause is honored without contradiction: numbers stay byte-exact (Rev-2 published estimates reproduce against the Phase 5a parquets unchanged); the X_d in this notebook re-presentation IS the published Minteo-fintech series (now correctly classified out-of-Mento-native-scope); the framing rescope to scope-mismatch close-out per the rest of this CORRECTIONS block carries the disposition forward without re-estimating, re-binning, or re-thresholding any Rev-2 row.
+
+A reader landing in §B-6 must read this retraction first; the original §B-6 text is preserved unmodified for audit-trail purposes but is overlaid by this retraction. Future revisions of the NB-α sub-plan can either (a) replace §B-6 in place under a Rev-5.3.6+ CORRECTIONS-block discipline, OR (b) leave §B-6 + this retraction stacked indefinitely; either is acceptable per `feedback_pathological_halt_anti_fishing_checkpoint` anti-fishing-on-memory-edits append-only-or-section-replace-with-corrigendum discipline.
+
 ### Affected dispatch units
 
 NB-α's 31 dispatch units carry forward unchanged for byte-exact migration of Rev-2 panels, gate verdicts (β̂ = −2.7987e−8, n = 76, T3b FAIL), T1–T7 spec tests, Phase 5b sensitivity rows, and all artifact paths. Anti-fishing invariants (N_MIN=75, POWER_MIN=0.80, MDES_SD=0.40, MDES_FORMULATION_HASH = `4940360dcd2987…cefa`, decision_hash = `6a5f9d1b05c1…443c`) preserved byte-exact.
 
-What changes: every `interpretation-markdown` cell whose framing currently states or implies "Mento-native hedge thesis tested and failed" must be reframed to **"Minteo-fintech X_d was scope-mismatched; Rev-2 closes scope-mismatch (NOT Mento-hedge-fail)."**
+What changes: every `interpretation-markdown` cell whose Rev-2-source framing falls into the **banned substring set** must be rewritten using the **canonical reframe substring set**, with deterministic grep-verifiable acceptance per TW-2a advisory:
+
+- **Banned substring set** (banned in migrated NB-α interpretation cells): `Mento-native hedge`, `hedge thesis`, `tested-and-failed`, `tested and failed`, `Mento-hedge-fail`, `Mento-hedge-thesis-tested-and-failed`.
+- **Required canonical reframe substring set** (≥1 must appear in each affected interpretation cell): `Minteo-fintech scope-mismatch`, `scope-mismatch close-out`, `Rev-2 closes scope-mismatch`, `Minteo-fintech X_d`.
+- **Reviewer verification (deterministic):** `grep -i -F` over migrated notebooks must show **zero** matches in the banned set across the migrated NB-α corpus, and **≥1** match in the canonical set per affected interpretation cell. The 3-way review on NB-α deliverables runs this grep as a falsifiable acceptance criterion; any banned-set match in the migrated corpus fails review.
 
 ### Rescoped interpretation framing (concrete language)
 

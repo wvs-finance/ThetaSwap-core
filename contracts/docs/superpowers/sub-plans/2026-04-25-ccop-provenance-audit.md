@@ -279,6 +279,10 @@ This sub-plan does NOT:
 
 If a sub-task discovers a need to do any of the above, it HALTS to the user with an explicit pivot note per `feedback_pathological_halt_anti_fishing_checkpoint`.
 
+### §G addendum under §I CORRECTIONS (Rev-5.3.5) — TW-7 reconciliation
+
+The HALT-VERIFY β-resolution required append-only β-corrigenda to both `project_mento_canonical_naming_2026` and `project_abrigo_mento_native_only` (per §B-4 anti-fishing-on-memory-edits discipline). The §G first two bullets ("does NOT modify project_mento_canonical_naming_2026" / "does NOT modify project_abrigo_mento_native_only") are read under §I as **"does NOT silently modify; corrigenda are append-only and explicitly anchored to the Rev-5.3.5 CORRECTIONS block."** The Rev-5.3.2 published estimates remain byte-exact (no re-estimation; consume-only DuckDB invariants per §B-1); only their interpretation framing is rescoped under §I CORRECTIONS, which is consistent with the byte-exact-immutability invariant. The §G out-of-scope discipline is preserved structurally; §I is the authoritative venue where the disposition's append-only memory edits + interpretation reframing are formally documented. A reader scanning §G in isolation must read §I before concluding the corrigenda are out-of-scope — they are not; they are append-only-with-explicit-anchor and fall fully within the discipline §G enforces.
+
 ---
 
 ## H. CORRECTIONS block (post-author 3-way review, 2026-04-26)
