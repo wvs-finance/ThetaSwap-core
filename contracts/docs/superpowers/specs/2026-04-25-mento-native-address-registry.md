@@ -333,3 +333,38 @@ Both inversions originated from third-party / forum-style sources rather than fr
 The Rev-5.3.5 β-disposition is a **scope correction**, not a threshold relaxation. The registry authored here makes the scope correction explicit, durable, and cross-referenceable for every downstream β-track and α-track artifact.
 
 **End of Mento-Native On-Chain Address Registry.**
+
+---
+
+## §8.2 — BancorArbitrageV2 (out-of-Mento-native-scope; partition-rule-staleness audit-trail; Rev-5.3.6 corrigendum)
+
+**Address:** `0x20216f3056bf98e245562940e6c9c65ad9b31271`
+
+**Identity:** **BancorArbitrageV2** — V1 successor arb router; Carbon DeFi adjacent; decoded by Dune as `carbon_defi_multichain.bancorarbitragev2_*` (38 decoded tables including `evt_arbitrageexecuted`, `call_fundandarb`, `call_flashloanandarb`, `evt_initialized`, etc.).
+
+**Scope status under Rev-5.3.7:** OUT of Mento-native scope (Carbon DeFi has no protocol-level integration with Mento per Mento V3 deployment manifest; this entry is recorded for partition-rule-staleness audit-trail per Rev-5.3.6 disposition).
+
+**Provenance trail:**
+- Dune `searchTablesByContractAddress` confirmed 2026-04-27.
+- First event 2025-07-02 01:17:32 UTC (12h31m after BancorArbitrage V1's last event at 2025-07-01 12:45:27 UTC).
+- Lifetime events: 524,104 in the post-2025-07-01 window through 2026-04-03 (Dune query 7382645).
+- Project namespace: `carbon_defi_multichain.bancorarbitragev2_*` (38 decoded tables; cross-chain deployment).
+
+**Why this entry exists in the registry's out-of-scope appendix:**
+- The Rev-5.3.4 partition rule for X_d (per `contracts/data/carbon_celo/README.md` line 27 + `contracts/scripts/econ_pipeline.py` line 53) used the V1 address `0x8c05ea305235a67c7095a32ad4a2ee2688ade636` ONLY. V1 died 2025-07-01.
+- BancorArbitrageV2 took over 2025-07-02. Under the V1-only partition, V2 events get classified as 'user' partition (since `trader != 0x8c05ea30…`). Empirical contamination: 524,104 of 669,872 post-July 'user'-partition events are V2 (78.2%).
+- This entry serves as: (a) audit-trail anchor for the V1→V2 transition; (b) future-research safeguard cited in `project_carbon_user_arb_partition_rule` β-corrigendum; (c) explicit out-of-scope tag for Mento-native β-track Rev-3.
+
+**Cross-references:**
+- §8.1 — COPM-Minteo at `0xc92e8fc2…` (out-of-scope; Rev-5.3.5 disposition).
+- §4 — DuckDB cross-reference: NO existing `onchain_*` table tracks this address (V2 was discovered post-NB-α-dispatch; not previously ingested).
+- Project memory `project_carbon_user_arb_partition_rule.md` (β-corrigendum 2026-04-27).
+- Project memory `project_carbon_defi_attribution_celo.md` (β-corrigendum 2026-04-27).
+- Project memory `project_no_mento_carbon_protocol_integration.md` (NEW 2026-04-27).
+- Rev-5.3.6 disposition memo: `contracts/.scratch/2026-04-27-x-d-partition-rule-staleness-disposition-beta.md`.
+- Rev-5.3.7 Option A disposition memo: `contracts/.scratch/2026-04-27-x-d-strategic-re-evaluation-disposition.md`.
+
+**Future-research procedural note (per sub-task 5 safeguard memo):**
+Any contract decoded by Dune as `*ArbitrageExecuted` event-emitter on Celo MUST be added to the partition whitelist BEFORE X_d ingestion. Triangulation procedure: `searchTablesByContractAddress` → check `contract_name` for `*Arbitrage*` patterns; cross-check `bancorarbitrage*_evt_arbitrageexecuted` table-name proliferation under `carbon_defi_multichain`. Rev-5.3.6's V1-only-rule failure is the canonical cautionary precedent.
+
+**Registry immutability invariant honored:** This §8.2 entry is appended as a new appendix section (per §1.3 byte-exact-immutability invariant: "future address additions land as new appendix sections, never as in-place edits to existing entries"). The §8.1 COPM-Minteo entry is unmodified.

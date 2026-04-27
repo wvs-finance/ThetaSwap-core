@@ -381,3 +381,38 @@ Failure to triangulate before propagating a token-identity claim into specs / pl
 ### Reviewer cycle for this CORRECTIONS block
 
 Per `feedback_pathological_halt_anti_fishing_checkpoint` + `feedback_three_way_review`: post-hoc 3-way review (CR + RC + TW) on the disposition. The review scope is THIS CORRECTIONS block + the major-plan Rev-5.3.5 CORRECTIONS block + the disposition memo + the project-memory β-corrigenda. The review trio convenes immediately post-commit; convergence is required before MR-β.1 sub-task 1 re-dispatch under the rescoped framing.
+
+---
+
+## J. CORRECTIONS — Rev-5.3.6 + Rev-5.3.7 (BancorArbitrageV2 added to registry; X_d strategic re-evaluation, 2026-04-27)
+
+**Trigger.** User-surfaced HALT-VERIFY 2026-04-27 mid-NB-α sub-task 12. Empirical investigation via Dune queries 7382618 + 7382632 + 7382639 + 7382645 + 7382647 + 7382711 surfaced TWO additional X_d scope-mismatch layers on top of Rev-5.3.5 Minteo-vs-Mento.
+
+### Layer 2 (Rev-5.3.6) — V1-only partition rule broken post-2025-07-01
+
+BancorArbitrage V1 (`0x8c05ea305235a67c7095a32ad4a2ee2688ade636`) died 2025-07-01 12:45:27 UTC. Successor BancorArbitrageV2 (`0x20216f3056bf98e245562940e6c9c65ad9b31271`; decoded by Dune as `carbon_defi_multichain.bancorarbitragev2_*`, 38 decoded tables) took over 2025-07-02 01:17:32 UTC. The Rev-5.3.4-canonical V1-only partition rule misclassifies 524,104 V2 events as 'user' (78.2% of post-July 'user'-partition events).
+
+### Layer 3 (Rev-5.3.7) — No Mento-protocol-level Carbon integration
+
+Mento V3 deployment manifest (https://docs.mento.org/mento-v3/build/deployments/addresses.md) contains zero Carbon/BancorArbitrage references. Carbon hosts Mento basket tokens as standard ERC-20s without protocol-level integration. The X_d signal is third-party-DEX activity (mostly Bancor's own V1+V2 routers), NOT Mento Reserve user demand.
+
+### Registry spec doc impact (sub-task 3 deliverable byte-exact-immutability honored)
+
+Per the registry spec doc's §1.3 byte-exact-immutability invariant, future address additions land as new appendix sections, never as in-place edits to existing entries. **A new §8.2 entry for BancorArbitrageV2 `0x20216f30…`** is appended to the registry's Out-of-scope third-party tokens appendix. The existing §8.1 COPM-Minteo entry is unmodified.
+
+### MR-β.1 sub-plan deliverable status
+
+Sub-tasks 1-5 remain CLOSED at their respective commit anchors (`b6d320429`, `b8e220da1`, `2a0dcf8fe + 1d30f6fc4`, `c306a286a`, `9e382ae9b`). The Rev-5.3.7 disposition adds one additional registry-spec-appendix entry (§8.2) documented under this §J CORRECTIONS; the §8.2 addition is minimal (single new appendix entry; no per-token-section edits; no DuckDB cross-reference table count change).
+
+### Project memory amendments (companion to this CORRECTIONS)
+
+- `project_carbon_user_arb_partition_rule.md` — Rev-5.3.6 β-corrigendum: V1-only rule; broken post-2025-07-01; 78.2% post-July contamination.
+- `project_carbon_defi_attribution_celo.md` — Rev-5.3.6 + 5.3.7 β-corrigendum: V2 added to roster; Carbon-basket two-sided MM framing CLOSED OUT.
+- NEW `project_no_mento_carbon_protocol_integration.md` — Rev-5.3.7 finding: Mento V3 manifest has zero Carbon references; pivot β-track Rev-3 X_d to Broker-native.
+
+### Audit trail
+
+- Rev-5.3.6 disposition memo: `contracts/.scratch/2026-04-27-x-d-partition-rule-staleness-disposition-beta.md`
+- Rev-5.3.7 Option A disposition memo: `contracts/.scratch/2026-04-27-x-d-strategic-re-evaluation-disposition.md`
+- Mento V3 deployment manifest: https://docs.mento.org/mento-v3/build/deployments/addresses.md
+- Dune queries: 7382618, 7382632, 7382639, 7382645, 7382647, 7382711

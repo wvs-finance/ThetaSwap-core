@@ -2466,3 +2466,64 @@ Per `feedback_pathological_halt_anti_fishing_checkpoint`: HALT-VERIFY → user-e
 - Celo Token List (chainId 42220): https://raw.githubusercontent.com/celo-org/celo-token-list/main/celo.tokenlist.json .
 
 **Post-trio fix-up (Rev-5.3.5 fix-up commit, 2026-04-26).** All three reviewers converged: CR returned NEEDS-WORK with one blocker (NB-α §B-6 retraction hook, addressed in NB-α CORRECTIONS); RC and TW returned PASS-with-non-blocking-advisories. Bundle fix-up applied: NB-α §B-6 retraction hook added; NB-α grep-deterministic banned/canonical substring sets added per TW-2a; MR-β.1 §G addendum referencing §I CORRECTIONS added per TW-7; disposition memo §4.2 cross-reference tightened to §G-3 per TW-6b; disposition memo + this major plan reference list updated to working Mento V3 docs URL per RC-3 finding; disposition memo §4.2 RC-8 forward-looking joint-coverage note added (β-track Rev-3 joint-N is 73 weeks vs N_MIN=75 — closeable by Y₃ refresh ≥3 weeks before β-spec freeze; deferred to β-spec authoring per `feedback_pathological_halt_anti_fishing_checkpoint` discipline). RC-only single-pass re-review on the fix-up bundle is dispatched post-commit; convergence then unblocks MR-β.1 sub-task 1 re-dispatch.
+
+---
+
+## CORRECTIONS — Rev-5.3.6 + Rev-5.3.7 (2026-04-27, X_d compound scope-mismatch + Option A pivot)
+
+**Trigger.** User-surfaced HALT-VERIFY query 2026-04-27 mid-NB-α sub-task 12 dispatch flagging three address-provenance concerns. Empirical investigation via Dune queries `7382618`, `7382632`, `7382639`, `7382645`, `7382647`, `7382711` + Mento V3 deployment manifest fetch + `searchTablesByContractAddress` lookups surfaced TWO additional layers of X_d scope-mismatch on top of the Rev-5.3.5 Minteo-vs-Mento-native layer:
+
+- **Layer 2 (Rev-5.3.6)** — Carbon partition rule is V1-only; broken post-2025-07-01 when BancorArbitrage V1 (`0x8c05ea30…`) died and successor BancorArbitrageV2 (`0x20216f30…`) took over (12h31m gap). 78.2% post-July contamination of 'user' partition (524,104 V2 events misclassified as user out of 669,872 post-July 'user' events).
+- **Layer 3 (Rev-5.3.7)** — Mento V3 deployment manifest at `https://docs.mento.org/mento-v3/build/deployments/addresses.md` has ZERO references to Carbon DeFi or BancorArbitrage. Mento is a closed Reserve+Broker+Pools system; Carbon hosts Mento basket tokens as standard ERC-20s without protocol-level integration. The X_d signal we built is third-party-DEX arbitrage activity (mostly Bancor's own V1+V2 routers), NOT Mento Reserve user demand.
+
+**User disposition (2026-04-27): Option A pivot.** NB-α terminates at sub-task 12 (HEAD `2b46ef0f6`); sub-tasks 13-31 NOT authored; β-track Rev-3 spec (Task 11.P.spec-β; deferred) pivots X_d to Mento-Broker-native (`mento_celo.broker_evt_swap` events on Broker `0x777A8255…` aggregated weekly; 6.16M lifetime events; 383,303 distinct traders).
+
+**Empirical evidence (Dune query 7382711, free-tier, 0.124 credits):**
+
+| Signal | Lifetime events | Distinct traders | Events in Rev-2 panel window | First seen |
+|---|---|---|---|---|
+| **Mento Broker V2 Swap (Mento-native)** | **6,161,979** | **383,303** | **4,226,345** | 2023-04-07 |
+| Carbon `tokenstraded` (current X_d) | 2,231,212 | 147 | 1,785,588 | 2024-07-25 |
+
+**Scope of correction.** Wherever Rev-5.3.0 through Rev-5.3.6 frame the Carbon-basket `tokenstraded` series as Mento-native demand or Mento-basket two-sided MM, the framing is RETRACTED under Rev-5.3.7. The X_d signal is third-party-DEX arbitrage activity. Rev-2's β̂ = −2.7987e−8 measures the relationship between Bancor's own arbitrage volume and the inequality-differential Y_3 — a relationship with no theoretical justification. The gate FAIL is fully consistent with the wrong-signal interpretation; the negative-signed β̂, the ρ(X_d, fed_funds) = −0.614 confounder, and T1 REJECTS predictive-not-structural all fit a third-party-arb-volume signal vs a macro-hedge-demand signal.
+
+**Substantively unchanged (anti-fishing-immutable).** Rev-2 published estimates byte-exact (β̂ = −2.7987050503705652e−08; HAC(4) SE = 1.4234226026833985e−08; n = 76; T3b FAIL); MDES_FORMULATION_HASH `4940360dcd2987…cefa` (runtime-verified at NB2 §1); Rev-4 decision_hash `6a5f9d1b05c1…443c`; N_MIN=75; POWER_MIN=0.80; MDES_SD=0.40; Rev-2 14-row resolution-matrix scope; all 12 NB-α commits (sub-tasks 1-12; HEAD `2b46ef0f6`); 0 DuckDB row mutations under any disposition.
+
+**NB-α termination.** NB-α terminates at sub-task 12 (HEAD `2b46ef0f6`) with a closer trio appended to BOTH `01_data_eda.ipynb` (25 → 28 cells) and `02_estimation.ipynb` (16 → 19 cells) documenting:
+
+1. The 3-layer compound scope-mismatch (Rev-5.3.5 + 5.3.6 + 5.3.7).
+2. Empirical Mento Broker vs Carbon comparison (6.16M / 383K traders vs 2.23M / 147 traders).
+3. BancorArbitrage V1→V2 transition (V1 dead 2025-07-01 12:45:27 UTC; V2 first event 2025-07-02 01:17:32 UTC; gap 12h31m).
+4. NB-α termination statement: sub-tasks 13-31 NOT authored under Option A pivot.
+
+NB-α deliverable count: 12 sub-tasks + closer trio per notebook = 13 sub-tasks plus closer (rather than 31).
+
+**Project memory amendments.**
+- `project_carbon_user_arb_partition_rule` — Rev-5.3.6 β-corrigendum: V1-only rule; broken post-2025-07-01.
+- `project_carbon_defi_attribution_celo` — Rev-5.3.6 + 5.3.7 β-corrigendum: V2 added to roster; Carbon-basket two-sided MM framing CLOSED OUT.
+- NEW `project_no_mento_carbon_protocol_integration` — Rev-5.3.7 finding: Mento V3 manifest has zero Carbon references; pivot to Broker-native X_d.
+- `MEMORY.md` index — three entries refreshed.
+
+**Registry spec doc (sub-task 3 deliverable) — append §8.2 BancorArbitrageV2 entry.** The byte-exact-immutability invariant of the registry doc is honored: `0x20216f30…` (BancorArbitrageV2) lands as a NEW appendix entry §8.2 (companion to §8.1 COPM-Minteo); existing entries unmodified.
+
+**β-track Rev-3 spec (Task 11.P.spec-β; deferred — to be authored).** Pivots X_d to Mento Broker V2 + V3:
+- **Primary**: `mento_celo.broker_evt_swap` events on Broker `0x777A8255cA72412f0d706dc03C9D1987306B4CaD` aggregated weekly (Friday anchor); partitioned by direction (mint/redeem) and basket currency.
+- **Secondary**: Mento V3 FPMM pool swap events on the 4 deployed pools (USDT/USDm `0x0FEBa760d93423D127DE1B6ABECdB60E5253228D`; USDC/USDm `0x462fe04b4FD719Cbd04C0310365D421D02AaA19E`; axlUSDC/USDm `0xb285d4C7133d6f27BfB29224fb0D22E7EC3ddD2D`; GBPm/USDm `0x8C0014afe032E4574481D8934504100bF23fCB56`).
+- **Diagnostic**: StableToken `Transfer` events with `from = 0x0` (mint) / `to = 0x0` (burn) for issuance/redemption flow per currency.
+- **Partition discipline**: triangulation procedure for arb-router successor detection per `searchTablesByContractAddress` looking for `*ArbitrageExecuted` event-emitter contracts.
+- **N feasibility**: 4,226,345 events in Rev-2 panel window; 383,303 distinct traders; weekly aggregation yields ≥76 weeks coverage; Broker first event 2023-04-07 enables ~80 weeks pre-Rev-2-window history for windowed sensitivity.
+
+**PR #74 disposition (NOT merge).** PR #74 at upstream `wvs-finance/ThetaSwap-core` (head: `phase0-vb-mvp`; title: "feat(remittance): Phase-A.0 remittance-surprise → TRM-RV pipeline (WIP, do not merge)") is **CLOSED, NOT merged.** The X_d signal is scope-mismatched 3 layers deep; merging would propagate Rev-5.3.5/6/7 contamination upstream. The user's gate "push and merge PR #74. Only WHEN THAT TASK BUNDLE COMPLETES" is honored by recognizing the bundle close-out as scope-mismatched (NOT analytically successful); closing the PR is the honest disposition.
+
+**Anti-fishing-invariant integrity.** No invariant relaxed. All 3 layers are scope-corrections (interpretation reframes), not threshold relaxations. Rev-2 published estimates remain byte-exact-immutable in their audit-trail role.
+
+**Reviewer cycle.** Per `feedback_pathological_halt_anti_fishing_checkpoint`: post-hoc 3-way review (CR + RC + TW per `feedback_three_way_review`) on the Rev-5.3.7 disposition is dispatched immediately after this CORRECTIONS block + closer commits land. Convergence gates the PR #74 close + β-track Rev-3 spec authoring.
+
+**File anchors.**
+- Rev-5.3.6 disposition memo: `contracts/.scratch/2026-04-27-x-d-partition-rule-staleness-disposition-beta.md`
+- Rev-5.3.7 Option A disposition memo: `contracts/.scratch/2026-04-27-x-d-strategic-re-evaluation-disposition.md`
+- Mento V3 deployment manifest: https://docs.mento.org/mento-v3/build/deployments/addresses.md
+- Dune queries: 7382618, 7382632, 7382639, 7382645, 7382647, 7382711
+- NB-α HEAD at termination: `2b46ef0f6` (post-closer commits to update)
+- PR #74 to close (NOT merge): https://github.com/wvs-finance/ThetaSwap-core/pull/74
+- β-track Rev-3 spec sub-plan (TO BE AUTHORED): `contracts/docs/superpowers/sub-plans/2026-04-25-beta-spec.md`

@@ -522,3 +522,37 @@ NB-α does NOT:
 ### Reviewer cycle for this CORRECTIONS block
 
 Bundled into the same post-hoc 3-way review (CR + RC + TW) that is dispatched on the major-plan Rev-5.3.5 CORRECTIONS block + the MR-β.1 sub-plan §I CORRECTIONS block + the disposition memo. Single review trio covers the full β-resolution disposition. Convergence is required before NB-α dispatch unit 1 (the env.py-gated NB1 §0 panel-fingerprint validation) can re-dispatch under the rescoped framing.
+
+---
+
+## CORRECTIONS — Rev-5.3.6 + Rev-5.3.7 NB-α termination at sub-task 12 (Option A pivot, 2026-04-27)
+
+**Trigger.** User-surfaced HALT-VERIFY 2026-04-27 mid-NB-α sub-task 12 dispatch flagged 3 address-provenance concerns; empirical investigation surfaced 2 additional layers of X_d scope-mismatch on top of Rev-5.3.5 Minteo-vs-Mento. User picked Option A pivot.
+
+**NB-α terminates at sub-task 12.** Sub-tasks 13-31 (NB2 §5/§6/§7 + NB3 + README) are **NOT authored**. The closer trio appended to BOTH notebooks documents the compound 3-layer scope-mismatch + the analytical termination statement.
+
+### Sub-tasks superseded under Option A
+
+The original sub-plan §C Block B sub-tasks 13-15 + Block C sub-tasks 16-23 + Block D sub-task 24 are SUPERSEDED. They will not be authored in this notebook migration; the analytical work pivots to β-track Rev-3 spec (Task 11.P.spec-β) with Mento-Broker-native X_d.
+
+### Closer trio scope (already authored at HEAD-update commit)
+
+Each notebook (NB1 + NB2) gains a single trio:
+- **why-markdown** — 4-part citation block referencing the 3 disposition memos (Rev-5.3.5/6/7) + Mento V3 deployment manifest.
+- **code-cell** — emits frozen-dataclass summary: 3-layer scope-mismatch table + Mento Broker vs Carbon empirical comparison (6.16M / 383K traders vs 2.23M / 147 traders; 2,604× ratio) + BancorArbitrage V1→V2 transition (V1 last 2025-07-01 12:45:27 UTC; V2 first 2025-07-02 01:17:32 UTC; gap 12h31m; 524,104 V2 events misclassified) + NB-α termination statement.
+- **interpretation-markdown** — Rev-2 closes scope-mismatch (NOT Mento-hedge-fail); β-track Rev-3 pivots to Mento Broker; PR #74 closes (NOT merge); the gate FAIL is consistent with third-party-arb-signal interpretation.
+
+### Substring discipline (Rev-5.3.5 binding) — preserved
+
+The Rev-5.3.5 banned/canonical substring sets remain binding through NB-α termination:
+- BANNED set count corpus-wide (NB1+NB2): 0 across all 6 phrases.
+- CANONICAL set counts corpus-wide post-closer: 37/39/35/46 hits across the 4 required phrases.
+
+### β-track Rev-3 forward-pointer
+
+The notebook migration pattern (env.py + 3-notebook structure + JSON intermediate artifacts + Jinja2 README template) is preserved as a template for β-track Rev-3 execution under Task 11.P.exec-β. The new analytical exercise will use:
+- Primary X_d: `mento_celo.broker_evt_swap` events on Broker `0x777A8255cA72412f0d706dc03C9D1987306B4CaD`.
+- Secondary X_d: V3 FPMM pool swap events.
+- Diagnostic: StableToken Transfer events filtered to mint/burn (from=0x0 / to=0x0).
+
+Same Y_3 inequality-differential outcome, same 6-control conditioning set, same Cohen f² power formulation, same anti-fishing invariants — only the X_d source pivots.
