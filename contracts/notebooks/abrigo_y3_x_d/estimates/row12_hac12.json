@@ -1,0 +1,17 @@
+{
+  "beta_x_d": -2.7987050503705652e-08,
+  "ci_lower_05": -4.544073873587468e-08,
+  "ci_lower_one_sided_90": -4.156924442729632e-08,
+  "ci_upper_95": -1.0533362271536623e-08,
+  "estimator": "ols-hac12-newey-west-12",
+  "gate_verdict_under_hac12": "FAIL",
+  "n": 76,
+  "p_one_sided": 0.9958243705930383,
+  "p_two_sided": 0.008351258813923427,
+  "panel_id": "panel_row_12_hac12_bandwidth",
+  "se_hac12": 1.061108900280521e-08,
+  "t_stat": -2.6375285794235475,
+  "window_end": "2026-03-13",
+  "window_start": "2024-09-27",
+  "z90_one_sided": 1.28
+}
