@@ -1,6 +1,6 @@
 ---
-spec_sha256: f74b2ac577d5182842116a8798f307a610c185f1e6e259b8530e2ec266141728
-spec_version_pinned: 1.1 (per spec frontmatter; passed v1 + v1.1 with 2 verifier waves before pin; ZERO BLOCKERs at any wave)
+spec_sha256: b90be50bd9c68b7ea2000c33f6ea34169ea01995391baa8692cf95d13d6f4c6d
+spec_version_pinned: 1.2.1 (CORRECTIONS-α + 3-way review cleanup per Task 1.1 Step 0 schema-stability HALT 2026-04-28; supersedes v1.2 sha256 19bdaed9b966…b7a4 which superseded v1.1 sha256 f74b2ac577d5…41728; ZERO BLOCKERs at all 3 verifier waves [RC + MQS-fresh + SPM])
 plan_verifier_v1_wave1: PASS-WITH-REVISIONS (Reality Checker, 2026-04-27, 6 defects — all integrated in v2)
 plan_verifier_v1_wave2: PASS-WITH-REVISIONS with 2 BLOCK-severity (Senior Project Manager, 2026-04-27, 11 defects — all integrated in v2)
 plan_verifier_v2_wave1: pending re-dispatch
@@ -9,6 +9,7 @@ revision_history:
   - v1 2026-04-27 initial draft
   - v2 2026-04-27 integrate RC + SPM verifier defects (~17 total). Convergent fix on ESCALATE threshold (RC D3 + SPM D2 BLOCK). New schema-break verification (SPM D5 BLOCK). Timeline buffer added; Doc-Verify trailer gaps closed; HALT protocol expanded; closure-archival step added; goal-sentence reworded; youth-band discrepancy flagged; Phase-2 parallelization annotation corrected; trio-HALT taxonomy added; ESCALATE-FAIL handoff concretized.
   - v2.1 2026-04-27 inline patch integrating SPM v2 verifier findings (N1 self-review spec-coverage bullet + N2 Task 2.4 Step 5 "credible" → spec §3 ESCALATE-PASS threshold reference; N2 was a convergent finding RC NB-R2 + SPM N2). N3-N6 LOW polish items deferred to next plan revision. RC v2 PASS (no STILL-BLOCKING). SPM v2 PASS-WITH-REVISIONS (zero v1-BLOCK carryover; 6 new defects all NON-BLOCKING).
+  - v2.2 2026-04-28 CORRECTIONS-α revision per Task 1.1 Step 0 schema-stability HALT (typed exception `PairDSchemaPreFlightPathological`). User picked Option α from disposition memo (`contracts/.scratch/2026-04-28-task-1.1-step-0-schema-pathological-disposition.md`): shorten sample window to 2010-01 → 2026-03 (DANE-canonical, anti-fishing-cleanest). Plan Task 1.1 Step 0 amended with pinned harmonization rules table per Option α; Step 1 window updated 2008→2010; Step 4 simplified (Empalme catalogs pre-incorporate the empalme factor in FEX_C); Task 1.3 Step 2 N expectation revised 206→183. Spec §4 + §9.9 + frontmatter updated; new spec sha256 pinned (supersedes v1.1 sha256 `f74b2ac577d5…41728`). 3-way review of CORRECTIONS (RC + MQS-fresh + SPM) before commit per HALT protocol.
 notebook_trailer_convention: This plan defines a deferred-trailer convention for notebook commits during Phase 2 (`Doc-Verify: orchestrator-only-pre-Phase-3 (3-way review deferred to Task 3.2)` per SPM D9). Notebook commits are intentionally trailer-light pre-Phase-3; the 3-way review in Task 3.2 audits notebooks retrospectively. Future audits of Doc-Verify trailers should be aware of this convention to avoid false-positive process-violation flags. Standard 2-wave + 3-way trailers apply at all spec / memo / CLAUDE.md commits.
 ---
 
@@ -18,7 +19,7 @@ notebook_trailer_convention: This plan defines a deferred-trailer convention for
 
 **Goal:** Empirically test whether Colombian young-worker services-sector employment share responds positively to lagged COP/USD devaluation, producing a falsifiable feasibility verdict (β > 0 PASS / β = 0 FAIL → escalate to convex-payoff evidence) that determines whether Pair D **becomes a candidate for Stage 2 (M sketch) authoring as a separate downstream plan**, or is killed in favor of revisiting Pair A/B/C/E from the BPO research note 5-pair ranking. Stage 2 + Stage 3 are explicitly NOT promised by this Stage-1 plan.
 
-**Architecture:** Pre-registered single OLS (logit-OLS for bounded Y) regression with deliberately simpler methodology than the parked P1 apparatus per user "start simple" directive. Y = Colombian young-worker services-sector employment share (DANE GEIH monthly, youth band 14-28 per Ley 1622/2013, CIIU Rev.4 A.C. sections G-T broad services primary + J+M+N BPO-narrow sensitivity, ~218 monthly observations Aug 2006-present, logit-transformed for bounded [0.55, 0.75] range). X = COP/USD lagged 6-12 months (reuses closed FX-vol-CPI Phase-A.0 pipeline series). Sign expectation pre-pinned positive (Baumol → US-Colombia wage arbitrage → offshoring transmission, lit-grounded via Mendieta-Muñoz 2017 + Beerepoot-Hendriks 2013 mechanism validation).
+**Architecture:** Pre-registered single OLS (logit-OLS for bounded Y) regression with deliberately simpler methodology than the parked P1 apparatus per user "start simple" directive. Y = Colombian young-worker services-sector employment share (DANE GEIH monthly, youth band 14-28 per Ley 1622/2013, CIIU Rev.4 A.C. sections G-T broad services primary + J+M+N BPO-narrow sensitivity, ~195 monthly observations 2010-01 → 2026-03 post-CORRECTIONS-α / N≈183 post-lag-12 — was originally ~218 obs Aug 2006-present in the GEIH feasibility universe before the Task 1.1 Step 0 HALT and Option-α pivot, logit-transformed for bounded [0.55, 0.75] range). X = COP/USD lagged 6-12 months (reuses closed FX-vol-CPI Phase-A.0 pipeline series). Sign expectation pre-pinned positive (Baumol → US-Colombia wage arbitrage → offshoring transmission, lit-grounded via Mendieta-Muñoz 2017 + Beerepoot-Hendriks 2013 mechanism validation).
 
 **Tech stack (specialist-side, advisory):** Python pandas + statsmodels for OLS; arch package for GARCH-X if escalation triggers; DuckDB for panel storage per existing `contracts/scripts/` convention; Jupyter notebook with trio-checkpoint discipline (`feedback_notebook_trio_checkpoint`) and 4-part citation block (`feedback_notebook_citation_block`).
 
@@ -101,7 +102,7 @@ Goal: produce a sha256-pinned spec that fixes hypothesis, methodology, threshold
     - First clause (precise): composite β̂ > 0 with p ∈ (0.05, 0.20] one-sided
     - Second clause (precise — REQUIRED): "composite β̂ near zero with high tail asymmetry" must be replaced with concrete numbers — (a) numeric definition of "near zero" (e.g., `|β̂| / SE < 0.5`), (b) numeric definition of "high tail asymmetry" (e.g., `|skew(residuals)| > 1.0` OR `excess kurtosis > 3.0`), (c) rationale for each numeric choice from literature or pre-data conjecture only — NEVER from observed sample statistics
     - ESCALATE-PASS threshold MUST also be pre-pinned per SPM D2: "quantile β̂(0.90) > 0 at p ≤ 0.10 one-sided OR GARCH-X mean-β > 0 at p ≤ 0.10 one-sided OR EVT extreme-quantile β̂ > 0 at p ≤ 0.10" — or alternative concrete numerics, but NEVER "credible" or other soft language
-  - §4 Sample-selection: monthly 2008-01 through 2026-03 (excluding most recent ≤2 months for data-availability lag); N expected ≈ 218; N_MIN_OBS = 75 (Phase-A.0 floor) — HALT-disposition if realized N < 75 after methodology-break treatment.
+  - §4 Sample-selection: monthly **2010-01** through 2026-03 (revised per spec §9.9 CORRECTIONS-α 2026-04-28; was 2008-01 pre-revision — Marco-2005-era Empalme harmonization gap surfaced by Step 0 pre-flight, user picked Option α from disposition memo; details: §9.9 of spec); excludes most recent ≤2 months for data-availability lag; N expected ≈ 195 pre-lag, ≈ 183 post-lag-12; N_MIN_OBS = 75 (Phase-A.0 floor) — HALT-disposition if realized N < 75 after methodology-break treatment.
   - §5 Methodology — primary OLS specification:
     `logit(Y_t) = α + Σ_{k∈{6,9,12}} β_k · log(COP_USD_{t-k}) + ε_t`
     Composite β = β_6 + β_9 + β_12 (the lag window bounded by literature 6-12mo offshoring transmission).
@@ -162,15 +163,23 @@ Goal: produce a sha256-pinned spec that fixes hypothesis, methodology, threshold
 - Create: `contracts/.scratch/simple-beta-pair-d/data/geih_young_workers_narrow_share.parquet`
 - Create section in `DATA_PROVENANCE.md`
 
-- [ ] **Step 0 (NEW per SPM D5 BLOCK — schema-stability pre-flight):** Specialist verifies schema-stability across the full 218-month window via DANE nota-técnica catalog. Documents any column-rename or CIIU-revision break-points (esp. CIIU Rev.3 → Rev.4 transition circa 2012, and any pre-Marco-2018 schema differences). Defines schema-harmonization rule per break-point: column-rename map + CIIU-code crosswalk Rev.3→Rev.4 (DANE publishes the official correspondence table). If any break-point cannot be pre-pinned with a deterministic harmonization rule, HALT per the anti-fishing protocol below and dispatch spec amendment before any data pull.
+- [ ] **Step 0 (CLOSED per Task 1.1 Step 0 schema-stability HALT 2026-04-28; Option α picked):** The schema-stability pre-flight surfaced a non-pinnable break-point at 2008-01→2009-12 (DANE Empalme nota técnica covers 2010-01→2020-12 only; pre-2010 requires author-judgment Rev.3.1→Rev.4 crosswalk). Disposition memo at `contracts/.scratch/2026-04-28-task-1.1-step-0-schema-pathological-disposition.md` enumerated 5 pivot options; user picked Option α (shorten window to 2010-01 → 2026-03). Spec §4 sample window updated; spec §9.9 CORRECTIONS block records audit trail. **Pinned harmonization rules table for Option α** (DANE-canonical at every break-point):
 
-- [ ] **Step 1: Specialist downloads GEIH monthly micro-data** for 2008-01 through 2026-03 from DANE catalogues (URL list in GEIH feasibility report). CSV ZIP per-month per-module; "Cabecera - Ocupados" module is the relevant one for employment. Apply the schema-harmonization rule from Step 0 at ingest time (rename columns + crosswalk CIIU codes per the harmonization table).
+  | Era | Source catalog | Schema notes | FEX field | Sector field |
+  |---|---|---|---|---|
+  | 2010-01 → 2020-12 (132 mo) | GEIH Empalme catalogs cid 755-765 (per-year ZIPs) | Comma-separated, UTF-8, single-file (no Cabecera/Resto split); FEX_C pre-incorporates empalme factor; sector codes already in CIIU Rev.4 a.c. | `FEX_C` | `RAMA4D` |
+  | 2021-01 → 2021-12 (12 mo) | Marco-2018 semester archives within cid 701 (`GEIH - Marco-2018(I.Semestre).zip` + `GEIH_Marco_2018(II. semestre).zip`) | Schema matches 2022+ Marco-2018 native; preferred over per-month native files for 2021 | `FEX_C18` | `RAMA4D_R4` |
+  | 2022-01 → 2026-03 (51 mo) | Marco-2018 native per-month catalogs (cid 819, 853, 900, etc.) | 2022-2025: comma-separated, Latin-1 encoding (mojibake risk on UTF-8 read); 2026: semicolon-separated, UTF-8, new prefix columns `PERIODO`, `MES`, `PER` ahead of `DIRECTORIO` | `FEX_C18` | `RAMA4D_R4` |
+
+  Stable primary keys across all eras: `DIRECTORIO`, `SECUENCIA_P`, `ORDEN`. Unified column aliases at ingest: `_fex_c` ← {FEX_C, FEX_C18}; `_rama4d_rev4` ← {RAMA4D, RAMA4D_R4}; `P6040` (age) is stable. Per Empalme-catalog construction: no separate empalme transformation step needed downstream — the published FEX_C already incorporates it.
+
+- [ ] **Step 1: Specialist downloads GEIH monthly micro-data** for 2010-01 through 2026-03 from DANE catalogues per the Step 0 era table above (revised window per CORRECTIONS-α). Apply the per-era schema-harmonization rule (column rename + encoding selection) at ingest time. ~195 monthly files expected.
 
 - [ ] **Step 2: Specialist filters per spec §4 sample-selection rules** — youth band 14-28 (Ley 1622/2013), employed status (Ocupado=1), then split into broad-services (CIIU Rev.4 A.C. sections G-T) and narrow-services (J+M+N) subsets.
 
 - [ ] **Step 3: Specialist computes monthly Y_t** for both subsets: Y_broad = (count young employed in G-T / count all young employed); Y_narrow = (count young employed in J+M+N / count all young employed). Persists each to its parquet with schema `(timestamp_utc, Y_raw, Y_logit, n_young_employed, n_young_in_sector)`.
 
-- [ ] **Step 4: Specialist applies methodology-break disposition** per spec §6 (apply DANE empalme factor for Marco-2005 → Marco-2018 reconciliation). Documents the empalme transformation precisely in `DATA_PROVENANCE.md` with the source nota técnica URL.
+- [ ] **Step 4: Methodology-break treatment is automatic per Option α + per spec §6.** Under Option α, the GEIH Empalme catalogs (cid 755-765) for 2010-2020 already pre-incorporate the empalme factor in `FEX_C`; no separate empalme transformation is needed downstream. Marco-2018 semester archives for 2021 + Marco-2018 native for 2022+ already use the post-Marco-2018 frame. Document this in `DATA_PROVENANCE.md` with the DANE nota técnica URL (`https://www.dane.gov.co/files/investigaciones/boletines/ech/ech/Nota-tecnica-empalme-series-GEIH.pdf`) for traceability; the §6 R1 (2021 regime dummy) robustness option remains available as an alternative methodology-break treatment.
 
 - [ ] **Step 5: Specialist documents** all download URLs, filter steps, sample sizes per month, empalme application in `DATA_PROVENANCE.md`.
 
@@ -200,7 +209,7 @@ Goal: produce a sha256-pinned spec that fixes hypothesis, methodology, threshold
 
 - [ ] **Step 1: Specialist inner-joins** Y_broad + Y_narrow + X lag panel on monthly timestamp.
 
-- [ ] **Step 2: Specialist verifies N** ≥ N_MIN=75 after join (expected ≈ 206 = 218 − 12 leading months lost to lag). **HALT protocol per `feedback_pathological_halt_anti_fishing_checkpoint` (per RC D4):** If N < 75, raise typed exception `PairDSampleStructurallyPathological`; Foreground Orchestrator files disposition memo at `contracts/.scratch/2026-04-XX-pair-d-N-pathological-disposition.md` enumerating ≥3 pivot options (e.g., shorter lag window, narrower Y, alternative methodology-break treatment); surfaces to user; user picks pivot; CORRECTIONS block lands in next plan revision; 3-way review of CORRECTIONS revision. Auto-selection of pivot is anti-fishing-banned.
+- [ ] **Step 2: Specialist verifies N** ≥ N_MIN=75 after join (expected ≈ 183 = 195 − 12 leading months lost to lag, per CORRECTIONS-α; was ≈ 206 under the original 2008-01 window). **HALT protocol per `feedback_pathological_halt_anti_fishing_checkpoint` (per RC D4):** If N < 75, raise typed exception `PairDSampleStructurallyPathological`; Foreground Orchestrator files disposition memo at `contracts/.scratch/2026-04-XX-pair-d-N-pathological-disposition.md` enumerating ≥3 pivot options (e.g., shorter lag window, narrower Y, alternative methodology-break treatment); surfaces to user; user picks pivot; CORRECTIONS block lands in next plan revision; 3-way review of CORRECTIONS revision. Auto-selection of pivot is anti-fishing-banned.
 
 - [ ] **Step 3: Specialist persists final panel** with schema `(timestamp_utc, Y_broad_logit, Y_broad_raw, Y_narrow_logit, Y_narrow_raw, log_cop_usd_lag6, log_cop_usd_lag9, log_cop_usd_lag12, n_young_employed, n_young_in_services_broad, n_young_in_services_narrow)`.
 
@@ -379,7 +388,7 @@ Goal: surface verdict to user; user decides next-stage pivot.
 
 ## Self-review checklist (run by orchestrator before commit of THIS plan)
 
-- **Spec coverage:** does every requirement in the GEIH feasibility report (youth=14-28; CIIU G-T primary + J+M+N sensitivity; methodology-break empalme; logit-Y; ~218 obs; CIIU Rev.3→Rev.4 + Marco-2005→Marco-2018 schema-stability) map to a task here? **Verified — Task 0.1 spec, Task 1.1 Step 0 schema-stability pre-flight, Task 1.1 Step 1+ GEIH pull, Task 1.3 N verification.**
+- **Spec coverage:** does every requirement in the GEIH feasibility report (youth=14-28; CIIU G-T primary + J+M+N sensitivity; methodology-break empalme; logit-Y; ~218 obs in feasibility-universe / ~195 post-CORRECTIONS-α-window / N≈183 post-lag-12; CIIU Rev.3→Rev.4 + Marco-2005→Marco-2018 schema-stability) map to a task here? **Verified — Task 0.1 spec, Task 1.1 Step 0 schema-stability pre-flight, Task 1.1 Step 1+ GEIH pull, Task 1.3 N verification.**
 
 - **Placeholder scan:** zero "TBD" / "TODO" / "fill in details" / "similar to Task N" / "implement appropriate handling". **Verified — all steps name a specialist deliverable or dispatch with explicit charge.**
 

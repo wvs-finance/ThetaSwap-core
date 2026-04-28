@@ -1,7 +1,9 @@
 ---
-spec_version: 1.1
-decision_hash: f74b2ac577d5182842116a8798f307a610c185f1e6e259b8530e2ec266141728
-decision_hash_protocol: sha256 computed against this file with `decision_hash` field set to the sentinel `<to-be-pinned-after-Task-0.3>`. To re-verify, replace the pinned hash with the sentinel string and recompute sha256; should match.
+spec_version: 1.2.1
+decision_hash: b90be50bd9c68b7ea2000c33f6ea34169ea01995391baa8692cf95d13d6f4c6d
+decision_hash_protocol: sha256 computed against this file with `decision_hash` field set to the sentinel `<to-be-pinned-after-CORRECTIONS-alpha-3way-cleanup>`. To re-verify, replace the pinned hash with the sentinel string and recompute sha256; should match.
+prior_decision_hash_v1.1: f74b2ac577d5182842116a8798f307a610c185f1e6e259b8530e2ec266141728  # superseded by CORRECTIONS-α v1.2 per §9.9
+prior_decision_hash_v1.2: 19bdaed9b966232588bfc0034264d9ed32dbb3ab9fbd7e6c9b8a131ff8b7b7a4  # superseded by 3-way review cleanup v1.2.1 per §9.9 (D1+D2+D3+SPM#1+SPM#3+MQS-NB-1 textual fixes)
 dependent_plan: contracts/docs/superpowers/plans/2026-04-27-simple-beta-pair-d-implementation.md
 verifier_v1_wave1: PASS-WITH-REVISIONS (Reality Checker, 2026-04-27, 3 NB defects D1/D2/D3 + 4 OOS — D1+D3 closed in v1.1; D2 closed via CLAUDE.md fix in same commit; OOS deferrable)
 verifier_v1_wave2: PASS-WITH-REVISIONS (Model QA Specialist fresh instance, 2026-04-27, 5 NB craftsmanship adds R1-R5 — all closed in v1.1; ZERO BLOCKERs, ZERO anti-fishing violations)
@@ -9,6 +11,8 @@ verifier_v1.1: pending re-dispatch (RC waived re-dispatch for craftsmanship-only
 revision_history:
   - v1 2026-04-27 initial draft (Model QA Specialist)
   - v1.1 2026-04-27 inline integration of RC D1 (§3.2 NOTE clarifier extending FAIL to (β>0, p>0.20, neither B fires)), D3 (§5.1 CIIU Rev.3.1→Rev.4 boundary handling), MQS R1 (§5.3 "delta method" → "linear-restriction variance c'Σc"), MQS R2 (§5.3 multicollinearity / negative covariance offset acknowledgment), MQS R3 (§5.1 logit-OLS vs Papke-Wooldridge / Ferrari-Cribari-Neto justification), MQS R4 (§6 empalme residual-bias on logit nonlinearity + CIIU classification), MQS R5 (§3.4 structural-disjunction MHT defense). RC D2 (CLAUDE.md "two-sided" → "one-sided" reconciliation) handled in same-commit CLAUDE.md edit. RC O1 (BPO research note copy to worktree .scratch/) handled in same commit.
+  - v1.2 2026-04-28 CORRECTIONS-α revision per Task 1.1 Step 0 schema-stability HALT. User picked Option α from disposition memo (`contracts/.scratch/2026-04-28-task-1.1-step-0-schema-pathological-disposition.md`); §4 sample window 2008-01 → 2010-01 (data-availability-driven legal channel per §9.3); §9.9 new CORRECTIONS audit-trail block; spec sha256 superseded f74b2ac577d5…41728 → 19bdaed9b966…b7a4.
+  - v1.2.1 2026-04-28 inline integration of CORRECTIONS-α 3-way review fixes — RC D2 (§9.3 stale window text), SPM #2 (convergent with RC D2), MQS NB-1 (§6 line 179 "2012-2021" → "2010-2020 (132 months)" factual correction), SPM #3 (this revision_history v1.2 entry added — was missing). Plan v2.2 fixes RC D1 (Task 0.1 Step 1 §4 sub-bullet stale), SPM #1 (line 22 + 391 "~218 obs" annotation), RC D3 (CLAUDE.md line 171 N precision) integrated in same commit. Spec sha256 superseded 19bdaed9b966…b7a4 → (computed at end of CORRECTIONS-α-3way-cleanup pin).
 ---
 
 # Simple-β Pair D — Pre-registered Design Spec
@@ -98,11 +102,11 @@ If realized N (after §6 methodology-break treatment and §4 lag-window loss) fa
 ## §4. Sample-selection rules
 
 - **Frequency:** monthly.
-- **Time window:** 2008-01 through 2026-03 inclusive (excluding any month within the most recent two-month publication-lag tail per GEIH feasibility §Q4). The 2008-01 start is justified per GEIH feasibility §Q4: GEIH launched 2006-08, but the 2006-08 → 2007-12 ECH-transition period is methodologically unstable; from 2008-01 forward the monthly series is operationally stable on Marco 2005.
-- **Lag-window loss:** `k = 12` drops the 12 leading X-panel months, leaving 219 − 12 = 207 candidate months pre-methodology-break treatment.
-- **Expected realized N:** approximately 206 (one-month tolerance for end-of-window publication-lag drop).
+- **Time window:** 2010-01 through 2026-03 inclusive (excluding any month within the most recent two-month publication-lag tail per GEIH feasibility §Q4). **REVISED 2026-04-28 per CORRECTIONS block §9.9** from the original 2008-01 start (HALT-disposition: 2008-2009 falls outside the DANE Empalme nota técnica's 132-month window 2010-01→2020-12, and the per-row CIIU Rev.3.1→Rev.4 crosswalk admits author-judgment 1-to-many cases that §9.2 anti-fishing-bans). User picked Option α from the Task 1.1 Step 0 disposition memo (data-availability-driven, DANE-canonical, anti-fishing-cleanest); see §9.9 for full audit trail.
+- **Lag-window loss:** `k = 12` drops the 12 leading X-panel months, leaving 195 − 12 = 183 candidate months pre-methodology-break treatment.
+- **Expected realized N:** approximately 183 (one-month tolerance for end-of-window publication-lag drop).
 - **Universe:** national aggregate (Cabecera + Resto summed per GEIH feasibility §3); no city-level or departmental-level disaggregation in the primary.
-- **N_MIN floor:** `N_MIN_OBS = 75` per §3.6. Expected ≈ 206 is well above; floor exists to handle pathological methodology-break shrinkage.
+- **N_MIN floor:** `N_MIN_OBS = 75` per §3.6. Expected ≈ 183 is well above; floor exists to handle pathological methodology-break shrinkage.
 
 The `restrict-to-≥2022` window option (which collapses N to ≈ 51, below the floor) is BANNED per §6.
 
@@ -175,7 +179,7 @@ Each yields a coefficient and one-sided p-value; the §3.4 disjunction is evalua
 
 ## §6. Methodology-break disposition (pre-pinned)
 
-DANE switched the GEIH master sample from Marco 2005 (population frame derived from the 2005 Census) to Marco 2018 (frame from the 2018 Census) effective January 2021. 2021 was a parallel-collection year; from January 2022 onward, only Marco 2018 is published. DANE has published a 10-year empalme (splice) factor distributing the level shift across 2012–2021 (`Nota-tecnica-empalme-series-GEIH.pdf`, GEIH feasibility §Q4 + §5 References).
+DANE switched the GEIH master sample from Marco 2005 (population frame derived from the 2005 Census) to Marco 2018 (frame from the 2018 Census) effective January 2021. 2021 was a parallel-collection year; from January 2022 onward, only Marco 2018 is published. DANE has published a 132-month empalme (splice) factor covering **2010-01 through 2020-12 inclusive** per the nota técnica §3.3 verbatim: *"se construye un factor por cada mes a partir de enero de 2010 hasta diciembre 2020 que secuencialmente ajusta una parte del nivel de la serie de ocupados … se divide a θ en 132 partes (son los meses desde enero 2010 hasta diciembre de 2020)"* (`Nota-tecnica-empalme-series-GEIH.pdf`, GEIH feasibility §Q4 + §5 References; corrected per MQS NB-1 v1.2.1 — earlier text said "2012-2021" which was wrong).
 
 **Primary disposition:** apply the DANE empalme factor for Marco-2005 → Marco-2018 reconciliation per the published nota técnica at `https://www.dane.gov.co/files/investigaciones/boletines/ech/ech/Nota-tecnica-empalme-series-GEIH.pdf`. The empalme is applied to `Y_t` (raw share) before the logit transform of §5.1.
 
@@ -262,7 +266,7 @@ These invariants are immutable for this iteration; they carry forward the Phase-
 
 - **§9.2 Y-construction immutability.** The §5.1 construction (youth band 14–28, broad services CIIU sections G–T, national aggregate, logit transform, expansion factors per §5.1) is fixed at spec-authoring time. Sensitivities at 18–28 / 18–24 / 15–24, promoting BPO-narrow J+M+N to primary, promoting raw-share to primary, Bogotá-only, or any other Y reformulation post-data are anti-fishing-banned. The pre-committed sensitivity universe is exhausted by R1–R4 of §7.
 
-- **§9.3 Sample-window immutability.** The 2008-01 → 2026-03 monthly window of §4 is fixed. Re-curation post-data (excluding 2020 COVID months, excluding 2021 parallel-collection, restricting to post-2022) is anti-fishing-banned. The §6 methodology-break disposition is pre-pinned; `restrict-to-≥2022` is explicitly BANNED.
+- **§9.3 Sample-window immutability.** The **2010-01 → 2026-03 monthly window of §4 is fixed** (revised per §9.9 CORRECTIONS-α 2026-04-28; was 2008-01 pre-revision — the pre-2010 window was vacated via the data-availability-driven legal channel after Task 1.1 Step 0 schema-stability pre-flight surfaced a non-pinnable Marco-2005-era harmonization gap). Re-curation post-data (excluding 2020 COVID months, excluding 2021 parallel-collection, restricting to post-2022) is anti-fishing-banned. The §6 methodology-break disposition is pre-pinned; `restrict-to-≥2022` is explicitly BANNED.
 
 - **§9.4 Lag-set immutability.** The set `k ∈ {6, 9, 12}` is fixed per §5.4. Free lag tuning or post-data addition of non-{6, 9, 12} lags is anti-fishing-banned.
 
@@ -273,6 +277,19 @@ These invariants are immutable for this iteration; they carry forward the Phase-
 - **§9.7 Spec sha256 governance.** Once the spec sha256 is computed in Task 0.3 and quoted in the implementation plan frontmatter, it governs every downstream artifact: data parquets, notebooks, result tables, memo, gate_verdict.json, and the CLAUDE.md Active iteration block update. Any artifact not citing the pinned sha256 is non-canonical and must be revised before commit.
 
 - **§9.8 Phase-A.0 invariant carryforward.** This iteration inherits Phase-A.0's pre-registration discipline, spec sha256 pin, CORRECTIONS-block-on-revision, and the principle that closed iterations inform the next iteration's prior rather than re-running the same iteration at adjusted thresholds.
+
+- **§9.9 CORRECTIONS block — Task 1.1 Step 0 schema-stability HALT (2026-04-28).** Per `feedback_pathological_halt_anti_fishing_checkpoint` and the spec's own §9.5 HALT-disposition path, the following CORRECTIONS-block audit trail records the post-HALT pivot.
+  - **HALT trigger.** Plan Task 1.1 Step 0 schema-stability pre-flight (added per SPM D5 BLOCK closure in plan v1 verification). Typed exception `PairDSchemaPreFlightPathological`. Disposition memo at `contracts/.scratch/2026-04-28-task-1.1-step-0-schema-pathological-disposition.md`.
+  - **Cause of HALT.** The DANE Empalme nota técnica covers 2010-01 → 2020-12 (132 months) only; 2008-01 → 2009-12 (24 months) falls outside that window. For pre-2010 months, two simultaneous harmonization actions DANE did NOT publish are required: (a) Marco-2005 → Marco-2018 reconciliation (out of scope per DANE nota técnica §3.3 verbatim); (b) CIIU Rev.3.1 → Rev.4 a.c. crosswalk for which DANE's published correspondence admits per-4-digit-code 1-to-many cases requiring author judgment. Per §9.2 Y-construction-immutability, author-judgment harmonization is itself anti-fishing-banned.
+  - **User pivot.** User picked **Option α** (shorten sample window to 2010-01 → 2026-03 inclusive). Rationale: data-availability-driven (NOT data-driven; the legal channel for §9.3 sample-window-immutability amendment); DANE-canonical at every break-point; N=183 post-lag-12 well above N_MIN=75.
+  - **Audit-trail effects.**
+    - §4 sample window edited (2008-01 → 2010-01); §4 N expectation revised (≈206 → ≈183); §4 cites §9.9 explicitly.
+    - Spec sha256 recomputed per §9.7 governance (the original v1.1 sha256 `f74b2ac577d5182842116a8798f307a610c185f1e6e259b8530e2ec266141728` is superseded; new sha256 pinned in this revision).
+    - Plan Task 1.1 Step 0 amended with the pinned harmonization rules table for Option α (2010-2020 Empalme catalogs cid 755-765; 2021 Marco-2018 semester archives cid 701; 2022-2026 Marco-2018 native).
+    - §6 methodology-break disposition language unchanged in substance — DANE empalme remains primary; 2021 regime dummy remains R1; restrict-≥2022 remains BANNED.
+    - §7 robustness universe (R1-R4) unchanged — Y-window shrinkage does not redefine the robustness specifications.
+  - **Rejected pivots (anti-fishing audit).** Options β (author-judgment crosswalk for 2008-2009), γ (author-constructed empalme extension), ε (empalme-only window dropping post-2020) were enumerated in the disposition memo but NOT chosen. Rationale per memo §6: β admits §9.2 author-judgment Y-construction; γ requires §9 anti-fishing-banned author-constructed empalme; ε excludes the most reliable post-2020 era which is anti-fishing-paradoxical.
+  - **3-way review of this CORRECTIONS revision.** Per HALT protocol, this revision is subject to Reality Checker (Wave 1 evidence + anti-fishing) + Model QA Specialist fresh instance (Wave 2 spec methodology) + Senior Project Manager (plan + workflow integrity). All three must PASS or PASS-WITH-REV-no-blocking before commit; trailer `Doc-Verify: wave1=...` carries all three verdicts.
 
 ---
 
