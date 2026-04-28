@@ -12,9 +12,9 @@
 
 We tested whether the share of young Colombian workers (ages 14–28) employed in services moves in the same direction as past devaluation of the Colombian peso against the US dollar, six to twelve months earlier. That is the empirical fingerprint we expect from the Baumol → US-Colombia wage-arbitrage → BPO-offshoring transmission chain that the BPO research note built up out of the Mendieta-Muñoz 2017 / Rodrik 2016 / Beerepoot-Hendriks 2013 literature.
 
-**Verdict: PASS.** The relationship is positive and statistically extremely strong: a 1% peso devaluation today is associated with a measurable rise in the young-worker services share six to twelve months later, in a direction and magnitude consistent with the literature. Out of four pre-committed robustness checks (regime-dummy, BPO-narrow Y, raw-share Y, longer HAC bandwidth) all four agree on sign — zero flips out of four.
+**Verdict: PASS.** The relationship is positive and statistically extremely strong: a 1% peso devaluation today is associated with a measurable rise in the young-worker services share, **concentrated at the 6-month horizon and within the 6-12mo contracting window** (β_6 contributes ≈80% of the composite; β_9 + β_12 contribute the remaining ≈20%). Out of four pre-committed robustness checks (regime-dummy, BPO-narrow Y, raw-share Y, longer HAC bandwidth) all four agree on sign — zero flips out of four.
 
-**What this empirically confirms.** The Colombian BPO / non-industrialization-trap mechanism is detectable in the data at a meaningful magnitude and at conventional one-sided significance over the 2015-01 → 2026-02 window. The microeconomic risk that the Abrigo framework wants to hedge — the trap-tightening that absorbs young workers into low-productivity services as US service-wage arbitrage cheapens — admits a positive measurable beta on a Panoptic-eligible reference asset (COP/USD).
+**What this empirically confirms.** A positive lagged FX→Y association *consistent with* the Colombian BPO / non-industrialization-trap mechanism is detected in the data at a meaningful magnitude and at conventional one-sided significance over the 2015-01 → 2026-02 window. **Identification caveat (per Phase-3 Reality-Checker FLAG #1, inherited into Stage-2):** the regression cannot uniquely identify the BPO channel against rival mechanisms predicting the same sign at the same lag (generic services cyclicality response to FX shocks, commodity-export feedback, tourism employment cycles, internal migration responses). The microeconomic risk that the Abrigo framework wants to hedge admits a positive measurable beta on a Panoptic-eligible reference asset (COP/USD); the *correlation* is the load-bearing object, the *causal channel* is supportive narrative.
 
 **What this unblocks.** Stage-2: an ideal-scenario M-sketch on Panoptic, modeling the convex instrument that *would* settle this relationship if deployed. Per CLAUDE.md framework, Stage-2 graduation does NOT require sourcing real Panoptic LP capital — that is the Stage-3 deployment gate.
 
@@ -105,7 +105,7 @@ Each binding Phase-A.0 anti-fishing invariant is verified against Pair D executi
 
 - **N_MIN = 75 (spec §3.6 / §4 / project memory `project_rev531_n_min_relaxation_path_alpha`).** Realized N = 134 ≫ 75. ✓
 - **POWER_MIN = 0.80** (spec §4 / Phase-A.0 floor). N=134 against pre-pinned MDES_SD = 0.40 of Y₃-SD-units satisfies the power floor under the spec-pinned formulation. ✓
-- **MDES_FORMULATION_HASH = `4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa`** (project memory `project_mdes_formulation_pin`). Pair D did not free-tune MDES_SD upward to chase target power; the formulation is the pinned `required_power(n, k, mdes_sd)` source. ✓
+- **MDES_FORMULATION_HASH = `4940360dcd298738a1f7321c1573bc3aad01b8a4c5acbc546d0855276389cefa`** (project memory `project_mdes_formulation_pin`; **note per Phase-3 SD review: this hash is a project-wide invariant from the broader Abrigo memory and does NOT appear in the Pair D spec text itself**). The hash governs at the framework level; Pair D performed no MDES sensitivity analysis at all (nothing to free-tune), so the no-free-tuning condition is trivially satisfied. ✓
 - **Pre-pinned sign expectation (β > 0) is an honored test, not a fitted result.** Spec §2 locked H_1 at spec-authoring time before any data was pulled; observed sign agrees. The one-sided test is justified by literature, not by data (spec §2 / §9.1). ✓
 - **Single (Y, X) pair, no specification fishing.** Pair D was selected as rank-1 from the BPO research note §6 5-pair ranking and committed before Phase 1; no parallel `(Y, X)` candidates were estimated. The pre-committed sensitivity universe was exhausted by R1–R4 (spec §7); no post-data Y reformulation, no post-data lag-set tuning (spec §9.4), no post-data window curation (spec §9.3). ✓
 - **HALT-disposition discipline (spec §9.5 / `feedback_pathological_halt_anti_fishing_checkpoint`).** Two HALTs were correctly executed before final dispatch: CORRECTIONS-α v1.2 (Task 1.1 Step 0 schema-stability HALT, sample window 2008→2010 per §9.9) and CORRECTIONS-α' v1.3 / v1.3.1 (Task 1.1 Step 1 second HALT on Empalme Rev.3-vs-Rev.4 value-content contradiction, sample window 2010→2015 per §9.10). Both HALTs followed the typed-exception → disposition-memo → user-pivot → CORRECTIONS-block → 3-way-review protocol; auto-pivot was not used; user-enumerated pivots were filed for both. ✓
@@ -160,4 +160,23 @@ All paths absolute; all sha256s pinned.
 
 ---
 
-**End of memo.** All 9 sections present; all 4 R-rows described in §4; spec sections cited inline against sha256 `964c62cca…ef659`; no new estimation; no Stage-3 deployment claims; no ζ-group escalation speculation (gate did not fire); anti-fishing record preserved.
+## §10. Task-numbering reconciliation (per Phase-3 SD review)
+
+The implementation plan `2026-04-27-simple-beta-pair-d-implementation.md` enumerates Phase 2 as plan-Tasks 2.1 (notebook scaffolding) → 2.2 (NB03 primary OLS) → 2.3 (NB05 robustness) → 2.4 (NB04 escalation, conditional). The orchestrator-execution layer used a parallel numbering: orchestrator-Task 2.1 (script primary OLS) → 2.2 (script robustness) → 2.3 (verdict synthesis) → 2.4 (this memo + 3-way review). The numbers semantically collide (e.g., "Task 2.2" = robustness in execution but = primary OLS in plan).
+
+Historical-audit reconciliation table:
+
+| Plan task | Orchestrator-execution task | Artifact(s) |
+|---|---|---|
+| Plan-Task 2.1 (notebook scaffolding) | (deferred; executed under Option-β post-Phase-2 as scaffolding commit `b3d027f2d`) | `notebooks/{env.py, references.bib, 01_data_eda.ipynb, 02_estimation.ipynb, 03_tests_and_sensitivity.ipynb}` |
+| Plan-Task 2.2 (NB03 primary OLS, trio-checkpoints) | Orch-Task 2.1 (script primary OLS) | `scripts/task_2_1_primary_ols.py`, `results/primary_ols.json`, `results/task_2_1_findings.md` |
+| Plan-Task 2.3 (NB05 robustness, trio-checkpoints) | Orch-Task 2.2 (script robustness) | `scripts/task_2_2_robustness.py`, `results/robustness_pack.json`, `results/task_2_2_findings.md` |
+| Plan-Task 2.4 (NB04 escalation, conditional) | (skipped; Clause-A gate did not fire — primary p_one = 1.46e-08 ∉ (0.05, 0.20]) | none |
+| (no plan analogue) | Orch-Task 2.3 (mechanical verdict synthesis) | `results/VERDICT.md` |
+| (no plan analogue) | Orch-Task 2.4 (this memo + 3-way review) | `results/MEMO.md`, Phase-3 review verdicts |
+
+The script-form Phase-2 execution (orch-Tasks 2.1-2.2) was a process violation of plan-Tasks 2.2-2.3's NON-NEGOTIABLE trio-checkpoint discipline per memory `feedback_notebook_trio_checkpoint`. The user-chosen remediation (2026-04-28 PM late evening: **Option β**) re-executes the analysis as notebooks under trio discipline; CORRECTIONS-β (spec section to be added) records the deviation + Option-β path explicitly. The numerical content of the script-form execution is preserved as the canonical Phase-2 result; the notebook-form re-execution reproduces it byte-deterministically (sha256 round-trip assertions in NB02 §2 + NB03 §6).
+
+---
+
+**End of memo.** All 10 sections present (§9 = 9 in original commit; §10 added under Phase-3 narrative remediations per SD review); all 4 R-rows described in §4; spec sections cited inline against sha256 `964c62cca…ef659`; no new estimation; no Stage-3 deployment claims; no ζ-group escalation speculation (gate did not fire); anti-fishing record preserved; Phase-3 review FLAGs (RC #1, #3, #7) integrated into §1 narrative.
