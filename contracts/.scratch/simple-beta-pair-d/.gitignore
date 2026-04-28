@@ -1,0 +1,9 @@
+# Raw GEIH ZIPs and DANE source files (5.3GB, reproducible from manifest)
+data/downloads/
+data/probes/
+data/extracted/
+data/logs/
+
+# Python build artifacts
+**/__pycache__/
+*.pyc

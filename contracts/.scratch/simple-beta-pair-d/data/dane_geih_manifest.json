@@ -1,0 +1,3689 @@
+{
+  "_collected_at_utc": "2026-04-28T10:56:24Z",
+  "_source": "https://microdatos.dane.gov.co/index.php/catalog/{cid}/get-microdata",
+  "2008": {
+    "native": {
+      "catalog_id": 206,
+      "files": [
+        {
+          "filename": "Enero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3268",
+          "file_id": 3268,
+          "size": "ZIP, 14.23 MB"
+        },
+        {
+          "filename": "Febrero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3269",
+          "file_id": 3269,
+          "size": "ZIP, 14.67 MB"
+        },
+        {
+          "filename": "Marzo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3270",
+          "file_id": 3270,
+          "size": "ZIP, 14.32 MB"
+        },
+        {
+          "filename": "Abril.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3271",
+          "file_id": 3271,
+          "size": "ZIP, 8.47 MB"
+        },
+        {
+          "filename": "Mayo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3272",
+          "file_id": 3272,
+          "size": "ZIP, 14.81 MB"
+        },
+        {
+          "filename": "Junio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3273",
+          "file_id": 3273,
+          "size": "ZIP, 13.97 MB"
+        },
+        {
+          "filename": "Julio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3274",
+          "file_id": 3274,
+          "size": "ZIP, 13.99 MB"
+        },
+        {
+          "filename": "Agosto.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3275",
+          "file_id": 3275,
+          "size": "ZIP, 14.12 MB"
+        },
+        {
+          "filename": "Septiembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3276",
+          "file_id": 3276,
+          "size": "ZIP, 13.75 MB"
+        },
+        {
+          "filename": "Octubre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3277",
+          "file_id": 3277,
+          "size": "ZIP, 14.14 MB"
+        },
+        {
+          "filename": "Noviembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3278",
+          "file_id": 3278,
+          "size": "ZIP, 13.94 MB"
+        },
+        {
+          "filename": "Diciembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3293",
+          "file_id": 3293,
+          "size": "ZIP, 13.22 MB"
+        },
+        {
+          "filename": "Enero_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3294",
+          "file_id": 3294,
+          "size": "ZIP, 6.34 MB"
+        },
+        {
+          "filename": "Febrero_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3295",
+          "file_id": 3295,
+          "size": "ZIP, 6.57 MB"
+        },
+        {
+          "filename": "Marzo_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3298",
+          "file_id": 3298,
+          "size": "ZIP, 6.34 MB"
+        },
+        {
+          "filename": "Abril_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3299",
+          "file_id": 3299,
+          "size": "ZIP, 6.81 MB"
+        },
+        {
+          "filename": "Mayo_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3300",
+          "file_id": 3300,
+          "size": "ZIP, 6.64 MB"
+        },
+        {
+          "filename": "Junio_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3301",
+          "file_id": 3301,
+          "size": "ZIP, 6.28 MB"
+        },
+        {
+          "filename": "Julio_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3302",
+          "file_id": 3302,
+          "size": "ZIP, 6.3 MB"
+        },
+        {
+          "filename": "Agosto_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3303",
+          "file_id": 3303,
+          "size": "ZIP, 6.36 MB"
+        },
+        {
+          "filename": "Septiembre_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3304",
+          "file_id": 3304,
+          "size": "ZIP, 6.19 MB"
+        },
+        {
+          "filename": "Octubre_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3305",
+          "file_id": 3305,
+          "size": "ZIP, 6.38 MB"
+        },
+        {
+          "filename": "Noviembre_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3306",
+          "file_id": 3306,
+          "size": "ZIP, 6.29 MB"
+        },
+        {
+          "filename": "Diciembre_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3307",
+          "file_id": 3307,
+          "size": "ZIP, 5.94 MB"
+        },
+        {
+          "filename": "total_2008_c.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3308",
+          "file_id": 3308,
+          "size": "ZIP, 3.83 MB"
+        },
+        {
+          "filename": "total_2008_c.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/3309",
+          "file_id": 3309,
+          "size": "ZIP, 3.56 MB"
+        },
+        {
+          "filename": "Enero_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/12791",
+          "file_id": 12791,
+          "size": "ZIP, 6.54 MB"
+        },
+        {
+          "filename": "Febrero_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/12792",
+          "file_id": 12792,
+          "size": "ZIP, 6.77 MB"
+        },
+        {
+          "filename": "Marzo_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/12793",
+          "file_id": 12793,
+          "size": "ZIP, 6.53 MB"
+        },
+        {
+          "filename": "Abril.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/12794",
+          "file_id": 12794,
+          "size": "ZIP, 7.02 MB"
+        },
+        {
+          "filename": "Mayo_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/12795",
+          "file_id": 12795,
+          "size": "ZIP, 6.84 MB"
+        },
+        {
+          "filename": "Junio_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/12796",
+          "file_id": 12796,
+          "size": "ZIP, 6.47 MB"
+        },
+        {
+          "filename": "Julio_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/12798",
+          "file_id": 12798,
+          "size": "ZIP, 6.5 MB"
+        },
+        {
+          "filename": "Agosto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/12799",
+          "file_id": 12799,
+          "size": "ZIP, 6.56 MB"
+        },
+        {
+          "filename": "Septiembre_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/12800",
+          "file_id": 12800,
+          "size": "ZIP, 6.39 MB"
+        },
+        {
+          "filename": "Octubre_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/12801",
+          "file_id": 12801,
+          "size": "ZIP, 6.59 MB"
+        },
+        {
+          "filename": "Noviembre_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/12802",
+          "file_id": 12802,
+          "size": "ZIP, 6.5 MB"
+        },
+        {
+          "filename": "Diciembre_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/12803",
+          "file_id": 12803,
+          "size": "ZIP, 6.14 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2008.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/206/download/20926",
+          "file_id": 20926,
+          "size": "ZIP, 11.34 MB"
+        }
+      ]
+    }
+  },
+  "2009": {
+    "native": {
+      "catalog_id": 207,
+      "files": [
+        {
+          "filename": "04.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3314",
+          "file_id": 3314,
+          "size": "ZIP, 7.29 MB"
+        },
+        {
+          "filename": "04_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3315",
+          "file_id": 3315,
+          "size": "ZIP, 6.12 MB"
+        },
+        {
+          "filename": "05.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3316",
+          "file_id": 3316,
+          "size": "ZIP, 7.19 MB"
+        },
+        {
+          "filename": "05_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3317",
+          "file_id": 3317,
+          "size": "ZIP, 6.05 MB"
+        },
+        {
+          "filename": "06.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3318",
+          "file_id": 3318,
+          "size": "ZIP, 7.09 MB"
+        },
+        {
+          "filename": "06_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3329",
+          "file_id": 3329,
+          "size": "ZIP, 5.95 MB"
+        },
+        {
+          "filename": "07.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3330",
+          "file_id": 3330,
+          "size": "ZIP, 7.43 MB"
+        },
+        {
+          "filename": "07_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3331",
+          "file_id": 3331,
+          "size": "ZIP, 6.24 MB"
+        },
+        {
+          "filename": "08.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3332",
+          "file_id": 3332,
+          "size": "ZIP, 7.46 MB"
+        },
+        {
+          "filename": "08_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3333",
+          "file_id": 3333,
+          "size": "ZIP, 6.26 MB"
+        },
+        {
+          "filename": "09.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3334",
+          "file_id": 3334,
+          "size": "ZIP, 7.44 MB"
+        },
+        {
+          "filename": "09_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3335",
+          "file_id": 3335,
+          "size": "ZIP, 6.25 MB"
+        },
+        {
+          "filename": "10.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3336",
+          "file_id": 3336,
+          "size": "ZIP, 7.37 MB"
+        },
+        {
+          "filename": "10_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3337",
+          "file_id": 3337,
+          "size": "ZIP, 6.22 MB"
+        },
+        {
+          "filename": "11.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3338",
+          "file_id": 3338,
+          "size": "ZIP, 7.33 MB"
+        },
+        {
+          "filename": "11_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3339",
+          "file_id": 3339,
+          "size": "ZIP, 6.18 MB"
+        },
+        {
+          "filename": "12.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3340",
+          "file_id": 3340,
+          "size": "ZIP, 7.07 MB"
+        },
+        {
+          "filename": "12_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3341",
+          "file_id": 3341,
+          "size": "ZIP, 5.95 MB"
+        },
+        {
+          "filename": "total_2009_c.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3342",
+          "file_id": 3342,
+          "size": "ZIP, 3.71 MB"
+        },
+        {
+          "filename": "total_2009_c_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/3343",
+          "file_id": 3343,
+          "size": "ZIP, 3.63 MB"
+        },
+        {
+          "filename": "Enero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/5490",
+          "file_id": 5490,
+          "size": "ZIP, 7.11 MB"
+        },
+        {
+          "filename": "Enero_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/5491",
+          "file_id": 5491,
+          "size": "ZIP, 5.75 MB"
+        },
+        {
+          "filename": "Febrero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/5492",
+          "file_id": 5492,
+          "size": "ZIP, 7.35 MB"
+        },
+        {
+          "filename": "Febrero_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/5493",
+          "file_id": 5493,
+          "size": "ZIP, 6 MB"
+        },
+        {
+          "filename": "Marzo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/5494",
+          "file_id": 5494,
+          "size": "ZIP, 7.35 MB"
+        },
+        {
+          "filename": "Marzo_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/5495",
+          "file_id": 5495,
+          "size": "ZIP, 5.95 MB"
+        },
+        {
+          "filename": "Enero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/12995",
+          "file_id": 12995,
+          "size": "ZIP, 5.92 MB"
+        },
+        {
+          "filename": "Febrero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/12996",
+          "file_id": 12996,
+          "size": "ZIP, 6.17 MB"
+        },
+        {
+          "filename": "Marzo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/12997",
+          "file_id": 12997,
+          "size": "ZIP, 6.13 MB"
+        },
+        {
+          "filename": "Abril.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/12998",
+          "file_id": 12998,
+          "size": "ZIP, 6.31 MB"
+        },
+        {
+          "filename": "Mayo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/12999",
+          "file_id": 12999,
+          "size": "ZIP, 6.25 MB"
+        },
+        {
+          "filename": "Junio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/13000",
+          "file_id": 13000,
+          "size": "ZIP, 6.15 MB"
+        },
+        {
+          "filename": "Julio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/13001",
+          "file_id": 13001,
+          "size": "ZIP, 6.45 MB"
+        },
+        {
+          "filename": "Agosto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/13002",
+          "file_id": 13002,
+          "size": "ZIP, 6.47 MB"
+        },
+        {
+          "filename": "Septiembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/13003",
+          "file_id": 13003,
+          "size": "ZIP, 6.45 MB"
+        },
+        {
+          "filename": "Octubre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/13004",
+          "file_id": 13004,
+          "size": "ZIP, 6.43 MB"
+        },
+        {
+          "filename": "Noviembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/13005",
+          "file_id": 13005,
+          "size": "ZIP, 6.39 MB"
+        },
+        {
+          "filename": "Diciembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/13006",
+          "file_id": 13006,
+          "size": "ZIP, 6.15 MB"
+        },
+        {
+          "filename": "total_2009_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/13007",
+          "file_id": 13007,
+          "size": "ZIP, 3.63 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2009.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/207/download/20925",
+          "file_id": 20925,
+          "size": "ZIP, 11.34 MB"
+        }
+      ]
+    }
+  },
+  "2010": {
+    "native": {
+      "catalog_id": 205,
+      "files": [
+        {
+          "filename": "Enero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3198",
+          "file_id": 3198,
+          "size": "ZIP, 7.68 MB"
+        },
+        {
+          "filename": "Febrero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3199",
+          "file_id": 3199,
+          "size": "ZIP, 7.92 MB"
+        },
+        {
+          "filename": "Marzo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3200",
+          "file_id": 3200,
+          "size": "ZIP, 7.74 MB"
+        },
+        {
+          "filename": "Abril.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3201",
+          "file_id": 3201,
+          "size": "ZIP, 8.19 MB"
+        },
+        {
+          "filename": "Mayo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3202",
+          "file_id": 3202,
+          "size": "ZIP, 7.97 MB"
+        },
+        {
+          "filename": "Junio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3203",
+          "file_id": 3203,
+          "size": "ZIP, 7.83 MB"
+        },
+        {
+          "filename": "Julio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3204",
+          "file_id": 3204,
+          "size": "ZIP, 7.97 MB"
+        },
+        {
+          "filename": "Agosto.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3205",
+          "file_id": 3205,
+          "size": "ZIP, 8.19 MB"
+        },
+        {
+          "filename": "Septiembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3206",
+          "file_id": 3206,
+          "size": "ZIP, 8.17 MB"
+        },
+        {
+          "filename": "Octubre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3207",
+          "file_id": 3207,
+          "size": "ZIP, 8.11 MB"
+        },
+        {
+          "filename": "Noviembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3208",
+          "file_id": 3208,
+          "size": "ZIP, 8.12 MB"
+        },
+        {
+          "filename": "Diciembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3209",
+          "file_id": 3209,
+          "size": "ZIP, 7.78 MB"
+        },
+        {
+          "filename": "Enero_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3210",
+          "file_id": 3210,
+          "size": "ZIP, 6.21 MB"
+        },
+        {
+          "filename": "Febrero_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3211",
+          "file_id": 3211,
+          "size": "ZIP, 6.4 MB"
+        },
+        {
+          "filename": "Marzo_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3212",
+          "file_id": 3212,
+          "size": "ZIP, 6.25 MB"
+        },
+        {
+          "filename": "Abril_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3213",
+          "file_id": 3213,
+          "size": "ZIP, 6.62 MB"
+        },
+        {
+          "filename": "Mayo_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3214",
+          "file_id": 3214,
+          "size": "ZIP, 6.44 MB"
+        },
+        {
+          "filename": "Junio_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3215",
+          "file_id": 3215,
+          "size": "ZIP, 6.33 MB"
+        },
+        {
+          "filename": "Julio_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3216",
+          "file_id": 3216,
+          "size": "ZIP, 6.46 MB"
+        },
+        {
+          "filename": "Agosto_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3217",
+          "file_id": 3217,
+          "size": "ZIP, 6.63 MB"
+        },
+        {
+          "filename": "Septiembre_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3218",
+          "file_id": 3218,
+          "size": "ZIP, 6.6 MB"
+        },
+        {
+          "filename": "Octubre_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3219",
+          "file_id": 3219,
+          "size": "ZIP, 6.56 MB"
+        },
+        {
+          "filename": "Noviembre_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3220",
+          "file_id": 3220,
+          "size": "ZIP, 6.57 MB"
+        },
+        {
+          "filename": "Diciembre_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3221",
+          "file_id": 3221,
+          "size": "ZIP, 6.29 MB"
+        },
+        {
+          "filename": "total_2010_c_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/3222",
+          "file_id": 3222,
+          "size": "ZIP, 3.73 MB"
+        },
+        {
+          "filename": "Enero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12974",
+          "file_id": 12974,
+          "size": "ZIP, 6.41 MB"
+        },
+        {
+          "filename": "Febrero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12975",
+          "file_id": 12975,
+          "size": "ZIP, 6.6 MB"
+        },
+        {
+          "filename": "Marzo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12976",
+          "file_id": 12976,
+          "size": "ZIP, 6.45 MB"
+        },
+        {
+          "filename": "Abril.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12977",
+          "file_id": 12977,
+          "size": "ZIP, 6.83 MB"
+        },
+        {
+          "filename": "Mayo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12978",
+          "file_id": 12978,
+          "size": "ZIP, 6.64 MB"
+        },
+        {
+          "filename": "Junio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12979",
+          "file_id": 12979,
+          "size": "ZIP, 6.54 MB"
+        },
+        {
+          "filename": "Julio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12980",
+          "file_id": 12980,
+          "size": "ZIP, 6.67 MB"
+        },
+        {
+          "filename": "Agosto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12981",
+          "file_id": 12981,
+          "size": "ZIP, 6.84 MB"
+        },
+        {
+          "filename": "Septiembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12982",
+          "file_id": 12982,
+          "size": "ZIP, 6.81 MB"
+        },
+        {
+          "filename": "Octubre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12983",
+          "file_id": 12983,
+          "size": "ZIP, 6.77 MB"
+        },
+        {
+          "filename": "Noviembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12984",
+          "file_id": 12984,
+          "size": "ZIP, 6.78 MB"
+        },
+        {
+          "filename": "Diciembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12985",
+          "file_id": 12985,
+          "size": "ZIP, 6.49 MB"
+        },
+        {
+          "filename": "total_2010_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12986",
+          "file_id": 12986,
+          "size": "ZIP, 3.73 MB"
+        },
+        {
+          "filename": "total_2010_spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/12987",
+          "file_id": 12987,
+          "size": "ZIP, 3.82 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2010.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/205/download/20924",
+          "file_id": 20924,
+          "size": "ZIP, 11.58 MB"
+        }
+      ]
+    },
+    "empalme": {
+      "catalog_id": 765,
+      "files": [
+        {
+          "filename": "GEIH_Empalme_2010.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/765/download/22001",
+          "file_id": 22001,
+          "size": "ZIP, 209.52 MB"
+        }
+      ]
+    }
+  },
+  "2011": {
+    "native": {
+      "catalog_id": 182,
+      "files": [
+        {
+          "filename": "Enero_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2729",
+          "file_id": 2729,
+          "size": "ZIP, 6.33 MB"
+        },
+        {
+          "filename": "Febrero_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2731",
+          "file_id": 2731,
+          "size": "ZIP, 6.96 MB"
+        },
+        {
+          "filename": "Marzo_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2733",
+          "file_id": 2733,
+          "size": "ZIP, 6.74 MB"
+        },
+        {
+          "filename": "Abril_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2735",
+          "file_id": 2735,
+          "size": "ZIP, 6.4 MB"
+        },
+        {
+          "filename": "Mayo_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2737",
+          "file_id": 2737,
+          "size": "ZIP, 6.71 MB"
+        },
+        {
+          "filename": "Junio_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2739",
+          "file_id": 2739,
+          "size": "ZIP, 6.7 MB"
+        },
+        {
+          "filename": "Julio_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2741",
+          "file_id": 2741,
+          "size": "ZIP, 6.73 MB"
+        },
+        {
+          "filename": "Agosto_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2743",
+          "file_id": 2743,
+          "size": "ZIP, 6.68 MB"
+        },
+        {
+          "filename": "Septiembre_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2745",
+          "file_id": 2745,
+          "size": "ZIP, 6.65 MB"
+        },
+        {
+          "filename": "Octubre_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2747",
+          "file_id": 2747,
+          "size": "ZIP, 6.6 MB"
+        },
+        {
+          "filename": "Noviembre_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2749",
+          "file_id": 2749,
+          "size": "ZIP, 6.67 MB"
+        },
+        {
+          "filename": "Diciembre_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2751",
+          "file_id": 2751,
+          "size": "ZIP, 6.44 MB"
+        },
+        {
+          "filename": "total_2011_c.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2752",
+          "file_id": 2752,
+          "size": "ZIP, 3.97 MB"
+        },
+        {
+          "filename": "total_2011_c_txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/2753",
+          "file_id": 2753,
+          "size": "ZIP, 3.88 MB"
+        },
+        {
+          "filename": "Enero_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12719",
+          "file_id": 12719,
+          "size": "ZIP, 6.53 MB"
+        },
+        {
+          "filename": "Febrero_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12720",
+          "file_id": 12720,
+          "size": "ZIP, 7.18 MB"
+        },
+        {
+          "filename": "Marzo_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12721",
+          "file_id": 12721,
+          "size": "ZIP, 6.94 MB"
+        },
+        {
+          "filename": "Abril_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12722",
+          "file_id": 12722,
+          "size": "ZIP, 6.59 MB"
+        },
+        {
+          "filename": "Mayo_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12723",
+          "file_id": 12723,
+          "size": "ZIP, 6.91 MB"
+        },
+        {
+          "filename": "Junio_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12724",
+          "file_id": 12724,
+          "size": "ZIP, 6.9 MB"
+        },
+        {
+          "filename": "Julio_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12725",
+          "file_id": 12725,
+          "size": "ZIP, 6.93 MB"
+        },
+        {
+          "filename": "Agosto_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12726",
+          "file_id": 12726,
+          "size": "ZIP, 6.88 MB"
+        },
+        {
+          "filename": "Septiembre_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12727",
+          "file_id": 12727,
+          "size": "ZIP, 6.85 MB"
+        },
+        {
+          "filename": "Octubre_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12728",
+          "file_id": 12728,
+          "size": "ZIP, 6.81 MB"
+        },
+        {
+          "filename": "Noviembre_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12729",
+          "file_id": 12729,
+          "size": "ZIP, 6.88 MB"
+        },
+        {
+          "filename": "Diciembre_csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12730",
+          "file_id": 12730,
+          "size": "ZIP, 6.64 MB"
+        },
+        {
+          "filename": "Total Departamentos.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12731",
+          "file_id": 12731,
+          "size": "ZIP, 4 MB"
+        },
+        {
+          "filename": "Enero.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12804",
+          "file_id": 12804,
+          "size": "ZIP, 9.04 MB"
+        },
+        {
+          "filename": "Febrero.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12805",
+          "file_id": 12805,
+          "size": "ZIP, 9.49 MB"
+        },
+        {
+          "filename": "Marzo.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12806",
+          "file_id": 12806,
+          "size": "ZIP, 9.57 MB"
+        },
+        {
+          "filename": "Abril.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12807",
+          "file_id": 12807,
+          "size": "ZIP, 9.1 MB"
+        },
+        {
+          "filename": "Mayo.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12808",
+          "file_id": 12808,
+          "size": "ZIP, 9.54 MB"
+        },
+        {
+          "filename": "Junio.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12809",
+          "file_id": 12809,
+          "size": "ZIP, 9.53 MB"
+        },
+        {
+          "filename": "Julio.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12810",
+          "file_id": 12810,
+          "size": "ZIP, 9.43 MB"
+        },
+        {
+          "filename": "Agosto.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12811",
+          "file_id": 12811,
+          "size": "ZIP, 9.51 MB"
+        },
+        {
+          "filename": "Septiembre.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12812",
+          "file_id": 12812,
+          "size": "ZIP, 9.45 MB"
+        },
+        {
+          "filename": "Octubre.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12813",
+          "file_id": 12813,
+          "size": "ZIP, 9.38 MB"
+        },
+        {
+          "filename": "Noviembre.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12814",
+          "file_id": 12814,
+          "size": "ZIP, 9.49 MB"
+        },
+        {
+          "filename": "Diciembre.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/12815",
+          "file_id": 12815,
+          "size": "ZIP, 9.18 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2011.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/182/download/20923",
+          "file_id": 20923,
+          "size": "ZIP, 11.75 MB"
+        }
+      ]
+    },
+    "empalme": {
+      "catalog_id": 755,
+      "files": [
+        {
+          "filename": "GEIH_Empalme_2011.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/755/download/21719",
+          "file_id": 21719,
+          "size": "ZIP, 213.92 MB"
+        }
+      ]
+    }
+  },
+  "2012": {
+    "native": {
+      "catalog_id": 77,
+      "files": [
+        {
+          "filename": "Enero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/860",
+          "file_id": 860,
+          "size": "ZIP, 7.75 MB"
+        },
+        {
+          "filename": "Enero.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/861",
+          "file_id": 861,
+          "size": "ZIP, 6.31 MB"
+        },
+        {
+          "filename": "Febrero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/862",
+          "file_id": 862,
+          "size": "ZIP, 8.11 MB"
+        },
+        {
+          "filename": "Febrero.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/863",
+          "file_id": 863,
+          "size": "ZIP, 6.63 MB"
+        },
+        {
+          "filename": "Marzo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/864",
+          "file_id": 864,
+          "size": "ZIP, 8.03 MB"
+        },
+        {
+          "filename": "Marzo.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/865",
+          "file_id": 865,
+          "size": "ZIP, 6.58 MB"
+        },
+        {
+          "filename": "Abril.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/866",
+          "file_id": 866,
+          "size": "ZIP, 8.33 MB"
+        },
+        {
+          "filename": "Abril.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/867",
+          "file_id": 867,
+          "size": "ZIP, 6.65 MB"
+        },
+        {
+          "filename": "Mayo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/868",
+          "file_id": 868,
+          "size": "ZIP, 8.62 MB"
+        },
+        {
+          "filename": "Mayo.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/869",
+          "file_id": 869,
+          "size": "ZIP, 6.88 MB"
+        },
+        {
+          "filename": "Junio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/870",
+          "file_id": 870,
+          "size": "ZIP, 8.19 MB"
+        },
+        {
+          "filename": "Junio.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/871",
+          "file_id": 871,
+          "size": "ZIP, 6.55 MB"
+        },
+        {
+          "filename": "Julio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/872",
+          "file_id": 872,
+          "size": "ZIP, 8.15 MB"
+        },
+        {
+          "filename": "Julio.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/873",
+          "file_id": 873,
+          "size": "ZIP, 6.51 MB"
+        },
+        {
+          "filename": "Agosto.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/874",
+          "file_id": 874,
+          "size": "ZIP, 8.31 MB"
+        },
+        {
+          "filename": "Agosto.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/875",
+          "file_id": 875,
+          "size": "ZIP, 6.64 MB"
+        },
+        {
+          "filename": "Septiembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/876",
+          "file_id": 876,
+          "size": "ZIP, 8.19 MB"
+        },
+        {
+          "filename": "Septiembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/877",
+          "file_id": 877,
+          "size": "ZIP, 6.54 MB"
+        },
+        {
+          "filename": "Octubre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/878",
+          "file_id": 878,
+          "size": "ZIP, 8.32 MB"
+        },
+        {
+          "filename": "Octubre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/879",
+          "file_id": 879,
+          "size": "ZIP, 6.6 MB"
+        },
+        {
+          "filename": "Noviembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/880",
+          "file_id": 880,
+          "size": "ZIP, 8.41 MB"
+        },
+        {
+          "filename": "Noviembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/881",
+          "file_id": 881,
+          "size": "ZIP, 6.67 MB"
+        },
+        {
+          "filename": "Diciembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/882",
+          "file_id": 882,
+          "size": "ZIP, 7.73 MB"
+        },
+        {
+          "filename": "Diciembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/883",
+          "file_id": 883,
+          "size": "ZIP, 6.12 MB"
+        },
+        {
+          "filename": "Enero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13013",
+          "file_id": 13013,
+          "size": "ZIP, 6.53 MB"
+        },
+        {
+          "filename": "Febrero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13014",
+          "file_id": 13014,
+          "size": "ZIP, 6.86 MB"
+        },
+        {
+          "filename": "Marzo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13015",
+          "file_id": 13015,
+          "size": "ZIP, 6.8 MB"
+        },
+        {
+          "filename": "Abril.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13016",
+          "file_id": 13016,
+          "size": "ZIP, 6.88 MB"
+        },
+        {
+          "filename": "Mayo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13017",
+          "file_id": 13017,
+          "size": "ZIP, 7.13 MB"
+        },
+        {
+          "filename": "Junio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13018",
+          "file_id": 13018,
+          "size": "ZIP, 6.78 MB"
+        },
+        {
+          "filename": "Julio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13019",
+          "file_id": 13019,
+          "size": "ZIP, 6.74 MB"
+        },
+        {
+          "filename": "Agosto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13020",
+          "file_id": 13020,
+          "size": "ZIP, 6.87 MB"
+        },
+        {
+          "filename": "Septiembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13021",
+          "file_id": 13021,
+          "size": "ZIP, 6.78 MB"
+        },
+        {
+          "filename": "Octubre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13022",
+          "file_id": 13022,
+          "size": "ZIP, 6.84 MB"
+        },
+        {
+          "filename": "Noviembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13023",
+          "file_id": 13023,
+          "size": "ZIP, 6.9 MB"
+        },
+        {
+          "filename": "Diciembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13024",
+          "file_id": 13024,
+          "size": "ZIP, 6.33 MB"
+        },
+        {
+          "filename": "Total_Fex_2012.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/13025",
+          "file_id": 13025,
+          "size": "ZIP, 11.46 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2012.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/77/download/20922",
+          "file_id": 20922,
+          "size": "ZIP, 11.48 MB"
+        }
+      ]
+    },
+    "empalme": {
+      "catalog_id": 760,
+      "files": [
+        {
+          "filename": "GEIH_Empalme_2012.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/760/download/21879",
+          "file_id": 21879,
+          "size": "ZIP, 249.18 MB"
+        }
+      ]
+    }
+  },
+  "2013": {
+    "native": {
+      "catalog_id": 68,
+      "files": [
+        {
+          "filename": "Enero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/732",
+          "file_id": 732,
+          "size": "ZIP, 8.14 MB"
+        },
+        {
+          "filename": "Enero.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/733",
+          "file_id": 733,
+          "size": "ZIP, 6.47 MB"
+        },
+        {
+          "filename": "Febrero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/734",
+          "file_id": 734,
+          "size": "ZIP, 8.12 MB"
+        },
+        {
+          "filename": "Febrero.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/735",
+          "file_id": 735,
+          "size": "ZIP, 6.46 MB"
+        },
+        {
+          "filename": "Marzo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/736",
+          "file_id": 736,
+          "size": "ZIP, 7.97 MB"
+        },
+        {
+          "filename": "Marzo.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/737",
+          "file_id": 737,
+          "size": "ZIP, 6.35 MB"
+        },
+        {
+          "filename": "Abril.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/738",
+          "file_id": 738,
+          "size": "ZIP, 8 MB"
+        },
+        {
+          "filename": "Abril.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/739",
+          "file_id": 739,
+          "size": "ZIP, 6.45 MB"
+        },
+        {
+          "filename": "Mayo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/740",
+          "file_id": 740,
+          "size": "ZIP, 8.17 MB"
+        },
+        {
+          "filename": "Mayo.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/741",
+          "file_id": 741,
+          "size": "ZIP, 6.57 MB"
+        },
+        {
+          "filename": "Junio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/742",
+          "file_id": 742,
+          "size": "ZIP, 8 MB"
+        },
+        {
+          "filename": "Junio.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/743",
+          "file_id": 743,
+          "size": "ZIP, 6.44 MB"
+        },
+        {
+          "filename": "Julio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/744",
+          "file_id": 744,
+          "size": "ZIP, 7.78 MB"
+        },
+        {
+          "filename": "Julio.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/745",
+          "file_id": 745,
+          "size": "ZIP, 6.33 MB"
+        },
+        {
+          "filename": "Agosto.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/746",
+          "file_id": 746,
+          "size": "ZIP, 7.85 MB"
+        },
+        {
+          "filename": "Agosto.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/747",
+          "file_id": 747,
+          "size": "ZIP, 6.39 MB"
+        },
+        {
+          "filename": "Septiembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/748",
+          "file_id": 748,
+          "size": "ZIP, 7.73 MB"
+        },
+        {
+          "filename": "Septiembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/749",
+          "file_id": 749,
+          "size": "ZIP, 6.29 MB"
+        },
+        {
+          "filename": "Octubre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/750",
+          "file_id": 750,
+          "size": "ZIP, 7.91 MB"
+        },
+        {
+          "filename": "Octubre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/751",
+          "file_id": 751,
+          "size": "ZIP, 6.43 MB"
+        },
+        {
+          "filename": "Noviembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/752",
+          "file_id": 752,
+          "size": "ZIP, 7.78 MB"
+        },
+        {
+          "filename": "Noviembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/753",
+          "file_id": 753,
+          "size": "ZIP, 6.32 MB"
+        },
+        {
+          "filename": "Diciembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/754",
+          "file_id": 754,
+          "size": "ZIP, 7.32 MB"
+        },
+        {
+          "filename": "Diciembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/755",
+          "file_id": 755,
+          "size": "ZIP, 5.95 MB"
+        },
+        {
+          "filename": "Enero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13027",
+          "file_id": 13027,
+          "size": "ZIP, 6.68 MB"
+        },
+        {
+          "filename": "Febrero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13028",
+          "file_id": 13028,
+          "size": "ZIP, 6.68 MB"
+        },
+        {
+          "filename": "Marzo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13029",
+          "file_id": 13029,
+          "size": "ZIP, 6.57 MB"
+        },
+        {
+          "filename": "Abril.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13030",
+          "file_id": 13030,
+          "size": "ZIP, 6.65 MB"
+        },
+        {
+          "filename": "Mayo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13031",
+          "file_id": 13031,
+          "size": "ZIP, 6.78 MB"
+        },
+        {
+          "filename": "Junio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13032",
+          "file_id": 13032,
+          "size": "ZIP, 6.64 MB"
+        },
+        {
+          "filename": "Julio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13033",
+          "file_id": 13033,
+          "size": "ZIP, 6.52 MB"
+        },
+        {
+          "filename": "Agosto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13034",
+          "file_id": 13034,
+          "size": "ZIP, 6.58 MB"
+        },
+        {
+          "filename": "Septiembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13035",
+          "file_id": 13035,
+          "size": "ZIP, 6.48 MB"
+        },
+        {
+          "filename": "Octubre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13036",
+          "file_id": 13036,
+          "size": "ZIP, 6.63 MB"
+        },
+        {
+          "filename": "Noviembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13037",
+          "file_id": 13037,
+          "size": "ZIP, 6.52 MB"
+        },
+        {
+          "filename": "Diciembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13038",
+          "file_id": 13038,
+          "size": "ZIP, 6.13 MB"
+        },
+        {
+          "filename": "Total_Fex_2013.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/13039",
+          "file_id": 13039,
+          "size": "ZIP, 11.42 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2013.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/68/download/20921",
+          "file_id": 20921,
+          "size": "ZIP, 11.35 MB"
+        }
+      ]
+    },
+    "empalme": {
+      "catalog_id": 761,
+      "files": [
+        {
+          "filename": "GEIH_Emplame_2013.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/761/download/21903",
+          "file_id": 21903,
+          "size": "ZIP, 240.91 MB"
+        }
+      ]
+    }
+  },
+  "2014": {
+    "native": {
+      "catalog_id": 328,
+      "files": [
+        {
+          "filename": "Enero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4810",
+          "file_id": 4810,
+          "size": "ZIP, 7.71 MB"
+        },
+        {
+          "filename": "Enero.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4811",
+          "file_id": 4811,
+          "size": "ZIP, 6.25 MB"
+        },
+        {
+          "filename": "Febrero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4812",
+          "file_id": 4812,
+          "size": "ZIP, 7.77 MB"
+        },
+        {
+          "filename": "Febrero.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4813",
+          "file_id": 4813,
+          "size": "ZIP, 6.32 MB"
+        },
+        {
+          "filename": "Marzo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4814",
+          "file_id": 4814,
+          "size": "ZIP, 7.6 MB"
+        },
+        {
+          "filename": "Marzo.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4815",
+          "file_id": 4815,
+          "size": "ZIP, 6.19 MB"
+        },
+        {
+          "filename": "Abril.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4816",
+          "file_id": 4816,
+          "size": "ZIP, 7.57 MB"
+        },
+        {
+          "filename": "Abril.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4817",
+          "file_id": 4817,
+          "size": "ZIP, 6.16 MB"
+        },
+        {
+          "filename": "Mayo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4818",
+          "file_id": 4818,
+          "size": "ZIP, 7.88 MB"
+        },
+        {
+          "filename": "Mayo.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4819",
+          "file_id": 4819,
+          "size": "ZIP, 6.42 MB"
+        },
+        {
+          "filename": "Junio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4820",
+          "file_id": 4820,
+          "size": "ZIP, 7.41 MB"
+        },
+        {
+          "filename": "Junio.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4822",
+          "file_id": 4822,
+          "size": "ZIP, 6.05 MB"
+        },
+        {
+          "filename": "Julio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4823",
+          "file_id": 4823,
+          "size": "ZIP, 7.82 MB"
+        },
+        {
+          "filename": "Julio.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4824",
+          "file_id": 4824,
+          "size": "ZIP, 6.22 MB"
+        },
+        {
+          "filename": "Agosto.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4825",
+          "file_id": 4825,
+          "size": "ZIP, 7.94 MB"
+        },
+        {
+          "filename": "Agosto.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4826",
+          "file_id": 4826,
+          "size": "ZIP, 6.32 MB"
+        },
+        {
+          "filename": "Septiembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4827",
+          "file_id": 4827,
+          "size": "ZIP, 7.76 MB"
+        },
+        {
+          "filename": "Septiembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4828",
+          "file_id": 4828,
+          "size": "ZIP, 6.18 MB"
+        },
+        {
+          "filename": "Octubre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4829",
+          "file_id": 4829,
+          "size": "ZIP, 8.17 MB"
+        },
+        {
+          "filename": "Octubre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4830",
+          "file_id": 4830,
+          "size": "ZIP, 6.5 MB"
+        },
+        {
+          "filename": "Noviembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4831",
+          "file_id": 4831,
+          "size": "ZIP, 7.81 MB"
+        },
+        {
+          "filename": "Noviembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4832",
+          "file_id": 4832,
+          "size": "ZIP, 6.2 MB"
+        },
+        {
+          "filename": "Diciembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4833",
+          "file_id": 4833,
+          "size": "ZIP, 7.49 MB"
+        },
+        {
+          "filename": "Diciembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/4834",
+          "file_id": 4834,
+          "size": "ZIP, 5.95 MB"
+        },
+        {
+          "filename": "Enero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13043",
+          "file_id": 13043,
+          "size": "ZIP, 6.44 MB"
+        },
+        {
+          "filename": "Febrero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13044",
+          "file_id": 13044,
+          "size": "ZIP, 6.51 MB"
+        },
+        {
+          "filename": "Marzo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13045",
+          "file_id": 13045,
+          "size": "ZIP, 6.37 MB"
+        },
+        {
+          "filename": "Abril.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13046",
+          "file_id": 13046,
+          "size": "ZIP, 6.35 MB"
+        },
+        {
+          "filename": "Mayo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13047",
+          "file_id": 13047,
+          "size": "ZIP, 6.61 MB"
+        },
+        {
+          "filename": "Junio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13048",
+          "file_id": 13048,
+          "size": "ZIP, 6.23 MB"
+        },
+        {
+          "filename": "Julio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13049",
+          "file_id": 13049,
+          "size": "ZIP, 6.4 MB"
+        },
+        {
+          "filename": "Agosto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13050",
+          "file_id": 13050,
+          "size": "ZIP, 6.5 MB"
+        },
+        {
+          "filename": "Septiembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13051",
+          "file_id": 13051,
+          "size": "ZIP, 6.35 MB"
+        },
+        {
+          "filename": "Octubre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13052",
+          "file_id": 13052,
+          "size": "ZIP, 6.69 MB"
+        },
+        {
+          "filename": "Noviembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13053",
+          "file_id": 13053,
+          "size": "ZIP, 6.39 MB"
+        },
+        {
+          "filename": "Diciembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13054",
+          "file_id": 13054,
+          "size": "ZIP, 6.12 MB"
+        },
+        {
+          "filename": "total_2014_c2.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/13055",
+          "file_id": 13055,
+          "size": "ZIP, 11.51 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2014.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/328/download/20920",
+          "file_id": 20920,
+          "size": "ZIP, 11.24 MB"
+        }
+      ]
+    },
+    "empalme": {
+      "catalog_id": 756,
+      "files": [
+        {
+          "filename": "GEIH_Empalme_2014.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/756/download/21743",
+          "file_id": 21743,
+          "size": "ZIP, 246.26 MB"
+        }
+      ]
+    }
+  },
+  "2015": {
+    "native": {
+      "catalog_id": 356,
+      "files": [
+        {
+          "filename": "Enero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5426",
+          "file_id": 5426,
+          "size": "ZIP, 7.71 MB"
+        },
+        {
+          "filename": "Enero.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5427",
+          "file_id": 5427,
+          "size": "ZIP, 6.11 MB"
+        },
+        {
+          "filename": "Febrero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5428",
+          "file_id": 5428,
+          "size": "ZIP, 7.84 MB"
+        },
+        {
+          "filename": "Febrero.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5429",
+          "file_id": 5429,
+          "size": "ZIP, 6.22 MB"
+        },
+        {
+          "filename": "Marzo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5430",
+          "file_id": 5430,
+          "size": "ZIP, 7.8 MB"
+        },
+        {
+          "filename": "Marzo.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5431",
+          "file_id": 5431,
+          "size": "ZIP, 6.2 MB"
+        },
+        {
+          "filename": "Abril.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5432",
+          "file_id": 5432,
+          "size": "ZIP, 8.05 MB"
+        },
+        {
+          "filename": "Abril.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5433",
+          "file_id": 5433,
+          "size": "ZIP, 6.41 MB"
+        },
+        {
+          "filename": "Mayo.Txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5589",
+          "file_id": 5589,
+          "size": "ZIP, 6.27 MB"
+        },
+        {
+          "filename": "Mayo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5590",
+          "file_id": 5590,
+          "size": "ZIP, 7.88 MB"
+        },
+        {
+          "filename": "Junio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5651",
+          "file_id": 5651,
+          "size": "ZIP, 7.79 MB"
+        },
+        {
+          "filename": "Junio.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5652",
+          "file_id": 5652,
+          "size": "ZIP, 6.18 MB"
+        },
+        {
+          "filename": "Julio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5760",
+          "file_id": 5760,
+          "size": "ZIP, 8.04 MB"
+        },
+        {
+          "filename": "Julio.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5761",
+          "file_id": 5761,
+          "size": "ZIP, 6.39 MB"
+        },
+        {
+          "filename": "Agosto.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5827",
+          "file_id": 5827,
+          "size": "ZIP, 8.07 MB"
+        },
+        {
+          "filename": "Agosto txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5828",
+          "file_id": 5828,
+          "size": "ZIP, 6.41 MB"
+        },
+        {
+          "filename": "Septiembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5990",
+          "file_id": 5990,
+          "size": "ZIP, 8.01 MB"
+        },
+        {
+          "filename": "Septiembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/5991",
+          "file_id": 5991,
+          "size": "ZIP, 6.35 MB"
+        },
+        {
+          "filename": "Octubre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/6143",
+          "file_id": 6143,
+          "size": "ZIP, 6.45 MB"
+        },
+        {
+          "filename": "Octubre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/6144",
+          "file_id": 6144,
+          "size": "ZIP, 8.12 MB"
+        },
+        {
+          "filename": "Noviembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/6214",
+          "file_id": 6214,
+          "size": "ZIP, 8 MB"
+        },
+        {
+          "filename": "Noviembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/6215",
+          "file_id": 6215,
+          "size": "ZIP, 6.34 MB"
+        },
+        {
+          "filename": "Diciembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/6278",
+          "file_id": 6278,
+          "size": "ZIP, 7.74 MB"
+        },
+        {
+          "filename": "Diciembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/6279",
+          "file_id": 6279,
+          "size": "ZIP, 6.13 MB"
+        },
+        {
+          "filename": "Enero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13056",
+          "file_id": 13056,
+          "size": "ZIP, 6.28 MB"
+        },
+        {
+          "filename": "Febrero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13057",
+          "file_id": 13057,
+          "size": "ZIP, 6.4 MB"
+        },
+        {
+          "filename": "Marzo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13058",
+          "file_id": 13058,
+          "size": "ZIP, 6.38 MB"
+        },
+        {
+          "filename": "Abril.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13059",
+          "file_id": 13059,
+          "size": "ZIP, 6.59 MB"
+        },
+        {
+          "filename": "Mayo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13060",
+          "file_id": 13060,
+          "size": "ZIP, 6.45 MB"
+        },
+        {
+          "filename": "Junio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13061",
+          "file_id": 13061,
+          "size": "ZIP, 6.36 MB"
+        },
+        {
+          "filename": "Julio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13062",
+          "file_id": 13062,
+          "size": "ZIP, 6.58 MB"
+        },
+        {
+          "filename": "Agosto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13063",
+          "file_id": 13063,
+          "size": "ZIP, 6.59 MB"
+        },
+        {
+          "filename": "Septiembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13064",
+          "file_id": 13064,
+          "size": "ZIP, 6.54 MB"
+        },
+        {
+          "filename": "Octubre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13065",
+          "file_id": 13065,
+          "size": "ZIP, 6.64 MB"
+        },
+        {
+          "filename": "Noviembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13066",
+          "file_id": 13066,
+          "size": "ZIP, 6.53 MB"
+        },
+        {
+          "filename": "Diciembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13067",
+          "file_id": 13067,
+          "size": "ZIP, 6.31 MB"
+        },
+        {
+          "filename": "Total Factor expansion.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/13068",
+          "file_id": 13068,
+          "size": "ZIP, 11.48 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2015.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/356/download/20919",
+          "file_id": 20919,
+          "size": "ZIP, 11.25 MB"
+        }
+      ]
+    },
+    "empalme": {
+      "catalog_id": 762,
+      "files": [
+        {
+          "filename": "GEIH_Empalme_2015.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/762/download/21928",
+          "file_id": 21928,
+          "size": "ZIP, 218.91 MB"
+        }
+      ]
+    }
+  },
+  "2016": {
+    "native": {
+      "catalog_id": 427,
+      "files": [
+        {
+          "filename": "Agosto.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/7228",
+          "file_id": 7228,
+          "size": "ZIP, 8.26 MB"
+        },
+        {
+          "filename": "Agosto.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/7229",
+          "file_id": 7229,
+          "size": "ZIP, 6.47 MB"
+        },
+        {
+          "filename": "Septiembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/7267",
+          "file_id": 7267,
+          "size": "ZIP, 7.7 MB"
+        },
+        {
+          "filename": "Septiembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/7268",
+          "file_id": 7268,
+          "size": "ZIP, 6.23 MB"
+        },
+        {
+          "filename": "Octubre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/7367",
+          "file_id": 7367,
+          "size": "ZIP, 7.75 MB"
+        },
+        {
+          "filename": "Octubre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/7368",
+          "file_id": 7368,
+          "size": "ZIP, 6.12 MB"
+        },
+        {
+          "filename": "Noviembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/7400",
+          "file_id": 7400,
+          "size": "ZIP, 7.7 MB"
+        },
+        {
+          "filename": "Noviembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/7401",
+          "file_id": 7401,
+          "size": "ZIP, 6.1 MB"
+        },
+        {
+          "filename": "Diciembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/7591",
+          "file_id": 7591,
+          "size": "ZIP, 7.58 MB"
+        },
+        {
+          "filename": "Diciembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/7592",
+          "file_id": 7592,
+          "size": "ZIP, 5.91 MB"
+        },
+        {
+          "filename": "Total_fact_exp_dto.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/7680",
+          "file_id": 7680,
+          "size": "ZIP, 7.86 MB"
+        },
+        {
+          "filename": "Enero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12290",
+          "file_id": 12290,
+          "size": "ZIP, 7.85 MB"
+        },
+        {
+          "filename": "Enero.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12291",
+          "file_id": 12291,
+          "size": "ZIP, 6.24 MB"
+        },
+        {
+          "filename": "Febrero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12292",
+          "file_id": 12292,
+          "size": "ZIP, 7.86 MB"
+        },
+        {
+          "filename": "Febrero.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12293",
+          "file_id": 12293,
+          "size": "ZIP, 6.26 MB"
+        },
+        {
+          "filename": "Marzo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12294",
+          "file_id": 12294,
+          "size": "ZIP, 8.16 MB"
+        },
+        {
+          "filename": "Marzo.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12295",
+          "file_id": 12295,
+          "size": "ZIP, 6.71 MB"
+        },
+        {
+          "filename": "Abril.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12296",
+          "file_id": 12296,
+          "size": "ZIP, 7.89 MB"
+        },
+        {
+          "filename": "Abril.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12297",
+          "file_id": 12297,
+          "size": "ZIP, 6.38 MB"
+        },
+        {
+          "filename": "Mayo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12298",
+          "file_id": 12298,
+          "size": "ZIP, 8.27 MB"
+        },
+        {
+          "filename": "Mayo.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12299",
+          "file_id": 12299,
+          "size": "ZIP, 6.61 MB"
+        },
+        {
+          "filename": "Junio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12300",
+          "file_id": 12300,
+          "size": "ZIP, 8.46 MB"
+        },
+        {
+          "filename": "Junio.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12301",
+          "file_id": 12301,
+          "size": "ZIP, 6.64 MB"
+        },
+        {
+          "filename": "Julio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12315",
+          "file_id": 12315,
+          "size": "ZIP, 8.26 MB"
+        },
+        {
+          "filename": "Julio.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/12316",
+          "file_id": 12316,
+          "size": "ZIP, 6.51 MB"
+        },
+        {
+          "filename": "Enero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13101",
+          "file_id": 13101,
+          "size": "ZIP, 6.31 MB"
+        },
+        {
+          "filename": "Febrero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13102",
+          "file_id": 13102,
+          "size": "ZIP, 6.34 MB"
+        },
+        {
+          "filename": "Marzo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13103",
+          "file_id": 13103,
+          "size": "ZIP, 6.8 MB"
+        },
+        {
+          "filename": "Abril.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13104",
+          "file_id": 13104,
+          "size": "ZIP, 6.46 MB"
+        },
+        {
+          "filename": "Mayo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13105",
+          "file_id": 13105,
+          "size": "ZIP, 6.69 MB"
+        },
+        {
+          "filename": "Junio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13106",
+          "file_id": 13106,
+          "size": "ZIP, 6.72 MB"
+        },
+        {
+          "filename": "Julio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13107",
+          "file_id": 13107,
+          "size": "ZIP, 6.69 MB"
+        },
+        {
+          "filename": "Agosto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13108",
+          "file_id": 13108,
+          "size": "ZIP, 6.64 MB"
+        },
+        {
+          "filename": "Septiembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13109",
+          "file_id": 13109,
+          "size": "ZIP, 6.41 MB"
+        },
+        {
+          "filename": "Octubre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13110",
+          "file_id": 13110,
+          "size": "ZIP, 6.3 MB"
+        },
+        {
+          "filename": "Noviembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13111",
+          "file_id": 13111,
+          "size": "ZIP, 6.27 MB"
+        },
+        {
+          "filename": "Diciembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13112",
+          "file_id": 13112,
+          "size": "ZIP, 6.07 MB"
+        },
+        {
+          "filename": "Total_fact_exp_dto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/13113",
+          "file_id": 13113,
+          "size": "ZIP, 11.46 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2016.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/427/download/20927",
+          "file_id": 20927,
+          "size": "ZIP, 11.14 MB"
+        }
+      ]
+    },
+    "empalme": {
+      "catalog_id": 757,
+      "files": [
+        {
+          "filename": "GEIH_Empalme_2016.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/757/download/21776",
+          "file_id": 21776,
+          "size": "ZIP, 219.47 MB"
+        }
+      ]
+    }
+  },
+  "2017": {
+    "native": {
+      "catalog_id": 458,
+      "files": [
+        {
+          "filename": "Enero.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/7748",
+          "file_id": 7748,
+          "size": "ZIP, 5.96 MB"
+        },
+        {
+          "filename": "Enero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/7749",
+          "file_id": 7749,
+          "size": "ZIP, 7.45 MB"
+        },
+        {
+          "filename": "Febrero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/7873",
+          "file_id": 7873,
+          "size": "ZIP, 7.6 MB"
+        },
+        {
+          "filename": "Febrero.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/7874",
+          "file_id": 7874,
+          "size": "ZIP, 6.08 MB"
+        },
+        {
+          "filename": "Marzo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/7883",
+          "file_id": 7883,
+          "size": "ZIP, 7.5 MB"
+        },
+        {
+          "filename": "Marzo.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/7884",
+          "file_id": 7884,
+          "size": "ZIP, 6.02 MB"
+        },
+        {
+          "filename": "Abril.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/7947",
+          "file_id": 7947,
+          "size": "ZIP, 7.68 MB"
+        },
+        {
+          "filename": "Abril.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/7948",
+          "file_id": 7948,
+          "size": "ZIP, 6 MB"
+        },
+        {
+          "filename": "Mayo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/7986",
+          "file_id": 7986,
+          "size": "ZIP, 7.87 MB"
+        },
+        {
+          "filename": "Mayo.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/7987",
+          "file_id": 7987,
+          "size": "ZIP, 6.19 MB"
+        },
+        {
+          "filename": "Junio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/8518",
+          "file_id": 8518,
+          "size": "ZIP, 7.78 MB"
+        },
+        {
+          "filename": "Junio.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/8519",
+          "file_id": 8519,
+          "size": "ZIP, 6.08 MB"
+        },
+        {
+          "filename": "Julio.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/8702",
+          "file_id": 8702,
+          "size": "ZIP, 6.44 MB"
+        },
+        {
+          "filename": "Julio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/8703",
+          "file_id": 8703,
+          "size": "ZIP, 8.37 MB"
+        },
+        {
+          "filename": "Agosto.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/8733",
+          "file_id": 8733,
+          "size": "ZIP, 8.2 MB"
+        },
+        {
+          "filename": "Agosto.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/8734",
+          "file_id": 8734,
+          "size": "ZIP, 6.51 MB"
+        },
+        {
+          "filename": "Septiembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9033",
+          "file_id": 9033,
+          "size": "ZIP, 6.39 MB"
+        },
+        {
+          "filename": "Septiembre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9034",
+          "file_id": 9034,
+          "size": "ZIP, 7.05 MB"
+        },
+        {
+          "filename": "Septiembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9035",
+          "file_id": 9035,
+          "size": "ZIP, 8.71 MB"
+        },
+        {
+          "filename": "Octubre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9036",
+          "file_id": 9036,
+          "size": "ZIP, 6.35 MB"
+        },
+        {
+          "filename": "Octubre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9037",
+          "file_id": 9037,
+          "size": "ZIP, 6.85 MB"
+        },
+        {
+          "filename": "Octubre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9038",
+          "file_id": 9038,
+          "size": "ZIP, 8.71 MB"
+        },
+        {
+          "filename": "Diciembre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9281",
+          "file_id": 9281,
+          "size": "ZIP, 6.32 MB"
+        },
+        {
+          "filename": "Diciembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9282",
+          "file_id": 9282,
+          "size": "ZIP, 8.14 MB"
+        },
+        {
+          "filename": "Diciembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9283",
+          "file_id": 9283,
+          "size": "ZIP, 5.96 MB"
+        },
+        {
+          "filename": "Noviembre.txt.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9340",
+          "file_id": 9340,
+          "size": "ZIP, 6.32 MB"
+        },
+        {
+          "filename": "Noviembre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9341",
+          "file_id": 9341,
+          "size": "ZIP, 6.93 MB"
+        },
+        {
+          "filename": "Noviembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9342",
+          "file_id": 9342,
+          "size": "ZIP, 8.6 MB"
+        },
+        {
+          "filename": "Factor_expansion.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/9439",
+          "file_id": 9439,
+          "size": "ZIP, 10.06 MB"
+        },
+        {
+          "filename": "Enero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/13294",
+          "file_id": 13294,
+          "size": "ZIP, 6.12 MB"
+        },
+        {
+          "filename": "Febrero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/13295",
+          "file_id": 13295,
+          "size": "ZIP, 6.25 MB"
+        },
+        {
+          "filename": "Marzo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/13296",
+          "file_id": 13296,
+          "size": "ZIP, 6.19 MB"
+        },
+        {
+          "filename": "Abril.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/13297",
+          "file_id": 13297,
+          "size": "ZIP, 6.17 MB"
+        },
+        {
+          "filename": "Mayo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/13298",
+          "file_id": 13298,
+          "size": "ZIP, 6.37 MB"
+        },
+        {
+          "filename": "Junio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/13299",
+          "file_id": 13299,
+          "size": "ZIP, 6.25 MB"
+        },
+        {
+          "filename": "Julio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/13300",
+          "file_id": 13300,
+          "size": "ZIP, 6.63 MB"
+        },
+        {
+          "filename": "Agosto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/13301",
+          "file_id": 13301,
+          "size": "ZIP, 6.71 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2017.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/458/download/20928",
+          "file_id": 20928,
+          "size": "ZIP, 10.93 MB"
+        }
+      ]
+    },
+    "empalme": {
+      "catalog_id": 763,
+      "files": [
+        {
+          "filename": "GEIH_Empalme_2017.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/763/download/21947",
+          "file_id": 21947,
+          "size": "ZIP, 223.24 MB"
+        }
+      ]
+    }
+  },
+  "2018": {
+    "native": {
+      "catalog_id": 547,
+      "files": [
+        {
+          "filename": "Junio.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/9907",
+          "file_id": 9907,
+          "size": "ZIP, 6.59 MB"
+        },
+        {
+          "filename": "Junio.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/9908",
+          "file_id": 9908,
+          "size": "ZIP, 7.93 MB"
+        },
+        {
+          "filename": "Junio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/9909",
+          "file_id": 9909,
+          "size": "ZIP, 6.34 MB"
+        },
+        {
+          "filename": "Julio.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10015",
+          "file_id": 10015,
+          "size": "ZIP, 6.84 MB"
+        },
+        {
+          "filename": "Julio.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10016",
+          "file_id": 10016,
+          "size": "ZIP, 8.06 MB"
+        },
+        {
+          "filename": "Julio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10017",
+          "file_id": 10017,
+          "size": "ZIP, 6.56 MB"
+        },
+        {
+          "filename": "Agosto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10102",
+          "file_id": 10102,
+          "size": "ZIP, 6.71 MB"
+        },
+        {
+          "filename": "Agosto.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10103",
+          "file_id": 10103,
+          "size": "ZIP, 7.1 MB"
+        },
+        {
+          "filename": "Agosto.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10104",
+          "file_id": 10104,
+          "size": "ZIP, 8.44 MB"
+        },
+        {
+          "filename": "Septiembre.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10114",
+          "file_id": 10114,
+          "size": "ZIP, 8.03 MB"
+        },
+        {
+          "filename": "Septiembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10115",
+          "file_id": 10115,
+          "size": "ZIP, 6.46 MB"
+        },
+        {
+          "filename": "Septiembre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10116",
+          "file_id": 10116,
+          "size": "ZIP, 6.8 MB"
+        },
+        {
+          "filename": "Octubre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10205",
+          "file_id": 10205,
+          "size": "ZIP, 6.43 MB"
+        },
+        {
+          "filename": "Octubre.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10206",
+          "file_id": 10206,
+          "size": "ZIP, 8.16 MB"
+        },
+        {
+          "filename": "Octubre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10207",
+          "file_id": 10207,
+          "size": "ZIP, 6.76 MB"
+        },
+        {
+          "filename": "Noviembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10341",
+          "file_id": 10341,
+          "size": "ZIP, 6.48 MB"
+        },
+        {
+          "filename": "Noviembre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10342",
+          "file_id": 10342,
+          "size": "ZIP, 6.83 MB"
+        },
+        {
+          "filename": "Noviembre.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10343",
+          "file_id": 10343,
+          "size": "ZIP, 8.11 MB"
+        },
+        {
+          "filename": "Diciembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10443",
+          "file_id": 10443,
+          "size": "ZIP, 6.25 MB"
+        },
+        {
+          "filename": "Diciembre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10444",
+          "file_id": 10444,
+          "size": "ZIP, 6.51 MB"
+        },
+        {
+          "filename": "Diciembre.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10445",
+          "file_id": 10445,
+          "size": "ZIP, 7.78 MB"
+        },
+        {
+          "filename": "Total_Fact_expansion.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/10921",
+          "file_id": 10921,
+          "size": "ZIP, 10.68 MB"
+        },
+        {
+          "filename": "Enero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12198",
+          "file_id": 12198,
+          "size": "ZIP, 6.3 MB"
+        },
+        {
+          "filename": "Enero.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12199",
+          "file_id": 12199,
+          "size": "ZIP, 6.65 MB"
+        },
+        {
+          "filename": "Enero.SPSS.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12200",
+          "file_id": 12200,
+          "size": "ZIP, 7.93 MB"
+        },
+        {
+          "filename": "Febrero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12201",
+          "file_id": 12201,
+          "size": "ZIP, 6.48 MB"
+        },
+        {
+          "filename": "Febrero.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12202",
+          "file_id": 12202,
+          "size": "ZIP, 6.66 MB"
+        },
+        {
+          "filename": "Febrero.SPSS.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12203",
+          "file_id": 12203,
+          "size": "ZIP, 8.08 MB"
+        },
+        {
+          "filename": "Marzo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12204",
+          "file_id": 12204,
+          "size": "ZIP, 6.51 MB"
+        },
+        {
+          "filename": "Marzo.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12205",
+          "file_id": 12205,
+          "size": "ZIP, 6.92 MB"
+        },
+        {
+          "filename": "Marzo.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12206",
+          "file_id": 12206,
+          "size": "ZIP, 8.08 MB"
+        },
+        {
+          "filename": "Abril.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12207",
+          "file_id": 12207,
+          "size": "ZIP, 6.63 MB"
+        },
+        {
+          "filename": "Abril.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12208",
+          "file_id": 12208,
+          "size": "ZIP, 6.92 MB"
+        },
+        {
+          "filename": "Abril.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12209",
+          "file_id": 12209,
+          "size": "ZIP, 8.28 MB"
+        },
+        {
+          "filename": "Mayo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12210",
+          "file_id": 12210,
+          "size": "ZIP, 6.79 MB"
+        },
+        {
+          "filename": "Mayo.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12211",
+          "file_id": 12211,
+          "size": "ZIP, 7.13 MB"
+        },
+        {
+          "filename": "Mayo.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/12212",
+          "file_id": 12212,
+          "size": "ZIP, 8.45 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2018.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/547/download/20918",
+          "file_id": 20918,
+          "size": "ZIP, 10.88 MB"
+        }
+      ]
+    },
+    "empalme": {
+      "catalog_id": 758,
+      "files": [
+        {
+          "filename": "GEIH_Empalme_2018.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/758/download/21795",
+          "file_id": 21795,
+          "size": "ZIP, 223.22 MB"
+        }
+      ]
+    }
+  },
+  "2019": {
+    "native": {
+      "catalog_id": 599,
+      "files": [
+        {
+          "filename": "Enero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/10719",
+          "file_id": 10719,
+          "size": "ZIP, 6.47 MB"
+        },
+        {
+          "filename": "Enero.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/10720",
+          "file_id": 10720,
+          "size": "ZIP, 8.2 MB"
+        },
+        {
+          "filename": "Enero.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/10721",
+          "file_id": 10721,
+          "size": "ZIP, 6.83 MB"
+        },
+        {
+          "filename": "Febrero.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/10962",
+          "file_id": 10962,
+          "size": "ZIP, 8.32 MB"
+        },
+        {
+          "filename": "Febrero.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/10963",
+          "file_id": 10963,
+          "size": "ZIP, 6.94 MB"
+        },
+        {
+          "filename": "Febrero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/10964",
+          "file_id": 10964,
+          "size": "ZIP, 6.59 MB"
+        },
+        {
+          "filename": "Marzo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/11117",
+          "file_id": 11117,
+          "size": "ZIP, 6.4 MB"
+        },
+        {
+          "filename": "Marzo.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/11118",
+          "file_id": 11118,
+          "size": "ZIP, 7.86 MB"
+        },
+        {
+          "filename": "Marzo.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/11119",
+          "file_id": 11119,
+          "size": "ZIP, 6.72 MB"
+        },
+        {
+          "filename": "Abril.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/11184",
+          "file_id": 11184,
+          "size": "ZIP, 6.48 MB"
+        },
+        {
+          "filename": "Abril.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/11185",
+          "file_id": 11185,
+          "size": "ZIP, 6.69 MB"
+        },
+        {
+          "filename": "Abril.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/11186",
+          "file_id": 11186,
+          "size": "ZIP, 8.23 MB"
+        },
+        {
+          "filename": "Mayo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/11300",
+          "file_id": 11300,
+          "size": "ZIP, 6.7 MB"
+        },
+        {
+          "filename": "Mayo.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/11301",
+          "file_id": 11301,
+          "size": "ZIP, 8.33 MB"
+        },
+        {
+          "filename": "Mayo.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/11302",
+          "file_id": 11302,
+          "size": "ZIP, 7.01 MB"
+        },
+        {
+          "filename": "Junio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12068",
+          "file_id": 12068,
+          "size": "ZIP, 6.38 MB"
+        },
+        {
+          "filename": "Junio.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12069",
+          "file_id": 12069,
+          "size": "ZIP, 8 MB"
+        },
+        {
+          "filename": "Junio.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12070",
+          "file_id": 12070,
+          "size": "ZIP, 6.54 MB"
+        },
+        {
+          "filename": "Julio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12100",
+          "file_id": 12100,
+          "size": "ZIP, 6.5 MB"
+        },
+        {
+          "filename": "Julio.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12101",
+          "file_id": 12101,
+          "size": "ZIP, 8 MB"
+        },
+        {
+          "filename": "Julio.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12102",
+          "file_id": 12102,
+          "size": "ZIP, 6.89 MB"
+        },
+        {
+          "filename": "Agosto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12221",
+          "file_id": 12221,
+          "size": "ZIP, 6.61 MB"
+        },
+        {
+          "filename": "Agosto.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12222",
+          "file_id": 12222,
+          "size": "ZIP, 8.37 MB"
+        },
+        {
+          "filename": "Agosto.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12223",
+          "file_id": 12223,
+          "size": "ZIP, 6.96 MB"
+        },
+        {
+          "filename": "Septiembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12275",
+          "file_id": 12275,
+          "size": "ZIP, 6.41 MB"
+        },
+        {
+          "filename": "Septiembre.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12276",
+          "file_id": 12276,
+          "size": "ZIP, 8.01 MB"
+        },
+        {
+          "filename": "Septiembre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12277",
+          "file_id": 12277,
+          "size": "ZIP, 6.82 MB"
+        },
+        {
+          "filename": "Octubre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12365",
+          "file_id": 12365,
+          "size": "ZIP, 6.49 MB"
+        },
+        {
+          "filename": "Octubre.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12366",
+          "file_id": 12366,
+          "size": "ZIP, 8.08 MB"
+        },
+        {
+          "filename": "Octubre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12367",
+          "file_id": 12367,
+          "size": "ZIP, 6.84 MB"
+        },
+        {
+          "filename": "Noviembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12444",
+          "file_id": 12444,
+          "size": "ZIP, 6.36 MB"
+        },
+        {
+          "filename": "Noviembre.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12445",
+          "file_id": 12445,
+          "size": "ZIP, 7.96 MB"
+        },
+        {
+          "filename": "Noviembre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12446",
+          "file_id": 12446,
+          "size": "ZIP, 6.59 MB"
+        },
+        {
+          "filename": "Diciembre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12514",
+          "file_id": 12514,
+          "size": "ZIP, 6.48 MB"
+        },
+        {
+          "filename": "Diciembre.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12515",
+          "file_id": 12515,
+          "size": "ZIP, 7.63 MB"
+        },
+        {
+          "filename": "Diciembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/12516",
+          "file_id": 12516,
+          "size": "ZIP, 6.12 MB"
+        },
+        {
+          "filename": "Total_Fact_expansion.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/13012",
+          "file_id": 13012,
+          "size": "ZIP, 9.65 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2019.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/599/download/20915",
+          "file_id": 20915,
+          "size": "ZIP, 10.78 MB"
+        }
+      ]
+    },
+    "empalme": {
+      "catalog_id": 759,
+      "files": [
+        {
+          "filename": "GEIH_Empalme_2019.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/759/download/21814",
+          "file_id": 21814,
+          "size": "ZIP, 221.16 MB"
+        }
+      ]
+    }
+  },
+  "2020": {
+    "native": {
+      "catalog_id": 780,
+      "files": [
+        {
+          "filename": "1.Enero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22286",
+          "file_id": 22286,
+          "size": "ZIP, 20.79 MB"
+        },
+        {
+          "filename": "2.Febrero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22287",
+          "file_id": 22287,
+          "size": "ZIP, 20.84 MB"
+        },
+        {
+          "filename": "3.Marzo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22288",
+          "file_id": 22288,
+          "size": "ZIP, 10.41 MB"
+        },
+        {
+          "filename": "4.Abril.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22289",
+          "file_id": 22289,
+          "size": "ZIP, 8.01 MB"
+        },
+        {
+          "filename": "5.Mayo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22290",
+          "file_id": 22290,
+          "size": "ZIP, 11.72 MB"
+        },
+        {
+          "filename": "6.Junio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22291",
+          "file_id": 22291,
+          "size": "ZIP, 11.71 MB"
+        },
+        {
+          "filename": "7.Julio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22292",
+          "file_id": 22292,
+          "size": "ZIP, 11.58 MB"
+        },
+        {
+          "filename": "8.Agosto.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22293",
+          "file_id": 22293,
+          "size": "ZIP, 22.93 MB"
+        },
+        {
+          "filename": "9.Septiembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22294",
+          "file_id": 22294,
+          "size": "ZIP, 22.61 MB"
+        },
+        {
+          "filename": "10.Octubre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22295",
+          "file_id": 22295,
+          "size": "ZIP, 23.08 MB"
+        },
+        {
+          "filename": "11.Noviembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22296",
+          "file_id": 22296,
+          "size": "ZIP, 22.35 MB"
+        },
+        {
+          "filename": "12.Diciembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22297",
+          "file_id": 22297,
+          "size": "ZIP, 22.25 MB"
+        },
+        {
+          "filename": "Fex.proyeccion CNPV_2018_2020.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/780/download/22570",
+          "file_id": 22570,
+          "size": "ZIP, 11.23 MB"
+        }
+      ]
+    },
+    "empalme": {
+      "catalog_id": 764,
+      "files": [
+        {
+          "filename": "GEIH_EMPALME_2020_ACT.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/764/download/22104",
+          "file_id": 22104,
+          "size": "ZIP, 208.28 MB"
+        }
+      ]
+    }
+  },
+  "2021": {
+    "native": {
+      "catalog_id": 701,
+      "files": [
+        {
+          "filename": "Mayo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20528",
+          "file_id": 20528,
+          "size": "ZIP, 6.32 MB"
+        },
+        {
+          "filename": "Mayo.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20529",
+          "file_id": 20529,
+          "size": "ZIP, 7.55 MB"
+        },
+        {
+          "filename": "Mayo.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20530",
+          "file_id": 20530,
+          "size": "ZIP, 6.75 MB"
+        },
+        {
+          "filename": "Junio.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20549",
+          "file_id": 20549,
+          "size": "ZIP, 7.09 MB"
+        },
+        {
+          "filename": "Junio.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20550",
+          "file_id": 20550,
+          "size": "ZIP, 6.23 MB"
+        },
+        {
+          "filename": "Junio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20551",
+          "file_id": 20551,
+          "size": "ZIP, 5.89 MB"
+        },
+        {
+          "filename": "Julio.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20630",
+          "file_id": 20630,
+          "size": "ZIP, 6.59 MB"
+        },
+        {
+          "filename": "Julio.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20631",
+          "file_id": 20631,
+          "size": "ZIP, 13 MB"
+        },
+        {
+          "filename": "Julio.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20632",
+          "file_id": 20632,
+          "size": "ZIP, 6.52 MB"
+        },
+        {
+          "filename": "Agosto.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20673",
+          "file_id": 20673,
+          "size": "ZIP, 6.27 MB"
+        },
+        {
+          "filename": "Agosto.spss.sav.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20674",
+          "file_id": 20674,
+          "size": "ZIP, 7.63 MB"
+        },
+        {
+          "filename": "Agosto.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20675",
+          "file_id": 20675,
+          "size": "ZIP, 6.64 MB"
+        },
+        {
+          "filename": "Septiembre.csv (2) (1).zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20676",
+          "file_id": 20676,
+          "size": "ZIP, 6.19 MB"
+        },
+        {
+          "filename": "Septiembre.spss(2).zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20677",
+          "file_id": 20677,
+          "size": "ZIP, 15.35 MB"
+        },
+        {
+          "filename": "Octubre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20707",
+          "file_id": 20707,
+          "size": "ZIP, 6 MB"
+        },
+        {
+          "filename": "Octubre.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20708",
+          "file_id": 20708,
+          "size": "ZIP, 12.87 MB"
+        },
+        {
+          "filename": "Octubre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20709",
+          "file_id": 20709,
+          "size": "ZIP, 12.83 MB"
+        },
+        {
+          "filename": "Septiembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20772",
+          "file_id": 20772,
+          "size": "ZIP, 7.24 MB"
+        },
+        {
+          "filename": "Noviembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20833",
+          "file_id": 20833,
+          "size": "ZIP, 5.71 MB"
+        },
+        {
+          "filename": "Noviembre.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20834",
+          "file_id": 20834,
+          "size": "ZIP, 12.49 MB"
+        },
+        {
+          "filename": "Noviembre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20835",
+          "file_id": 20835,
+          "size": "ZIP, 12.33 MB"
+        },
+        {
+          "filename": "Diciembre.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20902",
+          "file_id": 20902,
+          "size": "ZIP, 5.65 MB"
+        },
+        {
+          "filename": "Diciembre.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20903",
+          "file_id": 20903,
+          "size": "ZIP, 18.36 MB"
+        },
+        {
+          "filename": "Diciembre.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20904",
+          "file_id": 20904,
+          "size": "ZIP, 17.04 MB"
+        },
+        {
+          "filename": "Fex proyecciones CNPV 2018_2021.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/20913",
+          "file_id": 20913,
+          "size": "ZIP, 9.89 MB"
+        },
+        {
+          "filename": "GEIH_Marco_2018(II. semestre).zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/22661",
+          "file_id": 22661,
+          "size": "ZIP, 386.04 MB"
+        },
+        {
+          "filename": "GEIH - Marco-2018(I.Semestre).zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/22829",
+          "file_id": 22829,
+          "size": "ZIP, 412.75 MB"
+        },
+        {
+          "filename": "Enero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/23451",
+          "file_id": 23451,
+          "size": "ZIP, 5.21 MB"
+        },
+        {
+          "filename": "Enero.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/23452",
+          "file_id": 23452,
+          "size": "ZIP, 12.93 MB"
+        },
+        {
+          "filename": "Enero.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/23453",
+          "file_id": 23453,
+          "size": "ZIP, 13.13 MB"
+        },
+        {
+          "filename": "Febrero.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/23454",
+          "file_id": 23454,
+          "size": "ZIP, 5.24 MB"
+        },
+        {
+          "filename": "Febrero.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/23455",
+          "file_id": 23455,
+          "size": "ZIP, 13.13 MB"
+        },
+        {
+          "filename": "Febrero.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/23456",
+          "file_id": 23456,
+          "size": "ZIP, 13.18 MB"
+        },
+        {
+          "filename": "Marzo.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/23457",
+          "file_id": 23457,
+          "size": "ZIP, 5.15 MB"
+        },
+        {
+          "filename": "Marzo.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/23458",
+          "file_id": 23458,
+          "size": "ZIP, 12.98 MB"
+        },
+        {
+          "filename": "Marzo.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/23459",
+          "file_id": 23459,
+          "size": "ZIP, 9.29 MB"
+        },
+        {
+          "filename": "Abril.csv.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/23460",
+          "file_id": 23460,
+          "size": "ZIP, 5.29 MB"
+        },
+        {
+          "filename": "Abril.dta.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/23461",
+          "file_id": 23461,
+          "size": "ZIP, 13.11 MB"
+        },
+        {
+          "filename": "Abril.spss.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/701/download/23462",
+          "file_id": 23462,
+          "size": "ZIP, 13.14 MB"
+        }
+      ]
+    }
+  },
+  "2022": {
+    "native": {
+      "catalog_id": 771,
+      "files": [
+        {
+          "filename": "GEIH_Enero_2022_Marco_2018.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/771/download/22688",
+          "file_id": 22688,
+          "size": "ZIP, 73.42 MB"
+        },
+        {
+          "filename": "GEIH_Febrero_2022_Marco_2018.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/771/download/22689",
+          "file_id": 22689,
+          "size": "ZIP, 74.9 MB"
+        },
+        {
+          "filename": "GEIH_Marzo_2022_Marco_2018.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/771/download/22690",
+          "file_id": 22690,
+          "size": "ZIP, 75.44 MB"
+        },
+        {
+          "filename": "GEIH_Mayo_2022_Marco_2018.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/771/download/22692",
+          "file_id": 22692,
+          "size": "ZIP, 46.45 MB"
+        },
+        {
+          "filename": "GEIH_Junio_2022_Marco_2018.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/771/download/22693",
+          "file_id": 22693,
+          "size": "ZIP, 67.32 MB"
+        },
+        {
+          "filename": "GEIH_Julio_2022_Marco_2018.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/771/download/22694",
+          "file_id": 22694,
+          "size": "ZIP, 65.08 MB"
+        },
+        {
+          "filename": "GEIH_Agosto_2022_Marco_2018.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/771/download/22695",
+          "file_id": 22695,
+          "size": "ZIP, 67.39 MB"
+        },
+        {
+          "filename": "GEIH_Septiembre_Marco_2018.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/771/download/22696",
+          "file_id": 22696,
+          "size": "ZIP, 72.47 MB"
+        },
+        {
+          "filename": "GEIH_Octubre_Marco_2018.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/771/download/22697",
+          "file_id": 22697,
+          "size": "ZIP, 68.32 MB"
+        },
+        {
+          "filename": "GEIH_Diciembre_2022_Marco_2018.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/771/download/22699",
+          "file_id": 22699,
+          "size": "ZIP, 63.44 MB"
+        },
+        {
+          "filename": "GEIH_Abril_2022_Marco_2018_Act.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/771/download/22894",
+          "file_id": 22894,
+          "size": "ZIP, 74.45 MB"
+        },
+        {
+          "filename": "GEIH_Noviembre_2022_Marco_2018.act.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/771/download/23016",
+          "file_id": 23016,
+          "size": "ZIP, 69.3 MB"
+        }
+      ]
+    }
+  },
+  "2023": {
+    "native": {
+      "catalog_id": 782,
+      "files": [
+        {
+          "filename": "Enero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/782/download/22349",
+          "file_id": 22349,
+          "size": "ZIP, 65.92 MB"
+        },
+        {
+          "filename": "Febrero.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/782/download/22466",
+          "file_id": 22466,
+          "size": "ZIP, 68.63 MB"
+        },
+        {
+          "filename": "Marzo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/782/download/22553",
+          "file_id": 22553,
+          "size": "ZIP, 70.88 MB"
+        },
+        {
+          "filename": "Abril.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/782/download/22610",
+          "file_id": 22610,
+          "size": "ZIP, 60.89 MB"
+        },
+        {
+          "filename": "Mayo.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/782/download/22819",
+          "file_id": 22819,
+          "size": "ZIP, 64.83 MB"
+        },
+        {
+          "filename": "Junio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/782/download/22888",
+          "file_id": 22888,
+          "size": "ZIP, 65.04 MB"
+        },
+        {
+          "filename": "Julio.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/782/download/22917",
+          "file_id": 22917,
+          "size": "ZIP, 64.2 MB"
+        },
+        {
+          "filename": "Agosto.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/782/download/22946",
+          "file_id": 22946,
+          "size": "ZIP, 67.71 MB"
+        },
+        {
+          "filename": "Septiembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/782/download/23017",
+          "file_id": 23017,
+          "size": "ZIP, 61.6 MB"
+        },
+        {
+          "filename": "Octubre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/782/download/23081",
+          "file_id": 23081,
+          "size": "ZIP, 58.56 MB"
+        },
+        {
+          "filename": "Noviembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/782/download/23115",
+          "file_id": 23115,
+          "size": "ZIP, 66.74 MB"
+        },
+        {
+          "filename": "Diciembre.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/782/download/23243",
+          "file_id": 23243,
+          "size": "ZIP, 67.21 MB"
+        }
+      ]
+    }
+  },
+  "2024": {
+    "native": {
+      "catalog_id": 819,
+      "files": [
+        {
+          "filename": "Ene_2024.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/819/download/23313",
+          "file_id": 23313,
+          "size": "ZIP, 65.27 MB"
+        },
+        {
+          "filename": "Febrero_2024.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/819/download/23362",
+          "file_id": 23362,
+          "size": "ZIP, 65.02 MB"
+        },
+        {
+          "filename": "Abril 2024.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/819/download/23496",
+          "file_id": 23496,
+          "size": "ZIP, 64.68 MB"
+        },
+        {
+          "filename": "Marzo 2024.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/819/download/23596",
+          "file_id": 23596,
+          "size": "ZIP, 64.06 MB"
+        },
+        {
+          "filename": "Mayo_2024 1.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/819/download/23598",
+          "file_id": 23598,
+          "size": "ZIP, 65.38 MB"
+        },
+        {
+          "filename": "Junio_2024.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/819/download/23625",
+          "file_id": 23625,
+          "size": "ZIP, 63.81 MB"
+        },
+        {
+          "filename": "Julio_2024.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/819/download/23631",
+          "file_id": 23631,
+          "size": "ZIP, 65.89 MB"
+        },
+        {
+          "filename": "Agosto_2024.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/819/download/23651",
+          "file_id": 23651,
+          "size": "ZIP, 59.85 MB"
+        },
+        {
+          "filename": "Septiembre_2024.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/819/download/23671",
+          "file_id": 23671,
+          "size": "ZIP, 57.13 MB"
+        },
+        {
+          "filename": "Octubre_2024.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/819/download/23677",
+          "file_id": 23677,
+          "size": "ZIP, 57.34 MB"
+        },
+        {
+          "filename": "Noviembre_ 2024.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/819/download/23729",
+          "file_id": 23729,
+          "size": "ZIP, 56.57 MB"
+        },
+        {
+          "filename": "Diciembre_2024.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/819/download/23794",
+          "file_id": 23794,
+          "size": "ZIP, 54.73 MB"
+        }
+      ]
+    }
+  },
+  "2025": {
+    "native": {
+      "catalog_id": 853,
+      "files": [
+        {
+          "filename": "Enero 2025.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/853/download/24263",
+          "file_id": 24263,
+          "size": "ZIP, 59 MB"
+        },
+        {
+          "filename": "Febrero 2025.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/853/download/24264",
+          "file_id": 24264,
+          "size": "ZIP, 60.78 MB"
+        },
+        {
+          "filename": "Julio 2025.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/853/download/24265",
+          "file_id": 24265,
+          "size": "ZIP, 61.13 MB"
+        },
+        {
+          "filename": "Junio 2025.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/853/download/24266",
+          "file_id": 24266,
+          "size": "ZIP, 61.03 MB"
+        },
+        {
+          "filename": "Marzo 2025.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/853/download/24267",
+          "file_id": 24267,
+          "size": "ZIP, 62.13 MB"
+        },
+        {
+          "filename": "Mayo 2025.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/853/download/24268",
+          "file_id": 24268,
+          "size": "ZIP, 63.45 MB"
+        },
+        {
+          "filename": "Abril 2025.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/853/download/24269",
+          "file_id": 24269,
+          "size": "ZIP, 61.83 MB"
+        },
+        {
+          "filename": "Agosto 2025.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/853/download/24307",
+          "file_id": 24307,
+          "size": "ZIP, 61.41 MB"
+        },
+        {
+          "filename": "Septiembre 2025.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/853/download/24324",
+          "file_id": 24324,
+          "size": "ZIP, 62.24 MB"
+        },
+        {
+          "filename": "Octubre 2025.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/853/download/24382",
+          "file_id": 24382,
+          "size": "ZIP, 66.04 MB"
+        },
+        {
+          "filename": "Noviembre 2025.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/853/download/24406",
+          "file_id": 24406,
+          "size": "ZIP, 63.87 MB"
+        },
+        {
+          "filename": "Diciembre 2025.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/853/download/24463",
+          "file_id": 24463,
+          "size": "ZIP, 60.49 MB"
+        }
+      ]
+    }
+  },
+  "2026": {
+    "native": {
+      "catalog_id": 900,
+      "files": [
+        {
+          "filename": "Enero 2026.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/900/download/24530",
+          "file_id": 24530,
+          "size": "ZIP, 62.53 MB"
+        },
+        {
+          "filename": "Febrero 2026.zip",
+          "download_url": "https://microdatos.dane.gov.co/index.php/catalog/900/download/24594",
+          "file_id": 24594,
+          "size": "ZIP, 67.36 MB"
+        }
+      ]
+    }
+  },
+  "special_ciiu4_2015_2019": {
+    "catalog_id": 661,
+    "files": [
+      {
+        "filename": "CIIU 15.zip",
+        "download_url": "https://microdatos.dane.gov.co/index.php/catalog/661/download/12894",
+        "file_id": 12894,
+        "size": "ZIP, 5.88 MB"
+      },
+      {
+        "filename": "CIIU 16.zip",
+        "download_url": "https://microdatos.dane.gov.co/index.php/catalog/661/download/12895",
+        "file_id": 12895,
+        "size": "ZIP, 5.82 MB"
+      },
+      {
+        "filename": "CIIU 17.zip",
+        "download_url": "https://microdatos.dane.gov.co/index.php/catalog/661/download/12896",
+        "file_id": 12896,
+        "size": "ZIP, 5.75 MB"
+      },
+      {
+        "filename": "CIIU 18.zip",
+        "download_url": "https://microdatos.dane.gov.co/index.php/catalog/661/download/12897",
+        "file_id": 12897,
+        "size": "ZIP, 5.71 MB"
+      },
+      {
+        "filename": "CIIU 19.zip",
+        "download_url": "https://microdatos.dane.gov.co/index.php/catalog/661/download/12898",
+        "file_id": 12898,
+        "size": "ZIP, 5.61 MB"
+      }
+    ]
+  }
+}
