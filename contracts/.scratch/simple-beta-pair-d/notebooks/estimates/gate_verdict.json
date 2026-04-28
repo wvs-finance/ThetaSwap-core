@@ -1,0 +1,70 @@
+{
+  "task": "Pair D Phase 2 NB03 \u00a76 \u2014 joint verdict gate (\u00a78.1 step 4(a))",
+  "spec_sha256": "964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659",
+  "spec_version": "1.3.1",
+  "panel_sha256": "6d7d9e60dad1715ce86e8adb7b3d44ba236d0b063796293b40575994a9363edf",
+  "primary_ols_json_sha256": "d4790e743cdec62f1368cab1833e1266cb2da763d7c0931dd732bdf3d17938cf",
+  "robustness_pack_json_sha256": "67dd18cfeb2584fa6ed9334b1d0314a1a16830faf7c3f3443f07889b9b078904",
+  "robustness_results_md_sha256": "dc323346d7eb8b9aa8f7381a0c8964a485d5042f2fbe5b3a2618e56952f9f956",
+  "n": 134,
+  "n_min_floor": 75,
+  "n_min_gate_passes": true,
+  "primary_summary": {
+    "composite_point": 0.13670984691582935,
+    "composite_se_hac": 0.024651971136307547,
+    "composite_p_one_sided": 1.4647814294832529e-08,
+    "composite_sign": "+",
+    "passes_alpha_05_one_sided": true
+  },
+  "robustness_summary": {
+    "per_row_signs": {
+      "R1": "+",
+      "R2": "+",
+      "R3": "+",
+      "R4": "+"
+    },
+    "per_row_flips_vs_primary": {
+      "R1": "AGREE",
+      "R2": "AGREE",
+      "R3": "AGREE",
+      "R4": "AGREE"
+    },
+    "n_flips": 0,
+    "verdict_per_\u00a77_1": "AGREE",
+    "substrate_too_noisy_fires_per_\u00a73_5": false,
+    "honest_2_row_R1_R2_only_n_flips": 0
+  },
+  "gate_evaluation": {
+    "step_fired": "4(a) (\u03b2 > 0 AND p \u2264 0.05)",
+    "final_verdict": "PASS",
+    "next_stage_routing": "Stage-2 M-sketch authoring UNBLOCKED per \u00a78.3",
+    "escalate_clause_A_fires": false,
+    "substrate_too_noisy_override_fires": false
+  },
+  "phase_2_closure": {
+    "stage_2_m_sketch_unblocked": true,
+    "comment": "Per spec \u00a78.3: PASS verdict unblocks Stage-2 M-sketch authoring per framework ideal-scenario clause. Pair D's empirical-validation step closes here; M-sketch step opens next; deployment step requires real LP capital and remains gated independently."
+  },
+  "anti_fishing_compliance": {
+    "thresholds_spec_pinned_per_\u00a79_1": true,
+    "no_post_data_threshold_tuning": true,
+    "verdict_tree_deterministic_per_\u00a78_2": true,
+    "comment": "All \u00a78.1 thresholds (N_MIN=75, \u03b1=0.05 one-sided, R-consistency AGREE/MIXED/DISAGREE rule, SUBSTRATE_TOO_NOISY \u22653 flips) are spec-pinned and immutable per \u00a79.1. The verdict tree is exhaustive per \u00a78.2 \u2014 every input tuple maps to exactly one verdict; no leaf is 'TBD'."
+  },
+  "reproducibility": {
+    "seed_numpy": 42,
+    "python_version": "3.13.5 (main, Jun 12 2025, 12:40:22) [Clang 20.1.4 ]",
+    "platform": "Linux-6.18.9-arch1-2-x86_64-with-glibc2.43",
+    "package_versions": {
+      "numpy": "2.4.4",
+      "pandas": "3.0.2",
+      "statsmodels": "0.14.6",
+      "scipy": "1.17.1"
+    }
+  },
+  "outputs": {
+    "gate_verdict_json_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/.scratch/simple-beta-pair-d/notebooks/estimates/gate_verdict.json",
+    "robustness_results_md_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/.scratch/simple-beta-pair-d/notebooks/estimates/ROBUSTNESS_RESULTS.md",
+    "robustness_pack_json_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/.scratch/simple-beta-pair-d/results/robustness_pack.json"
+  }
+}

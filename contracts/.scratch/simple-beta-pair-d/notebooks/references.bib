@@ -1,0 +1,189 @@
+% references.bib — Pair D simple-β empirical-validation notebooks
+%
+% Citation universe for the BPO/non-industrialization-trap empirical
+% validation of (Y = Colombian young-worker services share, X = log COP/USD
+% lagged 6/9/12). Every \cite key in NB01/NB02/NB03 resolves here.
+%
+% Entry-key convention: authorYEARkeyword (camelCase for multi-author keys).
+%
+% No fabricated DOIs: where a DOI was not independently verifiable, the
+% entry uses the publisher's canonical URL or Working-Paper ID. URL-only
+% provenance is annotated.
+%
+% Spec governing these notebooks:
+%   2026-04-27-simple-beta-pair-d-design.md v1.3.1
+%   sha256 964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659
+
+% ── BPO transmission chain literature anchors ─────────────────────────────
+
+% Mendieta-Muñoz 2017 — Colombia-specific premature-deindustrialization
+% anchor. Traces Colombian deindustrialization to the 1990 Apertura under
+% Gaviria. Primary literature anchor for the Y-side trap-tightening claim.
+@article{mendietaMunoz2017colombia,
+  author  = {Mendieta-Mu{\~n}oz, Iv{\'a}n},
+  title   = {On the interaction between economic growth and business cycles in {C}olombia},
+  journal = {Journal of Economic Structures},
+  year    = {2017},
+  volume  = {6},
+  number  = {24},
+  doi     = {10.1186/s40008-017-0084-9},
+  note    = {Colombia premature-deindustrialization econometric anchor; traces structural transformation break to 1990 Apertura.}
+}
+
+% Rodrik 2016 — premature-deindustrialization framework. NBER WP 20935 +
+% JEG 21(1). The framework that names the Colombian phenomenon Pair D is
+% testing.
+@article{rodrik2016premature,
+  author  = {Rodrik, Dani},
+  title   = {Premature Deindustrialization},
+  journal = {Journal of Economic Growth},
+  year    = {2016},
+  volume  = {21},
+  number  = {1},
+  pages   = {1--33},
+  doi     = {10.1007/s10887-015-9122-3},
+  note    = {Framework for premature deindustrialization in late-industrializing economies; load-bearing for Pair D Y-side hypothesis.}
+}
+
+% McMillan & Rodrik 2011 — structural-transformation labor-allocation
+% framework. NBER WP 17143. Provides the labor-share dynamics underlying
+% the Y measurement choice (services share as trap-tightening indicator).
+@techreport{mcmillanRodrik2011globalization,
+  author      = {McMillan, Margaret S. and Rodrik, Dani},
+  title       = {Globalization, Structural Change and Productivity Growth},
+  institution = {National Bureau of Economic Research},
+  year        = {2011},
+  number      = {17143},
+  type        = {NBER Working Paper},
+  doi         = {10.3386/w17143}
+}
+
+% Beerepoot & Hendriks 2013 — direct BPO transmission-mechanism citation.
+% Service Industries Journal 33(11). Source for the 6-12mo offshoring
+% contracting-cycle horizon (Reality Checker FLAG #2: page-pin not yet
+% verified; lag-window claim is plausible but not numerically literature-
+% bound at the specificity claimed).
+@article{beerepootHendriks2013global,
+  author  = {Beerepoot, Niels and Hendriks, Mariska},
+  title   = {Global elite or local talent? International competition and the offshoring of business services},
+  journal = {Service Industries Journal},
+  year    = {2013},
+  volume  = {33},
+  number  = {11},
+  pages   = {1056--1071},
+  doi     = {10.1080/02642069.2013.815743},
+  note    = {Direct-mechanism citation for BPO offshoring labor-allocation effects; spec §5.4 cites this for the 6-12mo lag rationale.}
+}
+
+% Errighi, Khatiwada, Bodwell ILO 2017 — BPO labor-conditions panel
+% covering Philippines + Colombia. Secondary anchor for the BPO-mechanism
+% transmission. ILO Sectoral Working Paper 312.
+@techreport{errighiKhatiwadaBodwell2017offshoring,
+  author      = {Errighi, Lorenza and Khatiwada, Sameer and Bodwell, Charles},
+  title       = {Business Process Outsourcing in the {P}hilippines: Challenges for Decent Work},
+  institution = {International Labour Organization},
+  year        = {2017},
+  type        = {ILO Sectoral Working Paper},
+  number      = {312},
+  url         = {https://www.ilo.org/sector/Resources/publications/WCMS_553886},
+  note        = {ILO sectoral panel on BPO offshoring labor outcomes; covers Philippines + Colombia.}
+}
+
+% Baumol-Bowen 1966 — the founding statement of the cost-disease mechanism
+% that underlies the US-Colombia service-wage arbitrage. Spec §1
+% transmission chain step 1.
+@book{baumolBowen1966performing,
+  author    = {Baumol, William J. and Bowen, William G.},
+  title     = {Performing Arts: The Economic Dilemma},
+  publisher = {Twentieth Century Fund},
+  year      = {1966},
+  note      = {Original statement of Baumol's cost disease; spec §1 transmission chain step 1.}
+}
+
+% Baumol 2006 — NBER WP 12218 update on cost disease applied to modern
+% services productivity divergence. Strengthens the spec §1 step-1 anchor.
+@techreport{baumol2006costdisease,
+  author      = {Baumol, William J.},
+  title       = {Children of Performing Arts, the Economic Dilemma: The Climbing Costs of Health Care and Education},
+  institution = {National Bureau of Economic Research},
+  year        = {2006},
+  number      = {12218},
+  type        = {NBER Working Paper},
+  doi         = {10.3386/w12218}
+}
+
+% ── Methodology (econometric) ─────────────────────────────────────────────
+
+% Newey & West 1987 — HAC standard errors. Used in primary OLS (NW=4) and
+% R4 robustness (NW=12).
+@article{neweyWest1987simple,
+  author  = {Newey, Whitney K. and West, Kenneth D.},
+  title   = {A Simple, Positive Semi-Definite, Heteroskedasticity and Autocorrelation Consistent Covariance Matrix},
+  journal = {Econometrica},
+  year    = {1987},
+  volume  = {55},
+  number  = {3},
+  pages   = {703--708},
+  doi     = {10.2307/1913610}
+}
+
+% Andrews 1991 — bandwidth-selection rule for HAC; the floor(4·(N/100)^(2/9))
+% rule-of-thumb that primary OLS and R1/R2/R3 robustness use.
+@article{andrews1991heteroskedasticity,
+  author  = {Andrews, Donald W. K.},
+  title   = {Heteroskedasticity and Autocorrelation Consistent Covariance Matrix Estimation},
+  journal = {Econometrica},
+  year    = {1991},
+  volume  = {59},
+  number  = {3},
+  pages   = {817--858},
+  doi     = {10.2307/2938229}
+}
+
+% ── Data provenance (DANE / Banrep) ───────────────────────────────────────
+
+% DANE 2021 — Marco-2018 → Marco-2005 methodology break that drove the
+% CORRECTIONS-α / α' window narrowing to 2015-01 → 2026-02.
+@misc{dane2021empalme,
+  author       = {{Departamento Administrativo Nacional de Estad{\'i}stica}},
+  title        = {Empalme metodol{\'o}gico {GEIH} {Marco}-2005 a {Marco}-2018},
+  year         = {2021},
+  url          = {https://www.dane.gov.co/index.php/estadisticas-por-tema/mercado-laboral/empleo-y-desempleo},
+  note         = {DANE technical note on the GEIH 2021 methodology break; cited in spec §9.10 (CORRECTIONS-α') for the data-driven window narrowing rationale.}
+}
+
+% Banco de la República — COP/USD official end-of-month spot. Phase-1 X
+% panel data source.
+@misc{banrepCOPUSD,
+  author       = {{Banco de la Rep{\'u}blica}},
+  title        = {{Tasa Representativa del Mercado (TRM) — peso colombiano por d{\'o}lar de los Estados Unidos}},
+  year         = {2026},
+  url          = {https://www.banrep.gov.co/es/estadisticas/trm},
+  note         = {Source for COP/USD log-spot panel; end-of-month aggregation per spec §5.2.}
+}
+
+% ── Internal artifacts (paths cited; sha256 pinned in env.py) ─────────────
+
+@misc{abrigoSimpleBetaSpec2026,
+  author       = {{Abrigo Project}},
+  title        = {{Pair D simple-$\beta$ empirical-validation spec v1.3.1}},
+  year         = {2026},
+  howpublished = {contracts/docs/superpowers/specs/2026-04-27-simple-beta-pair-d-design.md},
+  note         = {sha256 964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659; pinned in env.py.SPEC_SHA256.}
+}
+
+@misc{abrigoBPOResearchNote2026,
+  author       = {{Abrigo Project}},
+  title        = {{Colombian BPO non-industrialization hedge research note}},
+  year         = {2026},
+  howpublished = {contracts/.scratch/2026-04-27-colombian-bpo-non-industrialization-hedge-research.md},
+  note         = {Literature pass that produced the Pair D rank-1 recommendation.}
+}
+
+@misc{abrigoGEIHFeasibility2026,
+  author       = {{Abrigo Project}},
+  title        = {{DANE GEIH Y feasibility report}},
+  year         = {2026},
+  howpublished = {contracts/.scratch/2026-04-27-dane-geih-y-feasibility.md},
+  note         = {Y-side data feasibility report; pinned youth-band 14-28, broad CIIU Rev.4 G-T sector definition.}
+}

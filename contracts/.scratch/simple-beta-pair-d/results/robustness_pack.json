@@ -1,0 +1,275 @@
+{
+  "task": "Pair D Phase 2 Task 2.2 \u2014 pre-committed robustness pack R1-R4",
+  "spec_sha256": "964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659",
+  "spec_version": "1.3.1",
+  "panel_sha256": "6d7d9e60dad1715ce86e8adb7b3d44ba236d0b063796293b40575994a9363edf",
+  "primary_ols_json_sha256": "d4790e743cdec62f1368cab1833e1266cb2da763d7c0931dd732bdf3d17938cf",
+  "n": 134,
+  "newey_west_bandwidth_default_R1_R2_R3": 4,
+  "newey_west_bandwidth_R4": 12,
+  "primary_reference": {
+    "composite_point": 0.13670984691582935,
+    "composite_se_hac": 0.024651971136307547,
+    "composite_p_one_sided": 1.4647814294832529e-08,
+    "composite_sign": "+"
+  },
+  "r1_implementation_note": "R1 = primary OLS specification + 2021 regime dummy. The DANE empalme is structurally pre-baked into FEX_C for the 2015-2020 era; per DATA_PROVENANCE.md line 268 'No separate downstream empalme transformation is applied' and per the algebraic identity Y = (\u03a3 FEX\u00b71{services}\u00b7f_t) / (\u03a3 FEX\u00b7f_t) = (\u03a3 FEX\u00b71{services}) / (\u03a3 FEX), Y_raw is invariant to a uniform multiplicative empalme factor. Therefore 'replace empalme with dummy' is operationally identical to 'add dummy to primary'. This is the interpretation explicitly endorsed by DATA_PROVENANCE.md.",
+  "r1_2021_regime_dummy_count_ones": 62,
+  "rows": {
+    "R1": {
+      "row": "R1",
+      "description": "2021 regime dummy (alternative to \u00a76 primary methodology-break disposition); same primary regressors + dummy_2021",
+      "regressors_in_design_matrix_order": [
+        "const",
+        "log_cop_usd_lag6",
+        "log_cop_usd_lag9",
+        "log_cop_usd_lag12",
+        "marco2018_dummy"
+      ],
+      "n": 134,
+      "coefficients": {
+        "const": {
+          "point": -0.08031952580422663,
+          "se_hac": 0.4589687847490142,
+          "t": -0.1749999748853272,
+          "p_two_sided": 0.8610796533187584,
+          "sign": "-"
+        },
+        "log_cop_usd_lag6": {
+          "point": 0.08313583533846787,
+          "se_hac": 0.07944992392924677,
+          "t": 1.0463928878333923,
+          "p_two_sided": 0.2953796750557256,
+          "sign": "+"
+        },
+        "log_cop_usd_lag9": {
+          "point": 0.007044851984206527,
+          "se_hac": 0.08375261907670982,
+          "t": 0.08411500514096257,
+          "p_two_sided": 0.9329649945471061,
+          "sign": "+"
+        },
+        "log_cop_usd_lag12": {
+          "point": -0.008724862146252805,
+          "se_hac": 0.07742777721215797,
+          "t": -0.11268387729052355,
+          "p_two_sided": 0.910281183886881,
+          "sign": "-"
+        },
+        "marco2018_dummy": {
+          "point": 0.02828463415193793,
+          "se_hac": 0.026642307705239798,
+          "t": 1.0616435507339754,
+          "p_two_sided": 0.2883975348448309,
+          "sign": "+"
+        }
+      },
+      "composite_beta": {
+        "definition": "\u03b2_composite = \u03b2_6 + \u03b2_9 + \u03b2_12",
+        "point": 0.0814558251764216,
+        "se_hac": 0.058051079740250484,
+        "t_stat": 1.4031750234602978,
+        "p_one_sided": 0.08028232680815761,
+        "p_two_sided": 0.16056465361631522,
+        "ci95_lower_one_sided": -0.014029703882778535,
+        "sign": "+",
+        "vs_primary": "AGREE"
+      }
+    },
+    "R2": {
+      "row": "R2",
+      "description": "Y narrow (CIIU Rev.4 J+M+N \u2014 BPO-narrow); Y_narrow_logit replaces Y_broad_logit; logit transform unchanged",
+      "regressors_in_design_matrix_order": [
+        "const",
+        "log_cop_usd_lag6",
+        "log_cop_usd_lag9",
+        "log_cop_usd_lag12"
+      ],
+      "n": 134,
+      "coefficients": {
+        "const": {
+          "point": -5.93363687808895,
+          "se_hac": 0.5885563746435716,
+          "t": -10.081679739994911,
+          "p_two_sided": 0.0,
+          "sign": "-"
+        },
+        "log_cop_usd_lag6": {
+          "point": 0.20719077034068356,
+          "se_hac": 0.18997280683310325,
+          "t": 1.0906338322553017,
+          "p_two_sided": 0.2754340364280523,
+          "sign": "+"
+        },
+        "log_cop_usd_lag9": {
+          "point": 0.1914589442269551,
+          "se_hac": 0.18096739974597695,
+          "t": 1.0579747760961649,
+          "p_two_sided": 0.2900669422315114,
+          "sign": "+"
+        },
+        "log_cop_usd_lag12": {
+          "point": 0.05024348020806735,
+          "se_hac": 0.15019731090408106,
+          "t": 0.3345165096874059,
+          "p_two_sided": 0.7379898348261991,
+          "sign": "+"
+        }
+      },
+      "composite_beta": {
+        "definition": "\u03b2_composite = \u03b2_6 + \u03b2_9 + \u03b2_12",
+        "point": 0.448893194775706,
+        "se_hac": 0.0721327235175305,
+        "t_stat": 6.223156050202526,
+        "p_one_sided": 2.4362611927841726e-10,
+        "p_two_sided": 4.872522385568345e-10,
+        "ci95_lower_one_sided": 0.3302454228760082,
+        "sign": "+",
+        "vs_primary": "AGREE"
+      }
+    },
+    "R3": {
+      "row": "R3",
+      "description": "Raw OLS (no logit transform); Y_broad_raw replaces Y_broad_logit",
+      "regressors_in_design_matrix_order": [
+        "const",
+        "log_cop_usd_lag6",
+        "log_cop_usd_lag9",
+        "log_cop_usd_lag12"
+      ],
+      "n": 134,
+      "coefficients": {
+        "const": {
+          "point": 0.389860312989763,
+          "se_hac": 0.045694880818631683,
+          "t": 8.531815949737654,
+          "p_two_sided": 0.0,
+          "sign": "+"
+        },
+        "log_cop_usd_lag6": {
+          "point": 0.024789362111614473,
+          "se_hac": 0.01775588069506868,
+          "t": 1.3961212365263973,
+          "p_two_sided": 0.16267798977774817,
+          "sign": "+"
+        },
+        "log_cop_usd_lag9": {
+          "point": 0.0028978779712498792,
+          "se_hac": 0.019004140940425702,
+          "t": 0.15248665963561125,
+          "p_two_sided": 0.8788031114648509,
+          "sign": "+"
+        },
+        "log_cop_usd_lag12": {
+          "point": 0.003628115542872193,
+          "se_hac": 0.019151164562683846,
+          "t": 0.18944620996790956,
+          "p_two_sided": 0.8497431098222088,
+          "sign": "+"
+        }
+      },
+      "composite_beta": {
+        "definition": "\u03b2_composite = \u03b2_6 + \u03b2_9 + \u03b2_12",
+        "point": 0.03131535562573655,
+        "se_hac": 0.005649889177104311,
+        "t_stat": 5.542649535966002,
+        "p_one_sided": 1.489643919327932e-08,
+        "p_two_sided": 2.979287838655864e-08,
+        "ci95_lower_one_sided": 0.022022114920902655,
+        "sign": "+",
+        "vs_primary": "AGREE"
+      }
+    },
+    "R4": {
+      "row": "R4",
+      "description": "HAC standard errors with maxlags=12 (autocorrelation-diagnostic bandwidth); same point estimate as primary, only SE differs",
+      "regressors_in_design_matrix_order": [
+        "const",
+        "log_cop_usd_lag6",
+        "log_cop_usd_lag9",
+        "log_cop_usd_lag12"
+      ],
+      "n": 134,
+      "coefficients": {
+        "const": {
+          "point": -0.5160620681507153,
+          "se_hac": 0.21144752907332648,
+          "t": -2.4406152694825467,
+          "p_two_sided": 0.014662265845902134,
+          "sign": "-"
+        },
+        "log_cop_usd_lag6": {
+          "point": 0.10889931113245283,
+          "se_hac": 0.0698126745993096,
+          "t": 1.5598788007690767,
+          "p_two_sided": 0.11878852504386717,
+          "sign": "+"
+        },
+        "log_cop_usd_lag9": {
+          "point": 0.011648432584541353,
+          "se_hac": 0.07045307829159574,
+          "t": 0.1653360345211613,
+          "p_two_sided": 0.8686794976477454,
+          "sign": "+"
+        },
+        "log_cop_usd_lag12": {
+          "point": 0.01616210319883519,
+          "se_hac": 0.08728087802396885,
+          "t": 0.1851734717242051,
+          "p_two_sided": 0.8530929757440668,
+          "sign": "+"
+        }
+      },
+      "composite_beta": {
+        "definition": "\u03b2_composite = \u03b2_6 + \u03b2_9 + \u03b2_12",
+        "point": 0.13670984691582935,
+        "se_hac": 0.026598387011675516,
+        "t_stat": 5.139779598507976,
+        "p_one_sided": 1.3753045746689452e-07,
+        "p_two_sided": 2.7506091493378904e-07,
+        "ci95_lower_one_sided": 0.09295939356861595,
+        "sign": "+",
+        "vs_primary": "AGREE"
+      }
+    }
+  },
+  "r_consistency": {
+    "primary_sign": "+",
+    "per_row_signs": {
+      "R1": "+",
+      "R2": "+",
+      "R3": "+",
+      "R4": "+"
+    },
+    "per_row_flips": {
+      "R1": "AGREE",
+      "R2": "AGREE",
+      "R3": "AGREE",
+      "R4": "AGREE"
+    },
+    "n_flips": 0,
+    "verdict_per_\u00a77_1": "AGREE",
+    "substrate_too_noisy_fires_per_\u00a73_5": false
+  },
+  "anti_fishing_compliance": {
+    "single_dimension_per_row": true,
+    "no_silent_re_specification": true,
+    "no_threshold_tuning": true,
+    "comment": "Each R-row varies exactly one design choice from the primary per spec \u00a77 line 200. R1=dummy added; R2=narrow Y; R3=raw Y (drop logit); R4=HAC bandwidth. No row varies two or more dimensions simultaneously."
+  },
+  "reproducibility": {
+    "seed_numpy": 42,
+    "python_version": "3.13.5 (main, Jun 12 2025, 12:40:22) [Clang 20.1.4 ]",
+    "platform": "Linux-6.18.9-arch1-2-x86_64-with-glibc2.43",
+    "package_versions": {
+      "numpy": "2.4.4",
+      "pandas": "3.0.2",
+      "statsmodels": "0.14.6",
+      "scipy": "1.17.1"
+    }
+  },
+  "outputs": {
+    "robustness_pack_json_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/.scratch/simple-beta-pair-d/results/robustness_pack.json",
+    "task_2_2_findings_md_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/.scratch/simple-beta-pair-d/results/task_2_2_findings.md"
+  }
+}
