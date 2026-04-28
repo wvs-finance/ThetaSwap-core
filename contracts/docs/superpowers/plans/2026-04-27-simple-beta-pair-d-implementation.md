@@ -1,5 +1,6 @@
 ---
-spec_sha256: <to-be-pinned-after-Task-0.3>
+spec_sha256: f74b2ac577d5182842116a8798f307a610c185f1e6e259b8530e2ec266141728
+spec_version_pinned: 1.1 (per spec frontmatter; passed v1 + v1.1 with 2 verifier waves before pin; ZERO BLOCKERs at any wave)
 plan_verifier_v1_wave1: PASS-WITH-REVISIONS (Reality Checker, 2026-04-27, 6 defects — all integrated in v2)
 plan_verifier_v1_wave2: PASS-WITH-REVISIONS with 2 BLOCK-severity (Senior Project Manager, 2026-04-27, 11 defects — all integrated in v2)
 plan_verifier_v2_wave1: pending re-dispatch
