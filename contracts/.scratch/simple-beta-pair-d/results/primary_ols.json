@@ -1,0 +1,185 @@
+{
+  "task": "Pair D Phase 2 Task 2.1 \u2014 pre-registered primary OLS",
+  "spec_sha256": "964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659",
+  "panel_sha256": "6d7d9e60dad1715ce86e8adb7b3d44ba236d0b063796293b40575994a9363edf",
+  "panel_path_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/.scratch/simple-beta-pair-d/data/panel_combined.parquet",
+  "n": 134,
+  "window_start": "2015-01-31 00:00:00+00:00",
+  "window_end": "2026-02-28 00:00:00+00:00",
+  "marco2018_dummy_count_ones": 62,
+  "newey_west_bandwidth": 4,
+  "alpha_primary_one_sided": 0.05,
+  "primary_spec_verbatim_per_spec_\u00a75_3": true,
+  "orchestrator_brief_contradiction": {
+    "flag": true,
+    "explanation": "Orchestrator Phase-2 brief specified a primary OLS that includes a marco2018_dummy (1 if t \u2265 2021-01-01 else 0). This contradicts spec \u00a75.3 verbatim, which has NO dummy in the primary; per \u00a76 the dummy is the R1 robustness alternative ONLY, and per \u00a79.1 / \u00a79.2 / \u00a79.7 the spec governs. The spec-verbatim primary (no dummy) is the AUTHORITATIVE result; the dummied variant is reported as an off-spec sensitivity for transparency."
+  },
+  "primary_spec_verbatim": {
+    "regressors_in_design_matrix_order": [
+      "const",
+      "log_cop_usd_lag6",
+      "log_cop_usd_lag9",
+      "log_cop_usd_lag12"
+    ],
+    "n": 134,
+    "rsquared": 0.16770832782464618,
+    "rsquared_adj": 0.1485015969282919,
+    "f_pvalue_overall": 3.053310830515139e-06,
+    "joint_lags_F": 10.519265494263179,
+    "joint_lags_p": 3.053310830515139e-06,
+    "coefficients": {
+      "const": {
+        "point": -0.5160620681507153,
+        "se_hac": 0.19932815264011558,
+        "t": -2.5890074297856898,
+        "p_two_sided": 0.00962530176813642
+      },
+      "log_cop_usd_lag6": {
+        "point": 0.10889931113245283,
+        "se_hac": 0.0776705481339856,
+        "t": 1.402066983544342,
+        "p_two_sided": 0.16089524520715193,
+        "sign": "+"
+      },
+      "log_cop_usd_lag9": {
+        "point": 0.011648432584541353,
+        "se_hac": 0.08304286062037364,
+        "t": 0.14027012674565237,
+        "p_two_sided": 0.8884465663441843,
+        "sign": "+"
+      },
+      "log_cop_usd_lag12": {
+        "point": 0.01616210319883519,
+        "se_hac": 0.08330993116804675,
+        "t": 0.19399971854777034,
+        "p_two_sided": 0.8461761022831809,
+        "sign": "+"
+      }
+    },
+    "composite_beta": {
+      "definition": "\u03b2_composite = \u03b2_6 + \u03b2_9 + \u03b2_12",
+      "contrast_vector_c": [
+        0.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "point": 0.13670984691582935,
+      "se_hac": 0.024651971136307547,
+      "t_stat": 5.545594961146227,
+      "p_one_sided": 1.4647814294832529e-08,
+      "p_two_sided": 2.9295628589665057e-08,
+      "ci95_lower_one_sided": 0.09616096278077088,
+      "ci95_two_sided_lower": 0.08839287134074561,
+      "ci95_two_sided_upper": 0.1850268224909131,
+      "verdict_alpha_05_one_sided": "PASS"
+    },
+    "individual_lag_sign_pattern_b6_b9_b12": "+/+/+",
+    "diagnostics": {
+      "breusch_pagan_lm": 2.0717495920674223,
+      "breusch_pagan_p": 0.5576491216291293,
+      "durbin_watson": 1.4156695099581909,
+      "jarque_bera_stat": 0.8692206055192663,
+      "jarque_bera_p": 0.647516953487048,
+      "skew": -0.05109199542411583,
+      "kurtosis_raw": 3.381103312102363,
+      "excess_kurtosis": 0.38110331210236303,
+      "adf_stat": -3.798513326869469,
+      "adf_p": 0.0029225622813367205,
+      "adf_lag_used": 3,
+      "adf_n_used": 130,
+      "adf_critical_values": {
+        "1%": -3.4816817173418295,
+        "5%": -2.8840418343195267,
+        "10%": -2.578770059171598
+      },
+      "ljung_box_lag4_stat": 23.532129207359773,
+      "ljung_box_lag4_p": 9.911060033998412e-05,
+      "ljung_box_lag12_stat": 39.47445135036249,
+      "ljung_box_lag12_p": 8.787109305100447e-05
+    },
+    "hac_cov_matrix": [
+      [
+        0.03973171243492122,
+        -0.0014975009798740447,
+        -0.002301916909853326,
+        -0.0011117695377574192
+      ],
+      [
+        -0.0014975009798474266,
+        0.006032714047433775,
+        -0.002827287878464676,
+        -0.0030158330876312337
+      ],
+      [
+        -0.002301916909870777,
+        -0.002827287878479515,
+        0.006896116700014803,
+        -0.003787706882785296
+      ],
+      [
+        -0.0011117695377471479,
+        -0.0030158330876427666,
+        -0.0037877068827644363,
+        0.006940544631224686
+      ]
+    ]
+  },
+  "off_spec_sensitivity_orchestrator_brief": {
+    "regressors_in_design_matrix_order": [
+      "const",
+      "log_cop_usd_lag6",
+      "log_cop_usd_lag9",
+      "log_cop_usd_lag12",
+      "marco2018_dummy"
+    ],
+    "n": 134,
+    "rsquared": 0.1827843575642436,
+    "coefficients": {
+      "const": {
+        "point": -0.08031952580422663,
+        "se_hac": 0.4589687847490142
+      },
+      "log_cop_usd_lag6": {
+        "point": 0.08313583533846787,
+        "se_hac": 0.07944992392924677
+      },
+      "log_cop_usd_lag9": {
+        "point": 0.007044851984206527,
+        "se_hac": 0.08375261907670982
+      },
+      "log_cop_usd_lag12": {
+        "point": -0.008724862146252805,
+        "se_hac": 0.07742777721215797
+      },
+      "marco2018_dummy": {
+        "point": 0.02828463415193793,
+        "se_hac": 0.026642307705239798
+      }
+    },
+    "composite_beta": {
+      "point": 0.0814558251764216,
+      "se_hac": 0.058051079740250484,
+      "t_stat": 1.4031750234602978,
+      "p_one_sided": 0.08028232680815761,
+      "ci95_lower_one_sided": -0.014029703882778535,
+      "verdict_alpha_05_one_sided": "FAIL"
+    }
+  },
+  "reproducibility": {
+    "seed_numpy": 42,
+    "python_version": "3.13.5 (main, Jun 12 2025, 12:40:22) [Clang 20.1.4 ]",
+    "platform": "Linux-6.18.9-arch1-2-x86_64-with-glibc2.43",
+    "package_versions": {
+      "numpy": "2.4.4",
+      "pandas": "3.0.2",
+      "statsmodels": "0.14.6",
+      "scipy": "scipy (scipy 1.17.1)"
+    }
+  },
+  "outputs": {
+    "primary_ols_json_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/.scratch/simple-beta-pair-d/results/primary_ols.json",
+    "primary_ols_residuals_parquet_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/.scratch/simple-beta-pair-d/results/primary_ols_residuals.parquet",
+    "primary_ols_residuals_sha256": "c1344d47ad6e3d7c78cf1d37190e3f11901ea7078884a4c35afc5dc49d89ba9e"
+  }
+}
