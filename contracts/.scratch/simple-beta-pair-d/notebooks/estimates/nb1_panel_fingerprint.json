@@ -1,0 +1,38 @@
+{
+  "missing_cells_required_cols": 0,
+  "n": 134,
+  "panel_sha256": "6d7d9e60dad1715ce86e8adb7b3d44ba236d0b063796293b40575994a9363edf",
+  "required_cols": [
+    "timestamp_utc",
+    "Y_broad_raw",
+    "Y_broad_logit",
+    "Y_narrow_raw",
+    "Y_narrow_logit",
+    "log_cop_usd_lag6",
+    "log_cop_usd_lag9",
+    "log_cop_usd_lag12"
+  ],
+  "spec_sha256": "964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659",
+  "window_end": "2026-02-28",
+  "window_start": "2015-01-31",
+  "x_lag12_range": [
+    7.534992331515036,
+    8.480408867853969
+  ],
+  "x_lag6_range": [
+    7.534992331515036,
+    8.480408867853969
+  ],
+  "x_lag9_range": [
+    7.534992331515036,
+    8.480408867853969
+  ],
+  "y_broad_range": [
+    0.6022439073932842,
+    0.6840826007872685
+  ],
+  "y_narrow_range": [
+    0.0726495265130294,
+    0.11578908547588847
+  ]
+}
