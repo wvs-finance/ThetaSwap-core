@@ -1,7 +1,9 @@
 ---
-spec_sha256: <to-be-pinned-after-Task-0.3>
+spec_sha256: f855e036d3c7807e2bef414a91a806caec1279a9d83575020bc2b3e82b47aeab
+spec_version_pinned: 3 (per spec frontmatter; spec passed through 3 revisions + 6 verifier dispatches before pin)
 plan_verifier_wave1: PASS-WITH-REVISIONS / Reality Checker / agent-id ad0b3d8d2134f0002 / 2026-04-27
 plan_verifier_wave2: PASS-WITH-REVISIONS / Senior Project Manager / agent-id ad19cc84a99ce8018 / 2026-04-27
+execution_status: PARKED 2026-04-27 per user directive — plan + spec finalized for the record but execution deferred. Refocus to fast-lane simple-β exercise. Plan may be re-activated as a future iteration.
 revision_history:
   - v1 2026-04-27 initial draft
   - v2 2026-04-27 integrate RC + SPM verifier defects (RC 2a/2b/3a/3b/6a + SPM D1-D6 + RC OOS-1)

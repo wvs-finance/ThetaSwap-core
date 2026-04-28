@@ -143,11 +143,12 @@ forge fmt --check                          # Check formatting
 
 **Iteration order (default — target-population dominant)**: fix the population → fix Y on a candidate inequality/transition-exposure measure → enumerate X candidates from the empirical risk surface → for each surviving X, search Panoptic-eligible M for tradability. The (Y, X) pair only graduates to instrument design once a Panoptic position with viable convex pricing exists. Closed iterations (gate verdict FAIL) inform the X-search prior for the next population, not silent re-runs of the same (Y, X) at different thresholds — Phase-A.0 anti-fishing invariants carry forward.
 
-**Active iteration (as of 2026-04-27)**:
-- Target population: LATAM wage earners attempting transition to entrepreneurship.
-- Denomination: TBD (no longer locked to COPm/Mento-native).
-- X identification: in flight.
-- Y, M: deferred until X is named.
+**Active iteration (as of 2026-04-27, evening update)**:
+- Target population: LATAM wage earners attempting transition to entrepreneurship (fast-lane); digital entrepreneurs / AI-tooling-dependent (slow-lane PARKED).
+- Denomination: per-iteration parameter; fast-lane TBD post Class-1/3/4 framework-scope decision.
+- **Fast lane (active):** X = FX devaluation; Y = Y1 = log(IPI × FX / NominalWage); M = Class 3 (parametric trigger off Chainlink Data Streams BRL/USD) recommended pending framework-scope amendment (A/B/C decision pending). **Stage goal per user directive: empirically validated microeconomic risk + simple positive-β confirmation → protocol design.** Methodology will be deliberately simpler than Phase-A.0 — single OLS spec, pre-registered, ~30-line scope; Bleakley-Cowan / Kalemli-Özcan-Liu-Shim literature is the theory anchor, sign expectation pre-pinned positive.
+- **Slow lane (PARKED):** X = AI-platform policy shift (Anthropic Claude / OpenAI GPT); Y = α_18 returns; substrate = Bittensor SN18 (Cortex.t / Corcel — reference implementation requires OpenAI API key per docs); M = Panoptic-permissionless via custom Uniswap pool. P1 spec sha256 = `f855e036d3c7807e2bef414a91a806caec1279a9d83575020bc2b3e82b47aeab` (passed v1→v2→v3 + 6 verifier dispatches; PARKED for execution deferral, retained for the record). May be re-activated as a future iteration if fast-lane succeeds and AI-cost is added as a second instrument.
+- Pending user decisions: (1) fast-lane M framework-scope (Class 3 off-Panoptic amendment vs Class 1 default); (2) v2 verification policy (Reality Checker + Workflow Architect re-dispatch + commit, or override).
 
 ## FX-vol-on-CPI-surprise Notebook Pipeline (Colombia, 2008-2026) — CLOSED 2026-04-19
 
