@@ -36,7 +36,7 @@
     "us_cpi_warmup": "us_cpi_surprise_ar1_warmup_12m",
     "vix_aggregation": "vix_avg_weekly_mean"
   },
-  "generated_at": "2026-04-19T03:35:58+00:00",
+  "generated_at": "2026-04-26T12:37:26+00:00",
   "ledger_table": [
     {
       "anti_fishing_binding": "closed interval [2008-01-02, 2026-03-01]",

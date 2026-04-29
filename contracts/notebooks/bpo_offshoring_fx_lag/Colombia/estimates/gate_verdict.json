@@ -63,8 +63,8 @@
     }
   },
   "outputs": {
-    "gate_verdict_json_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/notebooks/abrigo_pair_d/estimates/gate_verdict.json",
-    "robustness_results_md_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/notebooks/abrigo_pair_d/estimates/ROBUSTNESS_RESULTS.md",
+    "gate_verdict_json_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/notebooks/bpo_offshoring_fx_lag/Colombia/estimates/gate_verdict.json",
+    "robustness_results_md_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/notebooks/bpo_offshoring_fx_lag/Colombia/estimates/ROBUSTNESS_RESULTS.md",
     "robustness_pack_json_abs": "/home/jmsbpp/apps/ThetaSwap/thetaSwap-core-dev/.worktree/ranFromAngstrom/contracts/.scratch/simple-beta-pair-d/results/robustness_pack.json"
   }
 }
