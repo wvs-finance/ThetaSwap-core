@@ -36,15 +36,22 @@ import numpy as np
 # ── Repo-rooted path resolution ────────────────────────────────────────────
 
 # This file lives at:
-#   <worktree_root>/contracts/.scratch/simple-beta-pair-d/notebooks/env.py
-# parents[0] = notebooks/
-# parents[1] = simple-beta-pair-d/
-# parents[2] = .scratch/
-# parents[3] = contracts/
-# parents[4] = worktree root
-_CONTRACTS_DIR: Final[Path] = Path(__file__).resolve().parents[3]
-_PAIR_D_DIR: Final[Path] = Path(__file__).resolve().parents[1]
+#   <worktree_root>/contracts/notebooks/abrigo_pair_d/env.py
+# parents[0] = abrigo_pair_d/   (notebook directory; canonical pattern alongside
+#                                 abrigo_y3_x_d/, fx_vol_cpi_surprise/Colombia/, etc.)
+# parents[1] = notebooks/
+# parents[2] = contracts/
+# parents[3] = worktree root
+_CONTRACTS_DIR: Final[Path] = Path(__file__).resolve().parents[2]
 _NB_DIR: Final[Path] = Path(__file__).resolve().parent
+
+# Cross-tree reference: the Phase-1 panel + script-form Phase-2 JSON
+# artifacts live under contracts/.scratch/simple-beta-pair-d/ (per the
+# original Pair D script-form execution committed at bce431544). The
+# notebook layer references those artifacts read-only and asserts sha256
+# round-trip; the notebooks' own outputs go to _NB_DIR/estimates/ per the
+# canonical pattern.
+_PAIR_D_DIR: Final[Path] = _CONTRACTS_DIR / ".scratch" / "simple-beta-pair-d"
 
 # ── Phase-1 panel + Phase-2 results (committed under simple-beta-pair-d/) ──
 
