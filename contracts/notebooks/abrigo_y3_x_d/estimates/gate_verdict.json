@@ -1,0 +1,39 @@
+{
+  "anti_fishing_invariants_intact": true,
+  "bootstrap_reconciliation": {
+    "agrees_with_hac_at_50pct_containment": true,
+    "beta_hat": -2.7987050503705652e-08,
+    "estimator": "bootstrap_pr_4_10000",
+    "se": 2.2218236190478324e-08
+  },
+  "convex_payoff_caveat": "Mean-\u03b2 identification is necessary-but-insufficient for convex-payoff pricing. T3b verdict bounds linear-payoff hedge calibration only; convex-payoff (option/cap/floor) calibration requires Rev-3 \u03b6-group extensions per spec \u00a711.A.",
+  "gate_verdict": "FAIL",
+  "pre_committed_fails_actual": {
+    "row_3": "FAIL",
+    "row_4": "FAIL"
+  },
+  "row_1_beta_hat": -2.7987050503705652e-08,
+  "row_1_estimator": "ols_hac4",
+  "row_1_lower_90": -4.6206859818053154e-08,
+  "row_1_n": 76,
+  "row_1_p_one_sided": 0.9753610889502945,
+  "row_1_p_two_sided": 0.04927782209941108,
+  "row_1_se": 1.4234226026833985e-08,
+  "row_1_t_stat": -1.9661799981920483,
+  "spec_tests": {
+    "t1_exogeneity_p": 0.003111038598685556,
+    "t1_rejects": true,
+    "t2_levene_p": 0.20379013591562917,
+    "t3a_p_two": 0.04927782209941108,
+    "t3a_rejects": true,
+    "t3b_passes": false,
+    "t4_ljungbox_lag4_p": 0.5013646336590775,
+    "t4_ljungbox_lag8_p": 0.33080264045925023,
+    "t5_jb_p": 0.6833351645471128,
+    "t5_normality_rejects": false,
+    "t6_break_rejects": false,
+    "t6_chow_p": null,
+    "t7_predictive_or_structural": "predictive",
+    "t7_within_one_se": false
+  }
+}

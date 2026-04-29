@@ -36,13 +36,17 @@ import numpy as np
 # ── Repo-rooted path resolution ────────────────────────────────────────────
 
 # This file lives at:
-#   <worktree_root>/contracts/notebooks/abrigo_pair_d/env.py
-# parents[0] = abrigo_pair_d/   (notebook directory; canonical pattern alongside
-#                                 abrigo_y3_x_d/, fx_vol_cpi_surprise/Colombia/, etc.)
-# parents[1] = notebooks/
-# parents[2] = contracts/
-# parents[3] = worktree root
-_CONTRACTS_DIR: Final[Path] = Path(__file__).resolve().parents[2]
+#   <worktree_root>/contracts/notebooks/bpo_offshoring_fx_lag/Colombia/env.py
+# parents[0] = Colombia/                (country scope subfolder; mirrors
+#                                         fx_vol_cpi_surprise/Colombia/ pattern)
+# parents[1] = bpo_offshoring_fx_lag/   (hypothesis name: outcome=BPO offshoring labor
+#                                         absorption, driver=FX (COP/USD), qualifier=lag
+#                                         (6/9/12 months) — testing whether peso
+#                                         devaluation predicts youth BPO absorption)
+# parents[2] = notebooks/
+# parents[3] = contracts/
+# parents[4] = worktree root
+_CONTRACTS_DIR: Final[Path] = Path(__file__).resolve().parents[3]
 _NB_DIR: Final[Path] = Path(__file__).resolve().parent
 
 # Cross-tree reference: the Phase-1 panel + script-form Phase-2 JSON
