@@ -234,7 +234,7 @@ Goal: produce a sha256-pinned spec that fixes hypothesis, methodology, threshold
 **Owner:** Analytics Reporter
 
 **Files:**
-- Create: `contracts/.scratch/simple-beta-pair-d/notebooks/env.py`, `references.bib`, notebooks 01-05 (skeletons only)
+- Create: `contracts/notebooks/abrigo_pair_d/env.py`, `references.bib`, notebooks 01-05 (skeletons only). **Note (v2.4 path correction):** earlier scaffold landed at `contracts/.scratch/simple-beta-pair-d/notebooks/` per a literal read of an obsolete plan path; canonical location per project convention (alongside `contracts/notebooks/abrigo_y3_x_d/`, `contracts/notebooks/fx_vol_cpi_surprise/Colombia/`) is `contracts/notebooks/abrigo_pair_d/`. `git mv` of the entire notebook subtree was performed 2026-04-28 PM late evening at HEAD `<computed at commit>`.
 
 - [ ] **Step 1: Specialist sets up env.py** following the existing `contracts/notebooks/abrigo_y3_x_d/env.py` pattern (parents-fix landed at commit `865402c2c` per CLAUDE.md). Paths point to the simple-β-pair-d directory.
 
