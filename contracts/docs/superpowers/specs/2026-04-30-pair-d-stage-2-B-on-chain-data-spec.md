@@ -1,15 +1,18 @@
 ---
 spec_path: pair-d-stage-2-B-on-chain-data
-spec_version: v1.2.1 (CORRECTIONS-δ' — data_source_primary enum + Step-5 cross-ref micro-edits)
-spec_predecessor_version: v1.2 (CORRECTIONS-δ free-tier-only budget pin; sha256
-  `b3b41e3042cf91563977e6c0222cfe75d8b293d9b4379758a5721b090420c42c`)
+spec_version: v1.3 (CORRECTIONS-γ — behavioral-demand → structural-exposure rename executed)
+spec_predecessor_version: v1.2.1 (CORRECTIONS-δ' data_source_primary enum + Step-5 cross-ref
+  micro-edits; sha256 `86830209130b7833cb820531add8851513cf4831dc9a60b19c73bf7c076f4a17`)
 spec_predecessor_chain:
   v1_0: 7af22dd4f95324d777639d509f782efe41560469e29ca037f65c8940c0ee6997
   v1_1: c4fa24369485f107da7b26531b3771aa3f4cd824a457b69d19d1b779c4ea0714
   v1_2: b3b41e3042cf91563977e6c0222cfe75d8b293d9b4379758a5721b090420c42c
+  v1_2_1: 86830209130b7833cb820531add8851513cf4831dc9a60b19c73bf7c076f4a17
 spec_author: Data Engineer dispatch 2026-04-30 (v1.0); Data Engineer dispatch 2026-05-02 (v1.1);
   Data Engineer dispatch 2026-05-02 (v1.2 — CORRECTIONS-δ);
-  foreground micro-edit 2026-05-02 (v1.2.1 — CORRECTIONS-δ' per Wave-2 verifier NITs N1+N2)
+  foreground micro-edit 2026-05-02 (v1.2.1 — CORRECTIONS-δ' per Wave-2 verifier NITs N1+N2);
+  Data Engineer dispatch 2026-05-02 (v1.3 — CORRECTIONS-γ behavioral-demand →
+  structural-exposure rename per anticipated-rename inventory)
 spec_sha256: <to-be-pinned-after-recompute>
 stage1_pinned_chain:
   spec_v1_3_1: 964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659
@@ -78,14 +81,127 @@ internal_ladder: v0 (data audit) → v1 (CF^a_l) → v2 (CF^a_s) → v3 (CPO bac
 convergence_point: v3 realized P&L envelope check on Path A v3 MC bounds
 verifier_v1_wave1: pending (re-run on v1.2)
 verifier_v1_wave2: pending (re-run on v1.2)
-anticipated_corrections_gamma: deliverable rename "behavioral demand" →
-  "structural exposure" (transaction archaeology cannot infer WTP for a non-existent
-  instrument; cash-flow geometry yields |Δ^(a_l)| and |Δ^(a_s)| in $-notional, NOT
-  willingness-to-pay). Out of scope for v1.2; placeholder so v1.2 does not drift further
-  into demand-language.
+corrections_gamma_status: EXECUTED in v1.3 — deliverable framing renamed throughout from
+  "behavioral demand" / "willingness-to-pay" to "structural exposure" (cash-flow geometry
+  yielding |Δ^(a_l)| and |Δ^(a_s)| in $-notional that the CPO would neutralize on observed
+  transaction flows). Transaction archaeology cannot infer WTP for an instrument that does
+  not yet exist in the market; existing transactions describe equilibrium under the option
+  set without the CPO, so the inference would be broken. Behavioral demand / WTP is a
+  Stage-3 (deployment) question, outside Path B's Stage-2 scope. The Stage-2 ideal-scenario
+  clause (per project CLAUDE.md "Instrument family" paragraph) authorizes assuming
+  liquidity / market exists; estimating behavioral demand at Stage-2 is the Phase-A.0
+  stage-drift failure mode and is anti-fishing-banned. v1.3 is a prose-rename pass only —
+  no schema, methodology, typed-exception, or quota changes; the underlying ladder still
+  produces |Δ^(a_l)| and |Δ^(a_s)| as v1.0 → v1.2.1 always did.
 ---
 
 # Pair D — Stage-2 Path B — On-Chain Data Empirical-Validation Spec
+
+## Change Log v1.2.1 → v1.3 (CORRECTIONS-γ)
+
+This revision executes the rename queued from v1.1 onward (and explicitly flagged in v1.2's
+"Anticipated future revision" subsection plus v1.2.1's `anticipated_corrections_gamma`
+frontmatter field): every prose location that named Path B's deliverable as "behavioral
+demand" or "willingness-to-pay" is renamed to **"structural exposure"** — i.e., the
+cash-flow geometry yielding `|Δ^(a_l)|` and `|Δ^(a_s)|` magnitudes in $-notional that the
+CPO would neutralize on observed transaction flows. v1.3 is a prose-rename pass ONLY: no
+frontmatter pin moves, no schema field changes, no new typed exceptions, no quota changes,
+no methodology changes. The underlying v0 → v1 → v2 → v3 ladder still produces `|Δ^(a_l)|`
+and `|Δ^(a_s)|` as v1.0 → v1.2.1 always did; v1.3 just NAMES that output correctly.
+
+**Why it matters (the load-bearing rationale).** Transaction archaeology cannot infer
+willingness-to-pay for an instrument that does not yet exist in the market. Path B reads
+the existing on-chain history of a_l-side LP behavior (Mento V3 / Uniswap V3 swap-and-fee
+flows) and a_s-side bill-pay behavior (Bitgifty / Walapay settlement-leg `Transfer`
+events). Those transactions describe equilibrium under the *current* option set —
+specifically, an option set in which the CPO does not exist. Introducing the CPO would
+change the option set facing both sides, which would change observed transaction
+behavior, which means the existing-transaction inference cannot be lifted to a WTP claim
+about the new equilibrium. What the existing-transaction inference CAN do is characterize
+the **structural exposure** the CPO would neutralize: the realized magnitude of the
+cash-flow geometry that the framework predicts the CPO covers. That is a load-bearing,
+pre-deployment, M-sketch-fitness question; behavioral demand / WTP is a Stage-3
+(deployment) question that requires a different evidence base (deployed pilot, surveyed
+demand, observed take-up at posted prices).
+
+The framework's Stage-2 ideal-scenario clause (per project CLAUDE.md "Instrument family"
+paragraph: *"The framework permits — and at this stage requires — modeling the ideal
+scenario in which the proposed instrument settles cleanly with adequate liquidity"*)
+explicitly authorizes assuming the market exists; the M-design step proposes the ideal
+settlement architecture and only the deployment step requires real LP capital. Trying to
+estimate behavioral demand at Stage-2 is exactly the Phase-A.0 stage-drift failure mode
+that produced the over-engineered slow-lane apparatus that eventually parked, and is
+anti-fishing-banned. v1.3 corrects the prose to reflect the stage-correct framing the
+ladder always implemented.
+
+**Per-location list of changes (8 prose locations executed).**
+
+1. Frontmatter `anticipated_corrections_gamma` block → renamed to `corrections_gamma_status`
+   and updated from anticipated-status placeholder to EXECUTED record citing the
+   ideal-scenario clause and the stage-discipline rationale above.
+2. §1 framing-reminder paragraph (was "CORRECTIONS-γ-anticipated, not yet applied"; was
+   instructing executors to *treat* the deliverable as structural-exposure pending future
+   prose reconciliation) → rewritten as a normative definition: Path B's deliverable IS
+   structural-exposure characterization; behavioral demand / WTP is explicitly out of
+   Path B's Stage-2 scope; the framework's Stage-2 ideal-scenario clause permits assuming
+   the market exists.
+3. §1 "Path B's purpose" paragraph (was "revealed-preference evidence of cash-flow
+   geometry") → tightened to "structural-exposure characterization of realized cash-flow
+   geometry" — the revealed-preference framing risked sliding back into WTP-language;
+   structural-exposure is the load-bearing term.
+4. §4 v2 output bullet (was "demand-side / structural-exposure cash-flow series") →
+   simplified to "structural-exposure cash-flow series" — the dual naming inherited from
+   v1.1 prose dropping a transitional hedge; the a_s side IS the structural-exposure side
+   regardless of the supply-vs-demand economic-leg terminology.
+5. §6 `Stage2PathBASOnChainSignalAbsent` pivot (a) parenthetical (was "(NOTE: this is
+   structural-exposure proxy not WTP per CORRECTIONS-γ-anticipation)") → rewritten as
+   inline framing without the anticipation-flag: "the upper-bound proxy is a
+   structural-exposure ceiling — characterizing the realized magnitude of the CF^(a_s)
+   shape the CPO would neutralize, NOT a behavioral-demand or WTP estimate, which is a
+   Stage-3 question outside Path B's scope."
+6. Existing v1.0 → v1.1 Change Log "Anticipated future revision" paragraph (was naming
+   CORRECTIONS-γ as a future dispatch and noting v1.1 deliberately did not introduce the
+   rename) → updated tense to record CORRECTIONS-γ EXECUTED in v1.3 with sha-pin
+   crosslink to the predecessor v1.2.1 (the lineage record is preserved; only the
+   pending/executed marker flips).
+7. Change Log v1.1 → v1.2 "Preserved from v1.1" bullet (was naming CORRECTIONS-γ
+   anticipated rename as a kept-as-anticipated item) → updated to record CORRECTIONS-γ
+   EXECUTED in v1.3, no longer anticipated.
+8. §8 closing paragraph (was "Demand-side / structural-exposure-side convergence remains
+   an open question for downstream Stage-3 work") → simplified to "Structural-exposure-side
+   convergence remains an open question for downstream Stage-3 work" — preserves the
+   convergence-deferral substance while dropping the WTP-adjacent "demand-side" framing
+   for the open-question phrasing.
+
+**Preserved from v1.0 → v1.2.1 (no regression).** All BLOCK closures (BLOCK-B1 §4.0
+schema, BLOCK-B2 §3.A provenance, BLOCK-B3 SQD vs Subsquid Cloud structural distinction)
+intact. All FLAG closures (FLAG-B1 through FLAG-B9) intact. v1.2 CORRECTIONS-δ
+free-tier-only budget pin (§5 / §5.A burst-rate analysis with three new typed exceptions)
+intact. v1.2.1 CORRECTIONS-δ' fixes (`alchemy_free` enum value in §4.0 `data_source_primary`,
+Step-5 cross-reference in §5 + §6) intact. §8 cross-path handoff schema (B→A
+`r_al_handoff.json`; A→B v3 envelope) intact. The known cross-path handoff naming
+asymmetry (Path A §12 "σ-distribution" vs Path B FLAG-B9 "r_(a_l) point + HAC SE") is left
+for the convergence-dispatch work item — v1.3 does not touch §8 handoff fields.
+Anti-fishing discipline (no auto-pivot to paid services; no silent threshold tuning) intact.
+
+**Domain-correct terminology preserved.** Several locations use "demand-side" as standard
+economic terminology naming the a_s leg of the CPO (the demand-side of the framework's
+supply-side / demand-side decomposition); this is contextually correct and is preserved
+unchanged. Specifically: §1 "`a_s` (short-σ) demand side" describing the framework's
+named legs; §4 "demand-side / structural-exposure cash-flow series" was renamed in
+location-4 above to drop the dual phrasing (NOT because "demand-side" is wrong as
+economic terminology, but because the dual hedge created ambiguity between
+economic-leg-naming and deliverable-naming); §6 `Stage2PathBASOnChainSignalAbsent`
+disposition prose using "demand-side" to name the a_s leg of the framework decomposition
+preserved. The rename is targeted at WTP-implying language about the *deliverable*, not at
+the supply-vs-demand economic terminology naming the *legs*.
+
+**No-regression assertion.** v1.2 + v1.2.1 BLOCK / FLAG closures unchanged; v1.2 + v1.2.1
+typed exception inventory unchanged; §3.A provenance discipline unchanged; §4.0 schema
+unchanged; §5 + §5.A free-tier-only architecture unchanged; §6 disposition pivots
+unchanged except for the location-5 inline-framing rewrite of one parenthetical;
+§7 anti-fishing posture unchanged; §8 cross-path handoff schema unchanged. v1.3 diff
+surface is ≤8 prose locations as anticipated by the v1.2.1 inventory.
 
 ## Change Log v1.1 → v1.2 (CORRECTIONS-δ)
 
@@ -178,8 +294,13 @@ service is anti-fishing-banned and requires user re-budgeting.
   only the Alchemy quota assumptions inside it change)
 - All FLAG-B1 through FLAG-B9 closures
 - §8 + FLAG-B9 cross-path handoff (B→A r_al_handoff.json; A→B v3 MC envelope)
-- CORRECTIONS-γ anticipated rename (frontmatter + Change Log + §1 + §4 + §6 prose flagging
-  structural-exposure rename) — kept as anticipated, not executed in v1.2
+- CORRECTIONS-γ rename — recorded as anticipated through v1.2.1; **EXECUTED in v1.3**
+  (frontmatter `corrections_gamma_status` field + new Change Log v1.2.1 → v1.3 section
+  + §1 framing-reminder rewrite + §1 "Path B's purpose" tightening + §4 v2 output
+  bullet simplification + §6 inline-framing rewrite + §8 closing paragraph
+  simplification). v1.2's no-execution-in-v1.2 stance is preserved as historical record;
+  v1.3 carries out the rename per the prose-only scope pinned in the v1.2.1
+  `anticipated_corrections_gamma` frontmatter field.
 
 ## Change Log v1.0 → v1.1
 
@@ -275,14 +396,21 @@ structure is preserved; new normative content is additive (new subsections §4.0
   consuming Path A's parametric assumptions, Path A consuming Path B's σ-path
   decomposition) is anti-fishing-banned.
 
-**Anticipated future revision.** A `CORRECTIONS-γ` block (separate dispatch) will
-rename Path B's deliverable framing from "behavioral demand" / "willingness-to-pay"
-to **"structural exposure"** — i.e., cash-flow geometry yielding `|Δ^(a_l)|` and
-`|Δ^(a_s)|` in $-notional. Transaction archaeology cannot infer WTP for an
-instrument that does not yet exist in the market. v1.1 deliberately does NOT
-introduce this rename to keep the v1.0 → v1.1 diff scoped to the verification
-matrix; v1.1 prose is reviewed to ensure it does not drift further into
-demand-language pending CORRECTIONS-γ.
+**Anticipated future revision (EXECUTED in v1.3, sha-pin lineage preserved).** A
+`CORRECTIONS-γ` block (originally scoped as a separate dispatch; ultimately landed via
+Data Engineer dispatch 2026-05-02 on top of v1.2.1 sha256
+`86830209130b7833cb820531add8851513cf4831dc9a60b19c73bf7c076f4a17`) renames Path B's
+deliverable framing from "behavioral demand" / "willingness-to-pay" to
+**"structural exposure"** — i.e., cash-flow geometry yielding `|Δ^(a_l)|` and
+`|Δ^(a_s)|` in $-notional that the CPO would neutralize on observed transaction flows.
+Transaction archaeology cannot infer WTP for an instrument that does not yet exist in
+the market; existing transactions describe equilibrium under the option set without the
+CPO, so the inference would be broken. v1.1 deliberately did NOT introduce this rename
+to keep the v1.0 → v1.1 diff scoped to the verification matrix, and v1.2 + v1.2.1
+preserved that scoping for the same reason; v1.3 finally executes the rename as a
+prose-only pass per the v1.2.1 `anticipated_corrections_gamma` frontmatter
+specification. See the Change Log v1.2.1 → v1.3 section above for the per-location
+list, the load-bearing rationale, and the no-regression assertion.
 
 ## §1 — Goal + scope
 
@@ -306,11 +434,14 @@ sha-pin chain quoted verbatim from the dispatch brief §3:
 These pins are READ-ONLY through Path B. Any spec edit that would invalidate them is OUT OF
 SCOPE; this is a separate document, not a Stage-1 revision.
 
-Path B's purpose is **revealed-preference evidence** of cash-flow geometry — what behavior is
-*already* measurable in the existing on-chain history of the candidate venues, expressed as
-realized `|Δ^(a_l)|` and `|Δ^(a_s)|` magnitudes in $-notional — rather than the analytical
-claim that Path A constructs by stochastic / Monte-Carlo modeling of the same underlying CPO
-mechanics. The two paths are independent (FLAG-B9) and converge at v3: Path B reconstructs the
+Path B's purpose is **structural-exposure characterization** of realized cash-flow geometry —
+what magnitude of `|Δ^(a_l)|` and `|Δ^(a_s)|` is *already* measurable in the existing
+on-chain history of the candidate venues, expressed in $-notional — rather than the
+analytical claim that Path A constructs by stochastic / Monte-Carlo modeling of the same
+underlying CPO mechanics. The structural-exposure framing is load-bearing: realized
+transactions characterize the cash-flow shape the CPO would neutralize, NOT what users
+would pay for the CPO if it existed (which is a Stage-3 question, see §1 framing
+definition above). The two paths are independent (FLAG-B9) and converge at v3: Path B reconstructs the
 realized `CF^(a_l)` and `CF^(a_s)` and replays them through the framework's `Π(σ_T)` to get a
 realized CPO P&L envelope; Path A produces a stochastic-bound P&L distribution under the same
 framework. The convergence dispatch (separate from this spec) checks whether Path A's bounds
@@ -322,13 +453,25 @@ Path B is intentionally narrower than the dispatch brief itself. The dispatch br
 flows the M-sketch presupposes are present and measurable on-chain. If they are not, the
 M-sketch inherits an architectural risk that propagates into Stage-3.
 
-**Framing reminder (CORRECTIONS-γ-anticipated, not yet applied).** The phrase "behavioral
-demand" in v1.0 prose is a misnomer; transaction archaeology measures cash-flow geometry, not
-willingness-to-pay for a non-existent instrument. v1.1 retains v1.0 wording to keep the diff
-scoped, but executors implementing this spec MUST treat the deliverable as
-*structural-exposure* characterization (the magnitudes |Δ^(a_l)| and |Δ^(a_s)| measurable
-from realized history), NOT as behavioral-demand inference (what users *would* pay for a
-hedge). CORRECTIONS-γ will reconcile prose.
+**Framing definition (CORRECTIONS-γ EXECUTED in v1.3; normative).** Path B's deliverable IS
+**structural-exposure characterization** of the realized on-chain history of the candidate
+venues — specifically, the cash-flow geometry yielding `|Δ^(a_l)|` and `|Δ^(a_s)|`
+magnitudes in $-notional that the CPO would neutralize on observed transaction flows. The
+ladder produces those magnitudes from realized fee-yield extraction (v1) and realized
+settlement-leg extraction (v2), replays them through the framework's `Π(σ_T)` to get a
+realized P&L envelope (v3), and emits a calibration-handoff packet for Path A v3
+convergence (§8). Behavioral demand / willingness-to-pay is **explicitly out of Path B's
+Stage-2 scope**: transaction archaeology cannot infer WTP for an instrument that does not
+yet exist in the market, because the existing transactions describe equilibrium under the
+*current* option set (an option set in which the CPO is absent), and introducing the CPO
+would change the option set facing both sides, breaking the inference. The framework's
+Stage-2 ideal-scenario clause (per project CLAUDE.md "Instrument family" paragraph) permits
+assuming the market exists for M-design purposes; behavioral demand / WTP is a Stage-3
+(deployment) question requiring a different evidence base (deployed pilot, surveyed demand,
+observed take-up at posted prices) and is the Phase-A.0 stage-drift failure mode the
+framework's anti-fishing discipline is designed to prevent. Executors implementing this
+spec MUST keep the deliverable framed as structural-exposure characterization throughout;
+any drift into WTP-inference language is a methodology error, not a documentation nit.
 
 ## §2 — Internal ladder (v0 / v1 / v2 / v3)
 
@@ -536,11 +679,14 @@ against `Σ r·|FX_t − FX_{t-1}|`, `r_al_handoff.json` per FLAG-B9 schema, plu
 `DATA_PROVENANCE.md` per §3.A. Findings memo recommending whether v2 proceeds or v1 alone
 provides sufficient empirical defensibility for the M-sketch supply-side leg.
 
-**v2:** if `CF^(a_s)` reconstruction succeeds — empirical
-demand-side / structural-exposure cash-flow series, estimated effective `B_T` calibration,
-realized Δ-shape against σ, plus `DATA_PROVENANCE.md`. If HALT — typed-exception HALT memo
-per `feedback_pathological_halt_anti_fishing_checkpoint` documenting which fingerprint was
-sought, why unreachable, and ≥3 user-enumerated pivots.
+**v2:** if `CF^(a_s)` reconstruction succeeds — empirical structural-exposure cash-flow
+series for the a_s leg, estimated effective `B_T` calibration, realized Δ-shape against
+σ, plus `DATA_PROVENANCE.md`. The "a_s leg" naming is the framework's economic-leg
+terminology (the demand-side of the supply-side / demand-side decomposition); the
+deliverable itself is structural-exposure characterization of that leg's cash-flow
+geometry, NOT a behavioral-demand or WTP estimate (see §1 framing definition). If HALT —
+typed-exception HALT memo per `feedback_pathological_halt_anti_fishing_checkpoint`
+documenting which fingerprint was sought, why unreachable, and ≥3 user-enumerated pivots.
 
 **v3:** realized CPO P&L distribution over feasible block-range overlap with the Pair D window
 (mean, SD, quantiles, max drawdown, regime-conditional decomposition keyed to RC FLAG #6
@@ -979,12 +1125,14 @@ Pre-pinned typed exceptions:
   can be argued symmetrically from `Δ^(a_l) > 0` plus the framework derivation. The findings
   memo records the asymmetry explicitly and flags it for Path A v3 convergence dispatch as a
   known empirical asymmetry. v3 reports the supply-side P&L envelope only and explicitly flags
-  the demand-side as un-replicated. Pivots (if orchestrator declines PROCEED-without): (a)
+  the a_s leg as un-replicated. Pivots (if orchestrator declines PROCEED-without): (a)
   source off-chain Bitgifty / Walapay aggregate volume statistics from publicly available
-  reports as upper-bound proxy (NOTE: this is structural-exposure proxy not WTP per
-  CORRECTIONS-γ-anticipation); (b) substitute Walapay's published Africa-side cross-currency
-  reels as a geography substitute; (c) drop v2 and explicitly scope Path B to supply-side
-  empirical validation only.
+  reports as upper-bound proxy — the upper-bound proxy is a structural-exposure ceiling
+  (characterizing the realized magnitude of the `CF^(a_s)` shape the CPO would neutralize),
+  NOT a behavioral-demand or WTP estimate, which is a Stage-3 question outside Path B's
+  scope per the §1 framing definition; (b) substitute Walapay's published Africa-side
+  cross-currency reels as a geography substitute; (c) drop v2 and explicitly scope Path B
+  to supply-side empirical validation only.
 
 Each HALT requires a typed-exception memo, a disposition memo with ≥3 user-enumerated pivots,
 and explicit user adjudication before any pivot is taken. The v1.0 `Stage2PathBDuneCoverageInsufficient`
@@ -1080,9 +1228,9 @@ orchestrator dispatches the convergence comparison after both Path A v3 and Path
 their respective handoff packets.
 
 If Path B v2 HALTs with the PROCEED-without-`CF^(a_s)` disposition, v3 envelope characterizes
-the supply side only and convergence checks Path A's supply-side bounds against Path B's
-realized supply-side envelope. Demand-side / structural-exposure-side convergence remains an
-open question for downstream Stage-3 work.
+the supply side (a_l leg) only and convergence checks Path A's supply-side bounds against
+Path B's realized supply-side envelope. Structural-exposure-side convergence for the a_s
+leg remains an open question for downstream Stage-3 work.
 
 ## §9 — Self-review checklist
 
