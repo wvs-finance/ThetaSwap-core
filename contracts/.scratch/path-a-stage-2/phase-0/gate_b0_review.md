@@ -180,20 +180,29 @@ Phase 1 cleanly using only the Phase 0 artifacts?
 
 ---
 
-## §4. Verdict integration template (parent orchestrator fills in)
+## §4. Verdict integration (orchestrator-authored 2026-05-02)
 
-| Reviewer | Verdict | BLOCKs | NITs | Disposition |
+| Reviewer | Verdict | BLOCKs | NITs/FLAGs | Disposition |
 |---|---|---|---|---|
-| Code Reviewer | _PENDING_ — orchestrator dispatch required | — | — | — |
-| Reality Checker | _PENDING_ — orchestrator dispatch required | — | — | — |
-| Senior Developer (fresh) | _PENDING_ — orchestrator dispatch required | — | — | — |
+| Code Reviewer | **PASS_WITH_NITS** | 0 | 3 NITs (IPython/ipython case mismatch; QuantLib dist name ambiguity at v0; Ankr-stale spec §5) | PROCEED_TO_PHASE_1 |
+| Reality Checker | **ACCEPT_WITH_FLAGS** | 0 | 4 FLAGs (CU table-vs-meter caveat carry-forward; Ankr-stale spec §5; Celo Alchemy enable orchestrator-actionable; concurrent-agent serialization recommendation) | PROCEED_TO_PHASE_1 |
+| Senior Developer (fresh) | **ACCEPT_WITH_REMEDIATION** | 0 | 3 NITs + 3 remediation actions (Surface-1 Celo decision before Task 2.2; spec v1.2.2 micro-edit before Task 3.2; Task 3.4 v2 brief must quantify eth_getLogs 6.6 req/s effective ceiling) | PROCEED_TO_PHASE_1 |
 
-**Final Gate B0 verdict (orchestrator authors after the 3 reviewers
-return):**
+**Final Gate B0 verdict (orchestrator integration):**
 
-- All three PASS or PASS_WITH_NITS → Phase 1 dispatch UNBLOCKED.
-- Any one BLOCK → Phase 1 HALT; remediation tasks dispatched per the
-  BLOCKing reviewer's findings; re-convene Gate B0 after fix.
+**PASS_WITH_NITS_AND_FLAGS_AND_REMEDIATION → Phase 1 dispatch UNBLOCKED.**
+
+Rationale: All three reviewers concur PROCEED_TO_PHASE_1; zero BLOCKs across all dimensions; convergent findings on the 3 free-tier feasibility surfaces strengthen the Phase 0 closeout (independent reproduction by Reality Checker confirmed Foundry SHA matches binary, Ankr 401 reproduces verbatim, Forno UA-block reproduces, venv discipline activated correctly with Python 3.13.5).
+
+**Remediation actions tracked (NOT blockers; orchestrator-action items before downstream phases):**
+
+1. **Before Task 2.2 v1 fork manifest commit** — Celo Alchemy enable decision (one-click free dashboard toggle OR accept Forno-as-PRIMARY with Stage2PathAPublicRPCDeterminismDegraded re-verification).
+2. **Before Task 3.2 v2 fork manifest commit** — Spec v1.2.2 micro-edit removing `rpc.ankr.com/eth` from §5 enumeration (queued as orchestrator task #73).
+3. **Task 3.4 v2 dispatch brief** — Must include rate-limit-headroom quantification: 6.6 req/s effective ceiling on `eth_getLogs`-heavy workloads (binding constraint, tighter than 25 req/s nominal cap; binding via 500 CU/sec rolling-window).
+
+**Convergent findings (cross-path corroboration):**
+
+The Celo-Alchemy-403 finding was independently discovered by both Path A and Path B Phase 0 executor sessions (different Alchemy app keys, same root cause). Routes correctly to FALLBACK Forno per spec §5; spec was already prescriptive on this exact fallback ("if Celo archive depth is paid-tier-gated, FLAG-B8 layer-1 partitioning relies on tx.from field already present in the SQD Network swap event payload").
 
 ---
 
