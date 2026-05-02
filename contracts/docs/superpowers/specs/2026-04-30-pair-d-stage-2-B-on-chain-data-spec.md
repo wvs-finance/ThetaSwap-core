@@ -1,13 +1,15 @@
 ---
 spec_path: pair-d-stage-2-B-on-chain-data
-spec_version: v1.2 (CORRECTIONS-δ — free-tier-only budget pin)
-spec_predecessor_version: v1.1 (BLOCK + FLAG remediation of v1.0; sha256
-  `c4fa24369485f107da7b26531b3771aa3f4cd824a457b69d19d1b779c4ea0714`)
+spec_version: v1.2.1 (CORRECTIONS-δ' — data_source_primary enum + Step-5 cross-ref micro-edits)
+spec_predecessor_version: v1.2 (CORRECTIONS-δ free-tier-only budget pin; sha256
+  `b3b41e3042cf91563977e6c0222cfe75d8b293d9b4379758a5721b090420c42c`)
 spec_predecessor_chain:
   v1_0: 7af22dd4f95324d777639d509f782efe41560469e29ca037f65c8940c0ee6997
   v1_1: c4fa24369485f107da7b26531b3771aa3f4cd824a457b69d19d1b779c4ea0714
+  v1_2: b3b41e3042cf91563977e6c0222cfe75d8b293d9b4379758a5721b090420c42c
 spec_author: Data Engineer dispatch 2026-04-30 (v1.0); Data Engineer dispatch 2026-05-02 (v1.1);
-  Data Engineer dispatch 2026-05-02 (v1.2 — CORRECTIONS-δ)
+  Data Engineer dispatch 2026-05-02 (v1.2 — CORRECTIONS-δ);
+  foreground micro-edit 2026-05-02 (v1.2.1 — CORRECTIONS-δ' per Wave-2 verifier NITs N1+N2)
 spec_sha256: <to-be-pinned-after-recompute>
 stage1_pinned_chain:
   spec_v1_3_1: 964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659
@@ -569,7 +571,7 @@ fixed.
 | `tvl_usd_snapshot` | float64 | YES | TVL at snapshot timestamp; null where N/A |
 | `snapshot_timestamp_utc` | timestamp[ns,UTC] | NO | ISO-8601 UTC of the audit snapshot |
 | `audit_block` | int64 | NO | block number used as the audit's "now" |
-| `data_source_primary` | string | NO | one of `sqd_network`, `alchemy_growth`, `dune`, `the_graph`, `celoscan`, `etherscan` |
+| `data_source_primary` | string | NO | one of `sqd_network`, `alchemy_free`, `dune`, `the_graph`, `celoscan`, `etherscan` (v1.2.1 corrects `alchemy_growth` → `alchemy_free` to align with §5 free-tier-only stack) |
 | `feasibility_v1` | string | NO | one of `pass`, `marginal`, `halt` |
 | `feasibility_notes` | string | YES | freeform; required if `feasibility_v1` is `marginal` or `halt` |
 
@@ -622,7 +624,8 @@ dtypes; consumers MUST verify match before reading.
 The Path B tooling budget pin is **FREE-TIER ONLY** (user directive 2026-05-02; supersedes
 v1.1's `$49/mo Alchemy Growth` commitment). No paid services authorized under v1.2; any
 escalation requires typed-exception HALT with user-adjudicated re-budgeting per §6 and the
-§5.A degradation Step 4 protocol. v1.0 listed Subsquid as "free in compute" — v1.1
+§5.A degradation Step 5 protocol (v1.2.1 corrects v1.2's stale Step 4 reference; under
+CORRECTIONS-δ public-RPC fallback was inserted as Step 4 and paid-escalation moved to Step 5). v1.0 listed Subsquid as "free in compute" — v1.1
 disambiguated this (Subsquid Cloud is paid hosted indexer; SQD Network is the free
 decentralized data lake; structural distinction PRESERVED in v1.2).
 

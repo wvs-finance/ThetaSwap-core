@@ -1,10 +1,11 @@
 ---
 spec_path: pair-d-stage-2-A-fork-simulate
-spec_version: v1.2 (CORRECTIONS-δ — budget pin scrub to free-tier-only)
-spec_author: Backend Architect dispatch 2026-04-30; v1.1 revision 2026-05-02; v1.2 revision 2026-05-02 (CORRECTIONS-δ)
+spec_version: v1.2.1 (CORRECTIONS-δ' — Alchemy CU figure correction per Path B WebFetch verification)
+spec_author: Backend Architect dispatch 2026-04-30; v1.1 revision 2026-05-02; v1.2 revision 2026-05-02 (CORRECTIONS-δ); v1.2.1 micro-edit 2026-05-02 (CORRECTIONS-δ' — Alchemy 300M→30M CU/mo correction in 4 locations per Wave-2 verifier NIT)
 spec_sha256_v1_0: 56fa06b8222789eb6902227a09661728a899b464bc155036a3328d746d644665
 spec_sha256_v1_1: de4e8cdcb1af99d96f7657f7e9b397c8caf9196e59d30d5e9afce8e72265128b
-spec_sha256_v1_2: <to-be-pinned-after-2-wave-verify>
+spec_sha256_v1_2: ab65fd2048ed048d56917f3b9ce9c0dec85ebd498a568dd466ec396073b62dd6
+spec_sha256_v1_2_1: <to-be-pinned-after-recompute>
 stage1_pinned_chain:
   spec_v1_3_1: 964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659
   panel: 6d7d9e60dad1715ce86e8adb7b3d44ba236d0b063796293b40575994a9363edf
@@ -21,8 +22,10 @@ verifier_v1_0_wave1: PASS-WITH-DEFECTS (Reality Checker — 2 BLOCKs / 6 FLAGs)
 verifier_v1_0_wave2: PASS-WITH-DEFECTS (Software Architect — overlapping verdict)
 verifier_v1_1_wave1: PASS-WITH-NITS
 verifier_v1_1_wave2: PASS-WITH-NITS
-verifier_v1_2_wave1: pending
-verifier_v1_2_wave2: pending
+verifier_v1_2_wave1: PASS-WITH-NITS (Software Architect)
+verifier_v1_2_wave2: PASS-WITH-NITS (Software Architect — NIT N1 Alchemy CU figure mismatch addressed by v1.2.1)
+verifier_v1_2_1_wave1: not-required (micro-edit only)
+verifier_v1_2_1_wave2: not-required (micro-edit only)
 ---
 
 # Pair D Stage-2 — Path A "Fork-and-Simulate" Spec
@@ -38,13 +41,13 @@ verifier_v1_2_wave2: pending
 **Specific deltas applied.**
 
 - **Frontmatter.** New field `budget_pin: free_tier_only` added. Field `tooling_budget_committed` rewritten from `$49/mo Alchemy Growth (2026-04-30 user pin)` to `FREE-TIER ONLY (2026-05-02 user directive supersedes 2026-04-30 $49/mo Alchemy Growth pin)`. Predecessor pin `spec_sha256_v1_1: de4e8cdc…` recorded; `spec_sha256_v1_2` placeholder added. Verifier-status fields for v1.1 marked PASS-WITH-NITS (closing the v1.1 verification cycle); v1.2 verifier fields marked pending.
-- **§5 Tooling stack and budget assumption.** Rewritten end-to-end. Committed budget switched to FREE-TIER ONLY. Permitted free-tier services enumerated explicitly with their effective quotas at revision time (Alchemy free ≈300M compute units/month + ≈25 req/sec; public Celo `https://forno.celo.org` and Ethereum `https://eth.llamarpc.com` / `https://rpc.ankr.com/eth` mainnet RPCs as fallback; Foundry/Anvil local fork; SQD Network public gateways for Path B alignment; local QuantLib + numpy + scipy + sympy already pinned in §10.2). The trade-off (Alchemy free has predictable quotas + reliability; public RPCs are free but flakier and slower with unpredictable per-day rate caps) is documented as a per-rung dispatch decision, NOT a spec-level pre-commitment, because per-rung load profiles differ.
+- **§5 Tooling stack and budget assumption.** Rewritten end-to-end. Committed budget switched to FREE-TIER ONLY. Permitted free-tier services enumerated explicitly with their effective quotas at revision time (Alchemy free ≈30M compute units/month + ≈25 req/sec (corrected v1.2.1 from v1.2's ≈300M figure per Path B WebFetch verification 2026-05-02 against alchemy.com/pricing); public Celo `https://forno.celo.org` and Ethereum `https://eth.llamarpc.com` / `https://rpc.ankr.com/eth` mainnet RPCs as fallback; Foundry/Anvil local fork; SQD Network public gateways for Path B alignment; local QuantLib + numpy + scipy + sympy already pinned in §10.2). The trade-off (Alchemy free has predictable quotas + reliability; public RPCs are free but flakier and slower with unpredictable per-day rate caps) is documented as a per-rung dispatch decision, NOT a spec-level pre-commitment, because per-rung load profiles differ.
 - **§6 typed exceptions.** Existing `Stage2PathABudgetOverrun` rewritten: trigger now fires if any version requires a paid service (rather than the retired $49/mo overrun threshold); pivots updated. Three new typed exceptions added per the v1.2 directive: (i) `Stage2PathAAlchemyFreeTierRateLimitExceeded` (≈25 req/sec sustained breach during heavy-activity v1/v2 fork operations); (ii) `Stage2PathAArchiveNodeDepthInsufficientFree` (Panoptic v2 needs Ethereum archive depth beyond what free Alchemy + free public RPC fallback support — see free-tier feasibility risk in this change log); (iii) `Stage2PathAPublicRPCDeterminismDegraded` (fallback public RPC produces non-deterministic re-runs because of upstream load-balancing or per-call result variation, breaking BLOCK-D1 reproducibility).
 - **§10.1 Fork block heights, chainId, RPC source.** v1 Anvil RPC source switched from "Alchemy Growth Celo endpoint" to a primary/fallback ladder: PRIMARY = Alchemy free-tier Celo endpoint (≈25 req/sec); FALLBACK = public Celo RPC `https://forno.celo.org`; selection recorded in v1 manifest with rate-limit-headroom note. v2 Ethereum-side likewise: PRIMARY = Alchemy free-tier Ethereum endpoint; FALLBACK = `https://eth.llamarpc.com` or `https://rpc.ankr.com/eth`; selection recorded in v2 manifest. Degradation path documented: if PRIMARY hits rate-limit during fork heavy-activity, executor switches to FALLBACK and notes that determinism MAY degrade per `Stage2PathAPublicRPCDeterminismDegraded` (BLOCK-D1 reproducibility-pin compliance must be re-verified per the v1.1 §10.2 byte-identical-artifact rule, NOT relaxed).
 - **§9 Self-review checklist.** Pin reference updated from "$49/mo Alchemy budget pin in §5" to "free-tier-only budget pin in §5". Typed-exception count updated from 8 to 11 per the §6 expansion. No other changes to the checklist substance.
 - **§11.b GBM σ_0 ≈ 10% MC computation.** Confirmed pure-local-compute; numpy/scipy/sympy/QuantLib are local libraries with no external API calls; no §11.b changes required under CORRECTIONS-δ.
 
-**Free-tier feasibility risk surfaced (orchestrator decision required at v2 dispatch — NOT a spec-level HALT).** Panoptic on Ethereum mainnet typically requires archive-node depth (state read at historical blocks; the fork itself needs full state at the pinned block height, NOT merely the latest). Alchemy free-tier supports archive-depth reads but the cumulative compute-unit budget (≈300M/month) MAY be exhausted by repeated forks if v2 is re-run multiple times during debugging. Public Ethereum RPCs (`eth.llamarpc.com`, `rpc.ankr.com/eth`) historically support archive-depth reads but with no SLA; some endpoints rate-limit archive queries more aggressively than head-state queries. The v1.2 spec does NOT pre-commit to whether v2 is feasible end-to-end on free-tier; it pre-pins the typed exception `Stage2PathAArchiveNodeDepthInsufficientFree` so that v2 dispatch surfaces the question to the orchestrator BEFORE silent degradation. If at v2 dispatch the executor finds archive depth insufficient under free-tier across both Alchemy and public-RPC options, the typed exception fires and the orchestrator adjudicates (pivot options enumerated in §6).
+**Free-tier feasibility risk surfaced (orchestrator decision required at v2 dispatch — NOT a spec-level HALT).** Panoptic on Ethereum mainnet typically requires archive-node depth (state read at historical blocks; the fork itself needs full state at the pinned block height, NOT merely the latest). Alchemy free-tier supports archive-depth reads but the cumulative compute-unit budget (≈30M/month per v1.2.1 correction) MAY be exhausted by repeated forks if v2 is re-run multiple times during debugging. Public Ethereum RPCs (`eth.llamarpc.com`, `rpc.ankr.com/eth`) historically support archive-depth reads but with no SLA; some endpoints rate-limit archive queries more aggressively than head-state queries. The v1.2 spec does NOT pre-commit to whether v2 is feasible end-to-end on free-tier; it pre-pins the typed exception `Stage2PathAArchiveNodeDepthInsufficientFree` so that v2 dispatch surfaces the question to the orchestrator BEFORE silent degradation. If at v2 dispatch the executor finds archive depth insufficient under free-tier across both Alchemy and public-RPC options, the typed exception fires and the orchestrator adjudicates (pivot options enumerated in §6).
 
 **Path B coordination note.** Path B is receiving the same-shape CORRECTIONS-δ revision in parallel. §12 cross-path coupling table is unchanged (default INDEPENDENT). No new coupling emerges from the budget change; both paths face the same external-service constraint independently. If Path B's CORRECTIONS-δ surfaces a free-tier coupling concern that affects Path A v3 (e.g., shared RPC quota across both paths' simultaneous execution), that concern will be raised at convergence-dispatch authoring time, NOT under this CORRECTIONS-δ.
 
@@ -118,7 +121,7 @@ Committed budget per the v1.2 CORRECTIONS-δ user directive: **FREE-TIER ONLY**.
 
 Permitted free-tier services (quotas verified at v1.2 revision time 2026-05-02; executor must re-verify current quotas at v-dispatch time, as upstream providers change limits without notice):
 
-- **Alchemy free tier** — Celo + Ethereum endpoints; ≈300M compute units / month / app; ≈25 requests / second sustained rate limit; archive-depth state reads supported within compute-unit budget. Primary RPC choice for v1 + v2 forks where determinism + reliability dominate.
+- **Alchemy free tier** — Celo + Ethereum endpoints; ≈30M compute units / month / app (corrected v1.2.1 from v1.2's ≈300M figure per WebFetch verification 2026-05-02 against alchemy.com/pricing); ≈25 requests / second sustained rate limit; ≈500 CU/sec rolling-window cap; archive-depth state reads supported within compute-unit budget. Primary RPC choice for v1 + v2 forks where determinism + reliability dominate.
 - **Public Celo mainnet RPC** — `https://forno.celo.org` (cLabs-operated public endpoint); rate-limited (no published SLA; behaves as best-effort); used as fallback for v1 if Alchemy free-tier quota exhausts.
 - **Public Ethereum mainnet RPCs** — `https://eth.llamarpc.com` and `https://rpc.ankr.com/eth` as fallback options for v2 if Alchemy free-tier exhausts; selection at v2 dispatch with the chosen endpoint recorded in the v2 manifest. Both are best-effort, no SLA, may rate-limit archive queries more aggressively than head-state queries.
 - **Foundry** — Anvil + Forge + Cast; local compute only; no external cost; Anvil local fork is the v1/v2 sandbox harness host.
@@ -199,7 +202,7 @@ This section enumerates per-rung pins for every nondeterminism source. Each ladd
 Each version that touches a fork pins the following at v-dispatch time and records in the version's manifest. RPC source per rung uses a **PRIMARY / FALLBACK ladder** under the v1.2 CORRECTIONS-δ free-tier-only budget pin: PRIMARY is the determinism-favored free-tier endpoint (Alchemy free); FALLBACK is the public free-tier endpoint, accepted only when PRIMARY is exhausted or unavailable, with the determinism trade-off explicit and the BLOCK-D1 reproducibility-pin requirement re-verified per the §10.2 byte-identical-artifact rule (NOT relaxed).
 
 - **v1 Anvil fork target**: Celo mainnet, chainId 42220, fork block height pinned at v1 dispatch (recorded in `results/path_a_v1_fork_manifest.md`).
-  - PRIMARY RPC: Alchemy free-tier Celo endpoint (≈25 req/sec sustained, ≈300M compute units / month / app shared with v2 + concurrent work).
+  - PRIMARY RPC: Alchemy free-tier Celo endpoint (≈25 req/sec sustained, ≈30M compute units / month / app shared with v2 + concurrent work per v1.2.1 correction).
   - FALLBACK RPC: `https://forno.celo.org` (cLabs-operated public endpoint, no SLA, best-effort).
   - Selection at dispatch: PRIMARY by default; switch to FALLBACK only on rate-limit exhaustion (`Stage2PathAAlchemyFreeTierRateLimitExceeded` fires) or PRIMARY unavailability. Recorded in v1 manifest with rate-limit-headroom note (estimated peak req/sec for the dispatch run vs the 25 req/sec ceiling).
 
