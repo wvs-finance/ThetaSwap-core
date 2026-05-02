@@ -1,0 +1,14 @@
+{
+  "smoke_test_2_ethereum": {
+    "endpoint": "https://v2.archive.subsquid.io/network/ethereum-mainnet/height",
+    "status_code": 200,
+    "parsed_height": 25009986,
+    "elapsed_ms": 546.4476530032698
+  },
+  "smoke_test_3_worker_discovery_celo": {
+    "endpoint": "https://v2.archive.subsquid.io/network/celo-mainnet/65800000/worker",
+    "status_code": 200,
+    "worker_url": "https://rb03.sqd-archive.net/worker/query/czM6Ly9jZWxvLW1haW5uZXQtdHJhY2VsZXNz"
+  },
+  "timestamp_utc": "2026-05-02T22:07:31+00:00"
+}

@@ -1,0 +1,143 @@
+% references.bib — Pair D Stage-2 Path B notebooks (Colombia)
+% Per `feedback_notebook_citation_block` and Stage-1 Pair D pattern at
+% contracts/notebooks/bpo_offshoring_fx_lag/Colombia/references.bib
+
+@misc{pathb_spec_v1_3,
+  title  = {Pair D Stage-2 Path B (On-Chain Data) Spec v1.3},
+  author = {Reality Checker, Workflow Architect, Data Engineer dispatch},
+  year   = {2026},
+  month  = {may},
+  note   = {sha256 4e8905a93b1307d5f9a5b8fe76bcd5de92b6b6493627bcf28d8e8bdf0fdd6bea;
+           CORRECTIONS-γ executed (structural-exposure framing normative);
+           CORRECTIONS-δ executed (free-tier-only budget pin)},
+  url    = {contracts/docs/superpowers/specs/2026-04-30-pair-d-stage-2-B-on-chain-data-spec.md},
+}
+
+@misc{pathb_plan_v1_0,
+  title  = {Pair D Stage-2 Path B Implementation Plan v1.0},
+  author = {Data Engineer dispatch 2026-05-02},
+  year   = {2026},
+  month  = {may},
+  url    = {contracts/docs/superpowers/plans/2026-04-30-pair-d-stage-2-B-on-chain-data-implementation.md},
+}
+
+@misc{stage1_spec_pair_d_v1_3_1,
+  title  = {Pair D Stage-1 Simple-β Spec v1.3.1},
+  author = {Pair D simple-β execution chain},
+  year   = {2026},
+  month  = {apr},
+  note   = {self-referential sha256 protocol; pinned value
+           964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659.
+           READ-ONLY through Path B execution.},
+  url    = {contracts/docs/superpowers/specs/2026-04-27-simple-beta-pair-d-design.md},
+}
+
+@misc{stage1_panel,
+  title  = {Pair D Stage-1 joint panel (Y broad+narrow + X COP/USD lagged)},
+  author = {Pair D Phase 1 Data Engineer dispatch},
+  year   = {2026},
+  month  = {apr},
+  note   = {sha256 6d7d9e60dad1715ce86e8adb7b3d44ba236d0b063796293b40575994a9363edf;
+           N=134 post-lag-12; window 2015-01-31 to 2026-02-28 month-end UTC.
+           READ-ONLY through Path B execution.},
+  url    = {contracts/.scratch/simple-beta-pair-d/data/panel_combined.parquet},
+}
+
+@misc{stage1_verdict,
+  title  = {Pair D Stage-1 simple-β PASS verdict},
+  author = {Pair D Phase 2 Analytics Reporter},
+  year   = {2026},
+  month  = {apr},
+  note   = {β_composite = +0.13670985; HAC SE 0.02465; t = +5.5456;
+           p_one = 1.46e-08; robustness 0/4 sign-flips. Stage-2 M-sketch UNBLOCKED
+           per framework ideal-scenario clause.},
+  url    = {contracts/.scratch/simple-beta-pair-d/results/VERDICT.md},
+}
+
+@misc{sqd_network_docs,
+  title  = {SQD Network — Networks Reference},
+  author = {{Subsquid Labs}},
+  year   = {2025},
+  note   = {Public gateways for Celo and Ethereum mainnet; rate limit
+           50 requests / 10 seconds per IP per 2025-02-23 notice
+           (~5 req/sec sustained).},
+  url    = {https://docs.sqd.ai/subsquid-network/reference/networks/},
+}
+
+@misc{alchemy_pricing,
+  title  = {Alchemy — Pricing},
+  author = {{Alchemy Insights, Inc.}},
+  year   = {2026},
+  month  = {may},
+  note   = {Free tier verified 2026-05-02: 30M CU / month, 25 req/sec sustained,
+           500 CU/sec rolling-window. All mainnets and testnets supported per
+           network-enabling page; per-app dashboard toggle required for non-default chains.},
+  url    = {https://www.alchemy.com/pricing},
+}
+
+@misc{dune_rate_limits,
+  title  = {Dune Analytics API — Rate Limits},
+  author = {{Dune Analytics, Inc.}},
+  year   = {2026},
+  month  = {may},
+  note   = {Free tier verified 2026-05-02: 15 rpm low-limit endpoint,
+           40 rpm high-limit endpoint; numeric monthly credit cap NOT published
+           on docs.dune.com/api-reference/overview/billing as of v1.2 verification
+           (working assumption ~2500 credits/mo per dispatch brief).},
+  url    = {https://docs.dune.com/api-reference/overview/rate-limits},
+}
+
+@misc{mento_v3_no_carbon,
+  title  = {Mento V3 deployment manifest — no Carbon/Bancor protocol integration},
+  author = {Rev-5.3.7 finding 2026-04-27},
+  year   = {2026},
+  month  = {apr},
+  note   = {Mento V3 deployment manifest has zero Carbon/Bancor references;
+           Carbon hosts Mento basket as standard ERC-20s; X_d is third-party-DEX
+           activity not Mento-native demand. β-track Rev-3 X_d pivoted to Broker
+           0x777A8255... (6.16M lifetime events).},
+}
+
+@misc{mento_v2_copm_canonical,
+  title  = {Mento V2 StableTokenCOP canonical address (β-corrigendum 2026-04-26)},
+  author = {{Mento Labs}},
+  year   = {2026},
+  month  = {apr},
+  note   = {Canonical Mento-native COPm = 0x8A567e2aE79CA692Bd748aB832081C45de4041eA
+           (Mento V2 StableTokenCOP); 0xc92e8fc2... is Minteo-fintech, OUT of
+           scope per Rev-5.3.5 β-corrigendum.},
+}
+
+@misc{flashbots_mev_inspect,
+  title  = {Flashbots mev-inspect-py — labelled-address sets for FLAG-B8 layer-1 partition},
+  author = {{Flashbots}},
+  year   = {2026},
+  note   = {Public registry of MEV-bot addresses; FREE alternative to paid
+           Eigenphi if Eigenphi free tier has been retired since dispatch brief
+           authoring. Per spec §5 paid-escalation note: Flashbots / LibMEV /
+           zeromev.org are all free fallbacks.},
+  url    = {https://github.com/flashbots/mev-inspect-py},
+}
+
+@misc{public_rpc_celo_forno,
+  title  = {Forno — Celo public RPC endpoint},
+  author = {{Celo Foundation}},
+  year   = {2026},
+  note   = {Free public RPC; rate limit not published; observed flakiness common.
+           Used ONLY as Step 4 degradation fallback per spec §5.A. HALT-and-flag
+           on any cross-call inconsistency per Stage2PathBPublicRPCConsistencyDegraded
+           typed exception.},
+  url    = {https://docs.celo.org/network/node/forno},
+}
+
+@misc{newey_west_1987,
+  author = {Newey, Whitney K. and West, Kenneth D.},
+  title  = {A Simple, Positive Semi-Definite, Heteroskedasticity and Autocorrelation Consistent Covariance Matrix},
+  journal= {Econometrica},
+  volume = {55},
+  number = {3},
+  pages  = {703--708},
+  year   = {1987},
+  note   = {HAC standard-error kernel cited by FLAG-B1 r_(a_l) regression in
+           Notebook 02; statsmodels HAC convention.},
+}

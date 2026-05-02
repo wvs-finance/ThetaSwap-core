@@ -1,0 +1,208 @@
+# Pair D Stage-2 Path B — network_config.toml
+# Spec §5 free-tier-only stack; spec §5.A burst-rate discipline (binding-constraint pinning)
+# Plan ref: contracts/docs/superpowers/plans/2026-04-30-pair-d-stage-2-B-on-chain-data-implementation.md
+# Spec sha pin: 4e8905a93b1307d5f9a5b8fe76bcd5de92b6b6493627bcf28d8e8bdf0fdd6bea (v1.3)
+# CORRECTIONS-δ pin: free_tier_only (no paid services authorized; auto-pivot to paid is anti-fishing-banned)
+# Format: TOML (not Python; per `feedback_no_code_in_specs_or_plans` config files are permissible, code is not)
+
+[meta]
+schema_version = "v1.0"
+emit_timestamp_utc = "2026-05-02T22:10Z"
+budget_pin = "free_tier_only"
+budget_pin_provenance = "spec v1.3 frontmatter (CORRECTIONS-δ user directive 2026-05-02)"
+
+# ====================================================================
+# §1 — SQD Network public gateways (FREE; primary high-volume archive)
+# ====================================================================
+
+[sqd_network]
+celo_mainnet = "https://v2.archive.subsquid.io/network/celo-mainnet"
+ethereum_mainnet = "https://v2.archive.subsquid.io/network/ethereum-mainnet"
+docs_url = "https://docs.sqd.ai/subsquid-network/reference/networks/"
+rate_limit_req_per_10s_per_ip = 50  # 5 req/sec sustained per IP per 2025-02-23 notice
+rate_limit_req_per_sec_sustained = 5
+inter_call_sleep_ms_min = 250  # ≥250 ms inter-call sleep per spec §5.A
+concurrency_cap = 1  # sequential, single IP
+cost_model = "free public access; bulk extraction model returns full event lists per chunked HTTPS call"
+chunk_size_blocks_default = 500_000  # ~29 days at Celo 5-sec block time
+typed_exceptions = [
+  "Stage2PathBSqdNetworkThrottled",
+  "Stage2PathBSqdNetworkCoverageInsufficient",
+]
+
+# ====================================================================
+# §2 — Alchemy free tier (spot RPC + receipts)
+# ====================================================================
+
+[alchemy_free]
+celo_mainnet_endpoint_pattern = "https://celo-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+ethereum_mainnet_endpoint_pattern = "https://eth-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
+docs_url = "https://www.alchemy.com/pricing"
+rate_limit_req_per_sec_sustained = 25  # cap per spec §5.A; verified 2026-05-02
+rate_limit_cu_per_sec_rolling = 500    # cap per spec §5.A; verified 2026-05-02
+rate_limit_cu_per_month = 30_000_000   # 30M CU/month cap per spec §5.A; verified 2026-05-02
+inter_call_sleep_ms_min_inter_batch = 1000  # ≥1 sec sleep between ≤25-receipt batches
+batch_size_receipts_max = 25
+concurrency_cap = 1  # sequential
+cost_model = "free tier covers all mainnets and testnets per alchemy.com/pricing 2026-05-02"
+api_key_source = "environment variable ALCHEMY_API_KEY (NEVER committed; see .env.template)"
+typed_exceptions = [
+  "Stage2PathBAlchemyFreeTierRateLimitExceeded",
+  "Stage2PathBAlchemyFreeTierMonthlyCUExceeded",
+]
+celo_archive_depth_paid_tier_gated = "TBD at v0 audit; if true, FLAG-B8 layer-1 partition uses tx.from already in SQD swap event payload"
+
+# ====================================================================
+# §3 — Public RPC fallback (consistency-degraded; HALT-and-flag)
+# ====================================================================
+
+[public_rpc.celo]
+primary = "https://forno.celo.org"
+secondary = "https://rpc.ankr.com/celo"  # opportunistic; flakiness expected
+docs_url = "https://docs.celo.org/network/node/forno"
+rate_limit_published = false  # not published; observed flakiness common
+typed_exception = "Stage2PathBPublicRPCConsistencyDegraded"
+disposition = "HALT-and-flag, NOT silent merge"
+quorum_rule = "2-of-3 agreement on contested field before treating result as authoritative"
+
+[public_rpc.ethereum]
+primary = "https://eth.llamarpc.com"
+secondary = "https://rpc.ankr.com/eth"
+tertiary = "https://ethereum-rpc.publicnode.com"
+docs_url_primary = "https://llamarpc.com"
+docs_url_secondary = "https://www.ankr.com/rpc/eth/"
+rate_limit_published = false
+typed_exception = "Stage2PathBPublicRPCConsistencyDegraded"
+disposition = "HALT-and-flag, NOT silent merge"
+quorum_rule = "2-of-3 agreement on contested field before treating result as authoritative"
+
+# ====================================================================
+# §4 — Dune Analytics free tier (ad-hoc analytical SQL)
+# ====================================================================
+
+[dune]
+api_base_url = "https://api.dune.com/api/v1"
+docs_rate_limits_url = "https://docs.dune.com/api-reference/overview/rate-limits"
+rate_limit_low_endpoint_rpm = 15  # interactive query cadence; per docs verified 2026-05-02
+rate_limit_high_endpoint_rpm = 40
+monthly_credit_ceiling_working_assumption = 2500  # Dune does not publish numeric monthly cap; per dispatch brief
+concurrency_cap = 1
+pre_flight_cost_estimate_required = true  # Dune surfaces estimated cost at query-edit time
+api_key_source = "environment variable DUNE_API_KEY (NEVER committed; see .env.template)"
+fallback_if_exhausted = "Flipside Crypto free SQL credits OR same query against SQD Network primitives"
+paid_tier_status = "NOT authorized under spec v1.2 free-tier-only pin"
+
+# ====================================================================
+# §5 — The Graph hosted service (FREE for pre-existing subgraphs)
+# ====================================================================
+
+[the_graph]
+hosted_service_base = "https://api.thegraph.com/subgraphs/name"
+mento_v3_subgraph_candidate = "<resolved at v0 audit>"
+uniswap_v3_celo_subgraph_candidate = "<resolved at v0 audit>"
+panoptic_ethereum_subgraph_candidate = "<resolved at v0 audit>"
+rate_limit_published = false
+docs_url = "https://thegraph.com/docs/en/network/billing/"
+use_case = "ergonomic typed-event access; degradation Step 1 fallback per spec §5.A"
+
+# ====================================================================
+# §6 — Block explorers (ad-hoc verification only; NEVER bulk extraction)
+# ====================================================================
+
+[celoscan]
+api_base = "https://api.celoscan.io/api"
+rate_limit_req_per_sec = 5
+docs_url = "https://docs.celoscan.io"
+api_key_source = "environment variable CELOSCAN_API_KEY (optional; free tier works without)"
+use_case = "ad-hoc verification, source-code lookup, transaction decoding"
+
+[etherscan]
+api_base = "https://api.etherscan.io/api"
+rate_limit_req_per_sec = 5
+docs_url = "https://docs.etherscan.io"
+api_key_source = "environment variable ETHERSCAN_API_KEY"
+use_case = "ad-hoc verification, source-code lookup, transaction decoding"
+
+# ====================================================================
+# §7 — Burst-rate discipline (binding-constraint pin per spec §5.A)
+# ====================================================================
+
+[burst_rate_discipline]
+# All Alchemy receipt enrichment batched into ≤25-receipt request windows separated by
+# ≥1 second sleep, regardless of total receipt budget. Concurrency cap = 1 (sequential).
+alchemy_batch_size_max = 25
+alchemy_inter_batch_sleep_seconds_min = 1.0
+alchemy_concurrency_cap = 1
+
+# All SQD Network chunked queries issued sequentially with ≥250 ms inter-call sleep.
+# Concurrency cap = 1 per IP.
+sqd_inter_call_sleep_seconds_min = 0.250
+sqd_concurrency_cap = 1
+
+# All Dune queries sequential; pre-flight cost-estimate inspection before each execution.
+dune_concurrency_cap = 1
+dune_pre_flight_cost_estimate_required = true
+
+# Rolling-window monitoring: executor MUST log req_per_sec and cu_per_sec to a local
+# audit log per data source per minute; spike >80% of either cap surfaces a warning and
+# pauses next batch ≥5 sec.
+audit_log_path = "contracts/.scratch/path-b-stage-2/phase-0/burst_rate_log.csv"
+audit_log_columns = [
+  "timestamp_utc",
+  "source",
+  "req_per_sec",
+  "cu_per_sec",
+  "cu_cumulative",
+  "cap_pct",
+  "action_taken",
+]
+warning_threshold_pct = 80
+warning_pause_seconds_min = 5
+exceedance_disposition = "HALT-and-flag with typed-exception per §6; auto-pivot to paid tier is anti-fishing-banned"
+
+# ====================================================================
+# §8 — Burst-rate batching pseudocode pin
+# ====================================================================
+
+[burst_rate_pseudocode]
+alchemy_receipt_enrichment = '''
+for batch in chunked(receipts, size=25):
+    t0 = monotonic_seconds()
+    for receipt in batch:
+        results.append(alchemy.eth_getTransactionReceipt(receipt))
+    elapsed = monotonic_seconds() - t0
+    sleep_required = max(1.0 - elapsed, 0.0)
+    if sleep_required > 0:
+        sleep(sleep_required)
+    log_burst_rate(source="alchemy_free", req_per_sec=len(batch)/max(elapsed, 1e-3),
+                   cu_per_sec=(len(batch)*15)/max(elapsed, 1e-3))
+'''
+sqd_chunked_extraction = '''
+for chunk in block_range_chunks(start=mento_v3_deployment, end=2026_02_28, size=500_000):
+    response = sqd_query(chunk)
+    persist_to_parquet(response, partition_key=chunk)
+    sleep(0.250)
+    log_burst_rate(source="sqd_network", req_per_sec=1.0/max(elapsed, 0.250))
+'''
+
+# ====================================================================
+# §9 — Degradation ladder (per spec §5.A revised under CORRECTIONS-δ)
+# ====================================================================
+
+[degradation_ladder]
+step_1 = "switch to The Graph hosted-service subgraph for the affected venue (FREE if subgraph exists)"
+step_2 = "switch to Alchemy free-tier eth_getLogs for the affected block range (free CU inside 30M cap; 25 req/sec discipline)"
+step_3 = "switch to Dune SQL against the relevant community table (free credits, watch ~2500/mo working ceiling)"
+step_4 = "switch to public RPC fallback (forno.celo.org / eth.llamarpc.com / rpc.ankr.com/eth) under Stage2PathBPublicRPCConsistencyDegraded discipline — HALT-and-flag on cross-call inconsistency"
+step_5 = "typed-exception HALT requesting user re-budgeting for paid services (Subsquid Cloud, Alchemy paid, Dune Analyst, Eigenphi paid). Auto-pivot through Steps 1-4 is permitted; auto-pivot to Step 5 is anti-fishing-banned and requires explicit user adjudication."
+
+# ====================================================================
+# §10 — Smoke test record (this Phase 0 emits one)
+# ====================================================================
+
+[smoke_test]
+target = "https://v2.archive.subsquid.io/network/celo-mainnet/height"
+description = "single GET request returning latest archived block height for Celo mainnet; verifies SQD Network reachability and free-tier accessibility"
+inter_call_sleep_ms = 250
+expected_response_form = "plain integer block height (string) per SQD Network height endpoint convention"
+result_recorded_in = "contracts/.scratch/path-b-stage-2/phase-0/sqd_smoke_test_result.json"
