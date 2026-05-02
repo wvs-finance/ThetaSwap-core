@@ -1,0 +1,63 @@
+# DATA_PROVENANCE.md — TEMPLATE (per Pair D Stage-2 Path B spec §3.A)
+
+> **Usage.** Copy this template into the same directory as each emitted committed dataset
+> (`v0/`, `v1/`, `v2/`, `v3/`). Populate one entry per input artifact under §2 below.
+> Field schema parity with Pair D Stage-1 `contracts/.scratch/simple-beta-pair-d/data/DATA_PROVENANCE.md`
+> is REQUIRED; the on-chain extensions `block_range` and `filter_applied` are added on top of
+> the Stage-1 8-field schema, never instead of.
+
+## §1 — Self-meta
+
+- **artifact_path:** `<relative path under contracts/.scratch/path-b-stage-2/>`
+- **artifact_sha256:** `<sha256sum of the committed parquet / json / csv>`
+- **artifact_row_count:** `<int>`
+- **artifact_schema_version:** `<sha256 of column-set + dtypes serialized canonically>`
+- **emit_timestamp_utc:** `<ISO-8601 UTC>`
+- **emit_commit_sha:** `<git commit sha at which the artifact landed>`
+- **emit_plan_task:** `<plan task id, e.g., 1.2 or 2.3>`
+
+## §2 — Per-input provenance entries
+
+Repeat the following 8-field block once per input. The eight fields are NORMATIVE per spec §3.A; do NOT omit any field.
+
+### Input 1 — `<short label>`
+
+- **source:** `<data origin URL or contract address + chain>`
+  - examples:
+    - `sqd_network_gateway://celo-mainnet/contract=0x8A567e2aE79CA692Bd748aB832081C45de4041eA/topic0=Transfer`
+    - `dune.com/queries/<query_id>`
+    - `alchemy://eth_getLogs/<block-range>`
+    - `https://forno.celo.org` (public RPC fallback)
+- **fetch_method:** `<tool + parameters>`
+  - examples:
+    - `python contracts/.scratch/path-b-stage-2/v0/scripts/fetch_swaps_sqd.py --network celo-mainnet --block-range 12345000-13000000 --chunk-size 500000 --inter-call-sleep-ms 250`
+    - `python contracts/.scratch/path-b-stage-2/v1/scripts/extract_lp_fees.py --pool 0xABCD... --start-block 12345000 --end-block 18000000`
+- **fetch_timestamp:** `<ISO-8601 UTC of the fetch>`
+- **sha256:** `<sha256 of the raw fetched payload pre-transformation; AND sha256 of the committed parquet (two values; comma-separated if both committed)>`
+- **row_count:** `<post-fetch row count of the raw payload>`
+- **block_range:** `(<first_block>, <last_block>)`
+- **schema_version:** `<sha256 hash of the column-set + dtypes per spec §4.0 schema metadata convention>`
+- **filter_applied:** `<descriptive string of any partition rules applied>`
+  - examples:
+    - `none — raw payload`
+    - `FLAG-B8 layer-1 (MEV-bot allowlist drop, source = Flashbots mev-inspect-py 2026-04 snapshot, sha256=<...>); dropped 412 rows / 0.8% volume`
+    - `FLAG-B8 layer-2 (atomic-arb round-trip drop, single-tx swap-in/out fingerprint); dropped 89 rows / 0.2% volume`
+    - `daily-UTC binning per FLAG-B3; null-bin policy = drop`
+
+### Input 2 — `<short label>`
+
+(repeat the eight-field block)
+
+## §3 — Re-execution discipline
+
+Per spec §3.A:
+
+- Re-fetch of the same `(source, block_range)` MUST produce a sha256 within ±0.01 % row count delta and identical `schema_version`.
+- A non-trivial `schema_version` drift, a > 0.01 % row delta inside a frozen block range, or a sha256 change that cannot be reconciled to known new-block additions triggers `Stage2PathBProvenanceMismatch` typed exception per §6.
+- HALT-disposition memo per `feedback_pathological_halt_anti_fishing_checkpoint`: typed exception → memo with ≥3 user-enumerated pivots → user adjudication → CORRECTIONS-block.
+
+## §4 — DATA_PROVENANCE.md mirror discipline (BLOCK-B2 closure)
+
+This template establishes the per-artifact mirror discipline pinned at spec §3.A. Every committed dataset directory MUST contain exactly one `DATA_PROVENANCE.md` file co-located with its parquets. No exceptions.
+
+**Sentinel for orchestrator validation:** the Path B Phase 1+ test suite (Task 1.4) MUST include a check that for every `*.parquet` in `contracts/.scratch/path-b-stage-2/{v0,v1,v2,v3}/` there exists a co-located `DATA_PROVENANCE.md` with at least one populated §2 entry.

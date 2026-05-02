@@ -1,0 +1,29 @@
+((=-
+
+    Colombia FX-vol notebooks — nbconvert LaTeX template.
+
+    This template is intentionally one-line thin: it extends nbconvert's
+    bundled ``latex/index.tex.j2`` (the stock "article" output) and adds
+    NO Jinja overrides. All cell-hiding behavior is delegated to
+    ``TagRemovePreprocessor`` wired up in the sibling
+    ``jupyter_nbconvert_config.py``. That preprocessor strips the source
+    of any code cell tagged ``remove-input`` before the notebook ever
+    reaches the template layer, so the template only has to render what
+    the default article template renders.
+
+    Rationale for keeping this file minimal (vs. a Jinja ``block
+    input_group`` override):
+      * The TagRemovePreprocessor path is the officially documented one
+        (nbconvert docs: "Removing cells from notebooks" page).
+      * A Jinja override of ``input_group`` would couple us to the exact
+        block names in nbconvert's latex templates, which shift between
+        minor releases of the package.
+      * Fewer moving parts → fewer ways for a future developer to
+        accidentally leak boilerplate imports into the PDF.
+
+    Do not delete the ``latex`` prefix on the extends path below: nbconvert
+    disambiguates between markdown/latex/html/rst variants of
+    ``index.tex.j2`` by that prefix when it builds the Jinja search path.
+
+-=))
+((*- extends 'latex/index.tex.j2' -*))

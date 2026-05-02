@@ -1,0 +1,6 @@
+timestamp_utc,source,req_per_sec,cu_per_sec,cu_cumulative,cap_pct,action_taken
+2026-05-02T22:12:00Z,sqd_network_celo,1.71,0,0,0,smoke_test_height_get
+2026-05-02T22:12:01Z,sqd_network_eth,2.56,0,0,0,smoke_test_height_get
+2026-05-02T22:12:02Z,sqd_network_celo,1.83,0,0,0,smoke_test_worker_discover
+2026-05-02T22:14:00Z,alchemy_free_eth,3.01,30.0,10,0.04,smoke_test_eth_blockNumber
+2026-05-02T22:14:01Z,alchemy_free_celo,3.38,0,10,0.04,smoke_test_celo_blockNumber_HTTP403_app_disabled

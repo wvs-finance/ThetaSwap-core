@@ -1,0 +1,38 @@
+# Pair D Stage-2 Path A — Python dependency pins
+#
+# Snapshot taken 2026-05-02 from contracts/.venv (Python 3.13.5 / Arch Linux)
+# Versions match major.minor pins in env.py REQUIRED_PACKAGES dict.
+#
+# Re-installation:
+#   source contracts/.venv/bin/activate
+#   uv pip install -r contracts/notebooks/pair_d_stage_2_path_a/Colombia/requirements.txt
+#
+# Notes:
+#   * QuantLib import name is `QuantLib` but the PyPI distribution name is
+#     `QuantLib-Python` (legacy) or `QuantLib` (newer) — the line below uses
+#     the import-name; uv pip will resolve.
+#   * Sympy 1.14 + QuantLib 1.42 are NEW vs the Stage-1 baseline — required
+#     for v0 symbolic derivation and v3 GBM-MC stochastic-process generation.
+#   * jupyter_client/jupyter_core/ipykernel pulled transitively by jupyter.
+
+# --- Core numerics ---
+numpy~=2.4
+scipy~=1.17
+pandas~=3.0
+
+# --- Symbolic mathematics (v0) ---
+sympy~=1.14
+
+# --- Stochastic-process + option-pricing (v0/v2/v3) ---
+QuantLib~=1.42
+
+# --- Notebook tooling ---
+nbformat~=5.10
+nbconvert~=7.17
+matplotlib~=3.10
+ipykernel~=7.2
+ipython~=9.12
+
+# --- Bibliography + templating ---
+jinja2~=3.1
+bibtexparser~=1.4

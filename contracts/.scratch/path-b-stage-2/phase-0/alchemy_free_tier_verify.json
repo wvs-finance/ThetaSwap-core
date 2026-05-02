@@ -1,0 +1,31 @@
+{
+  "timestamp_utc": "2026-05-02T22:14Z",
+  "test_protocol": "Single eth_blockNumber JSON-RPC POST per network; method CU cost = 10 per Alchemy docs (compute-units page); honoring spec §5.A burst-rate discipline (≥1 sec inter-batch sleep)",
+  "ethereum_eth_blockNumber": {
+    "endpoint": "https://eth-mainnet.g.alchemy.com/v2/<REDACTED>",
+    "status_code": 200,
+    "elapsed_ms": 332.2,
+    "block_decimal": 25010175,
+    "cu_cost_per_alchemy_docs": 10,
+    "free_tier_confirmed": true,
+    "interpretation": "Ethereum mainnet supported on this Alchemy free-tier app; eth_blockNumber works without auth issues. Path B v0/v1/v2/v3 Ethereum-side queries (Panoptic factory enumeration, USDC/Ethereum spot lookups) viable on Alchemy free tier."
+  },
+  "celo_eth_blockNumber": {
+    "endpoint": "https://celo-mainnet.g.alchemy.com/v2/<REDACTED>",
+    "status_code": 403,
+    "response_body": "CELO_MAINNET is not enabled for this app. Visit this page to enable the network: https://dashboard.alchemy.com/apps/<APP_ID>/networks",
+    "free_tier_celo_supported_for_this_app": false,
+    "interpretation": "Alchemy free tier supports Celo mainnet per pricing page (alchemy.com/pricing 2026-05-02 verified per spec §5), but the network must be EXPLICITLY ENABLED per app in the Alchemy dashboard. The current app does not have Celo enabled. This is a free-tier app-config issue, NOT a paid-tier gate. Two viable resolutions consistent with spec §5 free-tier-only pin: (a) enable Celo on this app via the Alchemy dashboard (no cost; free-tier benefit), or (b) lean entirely on SQD Network primary archive for Celo data (per spec §5 + §5.A; FLAG-B8 layer-1 partition uses tx.from already in SQD swap event payload — no Alchemy receipt enrichment needed for Celo)."
+  },
+  "feasibility_surprise_severity": "LOW",
+  "feasibility_surprise_disposition": "Document and proceed; Phase 1 v0 Task 1.2 will re-verify after either (a) dashboard-enabling Celo on this app, OR (b) commit fully to SQD-primary for Celo per spec §5.A degradation Step 1 (The Graph) → Step 2 alternate Alchemy app instance with Celo enabled. Auto-pivot to paid tier is anti-fishing-banned; both (a) and (b) are free-tier compliant.",
+  "rate_limit_caps_per_spec_5A": {
+    "req_per_sec_sustained": 25,
+    "cu_per_sec_rolling": 500,
+    "cu_per_month": 30000000
+  },
+  "rate_limit_observed": "no rate-limit response on either single eth_blockNumber call; well below 25 req/sec sustained on this two-call test",
+  "monthly_cu_used_this_test": 10,
+  "monthly_cu_remaining_estimate": 29999990,
+  "next_action": "Phase 1 Task 1.2 re-tests Alchemy Celo via either (a) dashboard-enabled app or (b) Celo-only SQD primary; record outcome in v0/audit_metrics_raw.json"
+}
