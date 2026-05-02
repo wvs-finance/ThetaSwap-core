@@ -1,10 +1,14 @@
 ---
 spec_path: pair-d-stage-2-B-on-chain-data
-spec_version: v1.1 (BLOCK + FLAG remediation of v1.0)
-spec_predecessor_version: v1.0 (initial draft, sha256
-  `7af22dd4f95324d777639d509f782efe41560469e29ca037f65c8940c0ee6997`)
-spec_author: Data Engineer dispatch 2026-04-30 (v1.0); Data Engineer dispatch 2026-05-02 (v1.1)
-spec_sha256: <to-be-pinned-after-2-wave-verify>
+spec_version: v1.2 (CORRECTIONS-δ — free-tier-only budget pin)
+spec_predecessor_version: v1.1 (BLOCK + FLAG remediation of v1.0; sha256
+  `c4fa24369485f107da7b26531b3771aa3f4cd824a457b69d19d1b779c4ea0714`)
+spec_predecessor_chain:
+  v1_0: 7af22dd4f95324d777639d509f782efe41560469e29ca037f65c8940c0ee6997
+  v1_1: c4fa24369485f107da7b26531b3771aa3f4cd824a457b69d19d1b779c4ea0714
+spec_author: Data Engineer dispatch 2026-04-30 (v1.0); Data Engineer dispatch 2026-05-02 (v1.1);
+  Data Engineer dispatch 2026-05-02 (v1.2 — CORRECTIONS-δ)
+spec_sha256: <to-be-pinned-after-recompute>
 stage1_pinned_chain:
   spec_v1_3_1: 964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659
   panel: 6d7d9e60dad1715ce86e8adb7b3d44ba236d0b063796293b40575994a9363edf
@@ -21,23 +25,159 @@ on_chain_pins:
   panoptic_factory_ethereum: "<to-be-pinned-at-v0-audit-closure>"
   bitgifty_settlement_celo: "<to-be-pinned-at-v0-audit-closure-or-v2-HALT>"
   walapay_settlement_celo: "<to-be-pinned-at-v0-audit-closure-or-v2-HALT>"
-tooling_budget_committed: $49/mo Alchemy Growth (2026-04-30 user pin)
+budget_pin: free_tier_only
+budget_pin_provenance: 2026-05-02 user directive — supersedes v1.1's $49/mo Alchemy Growth
+  pin; no paid services authorized; any escalation to paid tier requires typed-exception
+  with HALT-and-ask-user disposition
+tooling_budget_committed: free-tier only (no paid services); SQD Network public gateways +
+  Alchemy free tier (30M CU/mo, 25 req/sec, 500 CU/sec rolling-window cap) + Dune free
+  tier (~2500 credits/mo, 15-40 rpm per endpoint class) + The Graph hosted-service free +
+  public Celo/Ethereum RPC fallbacks (rate-limited)
 tooling_budget_pending: false
-primary_data_path_v1_1: SQD Network public gateway (free, no documented rate limit) for bulk
-  archive extraction; Alchemy Growth for spot RPC + receipts; Dune free tier (2500 SQL
-  credits/mo) for ad-hoc analytical queries against pre-existing community datasets
+primary_data_path_v1_2: SQD Network public gateway (free; observed rate limit
+  50 req / 10s per IP per docs.sqd.ai 2025-02-23 notice) for bulk archive extraction;
+  Alchemy free tier (30M CU/mo, 25 req/sec) for spot RPC + receipts under batched +
+  rate-limited execution discipline per §5.A; The Graph hosted-service for typed-event
+  subgraphs where coverage exists; Dune free tier (~2500 credits/mo, 15-40 rpm) for
+  ad-hoc analytical queries against pre-existing community datasets; public RPCs
+  (forno.celo.org, eth.llamarpc.com, rpc.ankr.com/eth) as flaky fallback only with §6
+  consistency-degraded typed exception
+free_tier_quota_observations_2026_05_02:
+  alchemy_free_cu_per_month: 30000000
+  alchemy_free_rate_limit_req_per_sec: 25
+  alchemy_free_rolling_cu_per_sec: 500
+  alchemy_free_celo_support: "all mainnets and testnets per alchemy.com/pricing as of
+    2026-05-02; v0 audit re-verifies Celo presence in Alchemy chain directory at session
+    start"
+  dune_free_credits_per_month: 2500
+  dune_free_credits_per_month_source: "the 2500/mo number is the dispatch-brief reference;
+    docs.dune.com/api-reference/overview/billing does NOT publish a numeric monthly cap on
+    the free tier (verified 2026-05-02); only documented numeric limits are 15 rpm
+    (low-limit endpoints) + 40 rpm (high-limit endpoints) per
+    docs.dune.com/api-reference/overview/rate-limits; the 2500-credit figure is therefore
+    a working assumption inherited from the dispatch brief and is re-verified at v0 entry
+    via dashboard inspection"
+  sqd_network_documented_rate_limit: "50 requests per 10 seconds per IP per
+    docs.sqd.ai/subsquid-network/reference/networks/ 2025-02-23 notice; documentation
+    indicates higher bandwidths via public network expanding but no stricter or looser
+    limit published as of 2026-05-02 verification"
+  the_graph_hosted_service_free: "free for pre-existing subgraphs; no monthly cap
+    published; informal rate limits apply"
+  observation_method: "WebFetch on 2026-05-02 against alchemy.com/pricing,
+    alchemy.com/docs/reference/throughput, docs.dune.com/api-reference/overview/billing,
+    docs.dune.com/api-reference/overview/rate-limits,
+    docs.sqd.ai/subsquid-network/reference/networks/"
+  delta_vs_v1_1_assumed: "v1.1 §5.A projected against $49/mo Alchemy Growth (49M CU/day
+    ≈ 1.47B CU/month). v1.2 free-tier cap is 30M CU/MONTH (49× tighter). Projection in
+    §5.A re-derived; v1 + v2 projected ~165K-285K CU/month total stays inside cap with
+    >100× headroom, but the burst rate (25 req/sec) becomes the binding constraint, not
+    monthly CU. Burst-rate analysis added as §5.A sub-clause."
 internal_ladder: v0 (data audit) → v1 (CF^a_l) → v2 (CF^a_s) → v3 (CPO backtest)
 convergence_point: v3 realized P&L envelope check on Path A v3 MC bounds
-verifier_v1_wave1: pending (re-run on v1.1)
-verifier_v1_wave2: pending (re-run on v1.1)
+verifier_v1_wave1: pending (re-run on v1.2)
+verifier_v1_wave2: pending (re-run on v1.2)
 anticipated_corrections_gamma: deliverable rename "behavioral demand" →
   "structural exposure" (transaction archaeology cannot infer WTP for a non-existent
   instrument; cash-flow geometry yields |Δ^(a_l)| and |Δ^(a_s)| in $-notional, NOT
-  willingness-to-pay). Out of scope for v1.1; placeholder so v1.1 does not drift further
+  willingness-to-pay). Out of scope for v1.2; placeholder so v1.2 does not drift further
   into demand-language.
 ---
 
 # Pair D — Stage-2 Path B — On-Chain Data Empirical-Validation Spec
+
+## Change Log v1.1 → v1.2 (CORRECTIONS-δ)
+
+This revision integrates a single user directive issued 2026-05-02: **AI-tooling budget is
+FREE-TIER ONLY**. No paid services authorized. The v1.1 budget pin (`$49/mo Alchemy Growth`)
+is invalidated. Every section that quoted or implicitly relied on the Growth-tier cap (49M
+CU/day ≈ 1.47B CU/month) is re-derived against the Alchemy free-tier cap (30M CU/month, 25
+req/sec, 500 CU/sec rolling window) verified via WebFetch against alchemy.com/pricing on
+2026-05-02. v1.1 BLOCK and FLAG closures are PRESERVED — none regressed; only the
+Alchemy-quota assumptions inside §5 / §5.A / §6 change, and §6 gains three new typed
+exceptions specific to free-tier failure modes.
+
+**Scope of CORRECTIONS-δ.**
+
+- Frontmatter: `tooling_budget_committed`, `primary_data_path_v1_1` → `primary_data_path_v1_2`,
+  new `budget_pin: free_tier_only`, new `budget_pin_provenance`, new
+  `free_tier_quota_observations_2026_05_02` block recording WebFetch-verified quotas with
+  observation method + delta-vs-v1.1 commentary, predecessor chain expanded.
+- §3 prose: replace "$49/mo Alchemy Growth" / "49M CU / day" framing with free-tier
+  framing; preserve the Subsquid-Cloud-vs-SQD-Network distinction (BLOCK-B3 structural
+  resolution).
+- §5: re-pin the tooling stack to free-tier-only. SQD Network public gateways remain
+  primary. Alchemy demoted from "Growth committed" to "free tier with batched + rate-limited
+  execution discipline." Dune ceiling (~2500/mo working assumption) re-affirmed with the
+  caveat that the docs.dune.com billing page does not publish a numeric monthly cap.
+  Public RPCs (forno.celo.org, eth.llamarpc.com, rpc.ankr.com/eth) added explicitly as
+  flaky fallback. Paid escalation list expanded to include "Alchemy paid tier above free"
+  (in v1.1 only Subsquid Cloud + Dune Analyst were paid-only; in v1.2 the entire paid
+  Alchemy ladder is paid-only).
+- §5.A: re-derive every projection sub-block. Add a new "Burst-rate analysis" sub-clause
+  pinning the 25 req/sec free-Alchemy cap as the binding constraint when monthly CU is
+  abundant; pin a batched-extraction discipline (chunked event-window queries with explicit
+  inter-call sleep) for v1 fee-yield extraction and v2 settlement-leg extraction.
+  Document that monthly-CU headroom is >100× even on free tier (165K-285K CU vs 30M cap),
+  so CU-cap exceedance is unlikely; rate-limit exceedance is the realistic risk.
+  Re-affirm SQD Network has its own (50 req / 10s per IP) limit which now applies to
+  v1.2's primary data path; add an explicit batched-window discipline for SQD too.
+- §6: add three new typed exceptions:
+  - `Stage2PathBAlchemyFreeTierRateLimitExceeded` — burst pattern exceeds 25 req/sec
+  - `Stage2PathBAlchemyFreeTierMonthlyCUExceeded` — CU/month > 30M (low risk per §5.A
+    projection but pre-pinned for safety; will most likely trigger only under repeated
+    sensitivity re-runs)
+  - `Stage2PathBPublicRPCConsistencyDegraded` — fallback public RPCs return inconsistent
+    block / receipt / log responses across calls; degradation policy is HALT-and-flag,
+    not silent merge
+  - Preserve `Stage2PathBSqdNetworkThrottled` from v1.1 (formerly named
+    `Stage2PathBSqdNetworkRateLimitedRetroactively` in some review prose; kept under v1.1
+    name)
+  - Update the §5.A degradation Step 4 disposition: any escalation to a paid Alchemy
+    tier OR paid Subsquid Cloud OR paid Dune Analyst tier requires a typed-exception HALT
+    with user-adjudicated re-budgeting; previously v1.1 had Alchemy Growth as a permitted
+    landing; that is no longer authorized.
+- Anywhere "$49 / Alchemy Growth" appeared in v1.1 prose: scrubbed and replaced with
+  free-tier framing.
+
+**Free-tier-feasibility risk assessment.** All v1.1 ladder rungs (v0 → v1 → v2 → v3) remain
+feasible under v1.2's free-tier-only constraint per §5.A re-projection. Specific risks
+flagged for orchestrator awareness but NOT requiring spec-level downgrade:
+
+1. **Eigenphi MEV-bot allowlist (FLAG-B8 layer-1).** Eigenphi's free-tier API access for
+   MEV-bot enumeration must be re-verified at v1 entry. If Eigenphi has paywalled the
+   bot-list since the dispatch brief was authored, FLAG-B8 layer-1 falls back to a
+   community-maintained free-tier MEV-bot list (e.g., the Flashbots-published mev-inspect-py
+   labelled-address sets, or the LibMEV or zeromev.org public registries). The
+   Layer-2 atomic-arb partition is unaffected (it is computed locally from extracted swap
+   events).
+2. **CRC archive depth for v1 historic LP fee accrual.** Alchemy free tier provides full
+   archive node depth on most chains by default; whether Celo archive is included on free
+   tier is verified at v0 audit start. If archive depth is paid-tier-gated for Celo, the v1
+   bulk extraction shifts to SQD Network (which is the primary data path in v1.2 anyway,
+   so no architectural change required) and the Alchemy-side spot RPC narrows to non-archive
+   `eth_call` against current state only.
+3. **Burst-rate vs SQD Network.** Both Alchemy free (25 req/sec) and SQD Network (5 req/sec
+   per IP per docs.sqd.ai notice) impose modest rate caps. v1 bulk extractions are
+   request-volume-modest (one bulk extraction per pool returns the full event list in a
+   single response from SQD Network's archive query interface), so the binding constraint
+   is local-side processing throughput, not the network-side rate cap. Pre-flight estimation
+   per query window in §5.A.
+
+If at v0 audit any of these risks materialize as an actual blocker, the disposition path is
+the typed-exception HALT pathway in §6 with explicit user adjudication. Auto-pivot up the
+free-tier ladder is permitted (a tooling fallback within free tier); auto-pivot to a paid
+service is anti-fishing-banned and requires user re-budgeting.
+
+**Preserved from v1.1 (not changed in v1.2).**
+
+- §3.A DATA_PROVENANCE.md mirror discipline (BLOCK-B2 closure)
+- §4.0 Parquet artifact schema (BLOCK-B1 closure)
+- §5 SQD Network vs Subsquid Cloud structural distinction (BLOCK-B3 structural resolution;
+  only the Alchemy quota assumptions inside it change)
+- All FLAG-B1 through FLAG-B9 closures
+- §8 + FLAG-B9 cross-path handoff (B→A r_al_handoff.json; A→B v3 MC envelope)
+- CORRECTIONS-γ anticipated rename (frontmatter + Change Log + §1 + §4 + §6 prose flagging
+  structural-exposure rename) — kept as anticipated, not executed in v1.2
 
 ## Change Log v1.0 → v1.1
 
@@ -332,14 +472,22 @@ contamination); flagged as v3 sensitivity. Echoes the Carbon V1/V2 user-vs-arb p
 discipline pinned in memory `project_carbon_user_arb_partition_rule`. Dropped-row count and
 dropped-volume fraction reported in `audit_summary` per §4.0.
 
-**Data-source candidates (revised per BLOCK-B3).** Free-tier and committed-budget on-chain
-data sources only. Committed budget: `$49/mo Alchemy Growth` (49M CU / day; user pin
-2026-04-30). The full revised tooling stack is in §5 below. The salient v1.0 → v1.1
-substitution: **SQD Network public gateways** (FREE for archive extraction; documented Celo
-+ Ethereum mainnet support) replace **Subsquid Cloud** (paid hosted indexer-as-a-service)
-as the primary high-volume archive surface. The 2500-credit Dune ceiling is no longer
-load-bearing for bulk extraction (it remains load-bearing for ad-hoc analytical SQL against
-pre-existing community tables); SQD Network absorbs the bulk-extraction load.
+**Data-source candidates (revised per BLOCK-B3 in v1.1; budget-pin re-derived in v1.2
+under CORRECTIONS-δ).** Free-tier-only on-chain data sources. The v1.2 budget pin is
+**FREE-TIER ONLY** (user directive 2026-05-02) — no paid services authorized. The full
+revised tooling stack is in §5 below. The salient v1.0 → v1.1 → v1.2 architectural arc:
+**SQD Network public gateways** (FREE; ~5 req/sec per docs.sqd.ai 2025-02-23 notice;
+documented Celo + Ethereum mainnet support) is the primary high-volume archive surface,
+replacing v1.0's misnamed "Subsquid as escalation" framing (BLOCK-B3 structural fix in
+v1.1). Alchemy is now the **free tier** (30M CU/month, 25 req/sec, 500 CU/sec
+rolling-window) — v1.1's Growth-tier commitment is rescinded under CORRECTIONS-δ; the
+Alchemy role narrows to spot RPC + receipt enrichment under batched + rate-limited
+execution discipline pinned in §5.A. The ~2500-credit Dune ceiling (working assumption per
+dispatch brief; not formally published on docs.dune.com) is not load-bearing for bulk
+extraction (SQD Network absorbs that load) but remains load-bearing for ad-hoc analytical
+SQL against pre-existing community tables. Public Celo + Ethereum RPCs (forno.celo.org,
+eth.llamarpc.com, rpc.ankr.com/eth) added explicitly in v1.2 as flaky fallback only,
+governed by the new `Stage2PathBPublicRPCConsistencyDegraded` typed exception in §6.
 
 ## §3.A — Provenance Discipline (normative; resolves BLOCK-B2)
 
@@ -469,152 +617,261 @@ dtypes; consumers MUST verify match before reading.
 **Naming.** Exact filenames `audit_summary.parquet`, `address_inventory.parquet`,
 `event_inventory.parquet` in `contracts/.scratch/pair-d-stage-2-B/v0/`.
 
-## §5 — Tooling stack + budget assumption (revised per BLOCK-B3)
+## §5 — Tooling stack + budget pin (revised per BLOCK-B3 in v1.1; CORRECTIONS-δ in v1.2)
 
-The committed Path B tooling budget is `$49/mo Alchemy Growth` (user pin 2026-04-30) plus
-free-tier everything else. v1.0 listed Subsquid as "free in compute" — **this conflated
-Subsquid Cloud (paid hosted indexer) with SQD Network (free decentralized data lake)**. v1.1
-disambiguates and re-orders the data-path priority.
+The Path B tooling budget pin is **FREE-TIER ONLY** (user directive 2026-05-02; supersedes
+v1.1's `$49/mo Alchemy Growth` commitment). No paid services authorized under v1.2; any
+escalation requires typed-exception HALT with user-adjudicated re-budgeting per §6 and the
+§5.A degradation Step 4 protocol. v1.0 listed Subsquid as "free in compute" — v1.1
+disambiguated this (Subsquid Cloud is paid hosted indexer; SQD Network is the free
+decentralized data lake; structural distinction PRESERVED in v1.2).
 
 **Primary high-volume archive surface: SQD Network public gateways (FREE).**
 
 - SQD Network is the decentralized data lake at the foundation of the Subsquid ecosystem.
-  Public gateways are documented at https://docs.sqd.ai/subsquid-network/reference/networks/.
+  Public gateways documented at https://docs.sqd.ai/subsquid-network/reference/networks/.
 - Celo mainnet gateway: `https://v2.archive.subsquid.io/network/celo-mainnet`
 - Ethereum mainnet gateway: `https://v2.archive.subsquid.io/network/ethereum-mainnet`
-- Cost model per official documentation: "freely accessible to public using the same API"; no
-  documented rate limits as of 2026-05-02 (one "rate limited" reference page exists in the
-  docs, suggesting limits exist but are not published as concrete quotas; budget-aware
-  degradation in §5.A handles unanticipated throttling)
+- Cost model per official documentation 2026-05-02 verification: free public access; rate
+  limit `50 requests / 10 seconds per IP` per the 2025-02-23 notice on the networks
+  reference page (effective ~5 req/sec sustained per IP). Documentation indicates "higher
+  bandwidths will soon become available via the public network" but no looser limit is
+  published as of v1.2 verification.
 - Use case in Path B: bulk extraction of swap events, transfer events, pool-deployment
-  events for v0 + v1 + v2. Replaces the v1.0 "Subsquid as escalation pivot" framing.
+  events for v0 + v1 + v2. SQD Network is the v1.2 primary archive surface — its bulk
+  extraction model returns full event lists in a single HTTPS call per query window, so
+  the 5 req/sec rate limit is rarely the binding constraint for bulk pulls; it matters only
+  if multiple chunked windows are issued in tight succession.
+- Throttling response: per §6 typed exception `Stage2PathBSqdNetworkThrottled`; degradation
+  ladder per §5.A.
 
-**Spot RPC + receipts: Alchemy Growth ($49/mo committed).**
+**Spot RPC + receipts: Alchemy free tier (30M CU/month, 25 req/sec, 500 CU/sec
+rolling-window cap; verified 2026-05-02).**
 
-- 49M CU / day on the Growth tier; sufficient for spot-check verification, transaction-receipt
-  fetching where event extraction needs `tx.from` for FLAG-B8 layer-1 partitioning, and
-  `eth_call` for current-state snapshots (TVL, pool prices) in v0.
-- Celo network support: confirmed available on Alchemy as of 2026-05-02 (per Alchemy public
-  documentation; v0 audit re-verifies at session start).
-- Use case in Path B: audit-time TVL snapshots, transaction-level enrichment for partition
-  rules, fallback when SQD Network throttles.
+- v1.2 demotes Alchemy from v1.1's Growth-tier commitment to the free tier. The role
+  narrows: spot-check `eth_call` for current-state snapshots (TVL, pool prices) in v0,
+  transaction-receipt fetching where event extraction needs `tx.from` for FLAG-B8 layer-1
+  partitioning, fallback enrichment when SQD Network does not surface a needed field.
+- Celo network support: per alchemy.com/pricing 2026-05-02, free tier covers "all mainnets
+  and testnets." v0 audit re-verifies Celo is enumerated in the Alchemy chain directory
+  before committing FLAG-B8 layer-1 partitioning to the Alchemy path; if Celo archive
+  depth is paid-tier-gated, FLAG-B8 layer-1 partitioning relies on `tx.from` field already
+  present in the SQD Network swap event payload (no external enrichment needed).
+- Burst-rate discipline: see §5.A burst-rate analysis sub-clause. Path B execution must
+  smooth request bursts to stay below 25 req/sec sustained and 500 CU/sec rolling-window;
+  exceedance triggers `Stage2PathBAlchemyFreeTierRateLimitExceeded` typed exception per §6.
+- Monthly-CU discipline: see §5.A projection. Aggregate Path B usage projected at ~165K-285K
+  CU/month — ~0.5-1% of 30M cap — comfortable headroom; CU-cap exceedance is low-risk and
+  governed by `Stage2PathBAlchemyFreeTierMonthlyCUExceeded` typed exception per §6.
 
-**Ad-hoc analytical SQL: Dune Analytics free tier (2500 SQL credits / month).**
+**Ad-hoc analytical SQL: Dune Analytics free tier (~2500 credits/month working assumption;
+docs.dune.com does not publish a numeric monthly cap; rate limits 15 rpm low-limit endpoint
++ 40 rpm high-limit endpoint per docs.dune.com/api-reference/overview/rate-limits verified
+2026-05-02).**
 
 - Pre-existing community tables on Dune (e.g., `mento.swaps`, `uniswap_v3_celo.swaps`,
-  `panoptic_ethereum.events` if available) provide ad-hoc analytical surfaces useful for
-  spot-checks and findings-memo charts.
-- The 2500-credit ceiling is **NO LONGER load-bearing for bulk extraction** in v1.1 (SQD
-  Network absorbs that load). It remains load-bearing for ad-hoc SQL: a careless query
-  scanning multiple months of swap data can consume 50-200 credits. Pre-flight cost estimation
-  required before each Dune query (Dune surfaces estimated cost at query-edit time).
+  `panoptic_ethereum.events` where coverage exists) provide ad-hoc analytical surfaces
+  useful for spot-checks and findings-memo charts.
+- The ~2500-credit ceiling is the dispatch-brief working assumption; Dune does not publish
+  a numeric monthly free-tier cap on docs.dune.com/api-reference/overview/billing as of
+  2026-05-02 verification. Re-verified at v0 entry via dashboard inspection. The ceiling
+  is NOT load-bearing for bulk extraction (SQD Network absorbs that load) but IS
+  load-bearing for ad-hoc SQL: a careless query scanning multiple months of swap data can
+  consume 50-200 credits. Pre-flight cost estimation required before each Dune query
+  (Dune surfaces estimated cost at query-edit time).
 - Pivot if exhausted: switch to Flipside Crypto free SQL credits, or write the same query
-  against SQD Network primitives.
+  against SQD Network primitives. Paid Dune Analyst tier is explicitly NOT authorized under
+  v1.2 free-tier-only pin.
 
 **Subgraphs: The Graph hosted service (free for pre-existing subgraphs).**
 
-- Mento V3, Uniswap V3 Celo, and Panoptic Ethereum all have community subgraphs as of 2026-04.
-  v0 confirms subgraph existence per venue; preferred over raw `eth_getLogs` where coverage
-  exists AND where SQD Network does not give cleaner schema.
+- Mento V3, Uniswap V3 Celo, and Panoptic Ethereum all have community subgraphs as of
+  2026-04. v0 confirms subgraph existence per venue; preferred over raw `eth_getLogs` where
+  coverage exists AND where SQD Network does not give cleaner schema.
 - Use case in Path B: ergonomic typed-event access for findings-memo prep when SQD Network
-  raw-log extraction is heavier than needed.
+  raw-log extraction is heavier than needed; degradation fallback per §5.A Step 1 if SQD
+  Network throttles or has a coverage gap.
 
 **Block explorer: Celoscan + Etherscan free-tier API (5 req/s).**
 
 - Ad-hoc verification, source-code lookup, transaction decoding for human-readable audit
   notes only. NEVER for bulk extraction.
 
-**Notebook stack: Jupyter + pandas + statsmodels + sympy (free).**
+**Public RPC fallback: forno.celo.org (Celo), eth.llamarpc.com + rpc.ankr.com/eth
+(Ethereum). NEW IN v1.2.**
+
+- Free; rate-limited (limits not published; observed flakiness common); intermittent
+  consistency. Used ONLY when Alchemy free tier is exhausted (CU or rate limit) AND SQD
+  Network is unreachable AND The Graph subgraph is unavailable. Governed by the new
+  `Stage2PathBPublicRPCConsistencyDegraded` typed exception in §6 — when public RPCs
+  return inconsistent data across calls (different block heights, missing logs,
+  receipt-vs-trace mismatches), the disposition is HALT-and-flag, not silent merge.
+
+**Notebook stack: Jupyter + pandas + statsmodels + sympy (free; local).**
 
 - Inherited from the Pair D notebook environment at
   `contracts/notebooks/bpo_offshoring_fx_lag/Colombia/`. Path B notebooks live at
   `contracts/notebooks/pair_d_stage_2_path_b/` (subdirectory pinned at v0 entry).
 
-**Paid escalation only — NOT authorized under v1.1 spec without explicit user re-budgeting:**
+**Local data substrate: DuckDB + Parquet (free; local).**
+
+- All extracted on-chain data persists to local Parquet artifacts per §4.0 schema; analytical
+  queries against the local panel use DuckDB. No network round-trips, no rate limits, no
+  cost. Inherited from the Pair D Stage-1 architecture.
+
+**Paid escalation only — NOT authorized under v1.2 spec without explicit user re-budgeting:**
 
 - Subsquid Cloud (hosted indexer-as-a-service) — pay-as-you-go above free playground tier.
-  Cost ceiling if user re-authorizes: $X TBD per executor-side estimation; placeholder for
-  future CORRECTIONS-block.
+  Re-authorization requires typed-exception HALT per §6 with user-adjudicated cost
+  ceiling.
 - Dune Analyst tier ($89/mo) — credit ceiling lifted; not auto-authorized.
-- Alchemy tier above Growth — not authorized; if Growth CU cap is hit, the v1.1 fallback is
-  to lean harder on SQD Network rather than upgrade Alchemy.
+- Alchemy paid tier above free (Growth, Scale, Enterprise) — explicitly NOT authorized
+  under v1.2; v1.1's Growth commitment is rescinded under CORRECTIONS-δ. If the Alchemy
+  free-tier CU or rate-limit cap is hit, the v1.2 fallback is to lean harder on SQD Network
+  + The Graph subgraphs + public-RPC fallback (in that order, per §5.A degradation ladder)
+  rather than upgrade Alchemy.
+- Eigenphi paid API for FLAG-B8 layer-1 MEV-bot list — if Eigenphi free-tier access has
+  been retired since the dispatch brief was authored, the fallback is the
+  Flashbots-published mev-inspect-py labelled-address sets / LibMEV / zeromev.org public
+  registries (all free); paid Eigenphi access requires explicit user re-budgeting.
 
-Frontmatter records `tooling_budget_pending: false; tooling_budget_committed: $49/mo Alchemy
-Growth (2026-04-30 user pin); primary_data_path_v1_1: SQD Network public gateway`.
+Frontmatter records `tooling_budget_pending: false; budget_pin: free_tier_only;
+tooling_budget_committed: free-tier only; primary_data_path_v1_2: SQD Network public
+gateway`.
 
-## §5.A — Query-volume projection + budget reconciliation (normative; resolves BLOCK-B3)
+## §5.A — Query-volume projection + budget reconciliation (normative; resolves BLOCK-B3 in v1.1; re-derived under CORRECTIONS-δ in v1.2)
 
-Concrete projection of Path B query volume per data source, used to verify the v1.1
-free-tier-primary architecture is feasible inside the $49/mo budget pin.
+Concrete projection of Path B query volume per data source, used to verify the v1.2
+free-tier-only architecture is feasible. v1.1's projection assumed $49/mo Alchemy Growth
+(49M CU/day ≈ 1.47B CU/month). v1.2 re-derives against Alchemy free tier (30M CU/MONTH;
+49× tighter on monthly CU) plus the SQD Network 5 req/sec rate cap that was previously
+treated as "no documented limit." Monthly-CU headroom remains comfortable; the binding
+constraint shifts from monthly-CU to burst rate.
 
-**v0 audit volume projection.**
+**v0 audit volume projection (free-tier).**
 
-- `address_inventory` discovery within allowlist: ~10 contracts × 1 RPC call each (`eth_getCode`
-  + first/last block scan) ≈ 30-50 Alchemy CU per contract = ~500 CU total. Negligible vs
-  49M/day Growth cap.
+- `address_inventory` discovery within allowlist: ~10 contracts × 1 RPC call each
+  (`eth_getCode` + first/last block scan) ≈ 30-50 Alchemy CU per contract = ~500 CU total.
+  Negligible vs 30M/month free cap (~0.002%).
 - `event_inventory` topic-frequency scan: ~10 contracts × 5 topics × 1 SQD Network archive
-  query each = 50 SQD queries; FREE.
-- `audit_summary` aggregation: ~10 venues × cumulative-volume + TVL = 20-30 Alchemy `eth_call`s
-  ≈ 1000 CU. Negligible.
-- v0 total: <5000 Alchemy CU (single-day, well inside cap); <100 SQD queries (FREE); 0-5 Dune
-  credits (only if a community-table-backed sanity-check query is convenient).
+  query each = ~50 SQD queries spread across one v0 session; FREE; well below 5 req/sec
+  with sequential issuance.
+- `audit_summary` aggregation: ~10 venues × cumulative-volume + TVL = 20-30 Alchemy
+  `eth_call`s ≈ 1000 CU. Negligible.
+- v0 total: <5000 Alchemy CU (single-day, well inside 30M/mo); ~50 SQD queries spread
+  across minutes (well below 5 req/sec); 0-5 Dune credits (only if a community-table-backed
+  sanity-check query is convenient).
 
-**v1 CF^(a_l) extraction volume projection.**
+**v1 CF^(a_l) extraction volume projection (free-tier).**
 
-- Mento V3 USDm/COPm pool swap events over Mento-V3-deployment to 2026-02-28 window: estimate
-  100K-500K swaps depending on pool age + activity. SQD Network archive query = ONE bulk
-  extraction returning all events; FREE; documented data lake throughput is order-of-minutes
-  for sub-million event extractions.
-- Uniswap V3 USDC/USDm Celo pool swap events: similar order of magnitude. Same SQD Network
-  surface; FREE.
+- Mento V3 USDm/COPm pool swap events over Mento-V3-deployment to 2026-02-28 window:
+  estimate 100K-500K swaps depending on pool age + activity. SQD Network archive query
+  returns the full event list per chunked block-range query — pre-pin chunk size of
+  ~500K blocks per query (Celo block time ~5 sec → ~29 days per chunk; Mento V3 history
+  is ~2 yrs at most → ~25 chunks); FREE; sequential issuance with ~250 ms inter-call sleep
+  keeps issuance well below 5 req/sec.
+- Uniswap V3 USDC/USDm Celo pool swap events: similar order of magnitude; same chunked
+  SQD Network surface; FREE.
 - Per-event LP-fee accrual computation requires either: (a) on-chain `Mint`/`Burn` events
-  (also extractable via SQD Network in the same bulk pull; FREE), OR (b) per-block reserve
-  snapshots (more expensive but not needed if approach (a) is sufficient).
-- FLAG-B8 layer-1 partition (MEV-bot allowlist) requires `tx.from` enrichment for each swap
-  — already included in SQD Network swap event payload; FREE.
-- FLAG-B8 layer-2 partition (atomic-arb round-trip) requires per-tx event grouping —
-  computed locally from the SQD Network bulk extract; FREE.
-- v1 total: 2-3 SQD Network bulk extractions per pool × 1-3 pools = ~5-9 free queries;
-  <50K Alchemy CU for any spot-check enrichment; ~20-50 Dune credits for findings-memo charts.
+  (also extractable via SQD Network in the same chunked pull; FREE), OR (b) per-block
+  reserve snapshots (more expensive but not needed if approach (a) is sufficient).
+- FLAG-B8 layer-1 partition (MEV-bot allowlist): `tx.from` is included in the SQD Network
+  swap event payload; no Alchemy receipt enrichment needed. If a small subset of swaps
+  requires receipt-level confirmation (e.g., 1000 ambiguous swaps), Alchemy
+  `alchemy_getTransactionReceipts` at 15 CU per receipt × 1000 receipts = 15K CU
+  (~0.05% of free cap), batched in 25-receipt windows at 1 batch/sec to stay below 25
+  req/sec.
+- FLAG-B8 layer-2 partition (atomic-arb round-trip): per-tx event grouping computed
+  locally from the SQD Network bulk extract; FREE.
+- v1 total: ~25-75 SQD Network chunked queries per pool × 1-3 pools = ~25-225 SQD queries
+  total spread across ~5-30 minutes of execution (well below 5 req/sec); ~15K-50K Alchemy
+  CU for spot-check enrichment if needed; ~20-50 Dune credits for findings-memo charts.
 
 **v2 CF^(a_s) extraction volume projection (conditional on v0 confirming Bitgifty / Walapay
 on-chain footprint).**
 
-- Bitgifty / Walapay router + merchant-side `Transfer` events: estimate 10K-100K events over
-  Mento V3 deployment window. SQD Network bulk extraction; FREE.
+- Bitgifty / Walapay router + merchant-side `Transfer` events: estimate 10K-100K events
+  over Mento V3 deployment window. SQD Network chunked extraction (same ~500K-block chunk
+  size); ~25 queries per router × 2-3 routers = ~50-75 SQD queries; FREE.
 - Per-merchant aggregation + obligation-leg attribution: local computation; FREE.
-- v2 total: 3-5 SQD Network queries; <20K Alchemy CU.
+- Receipt enrichment for ambiguous settlement events: bounded by §5.A v1 receipt budget
+  (~10-20K CU additional).
+- v2 total: ~50-75 SQD Network queries; <30K Alchemy CU.
 
 **v3 backtest computational load.**
 
-- Pure local computation (Python + statsmodels + numpy) over v1 + v2 extracted panels.
-  Zero on-chain queries; zero Alchemy CU; zero Dune credits.
+- Pure local computation (Python + statsmodels + numpy + DuckDB) over v1 + v2 extracted
+  panels. Zero on-chain queries; zero Alchemy CU; zero Dune credits.
 
 **Aggregate monthly usage estimate.**
 
-- SQD Network: ~10-15 queries total across v0 + v1 + v2; FREE; throttling risk LOW per
-  documented "no rate limits" stance, mitigated by §6's `Stage2PathBSqdNetworkThrottled`
-  typed exception.
-- Alchemy Growth: <100K CU total across v0 + v1 + v2; ~0.2% of monthly cap; well inside
-  $49 commit.
-- Dune: <100 credits total; ~4% of monthly free quota; ample headroom for unanticipated
-  ad-hoc queries.
+- SQD Network: ~125-345 queries total across v0 + v1 + v2 spread across multi-hour
+  execution windows; FREE; sustained issuance well below 5 req/sec per IP; throttling
+  risk LOW given chunked sequential pattern, mitigated by §6's
+  `Stage2PathBSqdNetworkThrottled` typed exception if exceeded.
+- Alchemy free tier: ~30K-95K CU total across v0 + v1 + v2; ~0.1-0.3% of 30M monthly cap
+  with >100× headroom; rate-limit risk LOW given batched 25-receipt windows at 1 batch/sec
+  (well below 25 req/sec sustained); CU-cap risk LOW per projection but pre-pinned
+  exception `Stage2PathBAlchemyFreeTierMonthlyCUExceeded` covers re-run accumulation.
+- Dune: <100 credits total; ~4% of working ~2500/mo assumption; ample headroom; rate
+  limit risk LOW given sub-15 rpm interactive query cadence.
 - The Graph: opportunistic free queries; bounded by community-subgraph availability.
 - Celoscan + Etherscan: ad-hoc only; bounded by 5 req/s.
+- Public RPC fallback: opportunistic; flakiness governed by
+  `Stage2PathBPublicRPCConsistencyDegraded` typed exception.
 
-**Conclusion.** The v1.1 architecture (SQD Network primary archive + Alchemy Growth spot RPC
-+ Dune ad-hoc SQL) fits comfortably inside the $49/mo budget pin with substantial headroom
-for re-runs, sensitivity passes, and CORRECTIONS-block iterations. BLOCK-B3 is resolved:
-no paid Subsquid Cloud usage is required for the v0 → v3 ladder.
+**Burst-rate analysis sub-clause (NEW IN v1.2; binding-constraint pinning).**
 
-**Budget-aware degradation path.** If SQD Network throttles or has a coverage gap:
-Step 1: switch to The Graph hosted-service subgraph for the affected venue (FREE if subgraph
-exists). Step 2: switch to Alchemy `eth_getLogs` for the affected block range (paid CU but
-inside budget). Step 3: switch to Dune SQL against the relevant community table (paid
-credits, watch ceiling). Step 4 (only if Steps 1-3 jointly insufficient): typed-exception
-HALT requesting user re-budgeting for paid Subsquid Cloud. Auto-pivot up the ladder is
-permitted (this is a tooling fallback, not a result-shaping decision); auto-pivot to Step 4
-is anti-fishing-banned and requires explicit user adjudication.
+The Alchemy free-tier 25 req/sec cap (and 500 CU/sec rolling-window cap) is the binding
+constraint on Path B execution under v1.2's free-tier-only pin, NOT the monthly-CU cap.
+v1 fee-yield extraction and v2 settlement-leg extraction both have low total-CU
+fingerprints but can produce burst patterns if implemented naively (e.g., a parallel
+asyncio fan-out of 100 receipt fetches in a single second would exceed the cap).
+
+Path B execution discipline (binding):
+
+- All Alchemy receipt enrichment batched into ≤25-receipt request windows separated by
+  ≥1 second sleep, regardless of total receipt budget. Concurrency cap = 1 (sequential).
+- All SQD Network chunked queries issued sequentially with ≥250 ms inter-call sleep.
+  Concurrency cap = 1 per IP.
+- All Dune queries sequential; pre-flight cost-estimate inspection before each execution.
+- Rolling-window monitoring: executor MUST log `req_per_sec` and `cu_per_sec` to a local
+  audit log per data source per minute; monitoring spike >80% of either cap surfaces a
+  warning and pauses next batch ≥5 sec.
+- Exceedance of either cap triggers `Stage2PathBAlchemyFreeTierRateLimitExceeded` typed
+  exception per §6 with disposition = pause, reduce concurrency / chunk size, retry; if
+  exceedance recurs after retry, HALT-and-flag.
+
+This batched-extraction strategy smooths req/sec over the day so the Path B compute
+fingerprint stays well within 25 req/sec sustained; the projected ~125-345 SQD queries +
+~30-95K Alchemy CU + <100 Dune credits over a multi-hour execution window translates to
+a sub-1 req/sec sustained issuance rate across all surfaces combined.
+
+**Conclusion.** The v1.2 architecture (SQD Network primary archive + Alchemy free spot RPC
+under batched discipline + The Graph subgraphs + Dune ad-hoc SQL + public-RPC fallback
+under consistency-degraded HALT) fits comfortably inside the FREE-TIER-ONLY budget pin
+with substantial headroom for re-runs, sensitivity passes, and CORRECTIONS-block
+iterations. The CORRECTIONS-δ re-derivation REPLACES (not supplements) v1.1's projection;
+no paid services are required for the v0 → v3 ladder. BLOCK-B3 closure (SQD vs Subsquid
+Cloud structural distinction) is preserved; only the Alchemy quota assumptions inside it
+change.
+
+**Budget-aware degradation path (revised under CORRECTIONS-δ).** If SQD Network throttles
+or has a coverage gap:
+Step 1: switch to The Graph hosted-service subgraph for the affected venue (FREE if
+subgraph exists).
+Step 2: switch to Alchemy free-tier `eth_getLogs` for the affected block range (free CU
+inside the 30M cap; subject to 25 req/sec discipline).
+Step 3: switch to Dune SQL against the relevant community table (free credits, watch the
+~2500/mo working ceiling).
+Step 4: switch to public RPC fallback (forno.celo.org / eth.llamarpc.com / rpc.ankr.com/eth)
+under `Stage2PathBPublicRPCConsistencyDegraded` discipline — HALT-and-flag on any
+cross-call inconsistency.
+Step 5 (only if Steps 1-4 jointly insufficient): typed-exception HALT requesting user
+re-budgeting for paid services (Subsquid Cloud, Alchemy paid tier, Dune Analyst, or
+Eigenphi paid API). Auto-pivot through Steps 1-4 is permitted (all free-tier; tooling
+fallback, not result-shaping); auto-pivot to Step 5 is anti-fishing-banned and requires
+explicit user adjudication.
 
 ## §6 — HALT discipline
 
@@ -641,14 +898,60 @@ Pre-pinned typed exceptions:
 - **v0 — `Stage2PathBSqdNetworkCoverageInsufficient`.** Triggers if SQD Network gateway returns
   zero or fewer-than-100 events for a venue that on-chain explorers confirm has activity (i.e.,
   archive-side coverage gap). Pivots: (a) The Graph community subgraph for the affected venue;
-  (b) Alchemy `eth_getLogs` for the affected block range against the $49 budget; (c) Dune SQL
-  against the relevant community table.
+  (b) Alchemy free-tier `eth_getLogs` for the affected block range under the §5.A burst-rate
+  discipline (CU cost inside the 30M/mo cap, sequential issuance below 25 req/sec); (c) Dune
+  SQL against the relevant community table within the working ~2500-credit ceiling.
 
 - **v0 — `Stage2PathBSqdNetworkThrottled`.** Triggers if SQD Network gateway returns
   documented or undocumented rate-limit responses on a query that should be inside its free
-  bounds. Pivots: (a) reduce query window and chunk; (b) switch to The Graph hosted-service
-  subgraph; (c) switch to Alchemy `eth_getLogs` (CU cost); (d) escalation to paid Subsquid
-  Cloud requires user re-budgeting per §5.A degradation Step 4.
+  bounds (5 req/sec per IP per docs.sqd.ai 2025-02-23 notice). Pivots: (a) reduce query window
+  and chunk size, increase inter-call sleep beyond the §5.A baseline 250 ms; (b) switch to The
+  Graph hosted-service subgraph for the affected venue; (c) switch to Alchemy free-tier
+  `eth_getLogs` (CU cost inside the 30M/mo cap, subject to 25 req/sec discipline); (d)
+  escalation to paid Subsquid Cloud requires user re-budgeting per §5.A degradation Step 5
+  (Step 5 in v1.2 numbering after public-RPC fallback was inserted as Step 4).
+
+- **v0/v1/v2 — `Stage2PathBAlchemyFreeTierRateLimitExceeded` (NEW IN v1.2).** Triggers if
+  Path B execution exceeds the Alchemy free-tier 25 req/sec sustained rate or the 500 CU/sec
+  rolling-window cap, regardless of whether monthly CU headroom remains. Detected by the
+  per-minute `req_per_sec` / `cu_per_sec` audit log mandated in §5.A burst-rate analysis
+  sub-clause; warning at >80% of either cap, exception at exceedance. Pivots: (a) pause the
+  in-flight batch ≥5 sec, reduce concurrency to 1, reduce batch size (e.g., 25 receipts → 10
+  receipts per window), and retry; (b) shift the affected query class from Alchemy spot RPC
+  to SQD Network bulk extraction where the field is available without receipt enrichment;
+  (c) shift to The Graph hosted-service subgraph for typed-event surfaces; (d) shift to
+  public-RPC fallback under `Stage2PathBPublicRPCConsistencyDegraded` discipline. If the
+  exceedance recurs after Pivot (a), HALT-and-flag — escalation to a paid Alchemy tier
+  requires user re-budgeting per §5.A Step 5 and is anti-fishing-banned as auto-pivot.
+
+- **v0/v1/v2 — `Stage2PathBAlchemyFreeTierMonthlyCUExceeded` (NEW IN v1.2).** Triggers if
+  cumulative Alchemy CU usage in a calendar month exceeds the 30M free-tier cap. Pre-pinned
+  for safety; per §5.A projection (~30K-95K CU/mo aggregate), exceedance is low-risk under a
+  single execution pass and would only realistically arise under repeated sensitivity re-runs
+  or CORRECTIONS-block iterations within the same calendar month. Pivots: (a) pause Alchemy
+  usage until the next calendar-month reset; (b) shift remaining query volume to SQD Network
+  primary archive surface for the affected query class; (c) shift to The Graph hosted-service
+  subgraph for typed-event surfaces; (d) shift to public-RPC fallback under
+  `Stage2PathBPublicRPCConsistencyDegraded` discipline; (e) defer the affected work item
+  until calendar-month rollover. Escalation to a paid Alchemy tier requires user
+  re-budgeting per §5.A Step 5 and is anti-fishing-banned as auto-pivot.
+
+- **v0/v1/v2 — `Stage2PathBPublicRPCConsistencyDegraded` (NEW IN v1.2).** Triggers when the
+  public-RPC fallback path (forno.celo.org for Celo; eth.llamarpc.com / rpc.ankr.com/eth for
+  Ethereum) returns inconsistent data across calls — e.g., `eth_blockNumber` reporting two
+  different heights within seconds, `eth_getLogs` for a frozen block range returning a
+  different log set on retry, receipt-vs-trace mismatches for the same `tx_hash`, or a
+  schema_version drift on a Parquet artifact written from public-RPC-sourced input that
+  cannot be reconciled to known new-block additions. Disposition is **HALT-and-flag, not
+  silent merge** — public-RPC inconsistency MUST surface to the orchestrator before the
+  affected artifact is committed. Pivots: (a) re-issue against a different public-RPC
+  endpoint (forno.celo.org → public Cloudflare Celo RPC; eth.llamarpc.com → rpc.ankr.com/eth
+  → publicnode.com) and require 2-of-3 agreement on the contested field before treating the
+  result as authoritative; (b) wait ≥1 minute and re-issue against the same endpoint to
+  rule out transient public-node desync; (c) substitute SQD Network bulk extraction for the
+  affected block range if the data class is event-archival; (d) substitute Alchemy free-tier
+  spot RPC subject to 25 req/sec discipline. Escalation to a paid RPC tier requires user
+  re-budgeting per §5.A Step 5 and is anti-fishing-banned as auto-pivot.
 
 - **v0/v1/v2/v3 — `Stage2PathBProvenanceMismatch`.** Triggers if §3.A re-execution discipline
   surfaces a sha256 / row-count / schema_version delta that cannot be reconciled to known
@@ -784,18 +1087,21 @@ open question for downstream Stage-3 work.
   lineage + v0 schema + provenance discipline); Context Information (Pair D PASS verdict +
   framework imports + on-chain pin scaffolding + budget-aware degradation path); Tonal Control
   (reliability-obsessed Data Engineer voice; precise quantification; no marketing copy); Tool
-  Use Instructions (committed Alchemy budget + SQD-Network-primary architecture + Dune ceiling
-  + degradation ladder). User Preferences emerges through the inherited RC FLAG handling and
-  HALT discipline. Coverage: 4 of 5 explicit + 1 implicit-through-inheritance.
+  Use Instructions (free-tier-only tooling stack + SQD-Network-primary architecture + Alchemy
+  free-tier batched discipline + Dune ceiling + public-RPC fallback + degradation ladder).
+  User Preferences emerges through the inherited RC FLAG handling and HALT discipline.
+  Coverage: 4 of 5 explicit + 1 implicit-through-inheritance.
 - **≥6 of 7 complexity principles:** Define Personality and Tone; Guide Tool Use and Response
-  Formatting (SQD / Alchemy / Dune / Subgraph / Subsquid-Cloud-paid-only ladder with
-  pre-pinned ceilings); Implement Dynamic Behavior Scaling (v0-v3 ladder with per-version
-  exit criteria); Inject Critical Non-Negotiable Facts (Stage-1 sha pin chain, on-chain
-  address pins, $49 Alchemy commitment, SQD Network FREE classification); Instruct Critical
+  Formatting (SQD / Alchemy free / Dune free / Subgraph free / public-RPC fallback / paid-only
+  escalation ladder with pre-pinned ceilings); Implement Dynamic Behavior Scaling (v0-v3
+  ladder with per-version exit criteria); Inject Critical Non-Negotiable Facts (Stage-1 sha
+  pin chain, on-chain address pins, FREE-TIER-ONLY budget pin per CORRECTIONS-δ, SQD Network
+  FREE classification, Alchemy free-tier 30M CU/mo + 25 req/sec caps); Instruct Critical
   Evaluation (no causal claims, no β re-litigation, no curve-fitting, no post-data threshold
-  tuning, no silent path-coupling); Provide Context Information (full inheritance from
-  dispatch brief + MEMO §7 + VERDICT.md); Set Clear Guardrails (typed-exception HALT pathway
-  with ≥3 pre-pinned pivots per HALT, anti-fishing posture, Stage-3 out-of-scope,
+  tuning, no silent path-coupling, no auto-pivot to paid services); Provide Context
+  Information (full inheritance from dispatch brief + MEMO §7 + VERDICT.md); Set Clear
+  Guardrails (typed-exception HALT pathway with ≥3 pre-pinned pivots per HALT including 3
+  new free-tier-failure-mode exceptions in v1.2, anti-fishing posture, Stage-3 out-of-scope,
   CORRECTIONS-γ scoping reminder). Coverage: 7 of 7.
 - **No XML tags.** Section headers and bullet points only.
 - **No code.** Code-agnostic per `feedback_no_code_in_specs_or_plans`. Schema definitions,
@@ -814,5 +1120,9 @@ open question for downstream Stage-3 work.
   pre-pinned exits and pre-pinned pivots; explicit free-vs-paid cost classifications).
 
 End of spec body. Frontmatter `verifier_v1_wave1` and `verifier_v1_wave2` fields are pending
-re-run of the 2-wave doc-write verification on v1.1 per
-`feedback_two_wave_doc_verification`.
+re-run of the 2-wave doc-write verification on v1.2 per
+`feedback_two_wave_doc_verification`. v1.1 had passed Wave-2 re-verify with NITs only; v1.2
+scope is narrow (free-tier-only budget pin re-derivation; three new typed exceptions; no
+v1.1 BLOCK or FLAG closure regressed) and the re-verify is expected to focus on the
+free-tier-feasibility risk assessment in the Change Log v1.1 → v1.2 section, the §5.A
+burst-rate analysis sub-clause, and the three new §6 typed exceptions.
