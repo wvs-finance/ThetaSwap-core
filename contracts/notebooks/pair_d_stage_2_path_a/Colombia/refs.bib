@@ -1,0 +1,154 @@
+% references.bib — Pair D Stage-2 Path A (fork-and-simulate) notebooks
+%
+% Citation policy per project memory feedback_notebook_citation_block:
+%   every test/decision/spec choice in an estimation or sensitivity
+%   notebook is preceded by a 4-part markdown block (reference / why used
+%   / relevance to results / connection to simulator). The bib entries
+%   below are the canonical sources cited from those 4-part blocks.
+
+% --- Spec + plan + Stage-1 anchor (frozen sha-pinned inputs) ---
+
+@misc{path_a_stage2_spec_v121,
+  title        = {Pair {D} {S}tage-2 --- {P}ath {A} ``{F}ork-and-{S}imulate'' Spec, v1.2.1},
+  author       = {{Backend Architect dispatch}},
+  year         = {2026},
+  month        = may,
+  howpublished = {Internal spec, contracts/docs/superpowers/specs/2026-04-30-pair-d-stage-2-A-fork-simulate-spec.md},
+  note         = {sha256: 1a4cc6a41b864deec5702866dd3e8badc8a5eac5e259f61f41b93d233b3f9d78. {C}{O}{R}{R}{E}{C}{T}{I}{O}{N}{S}-$\delta'$ pin: free-tier-only budget; {A}lchemy free $\approx$30M {C}{U}/month + $\approx$25 req/sec.}
+}
+
+@misc{path_a_stage2_plan_v10,
+  title        = {Pair {D} {S}tage-2 --- {P}ath {A} (Fork-and-Simulate) Implementation Plan, v1.0},
+  author       = {{Backend Architect dispatch}},
+  year         = {2026},
+  month        = may,
+  howpublished = {Internal plan, contracts/docs/superpowers/plans/2026-04-30-pair-d-stage-2-A-fork-simulate-implementation.md},
+  note         = {sha256: 05f5216faa62b7a3cccb384215d5da007636d87d2b6d9597a21cb42b4860436d.}
+}
+
+@misc{pair_d_stage1_verdict,
+  title        = {Pair {D} {S}tage-1 simple-$\beta$ {VERDICT.md} {(PASS)}},
+  author       = {{Pair D Stage-1 dispatch chain}},
+  year         = {2026},
+  month        = apr,
+  howpublished = {Internal artifact, contracts/.scratch/simple-beta-pair-d/results/VERDICT.md},
+  note         = {sha256: 1efd0e34d7c1af821c8528a7bc895a63e1dc5e1c289f3b6a1b2d392ba59806cf. $\beta_{composite}$ = +0.13670985, {HAC} {SE} 0.02465, $t$ = +5.5456, $p_{one}$ = $1.46\times10^{-8}$; {R}-{AGREE} 0/4 flips. {READ}-{ONLY} anchor for {P}ath {A} --- {NOT} re-tested.}
+}
+
+@misc{pair_d_stage1_spec_v131,
+  title        = {Pair {D} {S}tage-1 simple-$\beta$ {S}pec, v1.3.1 {(CORRECTIONS-$\alpha'$)}},
+  author       = {{Backend Architect dispatch}},
+  year         = {2026},
+  month        = apr,
+  howpublished = {Internal spec, contracts/docs/superpowers/specs/2026-04-27-simple-beta-pair-d-design.md},
+  note         = {sha256: 964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659. {O}ption-$\alpha'$ window 2015-01 to 2026-03; {DANE}-canonical {R}ev.4 throughout via {RAMA4D\_R4}.}
+}
+
+% --- CPO framework import ---
+
+@misc{cpo_framework_import,
+  title        = {Macro {M}arkets {DRAFT} --- {P}athway 1 ({M}ento{,} permissionless) {C}{P}{O} derivation},
+  author       = {{Macro Markets internal note (imported source)}},
+  year         = {2026},
+  month        = apr,
+  howpublished = {contracts/notes/2026-04-29-macro-markets-draft-import.md (byte-identical to $\sim$/learning/cfmm-theory/macro-markets/{DRAFT.md})},
+  note         = {The framework whose analytical claims {P}ath {A} mechanically verifies under contract execution. {N}{O}{T} re-derived; {N}{O}{T} amended.}
+}
+
+% --- Carr-Madan replication identity ---
+
+@article{carr_madan_1998_volatility,
+  title   = {Towards a {T}heory of {V}olatility {T}rading},
+  author  = {Carr, Peter and Madan, Dilip},
+  journal = {{R}isk {B}ook on {V}olatility (R. Jarrow, ed.)},
+  year    = {1998},
+  pages   = {417--427},
+  publisher = {Risk Publications},
+  note    = {Foundational paper for the model-free $\sigma_T = \int_0^{S_0} P(K)/K^2 dK + \int_{S_0}^\infty C(K)/K^2 dK$ replication identity. {V}2 of {P}ath {A} discretizes this into a 3-condor / 12-leg {I}ron{C}ondor strip (spec \S10.5).}
+}
+
+@incollection{carr_madan_2001_robust,
+  title     = {Optimal positioning in derivative securities},
+  author    = {Carr, Peter and Madan, Dilip},
+  booktitle = {{Q}uantitative {F}inance},
+  volume    = {1},
+  number    = {1},
+  pages     = {19--37},
+  year      = {2001},
+  note      = {Robust derivation of the model-free strip representation; cited for the truncation/discretization bound expression in v0 derivation (\S11.b).}
+}
+
+% --- Panoptic protocol ---
+
+@misc{panoptic_whitepaper_2023,
+  title        = {Panoptic: A Perpetual, Oracle-Free Options Protocol},
+  author       = {Lambert, Guillaume and Kristensen, Jesper and Adams, Hayden},
+  year         = {2023},
+  howpublished = {Whitepaper, \url{https://paperswithbacktest.com/panoptic-whitepaper}},
+  note         = {Defines the {S}{F}{P}{M} ({S}emi-{F}ungible {P}osition {M}anager) and the up-to-5-legs-per-position constraint that motivates the spec \S10.5 3-condor / 12-leg strip configuration.}
+}
+
+@misc{panoptic_sfpm_v1_addresses,
+  title        = {Panoptic v1.0 deployment addresses ({E}thereum mainnet)},
+  author       = {{Panoptic Labs}},
+  year         = {2026},
+  howpublished = {\url{https://docs.panoptic.xyz/docs/developers/addresses}},
+  note         = {Cited at v2 dispatch ({T}ask 3.2) for canonical contract addresses resolved at the v2 fork-block height.}
+}
+
+% --- Mento V3 / V2 ---
+
+@misc{mento_v3_docs,
+  title        = {Mento V3 documentation},
+  author       = {{Mento Labs}},
+  year         = {2025},
+  howpublished = {\url{https://docs.mento.org/}},
+  note         = {{M}ento {V}3 router \texttt{0x4861840C2EfB2b98312B0aE34d86fD73E8f9B6f6} on {C}elo mainnet. v1 dispatch ({T}ask 2.2) resolves the {U}{S}{D}m/{C}{O}{P}m {F}{P}{M}{M} pool at fork-block height per {FLAG}-{F}2 resolution.}
+}
+
+@misc{mento_canonical_naming_2026,
+  title        = {Mento 2026 canonical naming rebrand ({c}{U}{S}{D}$\to${U}{S}{D}m, etc.) and {COPM} address corrigendum},
+  author       = {{Trend Researcher dispatch}},
+  year         = {2026},
+  month        = apr,
+  howpublished = {Internal memory, project\_mento\_canonical\_naming\_2026},
+  note         = {Canonical {M}ento {V}2 {C}{O}{P}{M} address: \texttt{0x8A567e2aE79CA692Bd748aB832081C45de4041eA}. \texttt{0xc92e8fc2...} ({M}inteo-fintech) is {OUT} of scope per the $\beta$-corrigendum 2026-04-26.}
+}
+
+% --- Foundry / Anvil tooling pin ---
+
+@misc{foundry_v151_stable,
+  title        = {Foundry v1.5.1-stable},
+  author       = {{Foundry contributors}},
+  year         = {2025},
+  howpublished = {\url{https://github.com/foundry-rs/foundry/commit/b0a9dd9ceda36f63e2326ce530c10e6916f4b8a2}},
+  note         = {Pinned via foundryup; commit sha \texttt{b0a9dd9ceda36f63e2326ce530c10e6916f4b8a2}, build timestamp 2025-12-22T11:39:01Z. {T}he commit hash is the determinism anchor per spec \S10.2.}
+}
+
+% --- Anti-fishing methodology ---
+
+@misc{anti_fishing_pathological_halt_checkpoint,
+  title        = {Pathological-{HALT} anti-fishing checkpoint ({P}air {D} methodology)},
+  author       = {{Pair D methodology dispatch}},
+  year         = {2026},
+  howpublished = {Internal memory, feedback\_pathological\_halt\_anti\_fishing\_checkpoint},
+  note         = {{HALT} + disposition memo + user-enumerated pivot + {CORRECTIONS} block + post-hoc 3-way review. {N}o silent threshold tuning. {P}ath {A} \S7 inherits this discipline.}
+}
+
+% --- Notebook trio-checkpoint discipline ---
+
+@misc{notebook_trio_checkpoint,
+  title        = {Notebook {X}-trio checkpoint discipline ({A}nalytics {R}eporter convention)},
+  author       = {{Pair D methodology dispatch}},
+  year         = {2026},
+  howpublished = {Internal memory, feedback\_notebook\_trio\_checkpoint},
+  note         = {{NON}-{NEGOTIABLE}: {A}nalytics {R}eporter authoring a notebook {HALT}s after every (why-markdown, code-cell, interpretation-markdown) trio for human review. {N}o bulk authoring. {P}hases 1-4 of {P}ath {A} are bound by this.}
+}
+
+@misc{notebook_citation_block,
+  title        = {Notebook decision-citation 4-part block convention},
+  author       = {{Pair D methodology dispatch}},
+  year         = {2026},
+  howpublished = {Internal memory, feedback\_notebook\_citation\_block},
+  note         = {{NON}-{NEGOTIABLE}: every test/decision/spec choice is preceded by a 4-part markdown block: reference / why used / relevance to results / connection to simulator. {C}itations resolve from this {bib} file.}
+}

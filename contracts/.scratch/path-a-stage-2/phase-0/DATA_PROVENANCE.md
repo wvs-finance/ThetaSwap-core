@@ -76,6 +76,69 @@ Downstream version manifests (v1 fork manifest under Task 2.2; v2 under Task 3.2
 
 ---
 
-## Section: Task 0.2 — Notebook scaffolding + Python deps (appended below by the Task 0.2 executor)
+## Section: Task 0.2 — Notebook scaffolding + Python deps
 
-(populated by Task 0.2 commit)
+**Owner:** Senior Developer (this dispatch — Task 0.2 executed inline alongside Task 0.1 per Phase-0 brief).
+**Constructed:** 2026-05-02 18:10–18:15 EDT.
+**Outputs:**
+- `contracts/notebooks/pair_d_stage_2_path_a/Colombia/env.py` (path constants + REQUIRED_PACKAGES + Foundry pin + RPC ladder + Mento contract addresses + spec-pinned numerical constants)
+- `contracts/notebooks/pair_d_stage_2_path_a/Colombia/refs.bib` (15 BibTeX entries: spec/plan/Stage-1 anchor + Carr-Madan 1998/2001 + Panoptic whitepaper + Panoptic SFPM addresses + Mento V3 docs + Mento canonical naming + Foundry v1.5.1 + 3 methodology citations)
+- `contracts/notebooks/pair_d_stage_2_path_a/Colombia/requirements.txt` (12 dependency lines mirroring env.REQUIRED_PACKAGES, re-installable via `uv pip install -r`)
+- `contracts/notebooks/pair_d_stage_2_path_a/Colombia/_nbconvert_template/{jupyter_nbconvert_config.py,article.tex.j2}` (mirrored from `fx_vol_cpi_surprise/Colombia/_nbconvert_template/`, env-module name updated from `fx_vol_env` → `path_a_env`)
+- 4 notebook skeletons: `01_v0_sympy.ipynb` (4 cells), `02_v1_mento_fork.ipynb` (4 cells), `03_v2_panoptic_strip.ipynb` (4 cells), `04_v3_gbm_mc.ipynb` (5 cells — extra trio for the §10.3 default_rng pin). Each carries the required 4-part citation block per `feedback_notebook_citation_block` plus a TODO block enumerating the rung's spec §2 exit criteria.
+- Empty artifact directories: `estimates/`, `figures/`, `pdf/` (created for downstream rung-specific output dropping)
+
+### Source: contracts/.venv (Python 3.13.5)
+
+The venv at `contracts/.venv/` was already provisioned for Stage-1 work (statsmodels + numpy + pandas + scipy + matplotlib + jupyter ecosystem). Task 0.2 added the Path-A-specific dependencies via `uv pip install`:
+
+- **Sympy 1.14.0** — already present (verified at smoke test).
+- **QuantLib 1.42.1** — already present.
+- **nbformat 5.10.4** — newly installed via `uv pip install`.
+- **nbconvert 7.17.1** — newly installed.
+- **matplotlib 3.10.8** — newly installed.
+- **bibtexparser 1.4.4** — newly installed (refs.bib parse-verified).
+- **IPython 9.12.0** — newly installed.
+- **ipykernel 7.2.0** — already present.
+- **jupyter_client 8.8.0**, **jupyter_core 5.9.1**, **Jinja2 3.1.6**, **pandas 3.0.2** — already present.
+
+Re-install verification: `uv pip install -r contracts/notebooks/pair_d_stage_2_path_a/Colombia/requirements.txt` returned `Audited 12 packages in 19ms` with zero conflicts.
+
+### env.py REPL test (parents-fix verification)
+
+Per spec convention (`feedback_*` memory), env.py uses `Path(__file__).resolve().parents[3]` to anchor `_CONTRACTS_DIR`. REPL test:
+```
+$ python -c "import env; print(env.SPEC_SHA256, env.FOUNDRY_COMMIT_SHA, env.NB_V0_SYMPY_PATH.parent.name)"
+1a4cc6a41b864deec5702866dd3e8badc8a5eac5e259f61f41b93d233b3f9d78  b0a9dd9ceda36f63e2326ce530c10e6916f4b8a2  Colombia
+```
+All references resolve. `CPO_FRAMEWORK_PATH` exists; `STAGE1_VERDICT_MD` exists.
+
+### Notebook headless-execution verification
+
+`jupyter nbconvert --to notebook --execute 01_v0_sympy.ipynb` ran clean, output captured:
+```
+env.py loaded from: .../pair_d_stage_2_path_a/Colombia/env.py
+SPEC_SHA256: 1a4cc6a41b864deec5702866dd3e8badc8a5eac5e259f61f41b93d233b3f9d78
+SPEC_VERSION: v1.2.1
+FOUNDRY_COMMIT_SHA: b0a9dd9ceda36f63e2326ce530c10e6916f4b8a2
+Stage-1 anchor PRIMARY_OLS_SHA256 (READ-ONLY): d4790e743cdec62f1368cab1833e1266cb2da763d7c0931dd732bdf3d17938cf
+Notebook scaffold OK — Phase-0 only; Phase-1+ dispatches will populate trios.
+```
+The other 3 NBs share the same env-import code-cell shape; not separately executed (they would emit identical output).
+
+### refs.bib parseability
+
+`bibtexparser.load(open(refs.bib))` returned 15 entries with no syntax errors. Citation keys cover: (a) spec + plan + Stage-1 anchor; (b) CPO framework import; (c) Carr-Madan 1998 + 2001; (d) Panoptic whitepaper + SFPM addresses; (e) Mento V3 docs + canonical naming corrigendum; (f) Foundry v1.5.1 commit pin; (g) 3 methodology memories (anti-fishing, trio-checkpoint, citation-block).
+
+### sha-pinnability
+
+These Phase-0 notebook scaffold files are sha-pinnable:
+```
+sha256sum contracts/notebooks/pair_d_stage_2_path_a/Colombia/env.py
+sha256sum contracts/notebooks/pair_d_stage_2_path_a/Colombia/refs.bib
+sha256sum contracts/notebooks/pair_d_stage_2_path_a/Colombia/requirements.txt
+```
+
+The 4 notebook skeletons themselves are NOT pinned by sha — they are scaffolds that Phase 1-4 dispatches will rewrite under trio discipline. The refs.bib + env.py + requirements.txt are the load-bearing scaffold files.
+
+End of Task 0.2 section.
