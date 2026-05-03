@@ -146,10 +146,46 @@ This pivot is structurally motivated, not threshold-tuned:
 - Cross-worktree write incident: category (iv) agent wrote to main repo path instead of angstrom worktree; manually moved before commit. Add absolute-worktree-path pin to dispatch brief boilerplate.
 - Concurrent-agent serialization held: Path A Phase 1 paused during Path B Phase 1 work; no commit interleaving observed in this session block.
 
-## §8. Decision required from user
+## §8. Decision (user, 2026-05-03)
 
-Approve the proposed paired (a_s, a_l) per corridor mapping in §4.1 + §4.2 before dispatching Backend Architect for spec CORRECTIONS-ε.
+User confirmed: **the on-chain a_s entity per the DRAFT.md simplified model (fixed B_T in local currency, sourced from Y reserves, on-chain treasury) does not exist.** §4.1 PRIMARY mapping is REJECTED — proposed a_s (Mento V2 BiPool LP) is structurally a_l per LVR (Milionis-Moallemi-Roughgarden 2022: LP NET = short variance); proposed a_l (Aave V3 USDm) is decoupled from FX entirely.
 
-Default if no objection: proceed with §4.1 PRIMARY (Mento V2 BiPool a_s + Aave V3 USDm a_l, both Celo) + §4.2 SECONDARY (MXNB/USDC LP a_s + Aave V3 USDC a_l, both Arbitrum, daily cadence).
+### §8.1 Structural finding
+
+**Abrigo is an a_s-INSTANTIATING product, not an a_s-hedging product.** The CPO cannot be sold into an existing on-chain a_s population because that population doesn't exist on-chain. Product must DEPLOY the a_s side simultaneously — a vault that:
+1. Accepts Y-stable deposits (USDm) from wage earners
+2. Creates the fixed-T X-denominated obligation (commits to delivering COPm monthly per schedule)
+3. Acts as the a_s itself (vault operator sources COP from USD reserves over time)
+4. Buys CPO Π hedge from LP side (a_l) to neutralize FX vol exposure
+5. Charges margin to wage earner; CPO premium funds LP-side counterparty
+
+This matches the CLAUDE.md "premium-funded ratchet (self-LBM)" framing — the instrument doesn't merely hedge an existing position, it CREATES the position that gets hedged.
+
+### §8.2 User-picked refinement: OPTION 3 (synthetic counterfactual)
+
+Path B v2 reframes from on-chain a_s extraction (impossible) to **synthetic counterfactual generation**:
+
+- Use historical Mento V3 / V2 swap flows (real, observable; 2023-08→present, 134 weekly obs)
+- Assumed q_t schedule (parametric; e.g., monthly COPm payouts of B_T/12 over T=12 months; sweep over q_t profiles)
+- Observed COP/USD path (Banrep TRM + Mento on-chain price; already pinned in Stage-1 chain)
+- Output: counterfactual time-series of Δ^(a_s) showing what a hypothetical vault WOULD have produced
+
+Output is simulation, NOT measurement. Anti-fishing posture: q_t schedules pre-committed; no fitting; sensitivity sweep over pre-pinned schedule families.
+
+### §8.3 Path B reframe scope
+
+- Path B v1 (a_l characterization) — UNCHANGED. Real, observable. Mento V3 FPMM LP fee yield → realized r_(a_l). Emits r_al_handoff.json to Path A v3.
+- Path B v2 (a_s synthetic counterfactual) — NEW METHODOLOGY. Simulated Δ^(a_s) under historical Mento flows + parametric q_t + observed FX path. Does NOT consume on-chain a_s entity addresses (none exist).
+- Path B v3 (CPO retrospective backtest) — UPDATED. Replays Π(σ_T) against synthetic Δ^(a_s) + observed Δ^(a_l). K_l = K_s equilibrium check becomes simulated under each q_t schedule.
+
+### §8.4 Spec CORRECTIONS-ε scope (revised per option 3)
+
+Path B v1.3 → v1.4. Substantive revision (not micro-edit):
+- Frontmatter on_chain_pins: deprecate Bitgifty/Walapay/Mento V3 USDm-COPm pool/Uniswap V3 USDm-COPm pool placeholders. Add Mento V3 FPMM USDm/COPm or V2 BiPool addresses for a_l side. Do NOT pin on-chain a_s entity addresses (none exist).
+- §1 framing: revise to "a_l characterization (on-chain) + a_s synthetic counterfactual (simulated)"; explicit acknowledgment that Abrigo is a_s-instantiating product
+- §2 ladder: v0/v1 unchanged (audit + a_l reconstruction); v2 reframes to synthetic generation methodology; v3 updates to mixed empirical-+-synthetic backtest
+- §4.0 schema: a_l Parquet schema unchanged; ADD a_s_counterfactual schema (q_t parameters, COP path source, simulated Δ trace)
+- §6 typed exceptions: deprecate Stage2PathBASOnChainSignalAbsent (resolved by acknowledging non-existence + pivot to synthetic); ADD Stage2PathBSyntheticDriftBeyondTolerance (when synthetic q_t-sweep produces inconsistent Δ across reasonable schedules)
+- §8 cross-path handoff: B→A r_al_handoff.json unchanged; A→B v3 envelope handoff updates to consume Path A's σ-distribution AS INPUT to Path B v2 synthetic counterfactual (allowing scenario-replay over the Path A simulated FX paths)
 
 End of synthesis.
