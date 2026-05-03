@@ -1,0 +1,212 @@
+# Pair D Stage-2 Path B — v0 audit allowlist
+# Plan ref: contracts/docs/superpowers/plans/2026-04-30-pair-d-stage-2-B-on-chain-data-implementation.md
+#   sha256 406c55a33e28af9e57b4cb912017e3bea26993733dc5260c0486e507d7f9cd38
+# Spec ref: contracts/docs/superpowers/specs/2026-04-30-pair-d-stage-2-B-on-chain-data-spec.md
+#   v1.3 sha256 4e8905a93b1307d5f9a5b8fe76bcd5de92b6b6493627bcf28d8e8bdf0fdd6bea
+# Plan task: §3 Phase 1 Task 1.1 (allowlist confirmation + Mento V3 deployment manifest)
+# Emit timestamp UTC: 2026-05-03T11:16:58Z
+#
+# Discipline pins:
+#   - Free-tier ONLY (no paid services); per spec frontmatter `budget_pin: free_tier_only`
+#   - All addresses EIP-55 checksummed (verified via eth_utils.to_checksum_address)
+#   - All `verification_status: confirmed_on_chain` entries verified via real eth_getCode
+#     against free public RPC endpoints (1rpc.io/celo + ethereum-rpc.publicnode.com); NO
+#     mocked verification per `feedback_real_data_over_mocks`
+#   - Minteo `0xc92e8fc2…` is OUT-OF-SCOPE per memory `project_mento_canonical_naming_2026`
+#     β-corrigendum (verified to be a Minteo-fintech token, not Mento-native); ABSENT
+#     from this allowlist by design
+#
+# Scope-anomaly bounds (spec §6 typed exception Stage2PathBAuditScopeAnomaly):
+#   N_MIN = 4 (HALT trigger), N_MAX = 20 (HALT trigger)
+#   This allowlist row count: 13 (well inside [4, 20]; outside the stricter [6, 12]
+#   audit_summary parquet expected band — allowlist is the broader contract enumeration,
+#   not the per-venue audit_summary which Task 1.3 emits)
+
+[meta]
+schema_version = "v1.0"
+emit_timestamp_utc = "2026-05-03T11:16:58Z"
+budget_pin = "free_tier_only"
+budget_pin_provenance = "spec v1.3 frontmatter (CORRECTIONS-δ user directive 2026-05-02)"
+plan_task = "1.1 (plan-numbered) — allowlist confirmation + Mento V3 manifest"
+spec_sha256 = "4e8905a93b1307d5f9a5b8fe76bcd5de92b6b6493627bcf28d8e8bdf0fdd6bea"
+plan_sha256 = "406c55a33e28af9e57b4cb912017e3bea26993733dc5260c0486e507d7f9cd38"
+allowlist_count = 13
+allowlist_count_bounds = [4, 20]
+allowlist_count_audit_band = [6, 12]
+on_chain_verify_celo_rpc = "https://1rpc.io/celo"
+on_chain_verify_eth_rpc = "https://ethereum-rpc.publicnode.com"
+
+# ====================================================================
+# §1 — Mento V3 routing infrastructure (Celo)
+# ====================================================================
+
+[[contracts]]
+address = "0x4861840C2EfB2b98312B0aE34d86fD73E8f9B6f6"
+role = "router"
+network = "celo-mainnet"
+name = "Mento V3 Router (Mento_Router fork of Aerodrome/Velodrome)"
+source = "https://celoscan.io/address/0x4861840C2EfB2b98312B0aE34d86fD73E8f9B6f6"
+discovery_timestamp_utc = "2026-05-03T11:13:48Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 26464
+notes = "Verified label 'Mento: Router' on Celoscan. Source-code header notes 'fork of Aerodrome/Velodrome's Router contract...modified to support the Mento protocol'. This is the address pre-pinned in spec frontmatter `on_chain_pins.mento_v3_router_celo`."
+
+# ====================================================================
+# §2 — Mento V3 FPMM pools (Celo) — discovered via Mento V3 manifest
+# ====================================================================
+# Per spec §6 line 1034-1036: a USDm/COPm V3 FPMM pool would be the load-bearing
+# (X/Y)_t reference; its absence from the V3 deployment manifest is HALT-and-surface
+# at Task 1.2, with documented pivot to Mento V2 BiPool legacy USDm/COPm. See
+# task_1_1_plan_disposition.md for the full HALT memo.
+
+[[contracts]]
+address = "0x462fe04b4FD719Cbd04C0310365D421D02AaA19E"
+role = "pool"
+network = "celo-mainnet"
+name = "Mento V3 FPMM USDC/USDm pool"
+source = "https://docs.mento.org/mento-v3/build/deployments/addresses"
+discovery_timestamp_utc = "2026-05-03T11:13:48Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 4288
+notes = "FPMMProxy (Transparent Upgradeable Proxy). Implementation 0x8cB0518a0510ab62450f79f3cd9ee0cbddb77f30. token0 = USDm (0x765de816...282a) verified via eth_call token0(); token1 = USDC.e (0xceba9300...118c). Spec on_chain_pins.uniswap_v3_usdc_usdm_pool_celo placeholder is mis-named in spec; on Mento V3 the USDC/USDm pool is THIS Mento FPMM, not a Uniswap V3 pool. Disposition memo records this rename."
+
+[[contracts]]
+address = "0x0FEBa760d93423D127DE1B6ABECdB60E5253228D"
+role = "pool"
+network = "celo-mainnet"
+name = "Mento V3 FPMM USDT/USDm pool"
+source = "https://docs.mento.org/mento-v3/build/deployments/addresses"
+discovery_timestamp_utc = "2026-05-03T11:13:48Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 4288
+notes = "FPMMProxy. Diagnostic in case USDC/USDm depegs and USDT/USDm becomes the cleaner USDm price feed."
+
+[[contracts]]
+address = "0xb285d4C7133d6f27BfB29224fb0D22E7EC3ddD2D"
+role = "pool"
+network = "celo-mainnet"
+name = "Mento V3 FPMM axlUSDC/USDm pool"
+source = "https://docs.mento.org/mento-v3/build/deployments/addresses"
+discovery_timestamp_utc = "2026-05-03T11:13:48Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 4288
+notes = "FPMMProxy. Axelar-bridged USDC variant; secondary diagnostic for USDm cross-source price triangulation."
+
+[[contracts]]
+address = "0x8C0014afe032E4574481D8934504100bF23fCB56"
+role = "pool"
+network = "celo-mainnet"
+name = "Mento V3 FPMM GBPm/USDm pool"
+source = "https://docs.mento.org/mento-v3/build/deployments/addresses"
+discovery_timestamp_utc = "2026-05-03T11:13:48Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 4288
+notes = "FPMMProxy. GBPm is Mento British Pound. Inclusion as cross-pair diagnostic (Mento V3 stablecoin cross-rate consistency)."
+
+# ====================================================================
+# §3 — Mento V2 stable tokens (Celo) — pinned per spec frontmatter
+# ====================================================================
+
+[[contracts]]
+address = "0x8A567e2aE79CA692Bd748aB832081C45de4041eA"
+role = "token"
+network = "celo-mainnet"
+name = "Mento V2 COPm (StableTokenCOPProxy)"
+source = "https://celoscan.io/address/0x8A567e2aE79CA692Bd748aB832081C45de4041eA"
+discovery_timestamp_utc = "2026-05-03T11:13:48Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 4824
+notes = "Verified label 'Mento Labs: cCOP Token' on Celoscan; symbol COPm under 2026 rebrand (cCOP → COPm). Implementation StableTokenV2 0x434563B0...3c9D8850E. Pre-pinned in spec frontmatter `on_chain_pins.mento_v2_copm_celo`. CONFIRMED canonical Mento-native COPm per memory `project_mento_canonical_naming_2026` β-corrigendum."
+
+[[contracts]]
+address = "0x765DE816845861e75A25fCA122bb6898B8B1282a"
+role = "token"
+network = "celo-mainnet"
+name = "Mento V2 USDm (StableTokenProxy, formerly cUSD)"
+source = "https://celoscan.io/address/0x765DE816845861e75A25fCA122bb6898B8B1282a"
+discovery_timestamp_utc = "2026-05-03T11:13:48Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 5172
+notes = "Verified label 'Mento' / 'Token Contract' on Celoscan; rebranded cUSD → USDm per memory `project_mento_canonical_naming_2026`. Implementation StableTokenV3 (0x815795c3...). Pinned at this task per spec frontmatter `on_chain_pins.mento_v2_usdm_celo` placeholder."
+
+# ====================================================================
+# §4 — Mento V2 routing legacy (Celo) — required for §6 pivot path
+# ====================================================================
+# Per spec §6 lines 1034-1036, the documented pivot when V3 USDm/COPm pool is
+# absent is the Mento V2 BiPool legacy. Including the V2 BiPoolManager ensures
+# Task 1.2 audit can enumerate the legacy USDm/COPm exchange ID and treat as
+# fallback supply-side reference per the spec pivot.
+
+[[contracts]]
+address = "0x22d9db95E6Ae61c104A7B6F6C78D7993B94ec901"
+role = "factory"
+network = "celo-mainnet"
+name = "Mento V2 BiPoolManager (BiPoolManagerProxy)"
+source = "https://celoscan.io/address/0x22d9db95E6Ae61c104A7B6F6C78D7993B94ec901"
+discovery_timestamp_utc = "2026-05-03T11:14:30Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 4824
+notes = "EIP-1967 transparent proxy delegating to implementation 0xc016174b60519bdc24433d4ed2cff6c1efac7881. Required for §6 V0 HALT pivot: enumerate legacy USDm/COPm exchange ID via getExchangeIds() at Task 1.2."
+
+[[contracts]]
+address = "0x777A8255cA72412f0d706dc03C9D1987306B4CaD"
+role = "router"
+network = "celo-mainnet"
+name = "Mento V2 Broker"
+source = "https://celoscan.io/address/0x777A8255cA72412f0d706dc03C9D1987306B4CaD"
+discovery_timestamp_utc = "2026-05-03T11:14:30Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 4824
+notes = "Mento V2 Broker — load-bearing for cross-protocol Mento volume baseline per memory `project_no_mento_carbon_protocol_integration` (6.16M lifetime events, 383K distinct traders pre-2026). Used as control-baseline for Mento V3 adoption ramp."
+
+# ====================================================================
+# §5 — Uniswap V3 (Celo) — required for cross-venue USDC/USDm sanity
+# ====================================================================
+
+[[contracts]]
+address = "0xAfE208a311B21f13EF87E33A90049fC17A7acDEc"
+role = "factory"
+network = "celo-mainnet"
+name = "Uniswap V3 Factory (Celo)"
+source = "https://developers.uniswap.org/contracts/v3/reference/deployments/celo-deployments"
+discovery_timestamp_utc = "2026-05-03T11:13:48Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 49072
+notes = "Canonical Uniswap V3 factory deployment on Celo. Pinned at this task per spec frontmatter `on_chain_pins.uniswap_v3_factory_celo`. Distinct from Ethereum mainnet UniswapV3Factory (`0x1F98...F984`); Celo deployment uses different factory address."
+
+[[contracts]]
+address = "0x5615CDAb10dc425a742d643d949a7F474C01abc4"
+role = "router"
+network = "celo-mainnet"
+name = "Uniswap V3 SwapRouter02 (Celo)"
+source = "https://developers.uniswap.org/contracts/v3/reference/deployments/celo-deployments"
+discovery_timestamp_utc = "2026-05-03T11:13:48Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 48996
+notes = "Canonical Uniswap V3 routing on Celo. Used for cross-venue swap-volume comparison vs Mento FPMM."
+
+# ====================================================================
+# §6 — Panoptic (Ethereum) — settlement venue for the CPO instrument
+# ====================================================================
+
+[[contracts]]
+address = "0x00000000000142658e41964CBD294a7f731712fD"
+role = "factory"
+network = "ethereum-mainnet"
+name = "Panoptic Factory (Ethereum mainnet)"
+source = "https://raw.githubusercontent.com/code-423n4/2025-12-panoptic/main/deployment-info.json"
+discovery_timestamp_utc = "2026-05-03T11:13:48Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 48664
+notes = "Canonical Panoptic V1 PanopticFactory on Ethereum mainnet. Vanity-prefixed deployment (CREATE2 salt). Pinned at this task per spec frontmatter `on_chain_pins.panoptic_factory_ethereum`. Source: Code4rena 2025-12 Panoptic audit deployment manifest (canonical pre-audit deployment-info.json)."
+
+[[contracts]]
+address = "0x0000000000014BE53913184E1B4585A059Ab0841"
+role = "factory"
+network = "ethereum-mainnet"
+name = "Panoptic SemiFungiblePositionManager (SFPM, Ethereum mainnet)"
+source = "https://raw.githubusercontent.com/code-423n4/2025-12-panoptic/main/deployment-info.json"
+discovery_timestamp_utc = "2026-05-03T11:13:48Z"
+verification_status = "confirmed_on_chain"
+on_chain_code_len = 41340
+notes = "Wraps Uniswap V3 positions as ERC1155-backed multi-leg perpetual options. Load-bearing for the M-sketch settlement architecture per project framework `Instrument family` clause. Role mapped to `factory` per spec §4.0 enum (closest semantic match for SFPM's position-creation surface; spec enum lacks 'position_manager')."
