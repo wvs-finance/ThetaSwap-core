@@ -1,0 +1,107 @@
+# Pair D Stage-2 Path B — a_s pivot research candidate-pool delta
+#
+# Provenance: contracts/.scratch/path-b-stage-2/phase-1/a_s_pivot_research/discovery_research.md
+# Spec ref: contracts/docs/superpowers/specs/2026-04-30-pair-d-stage-2-B-on-chain-data-spec.md (§6 Pivot β)
+# Plan task: a_s pivot research (post Bitgifty/Walapay on-chain visibility FAIL)
+# Emit timestamp UTC: 2026-05-03
+#
+# Discipline pins:
+#   - Free-tier ONLY (verification via public Celoscan / Arbiscan / Etherscan only)
+#   - All addresses EIP-55 checksummed where source provided checksum; mixed-case preserved
+#     from upstream sources (Celoscan / Arbiscan / Polygonscan)
+#   - All `verification_status: confirmed_on_chain` entries verified via Celoscan / Arbiscan
+#     / Polygonscan source-code-verified status PER PUBLIC EXPLORER UI; per-address
+#     eth_getCode RPC verification deferred to allowlist-merge step (orchestrator decides
+#     which entries graduate from this candidate pool to v1 allowlist.toml)
+#   - This file is a CANDIDATE POOL — NOT a final allowlist. The orchestrator MAY merge
+#     selected entries into contracts/.scratch/pair-d-stage-2-B/v0/allowlist.toml as v1
+#     after a_s pivot ranking decision is made.
+#   - Schema mirrors v0 allowlist.toml (address, role, network, name, source URL,
+#     discovery_timestamp_utc, verification_status, notes).
+#
+# Candidates included: 5 (Mento Reserve + GoodDollar UBI + GoodDollar G$ token + MXNB + BRL1)
+# Candidates considered but NOT included due to gate FAIL: MiniPay, Valora, Pretium,
+#   Kotani Pay, Fonbnk, El Dorado, Yellow Card (see discovery_research.md §2 for rationale)
+
+[meta]
+schema_version = "v1.0"  # mirrors v0 allowlist.toml schema
+emit_timestamp_utc = "2026-05-03T00:00:00Z"
+budget_pin = "free_tier_only"
+purpose = "a_s pivot candidate pool — Pivot β per spec §6 Stage2PathBASOnChainSignalAbsent"
+research_artifact = "contracts/.scratch/path-b-stage-2/phase-1/a_s_pivot_research/discovery_research.md"
+candidate_count = 5
+verification_method = "public block explorer source-verified status (Celoscan/Arbiscan/Polygonscan); RPC eth_getCode verification deferred to allowlist-merge step"
+
+# ====================================================================
+# §1 — Mento Reserve (Celo) — TOP-1 a_s aggregate-protocol embodiment
+# ====================================================================
+
+[[contracts]]
+address = "0x9380fA34Fd9e4Fd14c06305fd7B6199089eD4eb9"
+role = "reserve"
+network = "celo-mainnet"
+name = "Mento Reserve Proxy (Celo Reserve)"
+source = "https://celoscan.io/address/0x9380fA34Fd9e4Fd14c06305fd7B6199089eD4eb9"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+implementation = "0xfd9651862bc1965349e92073152112289393b57d"
+notes = "Mento Reserve — backs all Mento V2/V3 stable tokens including COPm. Holds 5.8M CELO + 29 tokens worth ~$1.9M cross-chain (32 chains). Aggregate-protocol-level a_s embodiment per discovery_research.md §3 rank-1: when COPm circulation grows the Reserve must hold sufficient COP-equivalent collateral to redeem; structurally short COP/USD volatility on the COPm subgraph of Reserve obligations. Verified label 'Celo: Reserve Proxy' on Celoscan (exact-match source verification, Solidity v0.5.8). Created by Celo: Deployer 1 ~6 years ago. Per-currency Δ^(a_s) attribution requires per-pool getReserveAddressBalance() decomposition. Role 'reserve' is the closest semantic match in v0 allowlist enum (no exact 'reserve' role exists in v0 schema — orchestrator may need to extend enum at allowlist-merge step)."
+
+# ====================================================================
+# §2 — MXNB / Juno (Arbitrum) — TOP-2 cross-corridor a_s archetype validator
+# ====================================================================
+
+[[contracts]]
+address = "0xF197FFC28c23E0309B5559e7a166f2c6164C80aA"
+role = "token"
+network = "arbitrum-one"
+name = "MXNB stablecoin (Mexican Peso, issued by Juno / Bitso Group)"
+source = "https://arbiscan.io/token/0xf197ffc28c23e0309b5559e7a166f2c6164c80aa"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+implementation = "0x72beddf7032eec58f199857b79a8e37020c14e42"
+notes = "MXNB — Mexican Peso stablecoin on Arbitrum. Issuer: Juno (Bitso Group subsidiary). 1:1 backed by MXN reserves at Tier-1 banks; monthly Big Four attestations; CertiK-audited Feb 10 2025. Circle FiatTokenProxy pattern (AdminUpgradeabilityProxy). 6 decimals. 20.4M total supply, 212 holders (Apr 2026). Cross-corridor a_s archetype validator per discovery_research.md §3 rank-2: Juno must deliver MXN on redemption from USD-denominated treasury reserves; mint() / burn() events on FiatTokenProxy isolate the supply-side delivery obligation flow. NOT a direct Pair D corridor match (MXN/USD ≠ COP/USD); INCLUDE as cross-corridor archetype validator with explicit substrate-relocation flag per discovery_research.md §5 recommendation 4. Network: also reported on Ethereum + Avalanche per Circle FiatToken multi-deploy pattern (same address)."
+
+# ====================================================================
+# §3 — GoodDollar UBI Scheme + G$ Token (Celo) — TOP-3 substrate sanity check
+# ====================================================================
+
+[[contracts]]
+address = "0x43d72Ff17701B2DA814620735C39C620Ce0ea4A1"
+role = "scheme"
+network = "celo-mainnet"
+name = "GoodDollar UBI Scheme Proxy (UBISchemeV2)"
+source = "https://celoscan.io/address/0x43d72Ff17701B2DA814620735C39C620Ce0ea4A1"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+implementation = "0x43f0eb66ea3c2d9552241525aa1af6607227dfbf"
+notes = "GoodDollar UBI Scheme — daily-claim UBI distributor on Celo. EIP-1967 transparent proxy. 69M+ transactions lifetime per Celoscan. Deployed by GoodDollar Deployer (0x5128e3c1f8846724cc1007af9b4189713922e4bb) ~3 years 62 days ago. Holds ~100M G$ tokens valued ~$11.7K. Substrate sanity check per discovery_research.md §3 rank-3: structural a_s pattern (committed daily distribution obligation B funded from cUSD-denominated reserve via Mento V4 integration) is GOOD_FIT but X-variable is G$/USD purchasing power, NOT COP/USD — substrate-noise compromise per spec §3.5 acknowledged. Role 'scheme' is approximate (no exact role in v0 enum; orchestrator may need to extend at merge step). Source: https://docs.gooddollar.org/about-the-protocol/protocol-v4-documentation/previous-protocol-versions/protocol-v3-documentation/previous-protocol-versions/smart-contracts-guide/core-contracts-and-api"
+
+[[contracts]]
+address = "0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A"
+role = "token"
+network = "celo-mainnet"
+name = "GoodDollar G$ Token (Celo)"
+source = "https://celoscan.io/address/0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+implementation = "0x880c4641702d5e12d6a881bb6d8fc425e98cb398"
+notes = "G$ Token — UUPS proxy on Celo. Compiled with Solidity v0.8.16. 999K+ transactions on this contract. Multichain presence: BSC, XDC, Base, Ethereum (Ethereum address: 0x67C5870b4A41D4Ebef24d2456547A03F1f3e094B; Fuse address: 0x495d133B938596C9984d462F007B676bDc57eCEC). Companion to UBI Scheme contract above; needed to compute G$/USD price feed for substrate-noise quantification per spec §3.5."
+
+# ====================================================================
+# §4 — BRL1 consortium (Polygon) — OPTIONAL extended cross-corridor diagnostic
+# ====================================================================
+# NOTE: BRL1 is OPTIONAL per discovery_research.md §3 rank-4. Included in this
+# candidate pool TOML but with `priority = "optional"` to signal that orchestrator
+# should treat as extended-shortlist not core-shortlist for v1 allowlist merge.
+
+[[contracts]]
+address = "0x5C067C80C00eCd2345b05E83A3e758eF799C40B5"
+role = "token"
+network = "polygon-mainnet"
+name = "BRL1 stablecoin (Brazilian Real, issued by Bitso/Mercado Bitcoin/Foxbit consortium)"
+source = "https://bitso.com/business/products/brl1-brazilian-real-stablecoin"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+priority = "optional"
+notes = "BRL1 — Brazilian Real stablecoin on Polygon. Issuer: consortium of Bitso + Mercado Bitcoin + Foxbit. 1:1 BRL backed; monthly attestations; deposits via PIX. Listed on OKX for spot trading. Cross-corridor a_s archetype validator (BRL/USD); same structural pattern as MXNB but consortium structure makes per-issuer Δ^(a_s) attribution harder. OPTIONAL per discovery_research.md §3 rank-4 — extend only if more candidates needed beyond TOP-3. Verification deferred (Polygonscan check not performed at this task; orchestrator should re-verify before promoting to v1 allowlist)."
