@@ -1,0 +1,289 @@
+# Pair D Stage-2 Path B — Category (iv) a_s pivot candidate-pool delta
+#
+# Provenance: contracts/.scratch/path-b-stage-2/phase-1/a_s_pivot_research/category_iv_discovery.md
+# Spec ref: contracts/docs/superpowers/specs/2026-04-30-pair-d-stage-2-B-on-chain-data-spec.md (§6 Pivot β)
+# Plan task: a_s pivot research — category (iv) Mento-stable term-deposit / time-locked savings vaults
+# Companion category: (ii) Mento-stablecoin payment platforms (parallel agent dispatch)
+# Emit timestamp UTC: 2026-05-03
+#
+# Discipline pins:
+#   - Free-tier ONLY (verification via public Celoscan only)
+#   - All `verification_status: confirmed_explorer_source_verified` entries verified via
+#     Celoscan source-code-verified status PER PUBLIC EXPLORER UI per direct check 2026-05-03
+#   - Per-address eth_getCode RPC verification deferred to allowlist-merge step
+#   - This file is a CANDIDATE POOL — NOT a final allowlist. Orchestrator MAY merge selected
+#     entries into contracts/.scratch/pair-d-stage-2-B/v0/allowlist.toml as v1 after a_s pivot
+#     ranking decision is made.
+#   - Schema mirrors v0 allowlist.toml (address, role, network, name, source URL,
+#     discovery_timestamp_utc, verification_status, notes)
+#   - Category (iv) HARD GATES are BOTH: (a) on-chain visibility AND (b) fixed-time-T
+#     obligation primitive. Entries here pass BOTH unless explicitly marked otherwise.
+#
+# Candidates included: 5 PASS-both-gates entries + 1 CONDITIONAL (Halofi dormant) for
+#   record-of-archetype + 6 supporting addresses (impactMarket Treasury / CommunityAdmin /
+#   PACT, MENTO token, Mento Timelock, MentoGovernor) for graph-completeness
+# Candidates considered but NOT included due to gate FAIL: Moola Market, Aave V3 Celo,
+#   Glo Dollar, SavingsCELO, Mento Reserve (cat-other), Allbridge Core (see
+#   category_iv_discovery.md §2 + §4 for rationale)
+
+[meta]
+schema_version = "v1.0"  # mirrors v0 allowlist.toml schema
+emit_timestamp_utc = "2026-05-03T00:00:00Z"
+budget_pin = "free_tier_only"
+purpose = "category (iv) a_s pivot candidate pool — Mento-stable term-deposit / time-locked savings vaults on Celo"
+research_artifact = "contracts/.scratch/path-b-stage-2/phase-1/a_s_pivot_research/category_iv_discovery.md"
+candidate_count_pass_both_gates = 5
+candidate_count_conditional = 1
+supporting_address_count = 6
+verification_method = "public Celoscan source-verified status per direct UI inspection 2026-05-03; RPC eth_getCode verification deferred to allowlist-merge step"
+
+# ====================================================================
+# §1 — impactMarket Microcredit (Celo) — TOP-1 strongest a_s archetype
+# ====================================================================
+# Per-loan maturity T encoded on-chain; per-installment q_t observable via Repay Loan events.
+# This is the textbook a_s archetype: protocol holds cUSD reserves, owes fixed cUSD disbursement
+# at T_0 to each borrower, expects repayments q_t through T_maturity. 3,959 lifetime tx;
+# active deployment (last activity Oct 25, 2024).
+
+[[contracts]]
+address = "0xEa4D67c757a6f50974E7fd7B5b1cc7e7910b80Bb"
+role = "vault"
+network = "celo-mainnet"
+name = "impactMarket MicrocreditProxy"
+source = "https://celoscan.io/address/0xEa4D67c757a6f50974E7fd7B5b1cc7e7910b80Bb"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+implementation = "0xe29a5e0b8a52cef37a757add2b177d32664ae329"
+time_t_primitive = "per-loan maturity T encoded on-chain; per-installment q_t schedule via Repay Loan event"
+fixed_t_obligation_gate = "PASS"
+copm_exposure = "indirect (cUSD-denominated; FX borne by borrower via Libera mobile-money)"
+notes = "TOP-1 a_s archetype on Celo per category_iv_discovery.md §3 rank-1. TransparentUpgradeableProxy (Solidity v0.8.4). 3,959 lifetime tx; latest activity Oct 25 2024 with 'Repay Loan' + 'Add Loans' + 'Transfer ERC20' operations within last 30 days of that date. Holds 0.617 USDm + 3 ERC1155. Δ^(a_s) attribution: protocol-side a_s exposure is in default-rate variance correlated with COP/USD volatility (second-order signal); not direct treasury drawdown. Strongest single-contract time-T primitive in entire candidate set per CORRECTIONS-γ structural-exposure framing. Role 'vault' is approximate (no exact 'microcredit' or 'lending' role in v0 enum); orchestrator may need to extend enum at allowlist-merge step. Companion contracts: TreasuryProxy, CommunityAdminProxy, MicrocreditRevenueProxy, PACT (see §6 supporting)."
+
+[[contracts]]
+address = "0xa75D14c212df85F24ead896747cb1688C1F889D7"
+role = "revenue_distributor"
+network = "celo-mainnet"
+name = "impactMarket MicrocreditRevenueProxy"
+source = "https://celoscan.io/address/0xa75D14c212df85F24ead896747cb1688C1F889D7"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+notes = "Companion to MicrocreditProxy (TOP-1). Distributes interest revenue from microcredit loans. Required for full Δ^(a_s) attribution accounting (interest revenue is the offset to default-rate losses). Role 'revenue_distributor' is approximate (no exact role in v0 enum)."
+
+# ====================================================================
+# §2 — veMENTO Locking (Celo) — TOP-2 cleanest single-contract time-T primitive
+# ====================================================================
+# Up to 2-year (104 weeks) MENTO lock with weekly decay schedule. Each user's lock has a
+# deterministic unlock T encoded on-chain. Substrate-noise compromise per spec §3.5: X is
+# MENTO/USD, NOT COP/USD.
+
+[[contracts]]
+address = "0x001Bb66636dCd149A1A2bA8C50E408BdDd80279C"
+role = "time_lock"
+network = "celo-mainnet"
+name = "Mento veMENTO Locking (TransparentUpgradeableProxy → Locking)"
+source = "https://celoscan.io/address/0x001Bb66636dCd149A1A2bA8C50E408BdDd80279C"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+implementation = "0x5a2c50efa0f63f0f97da9f002fefef3f64ed7d46"
+time_t_primitive = "up to 104-week lock duration; weekly decay; per-user unlock T encoded on-chain"
+fixed_t_obligation_gate = "PASS"
+copm_exposure = "NONE — X = MENTO/USD; SUBSTRATE_TOO_NOISY per spec §3.5"
+notes = "TOP-2 a_s archetype on Celo per category_iv_discovery.md §3 rank-2. Cleanest single-contract time-T primitive (no business-logic complexity). Per direct Celoscan check 2026-05-03: 213 lifetime tx; latest activity 44h ago at block 65748386 (2026-05-01); holds 276,862,955 MENTO. Per-lock 'Lock', 'Withdraw', 'Relock' events directly observable. Δ^(a_s) for veMENTO holders: each lock owes MENTO at T; if MENTO/USD declines during T, holder is short volatility on MENTO/USD (a_s exposure). Substrate-noise compromise (wrong X-variable for Pair D direct match) acknowledged per §3.5; INCLUDE as archetype-validator at zero corridor-fit. Role 'time_lock' matches v0 enum directly per category-(iv) brief."
+
+# ====================================================================
+# §3 — GoodDollar UBI Scheme (Celo) — TOP-3 carry-forward from Track-2 with cat-(iv) reclass
+# ====================================================================
+# NOTE: GoodDollar UBI Scheme + G$ Token are ALREADY enumerated in
+# contracts/.scratch/path-b-stage-2/phase-1/a_s_pivot_research/contract_addresses_verified.toml
+# §3 (Track-2 candidate pool). RECLASSIFIED here under category (iv) as the UBI daily-claim
+# obligation IS a fixed-T q_t primitive per the brief. Re-listed here for category-(iv)
+# completeness; orchestrator should DEDUPLICATE at allowlist-merge step.
+
+[[contracts]]
+address = "0x43d72Ff17701B2DA814620735C39C620Ce0ea4A1"
+role = "scheme"
+network = "celo-mainnet"
+name = "GoodDollar UBI Scheme Proxy (UBISchemeV2)"
+source = "https://celoscan.io/address/0x43d72Ff17701B2DA814620735C39C620Ce0ea4A1"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+implementation = "0x43f0eb66ea3c2d9552241525aa1af6607227dfbf"
+time_t_primitive = "daily UBI claim window per verified member; q_t = daily fixed-rate claim"
+fixed_t_obligation_gate = "PASS"
+copm_exposure = "NONE — X = G$/cUSD purchasing power"
+duplicate_of = "contract_addresses_verified.toml §3 entry"
+notes = "TOP-3 per category_iv_discovery.md §3 rank-3. RECLASSIFIED under category (iv) — daily UBI claim is the textbook q_t primitive per category-(iv) brief. 69M+ lifetime tx. Substrate-noise compromise per §3.5 (X = G$/cUSD purchasing power, not COP/USD). DEDUPLICATE at allowlist-merge step against Track-2 candidate pool entry."
+
+# ====================================================================
+# §4 — impactMarket CommunityAdmin (Celo) — TOP-4 q_t-claim cohort companion
+# ====================================================================
+# Per-Community UBI distribution under CommunityAdmin. Each Community sub-contract has a
+# fixed daily/weekly cUSD claim allowance per beneficiary, encoding q_t schedule on-chain.
+# Per-Community sub-contracts deployed via internal txs from CommunityAdminProxy.
+
+[[contracts]]
+address = "0xd61c407c3A00dFD8C355973f7a14c55ebaFDf6F9"
+role = "scheme"
+network = "celo-mainnet"
+name = "impactMarket CommunityAdminProxy"
+source = "https://celoscan.io/address/0xd61c407c3A00dFD8C355973f7a14c55ebaFDf6F9"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+implementation = "0xF969dBe5..5B3E098d0"
+time_t_primitive = "per-Community claim cooldown + per-period allowance; q_t encoded in Community.claim()"
+fixed_t_obligation_gate = "PASS"
+copm_exposure = "indirect (cUSD-denominated; multi-corridor)"
+notes = "TOP-4 per category_iv_discovery.md §3 rank-4. Companion to MicrocreditProxy (TOP-1) under the impactMarket protocol family. Verified TransparentUpgradeableProxy (Solidity v0.8.4). 3 direct tx but extensive internal txs deploying per-Community sub-contracts. Per-Community sub-contracts inherit CommunityImplementation (see §6). Each Community.claim() enforces beneficiary cooldown + period allowance, encoding q_t. Geography: impactMarket has historically operated communities in 35+ countries; specific COPm-denominated Community NOT confirmed. Role 'scheme' aligns with GoodDollar UBI Scheme classification."
+
+[[contracts]]
+address = "0xEc94c60f17F7f262973f032965534D1137f1202c"
+role = "scheme_implementation"
+network = "celo-mainnet"
+name = "impactMarket CommunityImplementation"
+source = "https://celoscan.io/address/0xEc94c60f17F7f262973f032965534D1137f1202c"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+notes = "Implementation contract inherited by all per-Community sub-contracts deployed via CommunityAdminProxy. Required for ABI decoding of per-Community claim() events at allowlist-merge analytics step. Role 'scheme_implementation' is approximate."
+
+# ====================================================================
+# §5 — StakedCelo (Celo) — TOP-5 same-arch reference at wrong X
+# ====================================================================
+# 3-day unlock period per Locked Gold mechanism. Each pending withdrawal creates an on-chain
+# state with known unlock timestamp. CELO-denominated obligation; X = CELO/USD; NOT a Pair-D
+# corridor match. Included for archetype completeness at very-active 49.8K-tx Account_Proxy.
+
+[[contracts]]
+address = "0xC668583dcbDc9ae6FA3CE46462758188adfdfC24"
+role = "token"
+network = "celo-mainnet"
+name = "StakedCelo stCELO Token (StakedCelo_Proxy)"
+source = "https://celoscan.io/address/0xC668583dcbDc9ae6FA3CE46462758188adfdfC24"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+time_t_primitive = "3-day unlock period (Locked Gold mechanism); per-withdrawal pending state"
+fixed_t_obligation_gate = "PASS"
+copm_exposure = "NONE — X = CELO/USD; NOT a Pair D corridor match"
+notes = "TOP-5 per category_iv_discovery.md §3 rank-5. ERC1967Proxy verified on Celoscan. 1,253 lifetime tx on token contract; ongoing approvals. Companion Account_Proxy (separate entry below) is the high-activity withdrawal-state contract. Include as same-architecture/different-X reference; explicit Pair-D corridor mismatch flag."
+
+[[contracts]]
+address = "0x4aAD04D41FD7fd495503731C5a2579e19054C432"
+role = "redemption_handler"
+network = "celo-mainnet"
+name = "StakedCelo Account_Proxy (validator-group voting + pending withdrawals)"
+source = "https://celoscan.io/address/0x4aAD04D41FD7fd495503731C5a2579e19054C432"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+time_t_primitive = "per-pending-withdrawal 3-day unlock encoded as on-chain state; finishPendingWithdrawal at T"
+fixed_t_obligation_gate = "PASS"
+copm_exposure = "NONE — CELO-denominated"
+notes = "Account.sol on Celo per docs.stcelo.xyz/contracts/account. ERC1967Proxy verified on Celoscan; deployed by Staked Celo: Deployer ~3 years ago. 49,802 lifetime tx — high-activity contract. Recent operations: 'Activate and Vote', 'Revoke Votes', 'Withdraw'. Holds 22.5 CELO + minor token positions (most CELO is in validator groups not this contract). Per-pending-withdrawal events are the q_t observation surface. Role 'redemption_handler' matches category-(iv) brief enum directly."
+
+[[contracts]]
+address = "0x0239b96D10a434a56CC9E09383077A0490cF9398"
+role = "manager"
+network = "celo-mainnet"
+name = "StakedCelo Manager_Proxy"
+source = "https://celoscan.io/address/0x0239b96D10a434a56CC9E09383077A0490cF9398"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+notes = "Manager.sol on Celo per github.com/celo-org/staked-celo deployments/celo/Manager_Proxy.json. Required for full StakedCelo accounting (deposit / withdraw orchestration across validator groups). Companion to StakedCelo_Proxy + Account_Proxy."
+
+[[contracts]]
+address = "0x78DaA21FcE4D30E74fF745Da3204764a0ad40179"
+role = "governance"
+network = "celo-mainnet"
+name = "StakedCelo MultiSig_Proxy"
+source = "https://celoscan.io/address/0x78DaA21FcE4D30E74fF745Da3204764a0ad40179"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+notes = "MultiSig.sol on Celo per github.com/celo-org/staked-celo deployments/celo/MultiSig_Proxy.json. Governance multisig for StakedCelo upgrades + parameter changes. Role 'governance' matches v0 enum."
+
+# ====================================================================
+# §6 — Halofi V2 (Celo) — CONDITIONAL: dormant historical-window archetype only
+# ====================================================================
+# Halofi V2 pools ARE the textbook fixed-T savings-circle primitive (deposit segments →
+# waiting round → redemption at T). However, the Celo deployment is operationally DORMANT
+# (last activity Apr 2023; GoodGhosting V2 GitHub archived Nov 2024). Included here ONLY as
+# historical-window retrospective Δ^(a_s) attribution candidate; NOT a forward-looking
+# deployable substrate.
+
+[[contracts]]
+address = "0xe2Db3Ff23adF232b0dB2c652d50B413f6511BAcd"
+role = "vault"
+network = "celo-mainnet"
+name = "Halofi GoodGhosting Polygon Celo-brate 100 cUSD pool (DORMANT)"
+source = "https://celoscan.io/address/0xe2Db3Ff23adF232b0dB2c652d50B413f6511BAcd"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+priority = "conditional_dormant"
+time_t_primitive = "pool lifecycle T (deposit segments + waiting round + redemption at T)"
+fixed_t_obligation_gate = "PASS_ARCHITECTURALLY"
+copm_exposure = "NONE — cUSD/USDm denominated only; no COPm pool launched"
+operational_status = "DORMANT — last tx Apr 7 2023; GoodGhosting V2 GitHub archived Nov 20 2024"
+notes = "CONDITIONAL inclusion per category_iv_discovery.md §1.2: contracts ARE the textbook a_s archetype but protocol is operationally dormant on Celo. Verified GoodGhosting V2 pool on Celoscan; deposit token = USDm; 1,997 lifetime tx; pool holdings ~$917 across 6 tokens. Useful for retrospective Δ^(a_s) attribution on 2021-2023 historical data, NOT live monitoring substrate. Suggests Pair D Stage-2 Path B should consider historical-window fit on Halofi as one-time empirical check rather than live deployment target. Companion pools (V1 baseline): 0x1b4fd5cc2e39cb002f96f4bdad015e8188a8bf25, 0xffD343a7F20093E9bcefe45Af552C1718059329E, 0x32Bd3ce981A575569d4bf1179f6B70D14Cf8E881, 0xd144f0848a3b1c08abbf33c976ed9fd2e822729c — all available if multi-pool retrospective panel is needed."
+
+# ====================================================================
+# §7 — Supporting addresses (graph completeness)
+# ====================================================================
+# These addresses are NOT a_s archetype embodiments themselves but are required for full
+# accounting / ABI decoding / governance traceability of the TOP-1..TOP-5 entries.
+
+[[contracts]]
+address = "0xa302dd52a4a85e6778E6A64A0E5EB0e8C76463d6"
+role = "treasury"
+network = "celo-mainnet"
+name = "impactMarket TreasuryProxy"
+source = "https://celoscan.io/address/0xa302dd52a4a85e6778E6A64A0E5EB0e8C76463d6"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+notes = "Treasury for impactMarket protocol family. Holds 4.85 USDm; latest activity Sep 18 2025 (USDm transfer). Required as funding source for MicrocreditProxy + CommunityAdminProxy. Role 'treasury' is approximate."
+
+[[contracts]]
+address = "0x46c9757C5497c5B1f2eb73aE79b6B67D119B0B58"
+role = "token"
+network = "celo-mainnet"
+name = "impactMarket PACT governance token"
+source = "https://celoscan.io/token/0x46c9757c5497c5b1f2eb73ae79b6b67d119b0b58"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+notes = "PACT governance token for impactMarket DAO. Required for governance-event tracing if Δ^(a_s) attribution methodology requires controller-update detection."
+
+[[contracts]]
+address = "0x5e7912f6C052D4D7ec8D6a14330c0c3a538e3f2B"
+role = "governance"
+network = "celo-mainnet"
+name = "impactMarket ImpactMultiSigProxyAdmin"
+source = "https://celoscan.io/address/0x5e7912f6C052D4D7ec8D6a14330c0c3a538e3f2B"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+notes = "ProxyAdmin multisig for all impactMarket TransparentUpgradeableProxy contracts. Required for upgrade-event detection."
+
+[[contracts]]
+address = "0x7FF62f59e3e89EA34163EA1458EEBCc81177Cfb6"
+role = "token"
+network = "celo-mainnet"
+name = "MENTO governance token"
+source = "https://celoscan.io/address/0x7FF62f59e3e89EA34163EA1458EEBCc81177Cfb6"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+notes = "MENTO ERC-20 governance token (the asset locked into veMENTO Locking contract above). Required for token-flow accounting on Lock / Withdraw / Relock events."
+
+[[contracts]]
+address = "0x47036d78bB3169b4F5560dD77BF93f4412A59852"
+role = "governance"
+network = "celo-mainnet"
+name = "MentoGovernor"
+source = "https://celoscan.io/address/0x47036d78bB3169b4F5560dD77BF93f4412A59852"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+notes = "Mento V3 Governor contract. Required for proposal-execution-event tracing if Δ^(a_s) methodology requires lock-parameter-change detection (e.g., max lock duration changes)."
+
+[[contracts]]
+address = "0x890DB8A597940165901372Dd7DB61C9f246e2147"
+role = "time_lock"
+network = "celo-mainnet"
+name = "Mento Timelock (Governance Executor)"
+source = "https://celoscan.io/address/0x890DB8A597940165901372Dd7DB61C9f246e2147"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+notes = "Governance Executor (time-locked execution of Mento V3 governance proposals). Distinct from veMENTO Locking (which is the user-facing time-lock) — this Timelock is the protocol-side proposal-execution time-lock. Role 'time_lock' matches v0 enum but is a different semantic category from veMENTO Locking; orchestrator should distinguish at allowlist-merge step."
