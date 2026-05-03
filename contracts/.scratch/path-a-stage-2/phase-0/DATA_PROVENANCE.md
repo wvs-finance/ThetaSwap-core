@@ -142,3 +142,89 @@ sha256sum contracts/notebooks/pair_d_stage_2_path_a/Colombia/requirements.txt
 The 4 notebook skeletons themselves are NOT pinned by sha — they are scaffolds that Phase 1-4 dispatches will rewrite under trio discipline. The refs.bib + env.py + requirements.txt are the load-bearing scaffold files.
 
 End of Task 0.2 section.
+
+---
+
+## Section: Task 1.1 — TDD failing-test scaffold for v0 exit criteria
+
+**Owner:** Senior Developer (Phase 1 Task 1.1 dispatch agent — this dispatch's executor)
+**Constructed:** 2026-05-03 02:32 UTC (single foreground session)
+**Outputs:**
+- `contracts/.scratch/path-a-stage-2/phase-1/test_v0_exit_criteria.py` — pytest module with 5 failing tests (sub-criteria a-e from spec §2 v0)
+- `contracts/.scratch/path-a-stage-2/phase-1/v0_test_run.md` — captured `pytest --tb=short -v` output showing 5 FAILED (not 5 ERROR), with provenance pins + failure-mode classification + caveats
+
+**Pre-existing fixture consumed:**
+- `contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py` — stub module raising `NotImplementedError` on every API call. Untracked at dispatch start; provides the seam against which Tasks 1.2 + 1.3 + 1.4 (Analytics Reporter notebook trios) will hang real implementations.
+
+### Source: spec §2 v0 sub-criteria (a)-(e)
+
+The 5 tests are derived 1-to-1 from spec §2 v0 (lines 124-126):
+- (a) `Δ^(a_l) > 0` over admissible `0 < ε < 1` → `test_a_delta_a_l_sign_positive`
+- (b) `Δ^(a_s) < 0` over same domain → `test_b_delta_a_s_sign_negative`
+- (c) `Π(σ_T) = -∫₀^σ_T Δ^(a)(u) du` yields `K·√σ_T` both sides → `test_c_pi_closed_form_equilibrium_k_l_eq_k_s`
+- (d) Linearization `Π ≈ K̂·σ_T` with `K̂ = K*/(2√σ₀)` → covered by combined (c) + (e) coverage; the §11.a self-consistency two-impl check serves as the explicit (d)-equivalent → `test_d_self_consistency_two_independent_codes`
+- (e) Carr-Madan strip identity 12-leg approx vs analytic per §11 → `test_e_carr_madan_strip_reconciles_within_truncation_bound`
+
+Spec §10.5 (3 condors × 4 legs = 12 legs total), §11.a (`SELF_CONSISTENCY_TOL = 1e-10 × 12 = 1.2e-9`), §11.b (`TRUNCATION_BOUND_REL = 5e-2` at GBM σ_0 = 10% baseline) supply the numerical thresholds in the test bodies.
+
+### Source: imported CPO framework note
+
+Framework note `contracts/notes/2026-04-29-macro-markets-draft-import.md` lines 130-272 supplies:
+- `(X/Y)_t(ε,ω)` deterministic perturbation generator (lines 130-138)
+- `σ_T(ε,ω)` and `ε(σ_T)` inversion (lines 142-155)
+- `Δ^(a_l) > 0` and `Δ^(a_s) < 0` symbolic claims (lines 161-179, with explicit "verification of `Δ^(a_s) < 0` is not trivial" flag at line 179)
+- `Π = K·√σ_T` closed forms on both sides + equilibrium `K_l = K_s` (lines 209-227)
+- Linearization `Π ≈ K̂·σ_T`, `K̂ = K*/(2√σ_0)` (lines 247-256)
+- Carr-Madan log-contract identity (lines 258-272)
+- 3-condor / 12-leg discrete strip approximation (lines 276-326)
+
+The note is byte-identical to source `~/learning/cfmm-theory/macro-markets/DRAFT.md` per spec §3.
+
+### Source: contracts/.venv (Python 3.13.5)
+
+No new dependencies installed for Task 1.1. The test scaffold consumes only the Phase-0-pinned stack:
+- pytest 9.0.3 (from `contracts/.venv`)
+- sympy 1.14.0 (Phase 0 Task 0.2 baseline)
+- numpy 2.4.4, scipy 1.17.1 (Phase 0 Task 0.2 baseline)
+
+### Verification status
+
+- **Test collection:** 5 of 5 tests collected cleanly (zero collection errors)
+- **Test execution:** 5 of 5 tests FAILED with explicit `NotImplementedError` traceback citing spec sub-criterion verbatim (zero ERROR results)
+- **pytest exit code:** 1 (standard for any test failure)
+- **Failure-mode classification:** all 5 are FAILED (test body executed, assertion path reached) — NOT ERROR (collection / fixture failure). This satisfies the `feedback_strict_tdd` requirement that failing tests be authored BEFORE implementation.
+
+### Free-tier compliance
+
+- Pure offline pytest invocation
+- Zero network calls
+- Zero Alchemy compute units consumed
+- Zero Forno hits
+- Zero Anvil fork spawned
+- `Stage2PathABudgetOverrun` not at risk
+
+### Caveat: dispatch-brief vs plan §3 path mismatch
+
+Dispatch brief instructs `contracts/.scratch/path-a-stage-2/phase-1/test_v0_exit_criteria.py`; plan §3 Phase 1 Task 1.1 instructs `contracts/.scratch/pair-d-stage-2-path-a/tests/test_v0_exit_criteria.py`. Dispatch brief is authoritative for THIS execution; honored as such. No file is created at the plan-path location. If Phase 5 Task 5.1 (Reality Checker) flags this as a path-conflict between plan and brief, follow-up CORRECTIONS-block can harmonize — out of scope for Task 1.1.
+
+### sha-pinnability
+
+These Phase-1 Task 1.1 artifacts are sha-pinnable. As of construction time:
+
+```
+contracts/.scratch/path-a-stage-2/phase-1/test_v0_exit_criteria.py
+  sha256: 9d34098ff3f3ddbdb17f9881734b0b9c7fde78d6b516661a379abd08caea551e
+contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py
+  sha256: df76e068e12b83ac86fbada4696b246f8b10ac09211c71079975917b2bc94e4a
+```
+
+Re-compute via:
+```
+sha256sum contracts/.scratch/path-a-stage-2/phase-1/test_v0_exit_criteria.py
+sha256sum contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py
+sha256sum contracts/.scratch/path-a-stage-2/phase-1/v0_test_run.md
+```
+
+The `v0_sympy.py` stub will be REPLACED by the sympy-pickled expression-tree artifacts emitted by the Analytics Reporter notebook trios in Tasks 1.2 + 1.3 (per plan §3 outputs `path_a_v0_delta_expressions.pkl` and `path_a_v0_derivation.pkl`). The test scaffold itself (`test_v0_exit_criteria.py`) is expected to be invariant from this point through Phase 1 Gate B1: any modification to the test bodies is a spec-amendment-equivalent action that triggers `Stage2PathAFrameworkInternallyInconsistent` HALT-disposition per `feedback_strict_tdd`.
+
+End of Task 1.1 section.
