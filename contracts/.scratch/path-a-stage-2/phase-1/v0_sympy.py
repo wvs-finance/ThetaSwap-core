@@ -148,38 +148,126 @@ def delta_a_s_expr() -> Any:
 def pi_closed_form_l(sigma_T_sym: Any, K_l_sym: Any) -> Any:
     """Closed-form Π^l(σ_T) = K_l · √σ_T per framework note lines 209-216.
 
-    Derived from Π(σ_T) = -∫_0^σ_T Δ^(a_l)(u) du and the proportionality
-    Δ^(a_l) ∝ 1/√σ_T.
+    Derivation (reproduced symbolically in the Phase-1 Task 1.2 Trio-2 notebook
+    `contracts/notebooks/pair_d_stage_2_path_a/Colombia/01_v0_sympy.ipynb`):
+
+        ∂Π/∂σ_T = -Δ^(a) (universal structural identity, DRAFT.md lines 196-201)
+
+    Applied to the LP-yield app with Δ^(a_l) = √2·r_(a_l)·S_l/√σ_T:
+
+        Π^l(σ_T) = -∫_0^σ_T Δ^(a_l)(u) du
+                 = -∫_0^σ_T √2·r_(a_l)·S_l·u^(-1/2) du
+                 = -2·√2·r_(a_l)·S_l·√σ_T
+                 = K_l · √σ_T
+
+    where the constant carrier is K_l = -2·√2·r_(a_l)·S_l < 0 by structural
+    positivity of r_(a_l) and S_l (Trio 1 carrier convention). The minus sign
+    on K_l is what makes Π^l decreasing in σ_T (consistent with the
+    short-volatility neutralization role of the payoff on the LP-yield-app
+    side).
+
+    The function signature treats `K_l_sym` as an OPAQUE symbol (no positivity
+    assumption); the structural sign claim K_l < 0 is documented in this
+    docstring and verified inline in the Trio-2 notebook code cell. The
+    test scaffold `test_c_pi_closed_form_equilibrium_k_l_eq_k_s` only checks
+    the algebraic form K_l · √σ_T (not the sign), so this signature is
+    test-compatible.
+
+    Spec §2 v0 (c) test target: `simplify(pi_closed_form_l(σ, K) - K*sqrt(σ)) == 0`.
     """
-    raise NotImplementedError(
-        "v0 spec §2(c): Π^l closed-form not yet implemented "
-        "(Phase 1 Task 1.3 trio-4 will land this)"
-    )
+    import sympy
+
+    return K_l_sym * sympy.sqrt(sigma_T_sym)
 
 
 def pi_closed_form_s(sigma_T_sym: Any, K_s_sym: Any) -> Any:
     """Closed-form Π^s(σ_T) = K_s · √σ_T per framework note lines 222-225.
 
-    Equilibrium: K_s = K_l per the framework "iff" claim line 227.
+    Derivation (reproduced symbolically in the Phase-1 Task 1.2 Trio-2 notebook):
+
+    The framework's two CPO equations (DRAFT.md lines 184-189) are:
+
+        Δ^(a_l) + ∂Π/∂σ_T = 0    ⟹    ∂Π/∂σ_T = -Δ^(a_l)    (long side)
+        Δ^(a_s) - ∂Π/∂σ_T = 0    ⟹    ∂Π/∂σ_T = +Δ^(a_s)    (short side)
+
+    Note the sign asymmetry on the SHORT side: the Π on the short app appears
+    as `-Π` (line 188), so its derivative is +Δ^(a_s) = -√2·S_s/√σ_T.
+    Integrating:
+
+        Π^s(σ_T) = ∫_0^σ_T Δ^(a_s)(u) du
+                 = ∫_0^σ_T (-√2·S_s/√u) du
+                 = -2·√2·S_s·√σ_T
+                 = K_s · √σ_T
+
+    where K_s = -2·√2·S_s < 0 by structural positivity of S_s (Trio 1 carrier
+    convention). Both K_l and K_s are negative.
+
+    **Equilibrium identification (DRAFT.md line 227):** K_l = K_s reduces to
+    -2·√2·r_(a_l)·S_l = -2·√2·S_s, i.e., r_(a_l)·S_l = S_s. This is the
+    POSITIVE magnitude-matching equality between the two LP-side carriers,
+    not a sign-flip identity. It is the no-arbitrage two-sided clearing
+    condition for the CPO instrument.
+
+    The function signature treats `K_s_sym` as opaque; the structural sign
+    claim K_s < 0 and the equilibrium magnitude-match are documented here
+    and verified inline in the notebook code cell.
+
+    Spec §2 v0 (c) test target: `simplify(pi_closed_form_s(σ, K) - K*sqrt(σ)) == 0`
+    AND `simplify(pi_closed_form_l(σ, K) - pi_closed_form_s(σ, K)) == 0` after
+    K_l ← K, K_s ← K substitution.
     """
-    raise NotImplementedError(
-        "v0 spec §2(c): Π^s closed-form not yet implemented "
-        "(Phase 1 Task 1.3 trio-4 will land this)"
-    )
+    import sympy
+
+    return K_s_sym * sympy.sqrt(sigma_T_sym)
 
 
 def pi_linearization(
     sigma_T_sym: Any, K_star_sym: Any, sigma_0_sym: Any
 ) -> Any:
-    """Linearization Π ≈ K̂·σ_T with K̂ = K*/(2√σ_0) per framework lines 247-256.
+    """Linearization Π ≈ K̂·σ_T with K̂ = K*/(2·√σ_0) per framework lines 247-256.
 
-    Used for the Carr-Madan replication path: σ_T (not √σ_T) is what is
-    statistically replicable via the log-contract identity.
+    Derivation (reproduced symbolically in the Phase-1 Task 1.2 Trio-2 notebook):
+
+    Per DRAFT.md lines 246-247, the linearization of √σ_T about a reference
+    σ_0 is the first-order Taylor expansion:
+
+        √σ_T  ≈  √σ_0  +  (σ_T - σ_0) / (2·√σ_0)
+
+    Applied to Π = K* · √σ_T (lines 251-252):
+
+        Π(√σ_T)  ≈  K*·√σ_0  +  (K* / (2·√σ_0))·(σ_T - σ_0)
+                  =  [K*·√σ_0 - K*·√σ_0/2]  +  (K* / (2·√σ_0))·σ_T
+                  =  K*·√σ_0/2  +  K̂ · σ_T          (where K̂ := K*/(2·√σ_0))
+
+    DRAFT.md line 256 drops the constant term (it is hedge-irrelevant — only
+    the σ_T-dependent slope matters for Carr-Madan replication) and writes:
+
+        Π(σ_T)  ≈  K̂ · σ_T
+
+    This is what enables the Carr-Madan log-contract reduction (DRAFT.md
+    lines 258-272): √σ_T is NOT statistically replicable, but σ_T is
+    (via the log-contract identity), so the replication target switches
+    from √σ_T to its linearization at σ_0.
+
+    **Returned form:** the FULL linearized expression including the constant
+    term, since spec §2 v0 (d) requires the linearization to "match import
+    verbatim" (DRAFT.md line 252 form). The constant-drop step (line 256)
+    is a downstream simplification used by the Carr-Madan strip in Trio 3,
+    not a substantive simplification of Π itself.
+
+        Π_linearized(σ_T; K*, σ_0) = K* · [√σ_0 + (σ_T - σ_0)/(2·√σ_0)]
+                                   = K* · (σ_0 + σ_T) / (2·√σ_0)         [sympy canonical form]
+
+    Verification: the coefficient of σ_T in the expanded form equals
+    K*/(2·√σ_0) = K̂ (verified inline in Trio-2 notebook code cell via
+    `sympy.expand(...).coeff(sigma_T_sym)`).
     """
-    raise NotImplementedError(
-        "v0 spec §2(d): Π linearization not yet implemented "
-        "(Phase 1 Task 1.3 trio-4 will land this)"
-    )
+    import sympy
+
+    sqrt_sigma_T_linearized = sympy.sqrt(sigma_0_sym) + (
+        sigma_T_sym - sigma_0_sym
+    ) / (2 * sympy.sqrt(sigma_0_sym))
+    return K_star_sym * sqrt_sigma_T_linearized
 
 
 def carr_madan_strip_value(

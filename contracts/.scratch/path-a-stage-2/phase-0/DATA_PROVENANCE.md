@@ -306,3 +306,103 @@ sha256sum contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py
 Per `feedback_notebook_trio_checkpoint`, Trio 2 (Π closed-form derivation) and Trio 3 (Carr-Madan strip) MUST NOT be dispatched until orchestrator reviews the Trio 1 why → code → interpretation chain. Specific items for review listed in the Trio 1 interpretation cell HALT-for-review note (5 items).
 
 End of Phase 1 Task 1.2 Trio 1 section.
+
+---
+
+## Section: Phase 1 Task 1.2 Trio 2 — Π(σ_T) closed-form integration + K_l = K_s equilibrium + linearization
+
+**Owner:** Analytics Reporter (Phase 1 Task 1.2 Trio 2 dispatch agent — this dispatch's executor)
+**Constructed:** 2026-05-02 EDT (single foreground session under auto mode)
+**Outputs:**
+- `contracts/notebooks/pair_d_stage_2_path_a/Colombia/01_v0_sympy.ipynb` (3 trio cells inserted at positions 6/7/8 between Trio 1 interpretation cell and legacy TODO cell; new cell count = 10)
+- `contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py` (replaced 3 of 6 remaining `NotImplementedError` stubs with closed-form returns: `pi_closed_form_l`, `pi_closed_form_s`, `pi_linearization`; the 3 Carr-Madan stubs `carr_madan_strip_value`, `carr_madan_analytic`, `strip_value_two_independent_codes` remain as `NotImplementedError` for Trio 3)
+
+### Source: framework derivation `contracts/notes/2026-04-29-macro-markets-draft-import.md`
+
+- **Lines 196-203**: universal Π definition `Π(σ_T) := −∫₀^σ_T Δ^(a)(u) du`.
+- **Lines 207-217**: long-side derivation `Π^l(σ_T) = −∫ Δ^(a_l) dσ_T ∼ −2·C·√σ_T = K_l·√σ_T`.
+- **Lines 219-227**: short-side mirror `Π^s = K_s·√σ_T`; equilibrium `K_l = K_s` iff statement.
+- **Lines 244-256**: linearization Taylor expansion `√σ_T ≈ √σ_0 + (σ_T − σ_0)/(2·√σ_0)`; `Π(σ_T) ≈ K̂·σ_T`; `K̂ := K*/(2·√σ_0)`.
+
+### Source: Phase 0 environment
+
+- `contracts/.venv` Python 3.13.5 (unchanged from Trio 1)
+- sympy 1.14.0 (Phase 0 Task 0.2 baseline; spec §10.2 pin)
+- jupyter nbconvert (notebook in-place execution)
+
+### Transformation: symbolic Π integration pipeline (Trio 2 code cell)
+
+1. **Re-import Trio 1 canonical Δ forms** from `v0_sympy` module; cross-check against expected `√2·r·S_l/√σ_T` and `−√2·S_s/√σ_T` via `simplify(diff) == 0`.
+2. **Long-side integration**: substitute integration variable `u` (declared `positive=True` to suppress `Piecewise` output); compute `−sympy.integrate(Δ^(a_l)(u), (u, 0, σ_T))`; reduce to `−2·√2·r_(a_l)·S_l·√σ_T`; identify `K_l = −2·√2·r_(a_l)·S_l`; certify `K_l.is_negative is True`.
+3. **Short-side integration**: same pattern; integrate `+Δ^(a_s)` (per framework's short-side equation `Δ^(a_s) − ∂Π/∂σ_T = 0` → `∂Π/∂σ_T = +Δ^(a_s)`); reduce to `−2·√2·S_s·√σ_T`; identify `K_s = −2·√2·S_s`; certify `K_s.is_negative is True`.
+4. **Equilibrium reduction**: `Eq(K_l_carrier, K_s_carrier)` reduces (after dividing both sides by `−2·√2`) to `Eq(r_(a_l)·S_l, S_s)` — the magnitude-matching equality between two LP-side positive carriers. Round-trip sanity: `pi_closed_form_l(σ, K)` ≡ `pi_closed_form_s(σ, K)` after `K_l ← K, K_s ← K` substitution.
+5. **Linearization**: manually construct first-order Taylor `√σ_T ≈ √σ_0 + (σ_T − σ_0)/(2·√σ_0)`; verify Taylor anchor (at σ_T = σ_0 returns √σ_0) and slope (1/(2√σ_0)); apply `Π = K*·√σ_T` linearization; `expand` and extract `K̂` via `.coeff(sigma_T)`; cross-check `K̂ = K*/(2·√σ_0)` matches DRAFT.md line 254.
+6. **Anti-fishing guards**: assert `not isinstance(integrated, Piecewise)` for both Π integrations (would signal missed positivity assumption on integration variable); assert all carrier-identification reductions via `simplify(diff) == 0` (no tolerance).
+7. **Module ↔ notebook agreement**: `simplify(notebook_integrated − module_returned) == 0` for both Π closed forms AND linearization. The v0 analog of spec §11.a code-vs-code self-consistency on the pre-Trio-3 surface.
+
+### Verification status
+
+- **Notebook execution**: `jupyter nbconvert --to notebook --execute --inplace 01_v0_sympy.ipynb` succeeded with zero exceptions; Trio 2 code cell `execution_count=3`; clean stream output covering all 6 derivation steps + summary table.
+- **Test scaffold**: `test_c_pi_closed_form_equilibrium_k_l_eq_k_s` transitioned **FAIL → PASS** (verified via stash-and-test: at HEAD `a93e09e0a` test_c FAILED with `NotImplementedError`; with Trio 2 implementations present, test_c PASSES). The other 2 tests (`test_d`, `test_e`) remain FAILED with `NotImplementedError` — reserved for Trio 3 (`carr_madan_strip_value` + `carr_madan_analytic` + `strip_value_two_independent_codes`).
+- **Final pytest summary**: 3 passed (test_a, test_b, test_c), 2 failed (test_d, test_e) — TDD discipline honored.
+
+### Key results emitted by Trio 2 code cell
+
+```
+Π^l(σ_T) = -2*sqrt(2)*S_l*r_a_l*sqrt(sigma_T)
+K_l carrier = -2*sqrt(2)*S_l*r_a_l        [is_negative = True]
+Π^s(σ_T) = -2*sqrt(2)*S_s*sqrt(sigma_T)
+K_s carrier = -2*sqrt(2)*S_s              [is_negative = True]
+Equilibrium K_l = K_s  ⟺  Eq(S_l*r_a_l, S_s)
+                          (magnitude-matching between two LP-side carriers)
+Linearization Π(σ_T) ≈ K_star*sigma_T/(2*sqrt(sigma_0))
+K̂ := K*/(2·√σ_0) per DRAFT.md line 254
+Module ↔ notebook: BOTH Π's + linearization AGREE
+```
+
+### Caveat: K_s identification rides on Trio 1's LP-induced positive-carrier S_s
+
+The K_s carrier identification `K_s = −2·√2·S_s` is TRANSITIVELY dependent on Trio 1's structurally-encoded positive carrier `S_s := −Σ q_t·f_t/(X/Y)_t² > 0` (DRAFT.md line 179 explicit "non-trivial" flag for `Δ^(a_s) < 0`). The K_s sign claim (negative real) and the equilibrium reduction `r_(a_l)·S_l = S_s` both inherit this dependency. Per spec §10.4 numeric reconciliation rule, **v1 numerical fork harness** will validate the LP-induced sign claim by comparing v0's analytic `Π^s(σ_T)` evaluated at three pinned (ε, ω) test points against v1's harness-emitted realized cash flow at those same points. If v1 reconciles to within ±5%, the LP-induced sign is empirically confirmed; if it diverges, HALT under `Stage2PathAFrameworkInternallyInconsistent` (v0 typed exception) per spec §6.
+
+### Caveat: linearization "matches import verbatim" interpretation
+
+The `pi_linearization(...)` function returns the FULL linearized form `K* · [√σ_0 + (σ_T − σ_0)/(2·√σ_0)]` (constant + σ_T term), not the constant-dropped form `K̂·σ_T`. This is the spec §2 v0 (d) "matches import verbatim" reading anchored on DRAFT.md line 252 (which has both terms). The constant-drop reduction to `≈ K̂·σ_T` is a downstream simplification used only by the Carr-Madan log-contract step in Trio 3 (DRAFT.md line 256 onward). Trio 3 will perform the constant-drop and verify the σ_T coefficient against the discrete IronCondor strip premium per §11.b 5% truncation bound.
+
+### Anti-fishing posture
+
+- Both Π integrations carried explicit positivity assumption on integration variable `u` (`Symbol("u", positive=True)`) so sympy returned `2·sqrt(σ_T)` cleanly, not `Piecewise`. Guard `assert not isinstance(integrated, Piecewise)` is in the code cell as a defensive trip-wire.
+- Carrier identification reductions used `simplify(diff) == 0` exact-equality (no tolerance, no `nsimplify`).
+- The K_l, K_s carriers are **structurally identified** (not opaque sympy symbols); the equilibrium reduction `r_(a_l)·S_l = S_s` is documented at the carrier-magnitude layer, not hidden behind opaque-symbol substitution.
+- Linearization Taylor expansion was constructed MANUALLY (`sqrt_sigma_T_taylor = sqrt(σ_0) + (σ_T − σ_0)/(2·√σ_0)`), not via `sympy.series` (which would return higher-order remainder terms requiring fragile cleanup across sympy versions).
+
+### Free-tier compliance
+
+- Pure offline sympy + jupyter nbconvert
+- Zero network calls
+- Zero Alchemy compute units consumed
+- Zero Forno hits
+- Zero Anvil fork spawned
+- `Stage2PathABudgetOverrun` not at risk
+
+### sha-pinnability
+
+```
+contracts/notebooks/pair_d_stage_2_path_a/Colombia/01_v0_sympy.ipynb
+  sha256: f174c961de0dcdbaf4717c49c6350ddda4b50940c7a3cc318cc5006e2666fcb1
+contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py
+  sha256: 768ef0858b026a8716e9c16e57a801510509222e88020b842b1c0e603910eb62
+```
+
+Re-compute via:
+```
+sha256sum contracts/notebooks/pair_d_stage_2_path_a/Colombia/01_v0_sympy.ipynb
+sha256sum contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py
+```
+
+Note: the notebook sha will change once Trio 3 cells are added; the v0_sympy.py sha will change once Trio 3 lands the Carr-Madan implementations. Both pins are sampled at end of Trio 2 commit.
+
+### Successor dispatches blocked on orchestrator review
+
+Per `feedback_notebook_trio_checkpoint`, Trio 3 (Carr-Madan 12-leg strip per spec §10.5 + §11.a code-vs-code self-consistency + §11.b strip-vs-analytic truncation bound) MUST NOT be dispatched until orchestrator reviews the Trio 2 why → code → interpretation chain. Specific items for review listed in the Trio 2 interpretation cell HALT-for-review note (6 items).
+
+End of Phase 1 Task 1.2 Trio 2 section.
