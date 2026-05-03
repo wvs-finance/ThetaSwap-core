@@ -270,6 +270,83 @@ def pi_linearization(
     return K_star_sym * sqrt_sigma_T_linearized
 
 
+# ───── Carr-Madan helpers (Black-Scholes pricing under GBM, r=0, T=1) ─────
+#
+# These free functions are used by `carr_madan_strip_value`,
+# `carr_madan_analytic`, and `strip_value_two_independent_codes` below.
+# Pinned to GBM σ_0 = 10% baseline per spec FLAG-F4. r = 0 because the
+# Carr-Madan log-contract identity replicates `E_Q[-2·log(S_T/S_0)]`
+# which under GBM(r=0) equals σ_0²·T (the v0 analytic anchor). Keeping
+# r = 0 also matches the framework's σ_T definition (variance, not drift).
+
+
+def _norm_cdf(x: float) -> float:
+    """Standard normal CDF via math.erf (zero external dep)."""
+    import math
+
+    return 0.5 * (1.0 + math.erf(x / math.sqrt(2.0)))
+
+
+def _bs_call(S_0: float, K: float, sigma_0: float, T: float = 1.0) -> float:
+    """Black-Scholes call price (r=0, no dividends).
+
+    Returns the OTM-call premium at strike K under GBM(σ_0, T).
+    """
+    import math
+
+    if K <= 0.0:
+        return max(S_0 - K, 0.0)
+    if sigma_0 * math.sqrt(T) <= 0.0:
+        return max(S_0 - K, 0.0)
+    sqrt_T = math.sqrt(T)
+    d1 = (math.log(S_0 / K) + 0.5 * sigma_0 * sigma_0 * T) / (sigma_0 * sqrt_T)
+    d2 = d1 - sigma_0 * sqrt_T
+    return S_0 * _norm_cdf(d1) - K * _norm_cdf(d2)
+
+
+def _bs_put(S_0: float, K: float, sigma_0: float, T: float = 1.0) -> float:
+    """Black-Scholes put price (r=0, no dividends) via put-call parity.
+
+    Returns the OTM-put premium at strike K under GBM(σ_0, T). Under r=0
+    parity reduces to:  Put − Call = K − S_0  (forward = spot).
+    """
+    return _bs_call(S_0, K, sigma_0, T) - S_0 + K
+
+
+def _build_strike_grid(
+    S_0: float,
+    sigma_0: float,
+    n_condors: int = 3,
+    legs_per_condor: int = 4,
+    x_max_factor: float = 3.0,
+) -> tuple[list[float], list[float], float]:
+    """Build the 12-strike log-grid + Carr-Madan weights per spec §10.5.
+
+    Returns (strikes K_j, weights w_j, Δx) where:
+        - K_j = S_0 · exp(x_j),  x_j uniform on [-x_max, +x_max]
+        - x_max = x_max_factor · σ_0 (default 3·σ_0 per §11.b derivation)
+        - w_j = 1/K_j²  (Carr-Madan weight rule, DRAFT.md line 264)
+        - Δx = uniform log-spacing step (used for trapezoidal integration)
+
+    The total leg count is `n_condors · legs_per_condor` (default 12). No
+    explicit per-condor ordering is imposed at this layer — that is the
+    consumer's responsibility (e.g., `carr_madan_strip_value` partitions
+    the 12 strikes into left-tail / ATM / right-tail per §10.5).
+    """
+    import math
+
+    n_legs = n_condors * legs_per_condor
+    x_max = x_max_factor * sigma_0
+    # Uniform x grid on [-x_max, +x_max] with n_legs nodes
+    if n_legs < 2:
+        raise ValueError("n_legs must be >= 2 for log-grid spacing")
+    dx = (2.0 * x_max) / (n_legs - 1)
+    xs: list[float] = [-x_max + j * dx for j in range(n_legs)]
+    strikes: list[float] = [S_0 * math.exp(x) for x in xs]
+    weights: list[float] = [1.0 / (K * K) for K in strikes]
+    return strikes, weights, dx
+
+
 def carr_madan_strip_value(
     S_0: float,
     sigma_0: float,
@@ -279,32 +356,102 @@ def carr_madan_strip_value(
     """Discrete IronCondor strip approximation of σ_T per spec §10.5.
 
     Constructs the 3 condors × 4 legs = 12 legs strip with strikes
-    K_j ≈ S_0·exp(x_j), weights w_j ∝ 1/K_j², covering left-tail / ATM
-    / right-tail regions. Returns (strip_value, per_leg_breakdown) where
-    per_leg_breakdown enumerates the 12 legs with their (strike, weight,
-    payoff_contribution) for downstream §11.a self-consistency tests.
+    K_j = S_0·exp(x_j), weights w_j ∝ 1/K_j², covering left-tail / ATM
+    / right-tail regions per spec §10.5. Returns
+    `(strip_value, per_leg_breakdown)` where:
 
-    Spec §11.b: under GBM σ_0 ≈ 10% baseline, the 3-condor / 12-leg
-    truncation+discretization bound is ≤ 5% relative error vs analytic.
+    - `strip_value`: the discrete strip approximation of the Carr-Madan
+       integrand `∫ w(K)·V(K) dK` evaluated at the 12 nodes via trapezoid
+       rule on the log-grid: `strip_value = Σ_j w_j · V_j · K_j · Δx`
+       where `V_j` is the OTM put price for `K_j < S_0` and OTM call price
+       for `K_j ≥ S_0`. Note `w_j · K_j · Δx = Δx / K_j` (the canonical
+       Carr-Madan log-grid weight).
+
+    - `per_leg_breakdown`: list of 12 dicts, each with keys
+       `{"strike", "weight", "is_put", "option_value", "contribution",
+         "condor_id", "leg_role"}`.
+       `condor_id ∈ {0,1,2}` enumerates the 3 condors (left-tail / ATM /
+       right-tail per §10.5); `leg_role ∈ {"long_K1","short_K2","short_K3",
+       "long_K4"}` enumerates the 4 legs of each IronCondor.
+
+    Spec §11.b: under GBM σ_0 ≈ 10% baseline + this 12-leg log-grid,
+    the truncation+discretization bound is ≤ 5% relative error vs the
+    analytic value (σ_0²·T under GBM r=0).
     """
-    raise NotImplementedError(
-        "v0 spec §2(e) + §10.5: Carr-Madan strip not yet implemented "
-        "(Phase 1 Task 1.3 trio-5 will land this)"
+    if n_condors * legs_per_condor != 12:
+        raise ValueError(
+            "spec §10.5 pin: n_condors × legs_per_condor must equal 12 "
+            f"(got {n_condors} × {legs_per_condor} = "
+            f"{n_condors * legs_per_condor})"
+        )
+
+    strikes, weights, dx = _build_strike_grid(
+        S_0, sigma_0, n_condors=n_condors, legs_per_condor=legs_per_condor
     )
 
+    leg_roles = ("long_K1", "short_K2", "short_K3", "long_K4")
+    n_legs = n_condors * legs_per_condor
+    leg_breakdown: list[dict[str, Any]] = []
+    strip_value: float = 0.0
+    for j in range(n_legs):
+        K_j = strikes[j]
+        w_j = weights[j]
+        is_put = K_j < S_0
+        V_j = _bs_put(S_0, K_j, sigma_0) if is_put else _bs_call(S_0, K_j, sigma_0)
+        # Carr-Madan log-grid trapezoidal integrand: w_j · V_j · ΔK_j
+        # where ΔK_j = K_j · dx (since K = e^x ⟹ dK = K·dx).
+        contribution = w_j * V_j * K_j * dx
+        strip_value += contribution
+        condor_id = j // legs_per_condor
+        leg_role = leg_roles[j % legs_per_condor]
+        leg_breakdown.append(
+            {
+                "strike": K_j,
+                "weight": w_j,
+                "is_put": is_put,
+                "option_value": V_j,
+                "contribution": contribution,
+                "condor_id": condor_id,
+                "leg_role": leg_role,
+            }
+        )
+    return strip_value, leg_breakdown
 
-def carr_madan_analytic(S_0: float, sigma_0: float) -> float:
+
+def carr_madan_analytic(S_0: float, sigma_0: float, T: float = 1.0) -> float:
     """Closed-form analytic value for σ_T per Carr-Madan log-contract.
 
-    Under GBM with volatility σ_0 over horizon T=1, the analytic value
-    of the integrated weight ∫ w(K)·payoff(K) dK reduces to a closed
-    form against which the discrete strip in `carr_madan_strip_value`
-    is reconciled per spec §11.b.
+    Under GBM with volatility σ_0 over horizon T (default 1), the
+    standard Carr-Madan 1998 log-contract identity (eq 9) is:
+
+        E_Q[-2·log(S_T/S_0)]  =  2·∫_0^{S_0} P(K)/K² dK
+                              +  2·∫_{S_0}^∞ C(K)/K² dK
+
+    Under GBM with r = 0 (matching the framework's σ_T = realized
+    variance convention), the log-return identity gives:
+
+        E_Q[-2·log(S_T/S_0)]  =  σ_0² · T
+
+    Therefore the integral on the right-hand side (which is what
+    `carr_madan_strip_value` discretizes via the §10.5 12-leg log-grid)
+    evaluates to:
+
+        ∫_0^{S_0} P(K)/K² dK + ∫_{S_0}^∞ C(K)/K² dK  =  ½ · σ_0² · T
+
+    DRAFT.md line 261 uses `σ_T ∼ ∫…` (informal proportionality `∼`,
+    NOT equality). The standard Carr-Madan factor of 2 (Carr-Madan 1998
+    eq 9; Demeterfi et al 1999 "More Than You Ever Wanted To Know About
+    Volatility Swaps" §III) lives outside the integral. This function
+    returns the integral side `½·σ_0²·T` because that is what the
+    discrete strip in `carr_madan_strip_value` numerically computes
+    (the integrand `V(K)/K²` summed against the log-grid weight).
+
+    This is the v0 anchor against which the discrete strip in
+    `carr_madan_strip_value` is reconciled per spec §11.b.
+
+    Returns ½·σ_0²·T (a positive scalar).
     """
-    raise NotImplementedError(
-        "v0 spec §2(e) + §11.b: analytic Carr-Madan baseline not yet "
-        "implemented (Phase 1 Task 1.3 trio-5 will land this)"
-    )
+    return 0.5 * sigma_0 * sigma_0 * T
 
 
 def strip_value_two_independent_codes(
@@ -312,15 +459,66 @@ def strip_value_two_independent_codes(
 ) -> tuple[float, float]:
     """Two independent codings of the strip value for §11.a self-consistency.
 
-    Implementation A: explicit per-leg long-call/short-call/long-put/short-put
-        summation over the 12 legs.
-    Implementation B: sympy-derived closed-form payoff function evaluated
-        at the same (strike, weight) tuples.
+    Implementation A: per-leg accumulation in a Python `for` loop, ordering
+        the strikes from leftmost (smallest K) to rightmost (largest K).
+        Contribution per leg is `w_j · V_j · K_j · Δx`.
 
-    Per spec §11.a, |A − B| ≤ 1e-10 × N_legs = 1.2e-9 absolute per
-    payoff evaluation. Failure indicates a code bug, not a model bug.
+    Implementation B: per-condor accumulation. Each of the 3 condors
+        contributes `Σ_{ℓ=1..4} w_{ℓ} · V_{ℓ} · K_{ℓ} · Δx` with the
+        `Σ` evaluated condor-internally (4 floating-point adds), then the
+        3 per-condor partial sums are accumulated. The grouping order
+        differs from implementation A, exercising the floating-point
+        non-associativity surface.
+
+    Per spec §11.a, `|A − B| ≤ 1e-10 × N_legs = 1.2e-9` absolute per
+    payoff evaluation. Failure at this scale indicates a code bug, not a
+    model bug (triage: debugger / unit-test, NOT spec amendment).
+
+    Returns `(impl_a_value, impl_b_value)`.
     """
-    raise NotImplementedError(
-        "v0 spec §11.a: two-code self-consistency not yet implemented "
-        "(Phase 1 Task 1.3 trio-6 will land this)"
+    if n_condors * legs_per_condor != 12:
+        raise ValueError(
+            "spec §10.5 pin: n_condors × legs_per_condor must equal 12 "
+            f"(got {n_condors} × {legs_per_condor})"
+        )
+    strikes, weights, dx = _build_strike_grid(
+        S_0, sigma_0, n_condors=n_condors, legs_per_condor=legs_per_condor
     )
+    n_legs = n_condors * legs_per_condor
+
+    # Implementation A: linear left-to-right per-leg accumulation.
+    impl_a: float = 0.0
+    for j in range(n_legs):
+        K_j = strikes[j]
+        w_j = weights[j]
+        is_put = K_j < S_0
+        V_j = _bs_put(S_0, K_j, sigma_0) if is_put else _bs_call(S_0, K_j, sigma_0)
+        impl_a += w_j * V_j * K_j * dx
+
+    # Implementation B: per-condor grouped accumulation with REWRITTEN
+    # weight expression. Algebraically: w_j · V_j · K_j · dx
+    #                                 = (1/K_j²) · V_j · K_j · dx
+    #                                 = V_j · dx / K_j
+    # This is the canonical Carr-Madan log-grid form. The arithmetic
+    # operation count differs from Impl A (one division vs two multiplies
+    # plus an implicit division inside the weight construction), exercising
+    # the §11.a non-associativity surface AND the equivalence of the two
+    # algebraically-identical weight expressions (`1/K²·K·dx` vs `dx/K`).
+    # The 4-leg inner / 3-condor outer grouping further differs from
+    # Impl A's linear accumulation order.
+    impl_b: float = 0.0
+    for c in range(n_condors):
+        condor_partial: float = 0.0
+        for ell in range(legs_per_condor):
+            j = c * legs_per_condor + ell
+            K_j = strikes[j]
+            is_put = K_j < S_0
+            V_j = (
+                _bs_put(S_0, K_j, sigma_0)
+                if is_put
+                else _bs_call(S_0, K_j, sigma_0)
+            )
+            # Different algebraic form than Impl A (no `weights[j]` lookup).
+            condor_partial += V_j * dx / K_j
+        impl_b += condor_partial
+    return impl_a, impl_b

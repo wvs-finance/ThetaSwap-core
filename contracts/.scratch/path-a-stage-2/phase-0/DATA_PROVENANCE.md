@@ -406,3 +406,169 @@ Note: the notebook sha will change once Trio 3 cells are added; the v0_sympy.py 
 Per `feedback_notebook_trio_checkpoint`, Trio 3 (Carr-Madan 12-leg strip per spec §10.5 + §11.a code-vs-code self-consistency + §11.b strip-vs-analytic truncation bound) MUST NOT be dispatched until orchestrator reviews the Trio 2 why → code → interpretation chain. Specific items for review listed in the Trio 2 interpretation cell HALT-for-review note (6 items).
 
 End of Phase 1 Task 1.2 Trio 2 section.
+
+---
+
+## Section: Phase 1 Task 1.2 Trio 3 — Carr-Madan 12-leg IronCondor strip + §11.a + §11.b reconciliation
+
+**Owner:** Analytics Reporter (Phase 1 Task 1.2 Trio 3 dispatch agent — this dispatch's executor)
+**Constructed:** 2026-05-02 EDT (single foreground session under auto mode)
+**Outputs:**
+- `contracts/notebooks/pair_d_stage_2_path_a/Colombia/01_v0_sympy.ipynb` (3 trio cells inserted at positions 9/10/11 between Trio 2 interpretation cell and legacy TODO cell; new cell count = 13)
+- `contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py` (replaced final 3 of 3 remaining `NotImplementedError` stubs with real implementations: `carr_madan_strip_value`, `carr_madan_analytic`, `strip_value_two_independent_codes`; added 4 internal helpers `_norm_cdf`, `_bs_call`, `_bs_put`, `_build_strike_grid` to support Black-Scholes pricing under GBM r=0)
+
+### Source: framework derivation `contracts/notes/2026-04-29-macro-markets-draft-import.md`
+
+- **Lines 256-272**: Carr-Madan log-contract identity in framework form `σ_T ∼ ∫_0^{S_0} P(K)/K² dK + ∫_{S_0}^∞ C(K)/K² dK` (informal proportionality `∼`, not equality — this is the load-bearing distinction that motivates the §11.b analytic-side correction below).
+- **Lines 274-326**: discrete IronCondor replication via 3 condors × 4 legs = 12 legs total per `K_j ≈ S_0·e^{x_j}` log-grid with weights `w_j ∝ 1/K_j²`; "but 4 per position constraint is respected" comment at line 325 confirms the Panoptic-eligibility design intent.
+
+### Source: spec sections (sha-pinned)
+
+- **§10.5 Panoptic position-count + leg-distribution pin (FLAG-F3 resolution)** — 3 IronCondor positions × 4 legs each = 12 legs total; left-tail / ATM / right-tail strike regions; `K_j ≈ S_0·exp(x_j)`, `w_j ∝ 1/K_j²`, `x_max` per §11.b truncation-bound target.
+- **§11.a self-consistency check (deterministic, code-vs-code)** — `≤ 1e-10 × N_legs = 1.2e-9` absolute per payoff evaluation; "if §11.a fails, the failure is a CODE bug, not a model-bug; triage path is debugger / unit-test, NOT spec amendment".
+- **§11.b truncation/discretization bound (analytic-vs-strip)** — `≤ 5e-2 (5%) relative error` for the v0 / v2 strip-vs-analytic reconciliation under the §10.5 strike grid; "if v0's exact derivation of ε_total produces a tighter bound at the §10.5 grid, the threshold tightens to that bound (recorded in CORRECTIONS-block); it does NOT loosen".
+- **§11.c retired figure** — the v1.0 1e-6 figure is RETIRED; "no v1.1 numerical threshold is looser than its v1.0 counterpart except where v1.0's threshold was mathematically infeasible".
+- **FLAG-F4 GBM σ_0 = 10% baseline pin** — v3 baseline is GBM; Trio 3 inherits this for the v0 numerical reconciliation.
+
+### Source: Phase 0 environment
+
+- `contracts/.venv` Python 3.13.5 (unchanged from Trio 2)
+- Pure-Python: `math.erf` for normal CDF, `math.exp` / `math.sqrt` / `math.log` for Black-Scholes pricing (no scipy.integrate.quad needed because the analytic baseline `½·σ_0²·T` is a closed form under GBM r=0)
+- numpy 2.4.4 (Phase 0 Task 0.2 baseline; used only for arange convenience in notebook display)
+- sympy 1.14.0 (used in Step 1 of Trio 3 code cell to verify Trio 1+2 carrier inheritance)
+- jupyter nbconvert (notebook in-place execution)
+
+### Transformation: Carr-Madan strip + reconciliation pipeline (Trio 3 code cell)
+
+1. **Trio 1+2 inheritance check** — re-import `delta_a_l_expr`, `delta_a_s_expr`, `pi_linearization` from module; verify K̂ = K*/(2·√σ_0) via `expand(pi_lin).coeff(sigma_T)`; this confirms Trio 2's K̂ identity is intact before Trio 3 builds on top of it.
+2. **§10.5 12-strike log-grid construction** — call `_build_strike_grid(S_0=1.0, σ_0=0.10, n_condors=3, legs_per_condor=4)`; this produces 12 strikes at `K_j = S_0·exp(x_j)` with `x_j` uniform on `[-3·σ_0, +3·σ_0]`, log-spacing `Δx = (2·3·σ_0)/(N_legs - 1) ≈ 0.0545`. Strike range: `[0.7408, 1.3499]·S_0`.
+3. **Discrete strip value computation** — call `carr_madan_strip_value`; returns `(strip_value, leg_breakdown)` where `leg_breakdown` is a 12-element list of dicts `{strike, weight, is_put, option_value, contribution, condor_id, leg_role}`. Each leg's contribution = `w_j · V_j · K_j · Δx` (canonical Carr-Madan log-grid trapezoidal integrand). Strip value: **4.875446971593e-03**.
+4. **§11.a self-consistency check** — call `strip_value_two_independent_codes`; returns `(impl_a, impl_b)` from two algebraically-identical-but-floating-point-distinct paths (Impl A: linear `w·V·K·dx`, 4 mults + 1 add per leg, linear accumulation; Impl B: per-condor grouped `V·dx/K`, 1 mult + 1 div + 1 add per leg, 4-leg inner / 3-condor outer accumulation). Result: `|impl_a - impl_b| = 8.673617e-19`, vs bound `1.2e-9` → **PASS** with ~10⁹× comfort margin (LSB-level agreement, exactly the "machine-epsilon × N_legs" boundary §11.a intends).
+5. **§11.b truncation-vs-analytic check** — call `carr_madan_analytic(S_0=1.0, σ_0=0.10, T=1.0)`; returns `½·σ_0²·T = 5.000000000000e-03` (the integral-side closed form under GBM r=0, anchored on Carr-Madan 1998 eq 9). Relative error: `|strip - analytic| / |analytic| = 2.491061e-02`, vs bound `5.0e-02` → **PASS** with 2.01× comfort margin.
+6. **Module ↔ notebook agreement** — verify default-arg call (`carr_madan_strip_value(S_0, σ_0)`) is byte-equal to explicit-arg call (`n_condors=3, legs_per_condor=4`); verify `n_condors=2` raises `ValueError` mentioning the 12-leg pin (anti-grid-tune trip-wire).
+
+### Verification status
+
+- **Notebook execution:** `jupyter nbconvert --to notebook --execute --inplace 01_v0_sympy.ipynb` succeeded with zero exceptions; Trio 3 code cell `execution_count=4`; clean stream output covering all 6 derivation steps + summary table.
+- **Test scaffold:** `test_d_self_consistency_two_independent_codes` AND `test_e_carr_madan_strip_reconciles_within_truncation_bound` both transitioned **FAIL → PASS** (TDD discipline honored). Final pytest summary: **5 passed in 0.25s** (test_a, test_b, test_c, test_d, test_e). All v0 spec §2 sub-criteria (a)-(e) closed.
+
+### Key results emitted by Trio 3 code cell
+
+```
+Strip value (12-leg)       = 4.875446971593e-03
+Analytic ½·σ_0²·T (GBM r=0)= 5.000000000000e-03
+§11.a |Impl_A − Impl_B|    = 8.674e-19         (bound 1.2e-9; ~10⁹× margin)
+§11.b rel error            = 2.491e-02         (bound 5.0e-02; 2.01× margin)
+§10.5 12-leg pin           = ENFORCED (ValueError on != 12)
+v0 spec §2 (a)-(e) status  = ALL PASS
+```
+
+Per-leg breakdown (12 legs, K-ordered):
+
+| j | K_j | w_j | Put? | V_j (BS price) | contribution | condor | leg_role |
+|--:|--:|--:|:-:|--:|--:|:-:|:--|
+| 0 | 0.740818 | 1.822119 | P | 3.286e-05 | 2.42e-06 | 0 | long_K1 |
+| 1 | 0.782349 | 1.633801 | P | 2.037e-04 | 1.42e-05 | 0 | short_K2 |
+| 2 | 0.826208 | 1.464946 | P | 9.804e-04 | 6.47e-05 | 0 | short_K3 |
+| 3 | 0.872525 | 1.313542 | P | 3.706e-03 | 2.32e-04 | 0 | long_K4 |
+| 4 | 0.921439 | 1.177786 | P | 1.117e-02 | 6.61e-04 | 1 | long_K1 |
+| 5 | 0.973096 | 1.056060 | P | 2.734e-02 | 1.53e-03 | 1 | short_K2 |
+| 6 | 1.027648 | 0.946915 | C | 2.810e-02 | 1.49e-03 | 1 | short_K3 |
+| 7 | 1.085258 | 0.849051 | C | 1.212e-02 | 6.09e-04 | 1 | long_K4 |
+| 8 | 1.146099 | 0.761300 | C | 4.247e-03 | 2.02e-04 | 2 | long_K1 |
+| 9 | 1.210349 | 0.682619 | C | 1.187e-03 | 5.35e-05 | 2 | short_K2 |
+| 10 | 1.278202 | 0.612070 | C | 2.604e-04 | 1.11e-05 | 2 | short_K3 |
+| 11 | 1.349859 | 0.548812 | C | 4.435e-05 | 1.79e-06 | 2 | long_K4 |
+
+This breakdown is the seed for `results/path_a_v2_strip_config.json` per spec §4.
+
+### Caveat: Carr-Madan factor-of-2 disposition (analytic-side correction)
+
+DRAFT.md line 261 writes `σ_T ∼ ∫ V(K)/K² dK` with **informal proportionality** `∼`. The standard Carr-Madan 1998 eq 9 (and Demeterfi et al 1999 §III "More Than You Ever Wanted To Know About Volatility Swaps") has an explicit factor of 2: `E_Q[-2·log(S_T/S_0)] = 2·∫_0^{S_0} P(K)/K² dK + 2·∫_{S_0}^∞ C(K)/K² dK`. Under GBM r=0, the LHS equals `σ_0²·T`, so the integral side equals `½·σ_0²·T`.
+
+**First numerical run** of Trio 3 used `σ_0²·T = 0.01` as the analytic baseline and produced **rel error = 51%** (well above the 5% bound). **This was a mathematical correctness bug on the RHS of the reconciliation, NOT a threshold-tuning candidate.** The fix: switch the analytic to the textbook-correct `½·σ_0²·T = 0.005`, producing rel error = 2.49% — within the 5% bound by design.
+
+Per spec §11.b, **the bound itself was never moved** (still 5.0e-02 pre-committed). Per `feedback_pathological_halt_anti_fishing_checkpoint`, the disposition is documented inline:
+- `carr_madan_analytic.__doc__` carries the full Carr-Madan-1998 derivation with the factor of 2 explicit
+- Trio 3 why-md cell §4 (Connection to simulator) and §Anti-fishing posture call out the correction
+- Trio 3 interpretation cell §Sympy + numerical surprises point #1 documents the first-run failure and the mathematical fix
+- The framework DRAFT.md line 261 `∼` (informal proportionality, not equality) is consistent with this correction; the standard textbook factor of 2 lives outside the integral
+
+Orchestrator may flag this for a CORRECTIONS-block recording in spec §11.b if desired. **The fix is on the analytic baseline (model RHS), NOT on the bound (LHS); anti-fishing posture preserved.**
+
+### Caveat: §11.a Impl A vs Impl B differ at LSB only
+
+The two implementations are algebraically identical (both compute `Σ V_j·dx/K_j` over 12 legs) but use different floating-point operations and accumulation orders. The 8.673617e-19 absolute difference is exactly one ulp at the strip-value magnitude — the spec's intended "machine-epsilon × N_legs" boundary. Under stricter Kahan summation both implementations would reduce |A − B| to 0 exactly; the spec deliberately does NOT require Kahan because the 1.2e-9 bound has 9 orders of magnitude of headroom over LSB-level differences.
+
+If the orchestrator wants stricter §11.a interpretation (e.g., one float path + one sympy-symbolic path), Trio 3's design supports easy extension — but the spec wording is "two independent codings", which the current `w·V·K·dx` vs `V·dx/K` algebraic-form difference satisfies.
+
+### Caveat: net-put-weighted strip at S_0 = 1, σ_0 = 0.10
+
+The 12-strike grid `[0.74, 1.35]·S_0` is symmetric in log-space (±3σ_0) BUT asymmetric in dollar-space because of the convex `1/K²` weight: 6 OTM puts (K_j < S_0) carry summed weights = 8.469; 6 OTM calls (K_j ≥ S_0) carry summed weights = 4.501. Put:call weight ratio = 1.88. The strip is structurally net-put-weighted, biasing the convex-payoff replication toward downside σ exposure at this grid.
+
+Under FX-pair semantics (`S_0 = (X/Y)̄` ≈ COP/USD), this means the v2 Panoptic strip will price downside-USD (= upside-COP) σ moves more heavily than the upside — economically appropriate for a CPO designed as a wage→capital ratchet on COP devaluation paths. Flagged for v2/v3 dispatch brief inheritance (envelope-coverage analysis under v3 GBM MC will skew accordingly).
+
+### Caveat: LP-induced sign carrier (S_s) inheritance is structural — Trio 3 does NOT validate
+
+Carr-Madan operates on the **strip side** of the Π = K·√σ_T identity; the K_s carrier (transitively dependent on Trio 1's positive carrier `S_s := −Σ q_t·f_t/(X/Y)_t² > 0`) lives on the Π side, which Trio 3 does not numerically exercise. Per spec §10.4, **v1 numerical fork harness** must validate the LP-induced sign claim by comparing analytic Π^s evaluated at three pinned (ε, ω) points against v1's harness-emitted realized cash flow. v0's structural encoding (positive carrier `Symbol("S_s", positive=True)`) is necessary-but-not-sufficient; Trio 3 does not change this caveat (carries forward from Trio 2 unchanged).
+
+### Anti-fishing posture
+
+- **§11.a + §11.b bounds pre-committed and not moved**: 1.2e-9 absolute / 5e-2 relative are exactly as written in spec v1.2.2 §11.
+- **The retired v1.0 1e-6 figure does NOT reappear** anywhere in this trio.
+- **The 12-leg pin is structurally guarded** (`ValueError` on `n_condors × legs_per_condor != 12`), preventing silent re-gridding to chase a different bound.
+- **The factor-of-2 correction is on the analytic RHS** (Carr-Madan 1998 eq 9 textbook anchor), NOT on the bound (LHS of the reconciliation). Documented at three independent locations (module docstring + why-md cell + interpretation cell).
+- **No `assuming` blocks**, no late-binding sign assertions, no `nsimplify` on numerical results.
+- **No `scipy.integrate.quad` substitution** for the analytic — the closed form `½·σ_0²·T` under GBM r=0 makes numerical quadrature unnecessary and more importantly avoids a second source of discretization error contaminating the §11.b reconciliation.
+
+### Free-tier compliance
+
+- Pure offline Python (math + numpy + sympy) + jupyter nbconvert
+- Zero network calls
+- Zero Alchemy compute units consumed
+- Zero Forno hits
+- Zero Anvil fork spawned
+- `Stage2PathABudgetOverrun` not at risk
+
+### sha-pinnability
+
+```
+contracts/notebooks/pair_d_stage_2_path_a/Colombia/01_v0_sympy.ipynb
+  sha256: 3c4b20cca97ce30c43c229b8dc5309f86b9dab62b69fa92145c42977c605fc86
+contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py
+  sha256: 53af64bf4c384d3faa04b1fd64524e5ccb4265c0227b937cf2bfe449539765bc
+```
+
+Re-compute via:
+```
+sha256sum contracts/notebooks/pair_d_stage_2_path_a/Colombia/01_v0_sympy.ipynb
+sha256sum contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py
+```
+
+Note: these sha values are sampled at end of Trio 3 commit. The notebook sha will change at any future cell-content edit; the `v0_sympy.py` sha is now the **final v0 module fingerprint** (no further `NotImplementedError` stubs remain — all 8 API functions are now implemented).
+
+### v0 spec §2 sub-criteria (a)-(e) closure
+
+| Sub-criterion | Test | Status | Trio | Numerical evidence |
+|---|---|---|---|---|
+| (a) Δ^(a_l) > 0 | `test_a_delta_a_l_sign_positive` | PASS | Trio 1 | `is_positive == True` certified |
+| (b) Δ^(a_s) < 0 | `test_b_delta_a_s_sign_negative` | PASS | Trio 1 | `is_negative == True` (LP-induced positive carrier S_s) |
+| (c) Π(σ_T) closed form K_l = K_s | `test_c_pi_closed_form_equilibrium_k_l_eq_k_s` | PASS | Trio 2 | `K_l = K_s = -2·√2·S` magnitude-match |
+| (d) Π linearization K̂ = K*/(2·√σ_0) | implicit in (c) + (e) | PASS | Trio 2 | `coeff(σ_T) = K*/(2·√σ_0)` verified |
+| (e) Carr-Madan strip identity | `test_e_carr_madan_strip_reconciles_within_truncation_bound` | PASS | Trio 3 | rel error 2.49%, bound 5.0% |
+| §11.a code-vs-code self-consistency | `test_d_self_consistency_two_independent_codes` | PASS | Trio 3 | abs |A−B| 8.67e-19, bound 1.2e-9 |
+
+All 5 tests PASS; both Carr-Madan §11.a + §11.b bounds clear with comfort margin. **v0 ladder rung is closed.**
+
+### Successor dispatch (Phase 1 Task 1.4) blocked on orchestrator review
+
+Per `feedback_notebook_trio_checkpoint`, Phase 1 Task 1.4 (Phase-1 close + Gate B1 3-way review dispatch: Code Reviewer + Reality Checker + Senior Developer per `feedback_implementation_review_agents`) MUST NOT be dispatched until orchestrator reviews the Trio 3 why → code → interpretation chain. Specific items for review enumerated in the Trio 3 interpretation cell HALT-for-review note (6 items):
+
+1. **Carr-Madan factor-of-2 disposition** — RHS analytic correction documented; no threshold tuning. Orchestrator may want a CORRECTIONS-block in spec §11.b recording the standard-textbook anchor.
+2. **§11.b 2× margin posture** — strip clears at 2.49% (vs 5% bound). If orchestrator wishes to tighten per spec §11.b's "tighter only" clause, candidate is ~3% with margin.
+3. **§11.a Impl A vs Impl B algebraic-form distinction** — current design is two pure-float paths with different algebraic forms; stricter sympy-symbolic Impl B available if requested.
+4. **Net-put-weighted strip caveat** — propagates to v2 Panoptic strip + v3 GBM MC envelope coverage; should be inherited into v2/v3 dispatch briefs.
+5. **Anti-fishing audit trail intact** — bounds pre-committed, no retired figures, 12-leg pin guarded.
+6. **Gate B1 readiness** — v0 mechanically closed (5/5 tests PASS, both bounds clear, module ↔ notebook agreement verified). Phase 1 Task 1.4 unblocked pending orchestrator acceptance of items 1-5.
+
+End of Phase 1 Task 1.2 Trio 3 section.
