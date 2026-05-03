@@ -1,0 +1,160 @@
+# Pair D Stage-2 Path B — Category (ii) tokenized-fiat-issuer mint/burn deep-dive addresses
+#
+# Provenance: contracts/.scratch/path-b-stage-2/phase-1/a_s_pivot_research/category_ii_deep_dive.md
+# Spec ref: contracts/docs/superpowers/specs/2026-04-30-pair-d-stage-2-B-on-chain-data-spec.md (§3.5 substrate-relocation, §6 Pivot β)
+# Plan task: a_s pivot research deep-dive on category (ii)
+# Emit timestamp UTC: 2026-05-03
+#
+# Discipline pins:
+#   - Free-tier ONLY (verification via Arbiscan / Polygonscan / Celoscan / RWA.xyz / CoinGecko / OKLink)
+#   - All addresses EIP-55 checksummed where source provided checksum; mixed-case preserved
+#     from upstream sources
+#   - This file is COMPLEMENTARY to contract_addresses_verified.toml (DO NOT touch existing
+#     MXNB, BRL1, Mento Broker, Mento Reserve, GoodDollar entries — schema mirrors that file)
+#   - Per-address eth_getCode RPC verification deferred to allowlist-merge step (orchestrator
+#     decides which entries graduate)
+#   - This file is a CANDIDATE POOL — NOT a final allowlist
+#   - Schema mirrors contract_addresses_verified.toml (address, role, network, name, source URL,
+#     discovery_timestamp_utc, verification_status, notes)
+#
+# Candidates included in this file: 6 (4 new + 2 cross-reference re-anchors of existing entries
+#   for category-ii classification labeling)
+# Candidates considered but NOT included: MXNT (Tether-Mexico) due to opacity HALT; ARS Transfero
+#   ARZ + Anclap Sol Digital due to no Polygon/Ethereum verified addresses surfaced free-tier.
+
+[meta]
+schema_version = "v1.0"  # mirrors contract_addresses_verified.toml schema
+emit_timestamp_utc = "2026-05-03T00:00:00Z"
+budget_pin = "free_tier_only"
+purpose = "Category (ii) tokenized-fiat-issuer mint/burn deep-dive addresses for a_s pivot Stage-2 Path B"
+research_artifact = "contracts/.scratch/path-b-stage-2/phase-1/a_s_pivot_research/category_ii_deep_dive.md"
+companion_artifact = "contracts/.scratch/path-b-stage-2/phase-1/a_s_pivot_research/contract_addresses_verified.toml"
+candidate_count = 6
+verification_method = "public block explorer / RWA.xyz / CoinGecko visibility; per-address eth_getCode deferred to allowlist-merge"
+
+# ====================================================================
+# §1 — MXNB / Juno (Arbitrum) — TOP-1 deep-dive cross-corridor candidate
+# ====================================================================
+# NOTE: address already in contract_addresses_verified.toml as TOP-2 there;
+# included here with category-ii classification + LP-level Δ^(a_s) reframing.
+
+[[contracts]]
+address = "0xF197FFC28c23E0309B5559e7a166f2c6164C80aA"
+role = "fiat_token_proxy"
+network = "arbitrum-one"
+name = "MXNB stablecoin (Mexican Peso, issued by Juno / Bitso Group) — Category (ii) deep-dive re-anchor"
+source = "https://arbiscan.io/token/0xf197ffc28c23e0309b5559e7a166f2c6164c80aa"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+implementation = "0x72beddf7032eec58f199857b79a8e37020c14e42"
+category_ii_classification = "tokenized_fiat_issuer_mint_burn"
+a_s_archetype_fit_at_issuer = "NOT_A_FIT"
+a_s_archetype_fit_at_lp = "GOOD_FIT"
+delta_a_s_attribution = "CLEAN at LP level via Uniswap V3 Pool events; CLEAN at issuer level for cumulative supply trajectory but issuer is one-sided MXN-reserve so structural exposure does not bind to issuer balance sheet"
+on_chain_quantifiability = "HIGH"
+sample_window_status = "13 months since 2025-Q1 launch; weekly cadence ~52 obs BELOW N_MIN=75; daily cadence ~390 obs PASSES"
+notes = "Circle FiatTokenV2_2 pattern; Mint/Burn/Transfer events on FiatTokenProxy. CertiK-audited (NOTE: CertiK is NOT Big-Four — verify Juno's marketing claim of 'Big Four monthly attestations'). 6 decimals. Apr 2026 supply 24,559,099 MXNB ≈ $1.3M USD. 596 holders. Monthly transfer volume $146M USD-equivalent per RWA.xyz. RECOMMENDED: Δ^(a_s) attribution should target LP positions (Uniswap V3/V4 MXNB-USDC pools on Arbitrum) NOT issuer EOA — Juno itself holds MXN-only reserves and is structurally one-sided (no FX exposure). LP-targeting is a critical category-ii deep-dive reframing finding."
+
+# Companion address: Uniswap V3 Pool factory on Arbitrum (for downstream LP enumeration)
+# This is NOT a Juno address but is included to anchor the LP-level Δ^(a_s) attribution workflow.
+
+[[contracts]]
+address = "0x1F98431c8aD98523631AE4a59f267346ea31F984"
+role = "uniswap_v3_factory"
+network = "arbitrum-one"
+name = "Uniswap V3 Factory (Arbitrum) — for downstream MXNB-USDC pool enumeration"
+source = "https://arbiscan.io/address/0x1f98431c8ad98523631ae4a59f267346ea31f984"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+category_ii_classification = "lp_attribution_anchor_companion"
+notes = "Standard Uniswap V3 Factory on Arbitrum One. Used to enumerate MXNB-USDC and MXNB-USDT pools via getPool(token0, token1, fee) for fee tiers 100/500/3000/10000. Each pool's Swap, IncreaseLiquidity, DecreaseLiquidity events provide per-LP Δ^(a_s) attribution. NOT a category-ii issuer address; included as companion infrastructure for LP-level attribution workflow described in category_ii_deep_dive.md §1.3."
+
+# ====================================================================
+# §2 — Mento V2 Reserve + supporting (Celo) — TOP-2 direct-corridor candidate
+# ====================================================================
+# Mento Reserve already in contract_addresses_verified.toml; included here as primary
+# category-ii Reserve-aggregate a_s reference for Stage-2 Path B at COPm corridor.
+
+[[contracts]]
+address = "0x9380fA34Fd9e4Fd14c06305fd7B6199089eD4eb9"
+role = "reserve"
+network = "celo-mainnet"
+name = "Mento Reserve Proxy (Celo Reserve) — Category (ii) re-anchor as protocol-aggregate a_s for COPm"
+source = "https://celoscan.io/address/0x9380fA34Fd9e4Fd14c06305fd7B6199089eD4eb9"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+implementation = "0xfd9651862bc1965349e92073152112289393b57d"
+category_ii_classification = "protocol_aggregate_reserve_a_s"
+a_s_archetype_fit = "GOOD_FIT at Reserve aggregate level"
+delta_a_s_attribution = "NEEDS_WORK at per-currency (COPm) level — requires Reserve.getReserveAddressBalance() decomposition + StableTokenAllocation share computation + per-asset USD spot conversion"
+on_chain_quantifiability = "MEDIUM"
+sample_window_status = "COPm history Aug 2023 onwards ≈ 31 months; weekly cadence ~134 obs PASSES N_MIN=75 (THE ONLY direct-Pair-D-corridor candidate that passes N_MIN at weekly cadence)"
+notes = "Multi-asset Reserve backing all Mento V2/V3 stable tokens. Holds 5.8M CELO + 29 tokens worth ~$1.9M cross-chain (32 chains tracked). For COPm-specific Δ^(a_s) attribution requires StableTokenAllocation contract query + per-pool collateral-ratio decomposition. PRIMARY candidate for Stage-2 Path B per category_ii_deep_dive.md §6 cross-corridor recommendation: only direct Pair-D-corridor candidate (COPm/USD) with adequate sample window."
+
+[[contracts]]
+address = "0x8A567e2aE79CA692Bd748aB832081C45de4041eA"
+role = "stable_token"
+network = "celo-mainnet"
+name = "COPm — Mento V2 Colombian Peso Stable Token (canonical, NOT Minteo-fintech 0xc92e8fc2…)"
+source = "https://celoscan.io/address/0x8A567e2aE79CA692Bd748aB832081C45de4041eA"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+category_ii_classification = "tokenized_fiat_issuer_mint_burn_via_broker"
+a_s_archetype_fit = "WEAK_FIT at token level (mint/burn mediated by Broker; Δ^(a_s) attribution flows to Reserve aggregate above)"
+delta_a_s_attribution = "NEEDS_WORK (mint/burn events visible but issuer-effect requires BiPoolManager + Reserve state queries to attribute cleanly)"
+on_chain_quantifiability = "MEDIUM"
+notes = "COPm canonical Mento V2 StableTokenCOP per Rev-5.3.4 CORRIGENDUM in CLAUDE.md. NOT to be confused with Minteo-fintech 0xc92e8fc2947e32f2b574cca9f2f12097a71d5606 which is OUT OF SCOPE for Mento-native a_s attribution. Mint/burn flow: Broker.swapIn → BiPoolManager.swap → COPm.mint(user, amount) / COPm.burn(amount). Per-trade attribution via Broker Swap event includes 'trader' field. Direct Pair-D-corridor token. Used together with Mento Reserve above for Stage-2 Path B substrate-relocation per spec §3.5."
+
+# ====================================================================
+# §3 — wARS / Ripio — NEW DISCOVERY this dispatch
+# ====================================================================
+# Contract addresses NOT verified in this dispatch (Etherscan/Basescan free-tier did not
+# surface specific 0x address from search queries). Action item for Stage-2: query directly
+# via Etherscan/Basescan token search by name "wARS" or contact Ripio.
+
+[[contracts]]
+address = "UNVERIFIED_WARS_ETHEREUM"
+role = "stable_token_address_pending_verification"
+network = "ethereum-mainnet"
+name = "wARS — Ripio Argentine Peso stablecoin on Ethereum (CONTRACT ADDRESS UNVERIFIED IN THIS DISPATCH)"
+source = "https://www.coindesk.com/markets/2025/11/01/latin-american-crypto-exchange-ripio-launches-argentine-peso-stablecoin-wars"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "address_pending_verification"
+priority = "future_iteration_only"
+category_ii_classification = "tokenized_fiat_issuer_mint_burn"
+a_s_archetype_fit_at_issuer = "NOT_A_FIT (Ripio reserves are 100% ARS — same one-sided structure as MXNB/BRL1)"
+a_s_archetype_fit_at_lp = "WEAK_FIT (LP exposure confounded by trend-dominated ARS/USD regime: 229% ARS inflation Apr 2025; structural a_s premium-funded ratchet thesis fails on trending-mean substrates per Pair D Stage-1 lessons)"
+delta_a_s_attribution = "CLEAN at aggregate; OPAQUE-TO-NOISE at LP level due to ARS extreme regime"
+on_chain_quantifiability = "HIGH (standard ERC-20 on Ethereum + Base + World Chain)"
+sample_window_status = "wARS launched 2025-Q4; ~22 weeks of history as of 2026-05-03; BELOW N_MIN=75 at any cadence finer than daily"
+notes = "Ripio (LATAM crypto exchange, 25M+ users) launched wARS on Ethereum + Coinbase Base + World Chain in 2025-Q4. Per CoinDesk 2025-12-31 snapshot: 431,000,000 wARS outstanding, fully backed by ARS 447,361,996.56 in Argentine bank account; market cap ~$430,000 USD. DROP for Stage-2 immediate use; PRESERVE for future iteration if Argentina stabilizes (low probability 2026 horizon). Address verification action item for Stage-2 if reactivated."
+
+# ====================================================================
+# §4 — DROP candidates (recorded for transparency, NOT for v1 allowlist)
+# ====================================================================
+
+[[contracts]]
+address = "0x5C067C80C00eCd2345b05E83A3e758eF799C40B5"
+role = "stable_token_DROPPED_HALT_FLAG"
+network = "polygon-mainnet"
+name = "BRL1 — DROP per category-ii deep-dive HALT-FLAG (substrate-noise gate)"
+source = "https://polygonscan.com/token/0x5C067C80C00eCd2345b05E83A3e758eF799C40B5"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "confirmed_explorer_source_verified"
+priority = "DROP_recorded_for_transparency"
+category_ii_classification = "tokenized_fiat_issuer_mint_burn"
+halt_flag = "SUBSTRATE_TOO_NOISY per spec §3.5 — float $1.3M USD-equiv, daily volume $55K — 2-3 orders of magnitude below MXNB"
+notes = "BRL1 outstanding supply 6,583,047 (~$1.3M USD-equivalent); daily volume ~$55K per CoinGecko 2026-05-03. HALT-FLAG fires per substrate-noise gate. Additional issue: 4-issuer consortium (Bitso, MercadoBitcoin, Foxbit, Cainvest) commingles mint events at contract level — no per-issuer attribution field. RECOMMEND DROP from Stage-2 Path B. REACTIVATION CRITERIA: supply ≥10× current ($13M+ USD-equiv) AND consortium publishes per-issuer mint/burn attribution. Recorded here for transparency per anti-fishing discipline."
+
+[[contracts]]
+address = "MXNT_TETHER_MEXICO_DORMANT"
+role = "stable_token_DROPPED_OPACITY"
+network = "ethereum-polygon-tron"
+name = "MXNT — DROP per category-ii deep-dive opacity HALT-FLAG"
+source = "https://decrypt.co/101420/tether-enters-latin-american-market-with-mexican-peso-backed-stablecoin"
+discovery_timestamp_utc = "2026-05-03T00:00:00Z"
+verification_status = "no_recent_data_likely_dormant"
+priority = "DROP_recorded_for_transparency"
+category_ii_classification = "tokenized_fiat_issuer_mint_burn"
+halt_flag = "OPACITY — Tether stopped publishing MXNT marketing/adoption data after 2022 launch; no 2024-2026 supply or volume surfaced free-tier"
+notes = "Tether launched MXNT in May 2022 on Ethereum + Tron + Polygon. Multiple WebSearch attempts in this dispatch failed to surface 2024-2026 supply or volume data; MXNT does not appear in major LATAM-stablecoin trackers as of 2026-05-03. Inferred status: near-dormant or fully dormant. Tether MXNT addresses NOT verified in this dispatch (would require direct Etherscan/Polygonscan/Tronscan token-search). RECOMMEND DROP. Recorded for transparency — Tether stablecoins of this kind have a pattern of being launched as 'testing grounds' without sustained marketing follow-through; this appears to be that pattern."
