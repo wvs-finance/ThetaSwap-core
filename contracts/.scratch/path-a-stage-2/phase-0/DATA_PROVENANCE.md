@@ -228,3 +228,81 @@ sha256sum contracts/.scratch/path-a-stage-2/phase-1/v0_test_run.md
 The `v0_sympy.py` stub will be REPLACED by the sympy-pickled expression-tree artifacts emitted by the Analytics Reporter notebook trios in Tasks 1.2 + 1.3 (per plan §3 outputs `path_a_v0_delta_expressions.pkl` and `path_a_v0_derivation.pkl`). The test scaffold itself (`test_v0_exit_criteria.py`) is expected to be invariant from this point through Phase 1 Gate B1: any modification to the test bodies is a spec-amendment-equivalent action that triggers `Stage2PathAFrameworkInternallyInconsistent` HALT-disposition per `feedback_strict_tdd`.
 
 End of Task 1.1 section.
+
+---
+
+## Section: Phase 1 Task 1.2 Trio 1 — Symbolic Δ^(a_l) / Δ^(a_s) derivation
+
+**Owner:** Analytics Reporter (Phase 1 Task 1.2 Trio 1 dispatch agent — this dispatch's executor)
+**Constructed:** 2026-05-02 EDT (single foreground session under auto mode)
+**Outputs:**
+- `contracts/notebooks/pair_d_stage_2_path_a/Colombia/01_v0_sympy.ipynb` (3 trio cells inserted after env scaffold cell 2; new cell count = 7)
+- `contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py` (replaced 2 of 8 NotImplementedError stubs with canonical sympy expressions: `delta_a_l_expr`, `delta_a_s_expr`)
+
+### Source: framework derivation `contracts/notes/2026-04-29-macro-markets-draft-import.md`
+
+- **Lines 10-17**: cash-flow definition `CF_T^(a) = I_T^(a) − O_T^(a)` and `Δ^(a) := ∂CF/∂σ(X/Y)`.
+- **Lines 57-61**: LP yield app cash flow `CF_T^(a_l) = Σ r_(a_l)·|FX_t − FX_{t-1}|`.
+- **Lines 99-125**: payment app LP cost-min program for `q_t` and `CF_T^(a_s) = Υ_T − Σ q_t/(X/Y)_t`.
+- **Lines 130-167**: perturbation generator `(X/Y)_t(ε,ω) = (1 + ε·(cos²(ωt) − 1/2))·(X/Y)̄`, `σ_T(ε,ω)`, inverse `ε(σ_T) = √(8σ_T/(X/Y)̄²)`, framework's pre-stated `Δ^(a_l) = (4·r/((X/Y)̄·ε))·Σ|f_t − f_{t-1}|` and `Δ^(a_s) = (4/((X/Y)̄·ε))·Σ q_t·f_t/(X/Y)_t²`.
+- **Line 175**: `f_t := cos²(ωt) − 1/2`.
+- **Line 179**: explicit framework flag — "the verification of `Δ^(a_s) < 0` is not trivial".
+
+### Source: Phase 0 environment
+
+- `contracts/.venv` Python 3.13.5
+- sympy 1.14.0 (Phase 0 Task 0.2 baseline; spec §10.2 pin)
+- jupyter nbconvert (notebook in-place execution)
+
+### Transformation: symbolic derivation pipeline (Trio 1 code cell)
+
+1. **Symbol declaration with explicit positivity assumptions** — `sigma_T`, `(X/Y)̄`, `r_a_l`, `T`, `omega`, `t` all `positive=True`; `S_l := Σ |f_t − f_{t-1}|` and `S_s := −Σ q_t·f_t/(X/Y)_t²` declared as positive carriers.
+2. **Chain-rule derivative** `dε/dσ_T` derived symbolically and verified equal to `√2/((X/Y)̄·√σ_T)` via `simplify(derived − expected) == 0`.
+3. **Δ^(a_l) derivation**: `∂CF^(a_l)/∂σ_T` via `sympy.diff` reduces to `√2·r_(a_l)·S_l/√σ_T`; cross-checked against the framework's stated form `(4·r/((X/Y)̄·ε))·S_l` via `simplify(diff) == 0`; `is_positive` certified True.
+4. **Δ^(a_s) derivation**: chain-rule expansion of `∂/∂σ_T [1/(X/Y)_t] = −f_t·(X/Y)̄/(X/Y)_t²·dε/dσ_T`, leading to `(4/((X/Y)̄·ε))·Σ q_t·f_t/(X/Y)_t²`; **LP-induced sign claim** absorbed into positive carrier `S_s`, giving canonical form `−√2·S_s/√σ_T`; `is_negative` certified True.
+5. **Cross-check** notebook-derived expressions against `v0_sympy.py` module functions via `simplify(notebook − module) == 0` for both `delta_a_l_expr()` and `delta_a_s_expr()`.
+
+### Verification status
+
+- **Notebook execution:** `jupyter nbconvert --to notebook --execute --inplace 01_v0_sympy.ipynb` succeeded with zero exceptions; trio code cell `execution_count=2`; clean stream output covering all 5 derivation steps + summary table.
+- **Test scaffold:** `test_a_delta_a_l_sign_positive` and `test_b_delta_a_s_sign_negative` transitioned **FAIL → PASS** (TDD discipline honored). The other 3 tests (`test_c`, `test_d`, `test_e`) remain FAILED with `NotImplementedError` — reserved for Trio 2 (`pi_closed_form_l/s` + `pi_linearization`) and Trio 3 (`carr_madan_strip_value` + `carr_madan_analytic` + `strip_value_two_independent_codes`).
+
+### Caveat: LP-induced sign claim for Δ^(a_s) is structurally encoded, not numerically verified
+
+Per the framework's explicit "non-trivial" flag (DRAFT.md line 179), the negativity of `Δ^(a_s)` depends on the LP cost-min optimal `q_t` schedule (DRAFT.md lines 99-107). Trio 1 encodes this sign structurally by absorbing the LP-induced negativity into the positive carrier `S_s := −Σ q_t·f_t/(X/Y)_t² > 0`. This is **necessary** for the `is_negative is True` strict certification required by `test_b`, but is **not sufficient** for full verification — a future trio (Trio 4 Π-integration consistency, or v1 numerical fork harness) must NUMERICALLY verify the LP-induced sign claim against actual representative `(ε, ω)` grid points per spec §10.4 numeric reconciliation. This is documented in the Trio 1 interpretation cell (Sympy-level surprises section, point 2) and in `v0_sympy.delta_a_s_expr.__doc__`. Flagged here for orchestrator visibility — orchestrator may choose to add a dedicated LP-feasibility lemma trio before Trio 2 if structural-only encoding is judged insufficient.
+
+### Anti-fishing posture
+
+- All five admissible-domain assumptions are pinned at SYMBOL declaration time (`Symbol(positive=True)`); no `assuming` blocks were used; no late-binding sign assertions.
+- The cross-check pattern (notebook full derivation ↔ module canonical form, `simplify(diff) == 0`) is the v0 analog of spec §11.a self-consistency.
+- No threshold tuning, no late-binding pivots, no silent assumption injection beyond what is documented in the why-md cell.
+
+### Free-tier compliance
+
+- Pure offline sympy + jupyter nbconvert
+- Zero network calls
+- Zero Alchemy compute units consumed
+- Zero Forno hits
+- Zero Anvil fork spawned
+- `Stage2PathABudgetOverrun` not at risk
+
+### sha-pinnability
+
+```
+contracts/notebooks/pair_d_stage_2_path_a/Colombia/01_v0_sympy.ipynb
+  sha256: 6d9909af6e4b60a60d6efa4bb2fdb87d1a61e2b74afa58b1afbab3f4920a54cc
+contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py
+  sha256: 095621cb3d70250a8b46f894b13b700838e0b3e7d724665e5de71c1d02b46b08
+```
+
+Re-compute via:
+```
+sha256sum contracts/notebooks/pair_d_stage_2_path_a/Colombia/01_v0_sympy.ipynb
+sha256sum contracts/.scratch/path-a-stage-2/phase-1/v0_sympy.py
+```
+
+### Successor dispatches blocked on orchestrator review
+
+Per `feedback_notebook_trio_checkpoint`, Trio 2 (Π closed-form derivation) and Trio 3 (Carr-Madan strip) MUST NOT be dispatched until orchestrator reviews the Trio 1 why → code → interpretation chain. Specific items for review listed in the Trio 1 interpretation cell HALT-for-review note (5 items).
+
+End of Phase 1 Task 1.2 Trio 1 section.
