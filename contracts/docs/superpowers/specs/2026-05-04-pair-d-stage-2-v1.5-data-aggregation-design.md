@@ -1,8 +1,8 @@
 ---
 spec_path: pair-d-stage-2-v1.5-data-aggregation-design
-spec_version: v1.0 (initial via CORRECTIONS-η decomposition from v1.5-original)
+spec_version: v1.1 (post-Wave-1+2 revision integrating RC + Model QA findings + HyperEVM/MegaETH discovery NULL)
 spec_author: orchestrator + user co-design 2026-05-04
-spec_sha256: <to-be-pinned-after-recompute>
+spec_sha256: 8deffe5c6ab4033454f45a1c837f686c8f3a7b6a16dadd5556283c2127c89a0f
 parent_spec_pin: 2026-04-30-pair-d-stage-2-B-on-chain-data-spec.md (v1.4, sha fcebc95f923e1b55fbf2eaa22239b00bbde4a9f35bb031e8f32d090a4fb80d95)
 parent_plan_pin: 2026-04-30-pair-d-stage-2-B-on-chain-data-implementation.md (v1.1, sha 7e2f43c211a314475c3fc2ef5890c268c7216efa55b0b7a9d2c8e5d8d95bca6b)
 predecessor_spec_pin: 2026-05-04-pair-d-stage-2-v1.5-model-fitness-design.md (v1.5-original; SUPERSEDED-BY-DECOMPOSITION; sha 8a8ce0571bf7e5786048b13753991468c8fb63596c9dfe1a4d2b409e479a6514)
@@ -11,10 +11,15 @@ discovery_pin: contracts/.scratch/path-b-stage-2/phase-1/cop_corridor_aggregate_
 aggregation_methodology_pin: contracts/.scratch/path-b-stage-2/phase-1/cop_corridor_aggregate_research/aggregation_methodology.md
 gate_b1_review_pin: contracts/.scratch/path-b-stage-2/phase-1/gate_b1_review.md
 synthesis_memo_pin: contracts/.scratch/path-b-stage-2/phase-1/a_s_pivot_research/SYNTHESIS.md (commit e25131cd2)
+hyperevm_megaeth_discovery_pin: contracts/.scratch/path-b-stage-2/phase-1/cop_corridor_aggregate_research/hyperevm_megaeth_discovery.md (EXPLICIT_NULL 2026-05-04)
 budget_pin: free_tier_only (preserved from CORRECTIONS-δ)
-methodology_spec_link: <pending> v1.5-methodology spec — DEFERRED until v1.5-data execution delivers aggregate panel + n_informative_table + ar1_diagnostic + σ-anchor reality + cohort-N empirical floor
-verifier_v1_0_wave1: pending (Reality Checker — 2-wave verification per `feedback_two_wave_doc_verification`)
-verifier_v1_0_wave2: pending (Model QA Specialist — 2-wave verification per `feedback_two_wave_doc_verification`)
+methodology_spec_link: <pending> v1.5-methodology spec — DEFERRED until v1.5-data execution delivers aggregate panel + n_informative_table + cohort_n_table + ar1_diagnostic (with PACF lags 1-8) + σ-anchor coverage (with drift) + cohort-N empirical floor
+verifier_v1_0_wave1: ACCEPT_WITH_FLAGS (Reality Checker; 2 BLOCKs / 5 FLAGs / 2 NITs; verdict at /tmp/wave1_rc_v1_5_data_design.md; integrated v1.0→v1.1)
+verifier_v1_0_wave2: ACCEPT_WITH_FLAGS (Model QA Specialist; 0 BLOCKs / 5 FLAGs / 4 NITs; verdict at /tmp/wave2_modelqa_v1_5_data_design.md; integrated v1.0→v1.1)
+revision_history:
+  - v1.0 (2026-05-04 initial; sha 2d89007ff82eadd1983312bed845bbdf213e477694996086eec89e9ab53230c4): authored via CORRECTIONS-η decomposition from v1.5-original
+  - v1.0+EVM (2026-05-04; sha 3fb9daac08b0c597fc4239c7cbc9fffea9a7cfc757c47041ddecd6e369f425e1): EVM-only scope + HyperEVM/MegaETH research-pending rows per user direction; submitted to Wave-1+2 verify
+  - v1.1 (2026-05-04 THIS REVISION): integrated 2 BLOCKs (sha-pin protocol + §12 row 11 50-week floor smuggle remediated to forward-reference v1.5-methodology) + 9 FLAGs (Stage-3 firewall §13 invariant 11; Gate B1 σ-anchor disclaimer §6 + §9; Wenia probe budget §3 row 7; settlement-venue routing sub-table §5.1; Broker §3 row 3 verdict consistency; AR(1) extended §8 with HAC bandwidth + Ljung-Box α + PACF lags 1-8 + line 292 formula DROPPED as Class M smuggle; cohort-N table §10 + §16 #8; SQD-only inclusion gate §3.bis; pre-condition 9 schedule + §16 timing preamble) + HyperEVM/MegaETH discovery NULL closed (§3 rows 11-12 EXPLICIT_NULL; §3.bis closed; §16 #9 trivially satisfied; §16 #10 EXIT-candidate path pre-acknowledged) + 4 NITs polish
 ---
 
 # Pair D Stage-2 — v1.5-data Aggregate COP-Corridor Substrate Design
@@ -108,41 +113,42 @@ The v1.5-data substrate scope is FROZEN at this spec's commit. Post-commit subst
 | # | Venue | Chain | Address | Inclusion verdict | Resolution-pending action | Velocity-floor disposition |
 |---|---|---|---|---|---|---|
 | 1 | Mento V2 COPm baseline | Celo | `0x8A567e2aE79CA692Bd748aB832081C45de4041eA` | INCLUDED (Phase 1 baseline) | None | Velocity-floor PASS at Phase 1 (51,802 events) |
-| 2 | Mento V2 BiPool USDm/COPm exchange | Celo | exchange_id `0x1c9378bd0973ff313a599d3effc654ba759f8ccca655ab6d6ce5bd39a212943b` | INCLUDED (Phase 1 baseline) | None | Velocity-floor MARGINAL at Phase 1 (302 swaps); retained per spec §6 secondary fall-back authorization |
-| 3 | Mento V2 Broker | Celo | `0x777A8255B25Be7d7AF8a90c8AEDdcb53A1ad017f` | INCLUDED (Phase 1 baseline; broker-routed flow proxy) | None | Velocity-floor PASS at Phase 1 (672K events) |
+| 2 | Mento V2 BiPool USDm/COPm exchange | Celo | exchange_id `0x1c9378bd0973ff313a599d3effc654ba759f8ccca655ab6d6ce5bd39a212943b` | INCLUDED (Phase 1 baseline) | None | Phase 1 verdict: 302 total swaps (224 non_lp_user); under v1.5-data §4 thresholds applied to non_lp_user partition: MARGINAL (9/136 = 6.6% non-zero weeks); retained per spec §6 secondary fall-back authorization |
+| 3 | Mento V2 Broker | Celo | `0x777A8255B25Be7d7AF8a90c8AEDdcb53A1ad017f` | INCLUDED (Phase 1 baseline; broker-routed flow proxy) | None | Phase 1 PASS under v1 thresholds (672K total events); under v1.5-data §4 thresholds applied to non_lp_user partition: MARGINAL (14/136 = 10.3% non-zero weeks; 58,850 non_lp_user events) |
 | 4 | Minteo COPM Celo | Celo | `0xc92e8fc2947e32f2b574cca9f2f12097a71d5606` | INCLUDED (re-include per substrate-expansion) | Phase 1 audit re-run on this venue | Pre-audit |
 | 5 | Minteo COPM Polygon | Polygon | `0x12050c705152931cFEe3DD56c52Fb09Dea816C23` | INCLUDED (HIGH PRIORITY per discovery.md §1.3 — $200M+ monthly attested) | Phase 1 audit on Polygon SQD endpoint | Pre-audit |
 | 6 | Num Finance nCOP Polygon | Polygon | `0x0856f80fF4dE8F2bF89872B27ba6e9Fb45d96Ae3` | INCLUDED (independent issuer; 2023 launch; 180M supply) | Phase 1 audit on Polygon SQD endpoint | Pre-audit |
-| 7 | Wenia COPW Polygon | Polygon | `<PENDING_TOKEN_RESOLUTION_VIA_POR_FEED_PROBE>` | CONDITIONAL_INCLUDE (token address pending) | 1-call eth_call eth_getStorageAt on PoR feed `0x1d22c334621364F16f050076eE15Acd5eb8225Ce` to extract bound token contract; HALT-and-surface if free-tier resolution fails within sub-plan Task 2.1 budget | Pre-audit; resolution required before audit |
+| 7 | Wenia COPW Polygon | Polygon | `<PENDING_TOKEN_RESOLUTION_VIA_POR_FEED_PROBE>` | CONDITIONAL_INCLUDE (token address pending) | 1-3 eth_call probes against PoR feed `0x1d22c334621364F16f050076eE15Acd5eb8225Ce` using Chainlink AggregatorV3Interface methods (`description()`, `aggregator()`) and/or eth_getStorageAt on inferred slots to resolve the bound COPW token contract; HALT-and-surface if free-tier resolution requires >10 calls or fails to resolve within sub-plan Task 14.4.1 budget. Estimated: ≤20 Alchemy CU. | Pre-audit; resolution required before audit |
 | 8 | Daily COP DLYCOP Polygon | Polygon | `0x1659fFb2d40DfB1671Ac226A0D9Dcc95A774521A` | CONDITIONAL_INCLUDE (substrate-floor reference; not primary aggregator weight) | Phase 1 audit; expected to fail W1 velocity floor (24h vol $75) | Likely velocity-floor exclusion → w_DLYCOP = 0 in aggregator |
 | 9 | Daily COP DLYCOP BSC | BSC | `0xE9C6824508c19bc98b162BbcD7c940bFA4287e27` | EXCLUDED (EVM-eligible per user EVM-only directive but free-tier SQD coverage thin → future-iteration) | None | N/A |
 | 10 | Minteo SPL Solana | Solana | `Copm5KwCLXDTWYgXJYmo6ixmMZrxd1wabkujkcuaK47C` | EXCLUDED (non-EVM; user EVM-only directive 2026-05-04 confirms permanent exclusion from v1.5-data scope) | None | N/A |
-| 11 | HyperEVM (Hyperliquid L1 EVM) — COP-pegged tokens | HyperEVM | TBD via §3.bis discovery dispatch | RESEARCH_PENDING_DISCOVERY | Trend Researcher dispatch for COP-pegged token deployments (Mento V3 multi-chain bridge, Minteo HyperEVM deployment, Wenia HyperEVM, Num Finance HyperEVM, native HyperEVM-issued COP) | Pre-discovery |
-| 12 | MegaETH (high-throughput L2) — COP-pegged tokens | MegaETH | TBD via §3.bis discovery dispatch | RESEARCH_PENDING_DISCOVERY | Trend Researcher dispatch for COP-pegged token deployments | Pre-discovery |
+| 11 | HyperEVM (Hyperliquid L1 EVM) — COP-pegged tokens | HyperEVM | n/a — discovery NULL | EXPLICIT_NULL (§3.bis discovery returned 2026-05-04: no COP-pegged ERC-20 deployed on HyperEVM under any naming; CoinGecko HyperEVM ecosystem index, Mento V3 multichain docs, Minteo Transparency portal, Wenia/Bancolombia, Num Finance, Tether DLYCOP all confirmed Polygon/Celo-only) | None — recorded in `hyperevm_megaeth_discovery.md`; future-iteration re-research if a Mento/Minteo/Wenia/Num multichain expansion announces HyperEVM | N/A — no token to weight |
+| 12 | MegaETH (high-throughput L2) — COP-pegged tokens | MegaETH | n/a — discovery NULL | EXPLICIT_NULL (§3.bis discovery returned 2026-05-04: native stablecoin substrate is USD-only — USDM Ethena, USDT0, USDE; LATAM-fiat substrate has not migrated; mainnet only live since 2026-02-09) | None — recorded in `hyperevm_megaeth_discovery.md`; future-iteration re-research as MegaETH ecosystem matures | N/A — no token to weight |
 
 **v1.5-data effective substrate set**:
 - **Confirmed in scope (rows 1-8)**: 8 venues (4 confirmed EVM tokens + 1 conditional Wenia + 1 conditional DLYCOP + 2 Mento V2 settlement venues + 1 Mento V2 baseline)
-- **Research-pending (rows 11-12)**: HyperEVM + MegaETH; if discovery returns positive COP-pegged token deployments, those tokens enter the aggregator under the standard §4 audit gate via CORRECTIONS-block-style spec amendment (substrate addition triggers CORRECTIONS-block + 2-wave verify per §13 invariant 1)
+- **Research closed EXPLICIT_NULL (rows 11-12)**: HyperEVM + MegaETH; §3.bis discovery returned 2026-05-04 confirming no COP-pegged token deployments on either chain; recorded in `hyperevm_megaeth_discovery.md`. §16 pre-condition 9 trivially satisfied.
 - **Excluded (rows 9-10)**: BSC DLYCOP (free-tier coverage thin), Solana Minteo (non-EVM)
 
 Wenia COPW (row 7) is CONDITIONAL on PoR-feed probe success; if the probe fails to resolve the token address within free-tier budget, v1.5-data ships with 7 venues and a HALT-and-surface entry in `v1_5_data_findings.md`.
 
-### §3.bis Future-iteration EVM substrate research targets
+### §3.bis Future-iteration EVM substrate research — discovery closed EXPLICIT_NULL 2026-05-04
 
-Per user direction 2026-05-04 ("Only EVM chains. Include new chains like HyperEVM and MegaETH"), the v1.5-data scope opens an EVM-only research-pending category alongside the confirmed Polygon + Celo set. Two emerging EVM chains are seeded as priority research targets:
+Per user direction 2026-05-04 ("Only EVM chains. Include new chains like HyperEVM and MegaETH"), v1.5-data opened an EVM-only research-pending category alongside the confirmed Polygon + Celo set. Two emerging EVM chains were seeded as priority research targets:
 
-- **HyperEVM (Hyperliquid L1 EVM)**: Hyperliquid's EVM execution layer (launched 2025); user-flagged as priority EVM ecosystem with high developer attention. Concurrent **Stage-3 deployment-target interest**: HyperEVM is also flagged for future Panoptic-style options venue evaluation (this is M-side Stage-2 work, NOT v1.5-data substrate-side; recorded for future M-dispatch). For v1.5-data, the question is narrowly: does any COP-pegged token deploy on HyperEVM as of audit_block?
-- **MegaETH**: High-throughput EVM L2/L3 (testnet → mainnet trajectory in 2026); emerging ecosystem. Question for v1.5-data: any COP-pegged token deployment as of audit_block?
+- **HyperEVM (Hyperliquid L1 EVM)**: Hyperliquid's EVM execution layer (launched 2025); user-flagged as priority EVM ecosystem.
+- **MegaETH**: High-throughput EVM L2 (mainnet 2026-02-09); emerging ecosystem.
 
-**Discovery methodology** (mirrors `cop_corridor_aggregate_research/discovery.md` §1 pattern):
-- WebSearch for "HyperEVM COP stablecoin", "HyperEVM Colombian peso", "MegaETH stablecoin", "MegaETH COP", and Mento / Minteo / Wenia / Num Finance multichain deployment announcements
-- Native chain explorers: HyperEVM explorer (purrsec.com / hyperliquid.xyz), MegaETH explorer
-- GeckoTerminal / DEXScreener filters by chain
-- Mento V3 multichain registry (if any cross-chain BiPool deployment registers HyperEVM/MegaETH)
+**Discovery dispatch closed EXPLICIT_NULL 2026-05-04** — Trend Researcher report at `contracts/.scratch/path-b-stage-2/phase-1/cop_corridor_aggregate_research/hyperevm_megaeth_discovery.md`:
+- HyperEVM: NO COP-pegged ERC-20 deployed under any naming. Verified via CoinGecko HyperEVM ecosystem (USD-only stablecoin substrate: USDC, USDT0, USDE, RUSDC-HYPER) + issuer-side scans (Mento V3 docs explicitly do NOT list HyperEVM/MegaETH; Minteo Celo + Polygon + Solana only; Wenia Polygon only; Num Finance Polygon-primary; Tether DLYCOP Polygon only).
+- MegaETH: NO COP-pegged token. Native stablecoin substrate is USDM (Ethena/BUIDL-backed), USDT0, USDE — all USD-denominated. LATAM-fiat substrate has not migrated.
+- Methodology HALT-and-surface: HyperEVMScan token-list page returned HTTP 403; substituted with CoinGecko's documented 2.7K+ HyperEVM token coverage (sufficient for negative-presence claim at discovery stage).
 
-**Inclusion gate**: any discovered COP-pegged token must (a) be free-tier observable via SQD or public RPC on its chain, (b) pass §4 per-venue audit thresholds, (c) trigger CORRECTIONS-block + 2-wave verify on this spec for substrate-scope amendment before entering the aggregator.
+**Stage-3 forward note (out of substrate-side scope)**: HyperEVM has NO Panoptic-style options deployment as of 2026-05-04. Hyperliquid's native derivative innovation is HIP-3 (permissionless perp futures via 500K HYPE stake — linear, NOT convex) and HIP-4 (binary-outcome / prediction-market contracts, mainnet 2026-05-03 — also not convex options). Panoptic V2 is Ethereum-mainnet-only at launch; Lyra/Derive, Dopex/Stryke, Premia have no public HyperEVM deployments. Stage-3 implication: any future Pair D M-sketch must still target Panoptic on Ethereum mainnet; HyperEVM is a future-iteration target, not a current-iteration substrate. **This forward-note is informational only and is NOT spec-side authority for substrate-side scope expansion** (§13 invariant 11).
 
-**Discovery dispatch**: queued in parallel with v1.5-data spec 2-wave verify (Trend Researcher dispatched 2026-05-04).
+**Pre-pinned re-research trigger**: future-iteration v1.5-methodology authoring revisits §3.bis if any of the following lands: (a) Mento V3 multichain announcement deploying COPm to HyperEVM or MegaETH; (b) Minteo / Wenia / Num Finance announcement of HyperEVM or MegaETH deployment; (c) any new Colombian-fiat stablecoin issuer publicly announcing deployment on either chain. Re-research dispatch bypasses CORRECTIONS-block ONLY if the result is ALSO EXPLICIT_NULL; positive findings still route through the §13 invariant 1 substrate-scope amendment process.
+
+**Inclusion gate (preserved for future re-research)**: any discovered COP-pegged token must (a) be free-tier observable via **SQD ONLY** at this iteration (HyperEVM and MegaETH SQD coverage unconfirmed as of 2026-05-04; if FOUND-but-SQD-uncovered, route to RESEARCH_PENDING_FUTURE_ITERATION with explicit free-tier-budget-expansion CORRECTIONS-block as future-iteration trigger; do NOT auto-extend budget within v1.5-data); (b) pass §4 per-venue audit thresholds; (c) trigger CORRECTIONS-block + 2-wave verify on this spec for substrate-scope amendment before entering the aggregator.
 
 ## §4. Per-venue audit protocol
 
@@ -164,6 +170,8 @@ Each new venue (rows 4-8 above) runs through the Phase 1 audit script (`contract
 | **MARGINAL** | Total events ∈ [100, 1000) OR non_lp_user non_zero in [10%, 30%) of weeks | Include in aggregate with sparse-flag handling per W2; emit MARGINAL audit row |
 | **HALT** | Total events < 100 OR non_lp_user non_zero in < 5% of weeks (W1 velocity-floor exclusion) | Set w_venue = 0 in aggregator; emit HALT audit row with structural-truth reasoning |
 
+**Asymmetry note**: PASS uses AND (high bar — must clear both event-count and non-zero-pct floors); MARGINAL uses OR (either-or routing — easier entry); HALT uses OR (single-clause exclusion). Routing-gap edge: a venue with 50 events / 50% non-zero weeks lands HALT-via-events<100 (not MARGINAL, since the 10-30% non-zero clause fails at 50%). Asymmetry is deliberate — under-data substrates are routed conservatively to HALT.
+
 **Anti-fishing**: per-venue thresholds are pre-pinned in this spec. Post-data threshold relaxation (e.g., "DLYCOP is 6% non-zero, let's lower the floor to 5%") fires `Stage2PathBPerVenueThresholdTuningProhibited` typed exception.
 
 **Free-tier budget per venue audit**: ~30-40 SQD requests per venue × 5 new venues = 150-200 SQD requests over Phase 2 v1.5-data sub-plan execution. Estimated Alchemy CU: 5-10 CU for `eth_call totalSupply()` + token0/token1 sanity checks. Total: well within preserved CORRECTIONS-δ free-tier budget.
@@ -184,7 +192,15 @@ w_t = totalSupply_t(audit_block_chain_t) × decimals_t_normalizer × COPM_USD_an
 
 Effective token count at v1.5-data execution: 4 confirmed (rows 1, 4, 5, 6) + up to 2 conditional (row 7 Wenia COPW pending PoR-feed probe; row 8 DLYCOP expected W1 velocity-floor exclusion). Worst case (Wenia unresolved + DLYCOP excluded): 4 tokens. Best case: 6 tokens.
 
-Settlement-venue events (rows 2, 3) are routed to per-token partitions: BiPool USDm/COPm swaps map to Mento V2 COPm Celo token's flow; Mento V2 Broker token-traded events map to whichever Mento V2 stable token is the source/destination of the trade.
+Settlement-venue events (rows 2, 3) are routed to per-token partitions per the explicit routing table below:
+
+| Settlement venue event | Routes to TOKEN partition | Notes |
+|---|---|---|
+| Mento V2 BiPool USDm/COPm swap (row 2) | Mento V2 COPm Celo (row 1) | The COP-side leg of the swap |
+| Mento V2 Broker swap involving COPm | Mento V2 COPm Celo (row 1) | The COP-side leg only; USDm-side leg dropped (USDm is settlement currency, not COP-pegged) |
+| Mento V2 Broker swap NOT involving COPm | DROP — outside COP corridor | E.g., USDm/cEUR or USDm/cUSD swaps are not COP-corridor flows |
+
+This explicit routing prevents accidental inclusion of non-COP Mento V2 Broker traffic in the aggregator and avoids double-counting.
 
 Weights pinned at:
 - `audit_block_celo` = pinned in `audit_block_pin.json` at sub-plan execution time
@@ -227,6 +243,8 @@ Per Phase 1 RC FLAG-F2 finding (Broker non_lp_user sparse 14/136 weeks): aggrega
 
 Mirrors `aggregation_methodology.md` §3 verbatim, embedded here as load-bearing for v1.5-data:
 
+**Gate B1 adjudication firewall**: USD-anchor backup selection (Mento V2 BiPool spot below) is a downstream-of-Gate-B1 σ-anchor candidate enumeration choice, NOT a substrate-pivot pre-fix. The Gate B1 (a)/(b)/(c) `r_(a_l)`-substrate adjudication is deferred to v1.5-methodology authoring per §13 invariant 8. v1.5-methodology may revise σ-anchor primary selection if Gate B1 adjudication picks Option (b) or (c).
+
 **Primary anchor**: Banrep TRM (Tasa Representativa del Mercado) — already pinned in Stage-1 chain; canonical and free-tier accessible via Banrep API.
 
 **Backup anchor (for off-Banrep dates)**: Mento V2 BiPool USDm/COPm direct-pair price at exchange-id `0x1c9378bd0973ff313a599d3effc654ba759f8ccca655ab6d6ce5bd39a212943b` (already discovered in Phase 1 Task 1.3.b; see `mento_swap_flow_inventory.parquet`). NOT Mento V3 FPMM USDm/cUSD pool (which is dormant, 0 events).
@@ -265,9 +283,9 @@ Per-venue and aggregate count of weeks with non-zero observable events. Resolves
 
 **v1.5-methodology pre-condition**: this file ships before v1.5-methodology authoring begins. v1.5-methodology pins N_INFORMATIVE floor based on aggregate row's realized count.
 
-## §8. AR(1) diagnostic
+## §8. AR(1) + PACF autocorrelation diagnostic
 
-Emit first-order autocorrelation coefficient on aggregate-flow series; load-bearing for v1.5-methodology bootstrap block-length pinning (resolves predecessor MQ-BLOCK-5 substrate-side input).
+Emit autocorrelation diagnostics on aggregate-flow series; load-bearing for v1.5-methodology bootstrap block-length pinning across multiple bootstrap variants (resolves predecessor MQ-BLOCK-5 substrate-side input).
 
 **`ar1_diagnostic.json` schema**:
 
@@ -278,22 +296,38 @@ Emit first-order autocorrelation coefficient on aggregate-flow series; load-bear
   "ar1_coefficient": <float in [-1.0, 1.0]>,
   "ar1_se_hac_newey_west": <float; HAC-corrected SE>,
   "ar1_pvalue_two_sided": <float>,
+  "hac_bandwidth": <integer; pinned per methodology below>,
+  "hac_kernel": "Newey-West-Bartlett",
+  "pacf_lags_1_to_8": <array of 8 floats; partial autocorrelation function at lags 1..8>,
+  "pacf_se_per_lag": <array of 8 floats; SE per lag>,
   "ljung_box_q_stat_lag_4": <float>,
   "ljung_box_q_stat_lag_12": <float>,
+  "ljung_box_pvalue_lag_4": <float>,
+  "ljung_box_pvalue_lag_12": <float>,
+  "ljung_box_rejection_alpha": 0.05,
   "computed_at_audit_block_celo": <int>,
   "computed_at_audit_block_polygon": <int>,
-  "computation_method": "OLS-AR(1)-on-non-NULL-aggregate-weeks",
+  "computation_method": "OLS-AR(1)-on-non-NULL-aggregate-weeks; PACF via Yule-Walker; Ljung-Box at lags 4 + 12",
   "computation_sha256": <sha256 of aggregate panel input>
 }
 ```
 
-Methodology: regress `q_t_aggregate(week_t)` on `q_t_aggregate(week_{t-1})` over the subset of non-NULL weeks; report coefficient + HAC SE + Ljung-Box at lags 4 and 12. NO bootstrap at this stage (deferred to v1.5-methodology).
+**Methodology (pinned)**:
+1. Regress `q_t_aggregate(week_t)` on `q_t_aggregate(week_{t-1})` over the subset of non-NULL weeks
+2. HAC SE via Newey-West with Bartlett kernel; **bandwidth pinned at Newey-West-1994 plug-in: `floor(4 * (T/100)^(2/9))`** where T = `n_observations` (e.g., T=100 → bw=4; T=200 → bw=5)
+3. PACF lags 1-8 via Yule-Walker; emit point estimate + SE per lag
+4. Ljung-Box at lags 4 and 12; **rejection α = 0.05 pinned**; emit Q-stat + p-value at each lag
+5. NO bootstrap at this stage (consumer-side use deferred to v1.5-methodology)
 
-**v1.5-methodology pre-condition**: bootstrap block-length pinned at `1 / (1 - ρ̂)` capped at 26 weeks where `ρ̂` = `ar1_coefficient` from this emission.
+**Why PACF lags 1-8 are emitted**: AR(1) ρ̂ alone is insufficient if higher-order weekly autocorrelation exists (likely on weekly RV-class series). PACF lags 2-8 let v1.5-methodology pin block-length under any reasonable bootstrap variant (stationary bootstrap a la Politis-Romano 1994 needs ρ̂; moving-block bootstrap a la Künsch 1989 needs the autocovariance function over block-length-relevant lags; circular block-bootstrap a la Politis-White 2004 needs an optimal-block-length estimate from the autocovariance function) WITHOUT requiring v1.5-data re-execution.
+
+**v1.5-data scope discipline**: this section EMITS autocorrelation diagnostics; bootstrap block-length pinning, kernel choice for downstream bootstrap, and consumer-side use of `ρ̂` are EXPLICITLY OUT OF SCOPE for v1.5-data per §13 invariant 10. Block-length formulas (e.g., `1 / (1 - ρ̂)` under stationary bootstrap, or Politis-White optimal-block-length under MBB) belong in v1.5-methodology, not here.
 
 ## §9. σ-anchor reality assessment
 
 Emit per-anchor informative-weeks count for the three σ-anchor candidates; load-bearing for v1.5-methodology σ-anchor primary specification (resolves predecessor MQ-FLAG-9 substrate-side input).
+
+**Gate B1 adjudication firewall** (parallel to §6): σ-anchor candidate enumeration is NOT prejudicial to Gate B1 (a)/(b)/(c) `r_(a_l)`-substrate pivot adjudication, which is deferred to v1.5-methodology authoring per §13 invariant 8. v1.5-methodology may revise σ-anchor primary selection if Gate B1 adjudication picks Option (b) or (c).
 
 **`sigma_anchor_coverage.json` schema**:
 
@@ -319,11 +353,31 @@ Emit per-anchor informative-weeks count for the three σ-anchor candidates; load
     "first_observation_utc": <date>,
     "last_observation_utc": <date>,
     "free_tier_status": "OK or PENDING"
+  },
+  "sigma_anchor_drift_coincident_weeks": {
+    "banrep_vs_bipool_spot": {
+      "weeks_observed": <int>,
+      "mean_pct_drift": <float>,
+      "max_pct_drift": <float>,
+      "median_abs_drift": <float>
+    },
+    "banrep_vs_uniswap_v3_polygon_spot": {
+      "weeks_observed": <int>,
+      "mean_pct_drift": <float>,
+      "max_pct_drift": <float>,
+      "median_abs_drift": <float>
+    },
+    "bipool_spot_vs_uniswap_v3_polygon_spot": {
+      "weeks_observed": <int>,
+      "mean_pct_drift": <float>,
+      "max_pct_drift": <float>,
+      "median_abs_drift": <float>
+    }
   }
 }
 ```
 
-**v1.5-methodology pre-condition**: σ-anchor primary pinned based on this emission's informative-weeks counts; whichever anchor has highest coverage with cleanest microstructure becomes primary.
+**v1.5-methodology pre-condition**: σ-anchor primary pinned based on this emission's informative-weeks counts AND cross-anchor drift; whichever anchor has highest coverage with cleanest microstructure AND lowest drift vs primary candidate becomes primary; drift metrics inform sensitivity-arm robustness check.
 
 ## §10. Output deliverables
 
@@ -331,8 +385,9 @@ Emit per-anchor informative-weeks count for the three σ-anchor candidates; load
 |---|---|---|
 | `cop_corridor_aggregate_panel.parquet` | `contracts/.scratch/pair-d-stage-2-B/v1_5_data/` | Per-week aggregate flow + per-substrate contributions |
 | `n_informative_table.parquet` | same | Per-venue + aggregate informative-weeks count |
-| `ar1_diagnostic.json` | same | AR(1) coefficient on aggregate-flow series |
-| `sigma_anchor_coverage.json` | same | Per-anchor informative-weeks count |
+| `cohort_n_table.parquet` | same | Address-level cohort survival under ≥3-transfers filter; schema `{address, total_transfers_in_window, first_week_active, last_week_active, weeks_active, partition_classification (non_lp_user / mev_arb / lp), aggregate_substrates_touched}`; load-bearing for v1.5-methodology K-means k-selection input (resolves predecessor MQ-BLOCK-4) |
+| `ar1_diagnostic.json` | same | AR(1) + PACF lags 1-8 + Ljung-Box autocorrelation diagnostic on aggregate-flow series |
+| `sigma_anchor_coverage.json` | same | Per-anchor informative-weeks count + cross-anchor drift metric |
 | `audit_block_pin.json` | same | Frozen audit_block per chain with sha256-pinned timestamps |
 | `audit_metrics_raw.json` (5 new venues) | same | Per-venue audit results extending Phase 1 schema |
 | `v1_5_data_findings.md` | same | Narrative interpretation; substrate-pivot adjudication input |
@@ -364,7 +419,7 @@ Total v1.5-data execution cost: well under 1% of any monthly budget.
 | USD-anchor selection rule deterministic | Banrep TRM primary; Mento V2 BiPool backup; tertiary sanity-only; issuer-self never used |
 | `Stage2PathBAggregatorWeightTuningProhibited` typed exception | Fires on any post-hoc weight adjustment |
 | `Stage2PathBPerVenueThresholdTuningProhibited` typed exception | Fires on any post-hoc per-venue audit threshold relaxation |
-| `Stage2PathBAggregateSubstrateThinness` typed exception | Fires when aggregate `weeks_with_nonzero_events < 50` (load-bearing pre-condition for v1.5-methodology N_INFORMATIVE floor at 75; this floor itself defers to v1.5-methodology) |
+| `Stage2PathBAggregateSubstrateThinness` typed exception | Fires when aggregate `weeks_with_nonzero_events` realizes lower than the floor pinned in v1.5-methodology authoring. **NOT pre-pinned in this spec** — threshold deferred per §1, §13 invariant 8, and the CORRECTIONS-η decomposition discipline that defers Class-M pre-commits to empirical-anchor-aware authoring. v1.5-data EMITS the realized count via `n_informative_table.parquet`; v1.5-methodology PINS the threshold against framework precedent (`N_MIN = 75` per `project_mdes_formulation_pin`) or a justified alternative based on realized aggregate n. |
 
 ## §13. Pre-commitment invariants (spec-locked)
 
@@ -380,6 +435,8 @@ Total v1.5-data execution cost: well under 1% of any monthly budget.
 8. **Substrate-pivot adjudication block**: NOT resolved in v1.5-data; surfaces at v1.5-methodology authoring with realized aggregate panel as input. Recorded in `v1_5_data_findings.md` as "v1.5-methodology pre-condition: Gate B1 (a)/(b)/(c) substrate-pivot user adjudication required before v1.5-methodology spec finalization."
 9. **HALT cascade discipline**: every per-venue HALT outcome routes to a CORRECTIONS-block path with explicit user adjudication. NO silent pivots, NO auto-extensions, NO threshold relaxation post-data.
 10. **Decomposition discipline**: methodology choices (3-test gate, AICc/AIC, K-means k-selection, bootstrap method, R-thresholds, thesis-fitness verdict layer) are EXPLICITLY out of scope for v1.5-data. Any in-scope creep into methodology fires `Stage2PathBSpecScopeViolation` typed exception.
+
+11. **Stage-3 forward-note firewall**: Stage-3 deployment-target interests (e.g., HyperEVM as Panoptic-style options venue per §1 + §3.bis) are NOT spec-side authority for substrate-side scope expansion. Substrate-side HyperEVM/MegaETH inclusion requires §3.bis discovery returning a confirmed COP-pegged token + CORRECTIONS-block + 2-wave verify per invariant 1. Stage-3 dispatch interest carries no substrate-side weight. Re-citation of "user expressed HyperEVM interest" or similar Stage-3 forward-notes as authority for substrate-side shortcut fires `Stage2PathBSpecScopeViolation` typed exception.
 
 ## §14. Spec / plan revision footprint
 
@@ -414,7 +471,7 @@ Sub-phases:
 - 14.4.3 Audit-block pinning + W1-W5 weight computation + aggregator panel build (~3 tasks)
 - 14.4.4 N_INFORMATIVE table + AR(1) diagnostic + σ-anchor coverage emissions (~3 tasks)
 - 14.4.5 Gate B1.5-data 3-way review + v1_5_data_findings.md authoring (~2 tasks)
-- 14.4.6 v1.5-methodology authoring pre-condition checklist (1 task)
+- 14.4.6 v1.5-methodology authoring pre-condition checklist + handoff memo (1 task): emit `v1_5_methodology_handoff.md` containing (a) explicit yes/no satisfaction status per §16 pre-condition 1-10; (b) sha256 pins of all 9 v1.5-data deliverables + Gate B1.5-data 3-way review verdict; (c) Gate B1 (a)/(b)/(c) substrate-pivot decision adjudication readout (if user adjudicated during execution, reference; else explicit 'pending v1.5-methodology authoring'); (d) realized-data summary (n_informative_aggregate, ar1_coefficient, PACF lags 1-8, sigma-anchor winners by coverage + drift, cohort-N realized count) — the empirical anchors that v1.5-methodology will pin against
 
 ### §14.5 Verification gates (per `feedback_two_wave_doc_verification`)
 
@@ -426,43 +483,52 @@ Sub-phases:
 
 ### §14.6 Sequencing — data-first
 
+0. **THIS spec post-revision (sha-pin-as-last-edit protocol)**: complete 2-wave-verify revisions → finalize file content → recompute sha256 → patch frontmatter `spec_sha256` field as the LAST edit before `git add` → commit + push. Confirmed sha is then cross-pinned in commit message + `corrections_eta_decomposition.md` frontmatter. NEVER commit with `<to-be-pinned-after-recompute>` sentinel intact.
 1. CLAUDE.md framework update → 2-wave verify → commit
 2. Parent spec v1.5 CORRECTIONS-ζ data-only → 2-wave verify → commit → PR + merge
 3. Parent plan v1.2 CORRECTIONS-β' main-plan pointer → 2-wave verify → commit
 4. v1.5-data sub-plan → 2-wave verify → commit → PR + merge
-5. **EXECUTE v1.5-data sub-plan**: substrate-expansion audits + aggregate panel build + N_INFORMATIVE measurement + AR(1) emission + σ-anchor coverage
+5. **EXECUTE v1.5-data sub-plan**: substrate-expansion audits + aggregate panel build + N_INFORMATIVE measurement + cohort-N table + AR(1) + PACF emission + σ-anchor coverage + drift
 6. Gate B1.5-data 3-way review (CR + RC + SD per `feedback_implementation_review_agents`)
 7. v1.5-methodology spec authoring UNBLOCKED — author with realized data anchors
 
 ## §15. Self-review checklist
 
-- [ ] No placeholders / TBD / TODO outside the explicit `<to-be-pinned-after-recompute>` (line 5 sha sentinel) and `<PENDING_TOKEN_RESOLUTION_VIA_POR_FEED_PROBE>` (Wenia COPW, surfaced at §3 with explicit resolution-pending action)
-- [ ] All per-venue audit thresholds (PASS/MARGINAL/HALT) pre-pinned with specific numerical values (§4)
-- [ ] All W1-W5 invariants pre-pinned with specific numerical values (§5.2 + §12)
-- [ ] HALT cascades route to CORRECTIONS-block paths (no auto-pivot)
-- [ ] CORRECTIONS-γ structural-exposure framing preserved (no WTP / behavioral-demand language)
-- [ ] Free-tier-only budget pin preserved (CORRECTIONS-δ inheritance) (§11)
-- [ ] Stage-1 sha-pin chain READ-ONLY
-- [ ] Cross-substrate weights audit-block-frozen per W5
-- [ ] No statistical-methodology pre-commits (3-test gate, AIC, K-means, bootstrap, R-thresholds) — all DEFERRED to v1.5-methodology
-- [ ] Substrate-pivot adjudication explicit DEFERRAL recorded (§13 invariant 8)
-- [ ] N_INFORMATIVE floor itself NOT pinned in this spec (deferred to v1.5-methodology); only the measurement protocol is pinned (§7)
-- [ ] AR(1) computation method pinned but bootstrap method NOT pinned (deferred)
-- [ ] σ-anchor primary selection NOT pinned (deferred); only per-anchor coverage measurement is pinned (§9)
+Post-Wave-1+2 revision (v1.0 → v1.1 integrating RC + Model QA findings + HyperEVM/MegaETH discovery NULL):
+
+- [x] No placeholders / TBD / TODO outside the explicit `<PENDING_TOKEN_RESOLUTION_VIA_POR_FEED_PROBE>` (Wenia COPW, surfaced at §3 with explicit resolution-pending action). Frontmatter `spec_sha256` patched as last edit per §14.6 step 0.
+- [x] All per-venue audit thresholds (PASS/MARGINAL/HALT) pre-pinned with specific numerical values (§4)
+- [x] All W1-W5 invariants pre-pinned with specific numerical values (§5.2 + §12)
+- [x] HALT cascades route to CORRECTIONS-block paths (no auto-pivot)
+- [x] CORRECTIONS-γ structural-exposure framing preserved (no WTP / behavioral-demand language)
+- [x] Free-tier-only budget pin preserved (CORRECTIONS-δ inheritance) (§11)
+- [x] Stage-1 sha-pin chain READ-ONLY
+- [x] Cross-substrate weights audit-block-frozen per W5
+- [x] No statistical-methodology pre-commits (3-test gate, AIC, K-means, bootstrap method, R-thresholds) — all DEFERRED to v1.5-methodology. Wave-2 Model QA soft-smuggle at §8 line 292 (block-length formula) REMEDIATED — formula moved to v1.5-methodology scope; v1.5-data only emits ρ̂ + PACF + Ljung-Box.
+- [x] Substrate-pivot adjudication explicit DEFERRAL recorded (§13 invariant 8) + σ-anchor firewall disclaimers at §6 + §9
+- [x] N_INFORMATIVE floor itself NOT pinned in this spec (deferred to v1.5-methodology); only the measurement protocol is pinned (§7); §12 typed-exception threshold REMEDIATED to forward-reference v1.5-methodology
+- [x] AR(1) + PACF computation method pinned (§8) but bootstrap consumer-side use NOT pinned (deferred)
+- [x] σ-anchor primary selection NOT pinned (deferred); only per-anchor coverage + cross-anchor drift measurement pinned (§9)
+- [x] Stage-3 forward-note firewall: §13 invariant 11 prevents Stage-3 interest re-cited as substrate-side authority
+- [x] HyperEVM/MegaETH §3.bis discovery returned EXPLICIT_NULL 2026-05-04; §16 pre-condition 9 trivially satisfied; rows 11-12 of §3 closed
+- [x] EXIT-candidate path under aggregate `weeks_with_nonzero_events < 75` pre-acknowledged (§16 pre-condition 10)
 
 ## §16. Pre-conditions for v1.5-methodology authoring
+
+**Timing preamble**: All pre-conditions are deliverables of v1.5-data sub-plan execution per §14.4 task ordering. v1.5-methodology authoring is unblocked only after all pre-conditions land + Gate B1.5-data 3-way review verdict = PASS per §14.6 sequencing step 7.
 
 v1.5-methodology spec authoring is BLOCKED until v1.5-data execution delivers all of:
 
 1. ✗ `cop_corridor_aggregate_panel.parquet` — per-week aggregate flow + per-substrate contributions
 2. ✗ `n_informative_table.parquet` — per-venue + aggregate informative-weeks count
-3. ✗ `ar1_diagnostic.json` — AR(1) coefficient on aggregate-flow series
-4. ✗ `sigma_anchor_coverage.json` — per-anchor informative-weeks count
+3. ✗ `ar1_diagnostic.json` — AR(1) coefficient + PACF lags 1-8 + Ljung-Box on aggregate-flow series (per §8 extended schema)
+4. ✗ `sigma_anchor_coverage.json` — per-anchor informative-weeks count + cross-anchor drift metric (per §9 extended schema)
 5. ✗ `audit_block_pin.json` — frozen audit_block per chain with sha256-pinned timestamps
 6. ✗ Per-venue augmented `audit_metrics_raw.json` for 5 new venues
 7. ✗ `v1_5_data_findings.md` — substrate-pivot adjudication input + Gate B1.5-data 3-way review verdict
-8. ✗ Cohort-N empirical floor measurement: how many addresses survive ≥3-transfers filter on aggregate panel
-9. ✗ HyperEVM/MegaETH §3.bis discovery report — substrate-scope-amendment input (if positive COP-pegged tokens found, triggers CORRECTIONS-block + 2-wave verify before v1.5-methodology authoring; if null, recorded as "no EVM-emerging substrate addition for this iteration")
+8. ✗ `cohort_n_table.parquet` — address-level cohort survival under ≥3-transfers filter for K-means clustering input (per §10; resolves predecessor MQ-BLOCK-4)
+9. ✓ HyperEVM/MegaETH §3.bis discovery report — **TRIVIALLY SATISFIED 2026-05-04** by `hyperevm_megaeth_discovery.md` (EXPLICIT_NULL on both chains; no EVM-emerging substrate addition for this iteration; future-iteration re-research triggers pre-pinned in §3.bis). If a future-iteration dispatch returns positive (any COP-pegged token confirmed), v1.5-data spec must be REVISED via CORRECTIONS-block + 2-wave verify per §13 invariant 1 BEFORE v1.5-methodology authoring; this adds one v1.5-data revision cycle to the schedule.
+10. ✗ **EXIT-candidate path** (per Wave-2 Model QA FLAG-2): if aggregate `weeks_with_nonzero_events < 75` post-execution, v1.5-methodology spec authoring is FURTHER blocked pending CORRECTIONS-block adjudication of: (a) widen sample window beyond 2023-07-31; (b) re-research §3.bis HyperEVM/MegaETH (if any new EVM-emerging COP-pegged token has launched since); (c) HALT with EXIT verdict candidate per `feedback_pathological_halt_anti_fishing_checkpoint`. Pre-acknowledged here so the path fires as discovery, not silently.
 
 When all 8 land, v1.5-methodology authoring resolves the 8 BLOCKs from v1.5-original 2-wave verify (RC-BLOCK-1/2 + MQ-BLOCK-1/2/3/4/5/6) with empirical anchors per CORRECTIONS-η §5 mapping.
 
