@@ -45,6 +45,10 @@ This design specifies the **substrate-aggregation tier** of the v1.5 model-fitne
 
 This spec is the data-collection-first instantiation.
 
+**Chain scope rule (per user direction 2026-05-04, verbatim)**: *"Only EVM chains. Include new chains like HyperEVM and MegaETH."*
+
+EVM-only is now an explicit pre-commitment (§13.1.bis). Solana is EXCLUDED (row 10 of §3) under this rule. New / emerging EVM chains (HyperEVM, MegaETH) are added to v1.5-data substrate research scope as RESEARCH_PENDING_DISCOVERY rows; if COP-pegged tokens are confirmed on those chains via the research dispatch (§3.bis), they enter the aggregator under the standard §4 audit gate. **Stage-3 forward note**: HyperEVM is additionally flagged as a deployment-target candidate for Panoptic-style options venue (out of scope for v1.5-data substrate-side; recorded here as user's expressed interest 2026-05-04 to inform future M-side dispatch).
+
 ## §2. Architecture — v1.5-data flow
 
 ```text
@@ -111,10 +115,34 @@ The v1.5-data substrate scope is FROZEN at this spec's commit. Post-commit subst
 | 6 | Num Finance nCOP Polygon | Polygon | `0x0856f80fF4dE8F2bF89872B27ba6e9Fb45d96Ae3` | INCLUDED (independent issuer; 2023 launch; 180M supply) | Phase 1 audit on Polygon SQD endpoint | Pre-audit |
 | 7 | Wenia COPW Polygon | Polygon | `<PENDING_TOKEN_RESOLUTION_VIA_POR_FEED_PROBE>` | CONDITIONAL_INCLUDE (token address pending) | 1-call eth_call eth_getStorageAt on PoR feed `0x1d22c334621364F16f050076eE15Acd5eb8225Ce` to extract bound token contract; HALT-and-surface if free-tier resolution fails within sub-plan Task 2.1 budget | Pre-audit; resolution required before audit |
 | 8 | Daily COP DLYCOP Polygon | Polygon | `0x1659fFb2d40DfB1671Ac226A0D9Dcc95A774521A` | CONDITIONAL_INCLUDE (substrate-floor reference; not primary aggregator weight) | Phase 1 audit; expected to fail W1 velocity floor (24h vol $75) | Likely velocity-floor exclusion → w_DLYCOP = 0 in aggregator |
-| 9 | Daily COP DLYCOP BSC | BSC | `0xE9C6824508c19bc98b162BbcD7c940bFA4287e27` | EXCLUDED (chain disparity for v1.5-data; BSC SQD coverage not tier-1 free-tier) | None | N/A |
-| 10 | Minteo SPL Solana | Solana | `Copm5KwCLXDTWYgXJYmo6ixmMZrxd1wabkujkcuaK47C` | EXCLUDED (chain disparity; SPL ≠ EVM; non-trivial pipeline expansion) | None | N/A; defer to future-iteration sub-plan if aggregate falls below N_INFORMATIVE floor at v1.5-methodology authoring |
+| 9 | Daily COP DLYCOP BSC | BSC | `0xE9C6824508c19bc98b162BbcD7c940bFA4287e27` | EXCLUDED (EVM-eligible per user EVM-only directive but free-tier SQD coverage thin → future-iteration) | None | N/A |
+| 10 | Minteo SPL Solana | Solana | `Copm5KwCLXDTWYgXJYmo6ixmMZrxd1wabkujkcuaK47C` | EXCLUDED (non-EVM; user EVM-only directive 2026-05-04 confirms permanent exclusion from v1.5-data scope) | None | N/A |
+| 11 | HyperEVM (Hyperliquid L1 EVM) — COP-pegged tokens | HyperEVM | TBD via §3.bis discovery dispatch | RESEARCH_PENDING_DISCOVERY | Trend Researcher dispatch for COP-pegged token deployments (Mento V3 multi-chain bridge, Minteo HyperEVM deployment, Wenia HyperEVM, Num Finance HyperEVM, native HyperEVM-issued COP) | Pre-discovery |
+| 12 | MegaETH (high-throughput L2) — COP-pegged tokens | MegaETH | TBD via §3.bis discovery dispatch | RESEARCH_PENDING_DISCOVERY | Trend Researcher dispatch for COP-pegged token deployments | Pre-discovery |
 
-**v1.5-data effective substrate set**: 8 venues (rows 1-8); rows 9 + 10 EXCLUDED with explicit defer-to-future-iteration reasoning. Wenia COPW (row 7) is CONDITIONAL — if the PoR-feed probe fails to resolve the token address within free-tier budget, v1.5-data ships with 7 venues and a HALT-and-surface entry in `v1_5_data_findings.md`.
+**v1.5-data effective substrate set**:
+- **Confirmed in scope (rows 1-8)**: 8 venues (4 confirmed EVM tokens + 1 conditional Wenia + 1 conditional DLYCOP + 2 Mento V2 settlement venues + 1 Mento V2 baseline)
+- **Research-pending (rows 11-12)**: HyperEVM + MegaETH; if discovery returns positive COP-pegged token deployments, those tokens enter the aggregator under the standard §4 audit gate via CORRECTIONS-block-style spec amendment (substrate addition triggers CORRECTIONS-block + 2-wave verify per §13 invariant 1)
+- **Excluded (rows 9-10)**: BSC DLYCOP (free-tier coverage thin), Solana Minteo (non-EVM)
+
+Wenia COPW (row 7) is CONDITIONAL on PoR-feed probe success; if the probe fails to resolve the token address within free-tier budget, v1.5-data ships with 7 venues and a HALT-and-surface entry in `v1_5_data_findings.md`.
+
+### §3.bis Future-iteration EVM substrate research targets
+
+Per user direction 2026-05-04 ("Only EVM chains. Include new chains like HyperEVM and MegaETH"), the v1.5-data scope opens an EVM-only research-pending category alongside the confirmed Polygon + Celo set. Two emerging EVM chains are seeded as priority research targets:
+
+- **HyperEVM (Hyperliquid L1 EVM)**: Hyperliquid's EVM execution layer (launched 2025); user-flagged as priority EVM ecosystem with high developer attention. Concurrent **Stage-3 deployment-target interest**: HyperEVM is also flagged for future Panoptic-style options venue evaluation (this is M-side Stage-2 work, NOT v1.5-data substrate-side; recorded for future M-dispatch). For v1.5-data, the question is narrowly: does any COP-pegged token deploy on HyperEVM as of audit_block?
+- **MegaETH**: High-throughput EVM L2/L3 (testnet → mainnet trajectory in 2026); emerging ecosystem. Question for v1.5-data: any COP-pegged token deployment as of audit_block?
+
+**Discovery methodology** (mirrors `cop_corridor_aggregate_research/discovery.md` §1 pattern):
+- WebSearch for "HyperEVM COP stablecoin", "HyperEVM Colombian peso", "MegaETH stablecoin", "MegaETH COP", and Mento / Minteo / Wenia / Num Finance multichain deployment announcements
+- Native chain explorers: HyperEVM explorer (purrsec.com / hyperliquid.xyz), MegaETH explorer
+- GeckoTerminal / DEXScreener filters by chain
+- Mento V3 multichain registry (if any cross-chain BiPool deployment registers HyperEVM/MegaETH)
+
+**Inclusion gate**: any discovered COP-pegged token must (a) be free-tier observable via SQD or public RPC on its chain, (b) pass §4 per-venue audit thresholds, (c) trigger CORRECTIONS-block + 2-wave verify on this spec for substrate-scope amendment before entering the aggregator.
+
+**Discovery dispatch**: queued in parallel with v1.5-data spec 2-wave verify (Trend Researcher dispatched 2026-05-04).
 
 ## §4. Per-venue audit protocol
 
@@ -340,7 +368,9 @@ Total v1.5-data execution cost: well under 1% of any monthly budget.
 
 ## §13. Pre-commitment invariants (spec-locked)
 
-1. **Substrate scope**: 8 in-scope venues per §3; rows 9-10 EXCLUDED with explicit defer-to-future-iteration. NO post-data substrate addition without CORRECTIONS-block + 2-wave verify.
+1. **Substrate scope**: 8 in-scope venues per §3 (rows 1-8); rows 9-10 EXCLUDED (BSC free-tier-coverage / Solana non-EVM); rows 11-12 RESEARCH_PENDING_DISCOVERY (HyperEVM / MegaETH per §3.bis). NO post-data substrate addition without CORRECTIONS-block + 2-wave verify; this includes any HyperEVM/MegaETH token discovered via §3.bis dispatch.
+
+1.bis. **EVM-only chain scope** (per user direction 2026-05-04): only EVM-compatible chains are admissible substrate hosts. Solana / SVM / non-EVM L1/L2s are PERMANENTLY EXCLUDED from v1.5-data and v1.5-methodology aggregator scope. Future-iteration cross-chain non-EVM expansion (e.g., reactivating Solana Minteo) requires explicit CORRECTIONS-block reversing this invariant + 2-wave verify; CANNOT be silent.
 2. **Per-venue audit thresholds**: PASS ≥ 1000 events AND ≥ 30% non-zero weeks for non_lp_user; MARGINAL ∈ [100, 1000) events OR ∈ [10%, 30%) non-zero weeks; HALT < 100 events OR < 5% non-zero weeks. NO post-data tuning.
 3. **W1-W5 weight invariants**: as pre-pinned in §5.2 + §12. NO post-data tuning.
 4. **Audit-block freezing**: one block per chain pinned at sub-plan execution start; frozen via sha256 pin in `audit_block_pin.json`. NO post-data re-pinning unless CORRECTIONS-block fires.
@@ -432,6 +462,7 @@ v1.5-methodology spec authoring is BLOCKED until v1.5-data execution delivers al
 6. ✗ Per-venue augmented `audit_metrics_raw.json` for 5 new venues
 7. ✗ `v1_5_data_findings.md` — substrate-pivot adjudication input + Gate B1.5-data 3-way review verdict
 8. ✗ Cohort-N empirical floor measurement: how many addresses survive ≥3-transfers filter on aggregate panel
+9. ✗ HyperEVM/MegaETH §3.bis discovery report — substrate-scope-amendment input (if positive COP-pegged tokens found, triggers CORRECTIONS-block + 2-wave verify before v1.5-methodology authoring; if null, recorded as "no EVM-emerging substrate addition for this iteration")
 
 When all 8 land, v1.5-methodology authoring resolves the 8 BLOCKs from v1.5-original 2-wave verify (RC-BLOCK-1/2 + MQ-BLOCK-1/2/3/4/5/6) with empirical anchors per CORRECTIONS-η §5 mapping.
 
