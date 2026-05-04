@@ -99,18 +99,29 @@ AUDIT_SUMMARY_SCHEMA: dict[str, tuple[str, bool]] = {
     "feasibility_v1": ("string", False),
     "feasibility_notes": ("string", True),
 }
-AUDIT_SUMMARY_ROWS_MIN: int = 6
-AUDIT_SUMMARY_ROWS_MAX: int = 12
+# Spec v1.4 §4.0 Artifact 1 row-count expectation: 6-12 typical; <4 or >20
+# triggers HALT-review per Stage2PathBAuditScopeAnomaly. The HALT threshold
+# (not the typical band) is the test's enforcement boundary so values within
+# [4, 20] do not fire a false positive against the v1.4 substrate set
+# (n=13 = 4 a_l-side Mento + 5 Mento V3 FPMM + 4 ethereum-side venues).
+AUDIT_SUMMARY_ROWS_MIN: int = 4
+AUDIT_SUMMARY_ROWS_MAX: int = 20
 
 # Spec §4.0 Artifact 1 enum allowlists.
 AUDIT_NETWORK_ENUM: frozenset[str] = frozenset({"celo-mainnet", "ethereum-mainnet"})
+# Spec v1.4 §4.0 venue_kind enum: includes v1.4 NEW values (mento_v2_bipool,
+# mento_broker) per CORRECTIONS-ε; preserves DEPRECATED values (uniswap_v3_pool,
+# bill_pay_router, remittance_router) for predecessor-chain audit per spec
+# v1.4 §4.0 line 1321.
 AUDIT_VENUE_KIND_ENUM: frozenset[str] = frozenset({
     "mento_fpmm",
-    "uniswap_v3_pool",
+    "mento_v2_bipool",         # v1.4 NEW per CORRECTIONS-ε
+    "mento_broker",            # v1.4 NEW per CORRECTIONS-ε
+    "uniswap_v3_pool",         # DEPRECATED v1.4 — preserved for predecessor-chain audit
     "uniswap_v4_pool",
     "panoptic_factory",
-    "bill_pay_router",
-    "remittance_router",
+    "bill_pay_router",         # DEPRECATED v1.4 — preserved per spec §4.0
+    "remittance_router",       # DEPRECATED v1.4 — preserved per spec §4.0
 })
 # v1.2.1 corrected `alchemy_growth` → `alchemy_free` (free-tier alignment).
 AUDIT_DATA_SOURCE_PRIMARY_ENUM: frozenset[str] = frozenset({
@@ -525,10 +536,13 @@ def test_d_data_provenance_mirror() -> None:
         )
 
     # Verify the 8 normative provenance fields each appear at least once.
-    # Match against bolded-label form: e.g., `- **source:**` per the
+    # Match against canonical bolded-label form: e.g., `- **source:**` per the
     # template `contracts/.scratch/path-b-stage-2/phase-0/DATA_PROVENANCE.md.template`.
+    # The canonical template form is `**field:**` (closing `**` after colon),
+    # NOT `**field**:` — fixed in v1.1 of this scaffold to align with the
+    # template at phase-0/DATA_PROVENANCE.md.template lines 25-46.
     for field in PROVENANCE_REQUIRED_FIELDS:
-        pattern = rf"\*\*{re.escape(field)}\*\*\s*:"
+        pattern = rf"\*\*{re.escape(field)}:\*\*"
         assert re.search(pattern, provenance_text), (
             f"spec §3.A: required provenance field '**{field}:**' missing "
             f"from DATA_PROVENANCE.md. The 8 normative fields are: "

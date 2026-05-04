@@ -303,3 +303,93 @@ agent active right now per dispatch brief; no overlapping-file risk.
   to Uniswap V3 `Swap`/`Mint`/`Burn` topic0s; Mento V2 / Mento V3 Router / Panoptic queried
   unfiltered to capture all emissions then aggregated). Block-range bounds set to spec
   §3.B sample window 2023-08-01 → 2026-02-28 per spec §3 audit window pin.
+
+
+### Entry 7 — Task 1.3 emit — `audit_summary.parquet` (spec v1.4 §4.0 Artifact 1)
+
+- **source:** `contracts/.scratch/pair-d-stage-2-B/v0/audit_metrics_raw.json`
+  (sha256 `cb94f0588dfe95dafe2c3377d92e83595ae978f35a256ba278e9544b13b08d52`) +
+  `contracts/.scratch/pair-d-stage-2-B/v0/allowlist.toml`
+  (sha256 `5e9b3663efc75dee599966d741ec1ba5afd815194aef758d2c05bc96f09a9443`)
+- **fetch_method:** `python contracts/.scratch/path-b-stage-2/phase-1/scripts/run_task_1_3_emit.py`
+  Local data transformation: load Task-1.2 audit JSON + Task-1.1 allowlist TOML,
+  build pyarrow Tables matching spec v1.4 §4.0 normative schema, write
+  Snappy-compressed Parquet with `schema_version` field in file metadata.
+  Zero RPC calls; pure local I/O; free-tier-only per spec frontmatter
+  `budget_pin: free_tier_only`.
+- **fetch_timestamp:** `2026-05-04T00:10:10Z`
+- **sha256:** `444800fe797653324061c3c4c35bdd005ae47ec10a2437070a5733a4c6805138` (sha256 of the committed `audit_summary.parquet`)
+- **row_count:** 13
+- **block_range:** N/A (artifact spans both Celo + Ethereum windows; per-network ranges: Celo (20635912, 61000848); Ethereum (17817450, 24559982))
+- **schema_version:** `e70de84632a51ad28162c31c903c6217003a60b17e0a03fd5361173d14c69468` (sha256 of column-set + dtypes per
+  spec §4.0 schema_version metadata convention; embedded in Parquet file
+  metadata under key `schema_version`)
+- **filter_applied:** Task-1.2 audit JSON to spec §4.0 Artifact-audit_summary
+  normative column set: stripped audit-only diagnostic fields
+  (`diagnostic_log`, `typed_exception`, `on_chain_code_len`) which are
+  preserved in `audit_metrics_raw.json` for staging context but NOT in the
+  spec-§4.0 normative parquet columns. Per-row contract addresses
+  EIP-55-checksummed via `eth_utils.to_checksum_address()`. CORRECTIONS-γ
+  structural-exposure framing preserved (no demand-side / WTP language;
+  `relevance_v1` retains `cf_al_input` / `cf_as_input` economic-leg
+  terminology per spec §4.0 Artifact-3 enum).
+
+
+### Entry 8 — Task 1.3 emit — `address_inventory.parquet` (spec v1.4 §4.0 Artifact 2)
+
+- **source:** `contracts/.scratch/pair-d-stage-2-B/v0/audit_metrics_raw.json`
+  (sha256 `cb94f0588dfe95dafe2c3377d92e83595ae978f35a256ba278e9544b13b08d52`) +
+  `contracts/.scratch/pair-d-stage-2-B/v0/allowlist.toml`
+  (sha256 `5e9b3663efc75dee599966d741ec1ba5afd815194aef758d2c05bc96f09a9443`)
+- **fetch_method:** `python contracts/.scratch/path-b-stage-2/phase-1/scripts/run_task_1_3_emit.py`
+  Local data transformation: load Task-1.2 audit JSON + Task-1.1 allowlist TOML,
+  build pyarrow Tables matching spec v1.4 §4.0 normative schema, write
+  Snappy-compressed Parquet with `schema_version` field in file metadata.
+  Zero RPC calls; pure local I/O; free-tier-only per spec frontmatter
+  `budget_pin: free_tier_only`.
+- **fetch_timestamp:** `2026-05-04T00:10:10Z`
+- **sha256:** `eacc16228007c44ed3c95f3fe2290df5e52a12ff0b93e112be406a04b541fbdb` (sha256 of the committed `address_inventory.parquet`)
+- **row_count:** 13
+- **block_range:** N/A (artifact spans both Celo + Ethereum windows; per-network ranges: Celo (20635912, 61000848); Ethereum (17817450, 24559982))
+- **schema_version:** `f4b692dda38450b5985d22e9835c60b4574649caa89eaee69275ea238c297102` (sha256 of column-set + dtypes per
+  spec §4.0 schema_version metadata convention; embedded in Parquet file
+  metadata under key `schema_version`)
+- **filter_applied:** Task-1.2 audit JSON to spec §4.0 Artifact-address_inventory
+  normative column set: stripped audit-only diagnostic fields
+  (`diagnostic_log`, `typed_exception`, `on_chain_code_len`) which are
+  preserved in `audit_metrics_raw.json` for staging context but NOT in the
+  spec-§4.0 normative parquet columns. Per-row contract addresses
+  EIP-55-checksummed via `eth_utils.to_checksum_address()`. CORRECTIONS-γ
+  structural-exposure framing preserved (no demand-side / WTP language;
+  `relevance_v1` retains `cf_al_input` / `cf_as_input` economic-leg
+  terminology per spec §4.0 Artifact-3 enum).
+
+
+### Entry 9 — Task 1.3 emit — `event_inventory.parquet` (spec v1.4 §4.0 Artifact 3)
+
+- **source:** `contracts/.scratch/pair-d-stage-2-B/v0/audit_metrics_raw.json`
+  (sha256 `cb94f0588dfe95dafe2c3377d92e83595ae978f35a256ba278e9544b13b08d52`) +
+  `contracts/.scratch/pair-d-stage-2-B/v0/allowlist.toml`
+  (sha256 `5e9b3663efc75dee599966d741ec1ba5afd815194aef758d2c05bc96f09a9443`)
+- **fetch_method:** `python contracts/.scratch/path-b-stage-2/phase-1/scripts/run_task_1_3_emit.py`
+  Local data transformation: load Task-1.2 audit JSON + Task-1.1 allowlist TOML,
+  build pyarrow Tables matching spec v1.4 §4.0 normative schema, write
+  Snappy-compressed Parquet with `schema_version` field in file metadata.
+  Zero RPC calls; pure local I/O; free-tier-only per spec frontmatter
+  `budget_pin: free_tier_only`.
+- **fetch_timestamp:** `2026-05-04T00:10:10Z`
+- **sha256:** `debf701bfc0bca93d6f9f5319ff79d08089b21ce5bae25854e937b676daa6a20` (sha256 of the committed `event_inventory.parquet`)
+- **row_count:** 26
+- **block_range:** N/A (artifact spans both Celo + Ethereum windows; per-network ranges: Celo (20635912, 61000848); Ethereum (17817450, 24559982))
+- **schema_version:** `1c044618e9d502917eae79413a62f084311e6b87a6dfd120c25aaa39ab3ba02d` (sha256 of column-set + dtypes per
+  spec §4.0 schema_version metadata convention; embedded in Parquet file
+  metadata under key `schema_version`)
+- **filter_applied:** Task-1.2 audit JSON to spec §4.0 Artifact-event_inventory
+  normative column set: stripped audit-only diagnostic fields
+  (`diagnostic_log`, `typed_exception`, `on_chain_code_len`) which are
+  preserved in `audit_metrics_raw.json` for staging context but NOT in the
+  spec-§4.0 normative parquet columns. Per-row contract addresses
+  EIP-55-checksummed via `eth_utils.to_checksum_address()`. CORRECTIONS-γ
+  structural-exposure framing preserved (no demand-side / WTP language;
+  `relevance_v1` retains `cf_al_input` / `cf_as_input` economic-leg
+  terminology per spec §4.0 Artifact-3 enum).
