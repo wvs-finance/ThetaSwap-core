@@ -393,3 +393,52 @@ agent active right now per dispatch brief; no overlapping-file risk.
   structural-exposure framing preserved (no demand-side / WTP language;
   `relevance_v1` retains `cf_al_input` / `cf_as_input` economic-leg
   terminology per spec §4.0 Artifact-3 enum).
+
+
+### Entry 10 — Task 1.3.b — `mento_v2_bipool_exchange_ids.json` (BiPool exchange-id discovery sub-deliverable)
+
+- **source:** Mento V2 BiPoolManager `0x22d9db95E6Ae61c104A7B6F6C78D7993B94ec901` getExchanges() view (Forno eth_call)
+- **fetch_method:** `python contracts/.scratch/path-b-stage-2/phase-1/scripts/run_task_1_3b_swap_flow.py`
+  Call sequence: forno_block_number() to pin discovery_block, then forno_eth_call(BIPOOL_MANAGER, 0x1e2e3a6b)
+  decoded as Exchange[] (struct {bytes32 exchangeId; address[] assets;}) per Mento V2 ABI.
+  Discovery is reproducible: re-running yields the same 16-exchange list (assets are immutable).
+  Free-tier-only public-RPC; ~2 RPC calls per spec frontmatter `budget_pin: free_tier_only`.
+- **fetch_timestamp:** `2026-05-04T12:20:56Z`
+- **sha256:** `4b3c0342a703947a068a455427797cc39726daef12935ac818568b9dae2127ec` (sha256 of `mento_v2_bipool_exchange_ids.json`)
+- **row_count:** 16 exchanges (1 USDm/COPm + 14 USDm-paired non-COPm + 1 non-USDm USDC.e/cUSDC pair)
+- **block_range:** discovery at block 65915058; assets immutable per Mento V2 BiPoolManager design
+- **schema_version:** `v1.0` (json wrapper; payload conforms to spec §3.b discovery memo template)
+- **filter_applied:** None (raw getExchanges() output preserved verbatim alongside derived
+  USDm/COPm-vs-USDm-paired classification per spec §3 Mento substrate routing)
+
+### Entry 11 — Task 1.3.b emit — `mento_swap_flow_inventory.parquet` (spec v1.4 §4.0 Artifact 4)
+
+- **source:** Mento V2 Broker `0x777A8255cA72412f0d706dc03C9D1987306B4CaD` Swap event extraction over Celo blocks
+  20635912-65915058 via SQD Network gateway
+  `https://v2.archive.subsquid.io/network/celo-mainnet`. Filter: address=Broker, topic0=BROKER_SWAP_TOPIC0
+  (`0xe7b046415cac9de47940c3087e06db13a0e058ccf53ac5f0edd49ebb4c2c3a6f`), topic1 ∈ {USDm/COPm exchange_id ∪ 14 USDm-paired non-COPm
+  exchange_ids} per `mento_v2_bipool_exchange_ids.json` (sha256 `4b3c0342a703947a068a455427797cc39726daef12935ac818568b9dae2127ec`).
+- **fetch_method:** `python contracts/.scratch/path-b-stage-2/phase-1/scripts/run_task_1_3b_swap_flow.py`
+  9 chunked SQD queries of 5M blocks each over 20.6M-65.9M; per-event substrate routing
+  via topic1 → ExchangeMap; FLAG-B8 layer-1 partition (Eigenphi MEV-bot allowlist
+  EMPTY per spec §6 Stage2PathBASOnChainSignalAbsent fallback — Eigenphi free-tier
+  paywalled 2026-05-04); FLAG-B8 layer-2 atomic-arb partition computed locally via
+  intra-tx round-trip detection on USDm pivot. Aggregate by (week, substrate,
+  partition); zero-fill (week, substrate, partition) tuples with no events for
+  completeness per spec §4.0 row-count band (~135 weeks × 3 substrates × 4 partitions
+  ≈ 1620 rows expected). Free-tier-only per spec frontmatter `budget_pin: free_tier_only`.
+- **fetch_timestamp:** `2026-05-04T12:20:56Z`
+- **sha256:** `a715129bbb5427110e709db364df92407951345ad644d22b707afe7d66c799c3` (sha256 of committed `mento_swap_flow_inventory.parquet`)
+- **row_count:** 1632
+- **block_range:** Celo (20635912, 65915058)
+- **schema_version:** `afa508259fcbc05b0ed1c92d53f81c6f3d6f2424979a5149369537d6d316eef4` (sha256 of column-set + dtypes per spec §4.0
+  schema_version metadata convention; embedded in Parquet file metadata under key
+  `schema_version`)
+- **filter_applied:** topic1 ∈ {USDm/COPm exchange_id ∪ 14 USDm-paired non-COPm exchange_ids};
+  raw_events_total=101638; parsed_events=101638;
+  in_scope_v2_bipool=332; in_scope_broker=101306;
+  FLAG-B8 layer-1 (MEV-bot allowlist) hits=0 (empty allowlist; Eigenphi free-tier paywalled);
+  FLAG-B8 layer-2 (atomic-arb) flagged (tx, trader) pairs=19967;
+  V3 FPMM substrate ZERO events confirmed in 30M-65.9M (spec §4.0 inventory still
+  emits zero-count rows for that substrate to satisfy completeness invariant);
+  USD-equivalent notional anchored on USDm leg (USDm pegged ~$1, 18-decimal).
