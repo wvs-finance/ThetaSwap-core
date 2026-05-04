@@ -273,3 +273,33 @@ agent active right now per dispatch brief; no overlapping-file risk.
   to Uniswap V3 `Swap`/`Mint`/`Burn` topic0s; Mento V2 / Mento V3 Router / Panoptic queried
   unfiltered to capture all emissions then aggregated). Block-range bounds set to spec
   §3.B sample window 2023-08-01 → 2026-02-28 per spec §3 audit window pin.
+
+
+### Entry 6 — Task 1.2 per-venue audit fetch batch (`audit_metrics_raw.json`)
+
+- **source:** SQD Network public gateways:
+  - `https://v2.archive.subsquid.io/network/celo-mainnet/{block}/worker` (Celo)
+  - `https://v2.archive.subsquid.io/network/ethereum-mainnet/{block}/worker` (Ethereum)
+  Per-worker URL is dynamic (worker discovery via `/{block}/worker` endpoint).
+  Fallback public RPCs: `https://forno.celo.org` (Celo) + `https://ethereum-rpc.publicnode.com` (Ethereum).
+  Alchemy free-tier (`https://eth-mainnet.g.alchemy.com/v2/<REDACTED>`) used for
+  Ethereum-mainnet contracts only (Celo not enabled per `alchemy_free_tier_verify.json`).
+- **fetch_method:** `python contracts/.scratch/path-b-stage-2/phase-1/scripts/run_task_1_2_audit.py`
+  Per-venue audit driver: for each of the 13 in-scope contracts in `allowlist.toml`,
+  query SQD Network in chunked block ranges ({chunk_size_blocks=1_500_000}, max 6 chunks)
+  for log emissions filtered by contract address (and topic0 where applicable), then
+  aggregate event_count + first/last_event_block. Inter-call sleep ≥0.30 s on SQD;
+  ≥1.05 s on Alchemy; ≥0.5 s on public RPC; concurrency cap = 1.
+- **fetch_timestamp:** `2026-05-03T23:46:09Z`
+- **sha256:** `cb94f0588dfe95dafe2c3377d92e83595ae978f35a256ba278e9544b13b08d52` (sha256 of `audit_metrics_raw.json` post-emission)
+- **row_count:** 13 per-venue entries (one per allowlist row)
+- **block_range:** Celo (`20635912`, `61000848`); Ethereum (`17817450`, `24559982`)
+- **schema_version:** `audit_metrics_raw.json` per-venue entries follow the spec §4.0
+  Artifact 1 audit_summary schema with two extra diagnostic fields (`diagnostic_log`,
+  `typed_exception`) preserved as staging context for Task 1.3 parquet emit (the parquet
+  emit at Task 1.3 strips diagnostic fields per spec §4.0 normative column set).
+- **filter_applied:** Per-venue filtering to the contract's address + topic0 list
+  (token venues filtered to `Transfer(address,address,uint256)`; FPMM-style venues filtered
+  to Uniswap V3 `Swap`/`Mint`/`Burn` topic0s; Mento V2 / Mento V3 Router / Panoptic queried
+  unfiltered to capture all emissions then aggregated). Block-range bounds set to spec
+  §3.B sample window 2023-08-01 → 2026-02-28 per spec §3 audit window pin.

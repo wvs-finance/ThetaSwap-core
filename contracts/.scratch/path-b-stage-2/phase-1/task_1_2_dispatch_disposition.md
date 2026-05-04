@@ -1,7 +1,7 @@
 # Pair D Stage-2 Path B — Phase 1 Task 1.2 dispatch disposition
 
 > **Status:** partial-halt
-> **Generated:** 2026-05-03T23:41:09Z
+> **Generated:** 2026-05-04T00:03:06Z
 > **Plan ref:** `contracts/docs/superpowers/plans/2026-04-30-pair-d-stage-2-B-on-chain-data-implementation.md`
 > **Plan task:** §3 Phase 1 Task 1.2 (per-venue on-chain audit)
 > **Spec sha pin:** `4e8905a93b1307d5f9a5b8fe76bcd5de92b6b6493627bcf28d8e8bdf0fdd6bea` (v1.3)
@@ -9,9 +9,9 @@
 ## §1 — Per-venue completion summary
 
 Total venues: **13**
-- `pass`: **3**
+- `pass`: **4**
 - `marginal`: **1**
-- `halt`: **9**
+- `halt`: **8**
 
 | venue_id | role | network | event_count | feasibility_v1 | typed_exception |
 |---|---|---|---|---|---|
@@ -20,11 +20,11 @@ Total venues: **13**
 | `mento_v3_fpmm_usdt_usdm_pool_celo` | pool | celo-mainnet | 0 | halt | Stage2PathBSqdNetworkCoverageInsufficient |
 | `mento_v3_fpmm_axlusdc_usdm_pool_celo` | pool | celo-mainnet | 0 | halt | Stage2PathBSqdNetworkCoverageInsufficient |
 | `mento_v3_fpmm_gbpm_usdm_pool_celo` | pool | celo-mainnet | 0 | halt | Stage2PathBSqdNetworkCoverageInsufficient |
-| `mento_v2_copm_stabletokencopproxy_celo` | token | celo-mainnet | 0 | halt | Stage2PathBSqdNetworkCoverageInsufficient |
-| `mento_v2_usdm_stabletokenproxy_formerly_cusd_celo` | token | celo-mainnet | 1710650 | pass | — |
-| `mento_v2_bipoolmanager_bipoolmanagerproxy_celo` | factory | celo-mainnet | 60011 | pass | — |
-| `mento_v2_broker_celo` | router | celo-mainnet | 161381 | pass | — |
-| `uniswap_v3_factory_celo_celo` | factory | celo-mainnet | 20 | marginal | — |
+| `mento_v2_copm_stabletokencopproxy_celo` | token | celo-mainnet | 51802 | pass | — |
+| `mento_v2_usdm_stabletokenproxy_formerly_cusd_celo` | token | celo-mainnet | 8504048 | pass | — |
+| `mento_v2_bipoolmanager_bipoolmanagerproxy_celo` | factory | celo-mainnet | 114397 | pass | — |
+| `mento_v2_broker_celo` | router | celo-mainnet | 672567 | pass | — |
+| `uniswap_v3_factory_celo_celo` | factory | celo-mainnet | 54 | marginal | — |
 | `uniswap_v3_swaprouter02_celo_celo` | router | celo-mainnet | 0 | halt | Stage2PathBSqdNetworkCoverageInsufficient |
 | `panoptic_factory_ethereum_mainnet_ethereum` | factory | ethereum-mainnet | 0 | halt | Stage2PathBSqdNetworkCoverageInsufficient |
 | `panoptic_semifungiblepositionmanager_sfpm_ethereum_mainnet_ethereum` | factory | ethereum-mainnet | 0 | halt | Stage2PathBSqdNetworkCoverageInsufficient |
@@ -36,8 +36,8 @@ Total venues: **13**
 - **Sample window (Ethereum):** blocks `17817450` to `24559982`
 - **Audit block (Celo):** `65915058`
 - **Audit block (Ethereum):** `25017514`
-- **Total SQD queries:** 170
-- **Peak SQD req/sec:** 3.74 (cap = 5/sec sustained per spec §5.A)
+- **Total SQD queries:** 632
+- **Peak SQD req/sec:** 3.75 (cap = 5/sec sustained per spec §5.A)
 - **Total Alchemy CU consumed (this run):** 0 / 30 000 000 monthly cap (~0.0000%)
 - **Peak Alchemy req/sec:** 0 (cap = 25/sec)
 - **Public RPC calls (Celo + Ethereum):** 0
@@ -59,7 +59,7 @@ Per dispatch brief: HALT-and-surface, NOT auto-pivot. Awaiting orchestrator adju
 - **network:** celo-mainnet
 - **event_count (sample window):** 0
 - **feasibility_v1:** halt
-- **feasibility_notes:** Zero events from SQD over 6 chunks (20635912-29635911); contract verified deployed (code_len=26464). If venue has confirmed on-chain activity per Celoscan, this fires Stage2PathBSqdNetworkCoverageInsufficient.
+- **feasibility_notes:** Zero events from SQD over 27 chunks (20635912-61000848); contract verified deployed (code_len=26464). If venue has confirmed on-chain activity per Celoscan, this fires Stage2PathBSqdNetworkCoverageInsufficient.
 - **diagnostic_log (first 3 entries):**
   - `chunk 20635912-22135911: 0 events`
   - `chunk 22135912-23635911: 0 events`
@@ -83,7 +83,7 @@ Per dispatch brief: HALT-and-surface, NOT auto-pivot. Awaiting orchestrator adju
 - **network:** celo-mainnet
 - **event_count (sample window):** 0
 - **feasibility_v1:** halt
-- **feasibility_notes:** Zero events from SQD over 6 chunks (20635912-29635911); contract verified deployed (code_len=4288). If venue has confirmed on-chain activity per Celoscan, this fires Stage2PathBSqdNetworkCoverageInsufficient.
+- **feasibility_notes:** Zero events from SQD over 27 chunks (20635912-61000848); contract verified deployed (code_len=4288). If venue has confirmed on-chain activity per Celoscan, this fires Stage2PathBSqdNetworkCoverageInsufficient.
 - **diagnostic_log (first 3 entries):**
   - `chunk 20635912-22135911: 0 events`
   - `chunk 22135912-23635911: 0 events`
@@ -95,7 +95,7 @@ Per dispatch brief: HALT-and-surface, NOT auto-pivot. Awaiting orchestrator adju
 - **network:** celo-mainnet
 - **event_count (sample window):** 0
 - **feasibility_v1:** halt
-- **feasibility_notes:** Zero events from SQD over 6 chunks (20635912-29635911); contract verified deployed (code_len=4288). If venue has confirmed on-chain activity per Celoscan, this fires Stage2PathBSqdNetworkCoverageInsufficient.
+- **feasibility_notes:** Zero events from SQD over 27 chunks (20635912-61000848); contract verified deployed (code_len=4288). If venue has confirmed on-chain activity per Celoscan, this fires Stage2PathBSqdNetworkCoverageInsufficient.
 - **diagnostic_log (first 3 entries):**
   - `chunk 20635912-22135911: 0 events`
   - `chunk 22135912-23635911: 0 events`
@@ -107,7 +107,7 @@ Per dispatch brief: HALT-and-surface, NOT auto-pivot. Awaiting orchestrator adju
 - **network:** celo-mainnet
 - **event_count (sample window):** 0
 - **feasibility_v1:** halt
-- **feasibility_notes:** Zero events from SQD over 6 chunks (20635912-29635911); contract verified deployed (code_len=4288). If venue has confirmed on-chain activity per Celoscan, this fires Stage2PathBSqdNetworkCoverageInsufficient.
+- **feasibility_notes:** Zero events from SQD over 27 chunks (20635912-61000848); contract verified deployed (code_len=4288). If venue has confirmed on-chain activity per Celoscan, this fires Stage2PathBSqdNetworkCoverageInsufficient.
 - **diagnostic_log (first 3 entries):**
   - `chunk 20635912-22135911: 0 events`
   - `chunk 22135912-23635911: 0 events`
@@ -117,9 +117,10 @@ Per dispatch brief: HALT-and-surface, NOT auto-pivot. Awaiting orchestrator adju
 
 - **role / venue_kind:** token / mento_fpmm
 - **network:** celo-mainnet
-- **event_count (sample window):** 0
-- **feasibility_v1:** halt
-- **feasibility_notes:** Zero events from SQD over 6 chunks (20635912-29635911); contract verified deployed (code_len=4824). If venue has confirmed on-chain activity per Celoscan, this fires Stage2PathBSqdNetworkCoverageInsufficient.
+- **event_count (sample window):** 51802
+- **first_event_block / last_event_block:** 29635963 / 59707364
+- **feasibility_v1:** pass
+- **feasibility_notes:** 51802 events over 27 chunks (window 20635912-61000848); first_blk=29635963, last_blk=59707364; primary source SQD Network.
 - **diagnostic_log (first 3 entries):**
   - `chunk 20635912-22135911: 0 events`
   - `chunk 22135912-23635911: 0 events`
@@ -129,10 +130,10 @@ Per dispatch brief: HALT-and-surface, NOT auto-pivot. Awaiting orchestrator adju
 
 - **role / venue_kind:** token / mento_fpmm
 - **network:** celo-mainnet
-- **event_count (sample window):** 1710650
-- **first_event_block / last_event_block:** 20635914 / 28138959
+- **event_count (sample window):** 8504048
+- **first_event_block / last_event_block:** 20635914 / 59682870
 - **feasibility_v1:** pass
-- **feasibility_notes:** 1710650 events over 6 chunks (window 20635912-29635911); first_blk=20635914, last_blk=28138959; primary source SQD Network.
+- **feasibility_notes:** 8504048 events over 27 chunks (window 20635912-61000848); first_blk=20635914, last_blk=59682870; primary source SQD Network.
 - **diagnostic_log (first 3 entries):**
   - `chunk 20635912-22135911: 105140 events`
   - `chunk 22135912-23635911: 207164 events`
@@ -142,36 +143,36 @@ Per dispatch brief: HALT-and-surface, NOT auto-pivot. Awaiting orchestrator adju
 
 - **role / venue_kind:** factory / mento_v2_bipool
 - **network:** celo-mainnet
-- **event_count (sample window):** 60011
-- **first_event_block / last_event_block:** 20635933 / 28171420
+- **event_count (sample window):** 114397
+- **first_event_block / last_event_block:** 20635933 / 59707897
 - **feasibility_v1:** pass
-- **feasibility_notes:** 60011 events over 6 chunks (window 20635912-29635911); first_blk=20635933, last_blk=28171420; primary source SQD Network.
+- **feasibility_notes:** 114397 events over 27 chunks (window 20635912-61000848); first_blk=20635933, last_blk=59707897; primary source SQD Network.
 - **diagnostic_log (first 3 entries):**
   - `chunk 20635912-22135911: 14745 events`
   - `chunk 22135912-23635911: 18659 events`
-  - `chunk 23635912-25135911: 9750 events`
+  - `chunk 23635912-25135911: 6211 events`
 
 ### `mento_v2_broker_celo` (0x777A8255cA72412f0d706dc03C9D1987306B4CaD)
 
 - **role / venue_kind:** router / mento_broker
 - **network:** celo-mainnet
-- **event_count (sample window):** 161381
-- **first_event_block / last_event_block:** 20635932 / 28171427
+- **event_count (sample window):** 672567
+- **first_event_block / last_event_block:** 20635932 / 59707916
 - **feasibility_v1:** pass
-- **feasibility_notes:** 161381 events over 6 chunks (window 20635912-29635911); first_blk=20635932, last_blk=28171427; primary source SQD Network.
+- **feasibility_notes:** 672567 events over 27 chunks (window 20635912-61000848); first_blk=20635932, last_blk=59707916; primary source SQD Network.
 - **diagnostic_log (first 3 entries):**
   - `chunk 20635912-22135911: 19197 events`
   - `chunk 22135912-23635911: 74175 events`
-  - `chunk 23635912-25135911: 16363 events`
+  - `chunk 23635912-25135911: 22957 events`
 
 ### `uniswap_v3_factory_celo_celo` (0xAfE208a311B21f13EF87E33A90049fC17A7acDEc)
 
 - **role / venue_kind:** factory / uniswap_v3_pool
 - **network:** celo-mainnet
-- **event_count (sample window):** 20
-- **first_event_block / last_event_block:** 20717779 / 26831948
+- **event_count (sample window):** 54
+- **first_event_block / last_event_block:** 20717779 / 58626077
 - **feasibility_v1:** marginal
-- **feasibility_notes:** Only 20 events over 6 chunks; below the 100-event floor for Stage2PathBSqdNetworkCoverageInsufficient. Sample coverage may be insufficient for downstream substrate work.
+- **feasibility_notes:** Only 54 events over 27 chunks; below the 100-event floor for Stage2PathBSqdNetworkCoverageInsufficient. Sample coverage may be insufficient for downstream substrate work.
 - **diagnostic_log (first 3 entries):**
   - `chunk 20635912-22135911: 5 events`
   - `chunk 22135912-23635911: 2 events`
@@ -183,7 +184,7 @@ Per dispatch brief: HALT-and-surface, NOT auto-pivot. Awaiting orchestrator adju
 - **network:** celo-mainnet
 - **event_count (sample window):** 0
 - **feasibility_v1:** halt
-- **feasibility_notes:** Zero events from SQD over 6 chunks (20635912-29635911); contract verified deployed (code_len=48996). If venue has confirmed on-chain activity per Celoscan, this fires Stage2PathBSqdNetworkCoverageInsufficient.
+- **feasibility_notes:** Zero events from SQD over 27 chunks (20635912-61000848); contract verified deployed (code_len=48996). If venue has confirmed on-chain activity per Celoscan, this fires Stage2PathBSqdNetworkCoverageInsufficient.
 - **diagnostic_log (first 3 entries):**
   - `chunk 20635912-22135911: 0 events`
   - `chunk 22135912-23635911: 0 events`

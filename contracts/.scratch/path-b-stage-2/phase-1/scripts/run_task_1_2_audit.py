@@ -525,7 +525,14 @@ def audit_venue(
 
         cur = sample_start
         chunks_processed = 0
-        max_chunks = 6  # cap chunks to control SQD load (each chunk = one query)
+        # BUGFIX 2026-05-03 (orchestrator): max_chunks=6 cap missed late-deployed
+        # contracts (e.g., Mento V2 COPm). Removed cap; chunk through full
+        # sample window. Forno corroboration showed COPm has 181 events at
+        # block 40M (window middle) and 234 at block 61M (window end), but
+        # 0 at block 20.6M (pre-deployment); the 6-chunk cap stopped at ~29.6M.
+        # Burst-rate compliance: 27 chunks × 0.3s sleep = 8.1s per venue × 13
+        # venues = ~105s aggregate. Well under SQD 5/s sustained cap.
+        max_chunks = max(30, ((sample_end - sample_start) // chunk_size) + 2)
         while cur <= sample_end and chunks_processed < max_chunks:
             chunk_end = min(cur + chunk_size - 1, sample_end)
             try:
