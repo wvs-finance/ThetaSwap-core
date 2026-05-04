@@ -1,19 +1,37 @@
 ---
 spec_path: pair-d-stage-2-v1.5-model-fitness-design
-spec_version: v1.0 (initial design via brainstorming skill)
+spec_version: v1.0 (SUPERSEDED-BY-DECOMPOSITION 2026-05-04 per CORRECTIONS-η)
 spec_author: orchestrator + user co-design 2026-05-04
-spec_sha256: <to-be-pinned-after-recompute>
+spec_sha256: 8a8ce0571bf7e5786048b13753991468c8fb63596c9dfe1a4d2b409e479a6514
 parent_spec_pin: 2026-04-30-pair-d-stage-2-B-on-chain-data-spec.md (v1.4, sha fcebc95f923e1b55fbf2eaa22239b00bbde4a9f35bb031e8f32d090a4fb80d95)
 parent_plan_pin: 2026-04-30-pair-d-stage-2-B-on-chain-data-implementation.md (v1.1, sha 7e2f43c211a314475c3fc2ef5890c268c7216efa55b0b7a9d2c8e5d8d95bca6b)
 synthesis_memo_pin: contracts/.scratch/path-b-stage-2/phase-1/a_s_pivot_research/SYNTHESIS.md (commit e25131cd2)
 cop_corridor_research_pin: contracts/.scratch/path-b-stage-2/phase-1/cop_corridor_aggregate_research/discovery.md (commit cdc844721)
 gate_b1_review_pin: contracts/.scratch/path-b-stage-2/phase-1/gate_b1_review.md (commit b206b5cdc)
 budget_pin: free_tier_only (preserved from CORRECTIONS-δ)
-verifier_v1_0_wave1: pending (Reality Checker — 2-wave verification per `feedback_two_wave_doc_verification`)
-verifier_v1_0_wave2: pending (Workflow Architect — 2-wave verification per `feedback_two_wave_doc_verification`)
+verifier_v1_0_wave1: REJECT_ACCEPT_WITH_FLAGS (Reality Checker; 2 BLOCKs / 6 FLAGs / 3 NITs at /tmp/wave1_rc_v1_5_design.md)
+verifier_v1_0_wave2: REJECT (Model QA Specialist; 6 BLOCKs / 6 FLAGs / 3 NITs at /tmp/wave2_modelqa_v1_5_design.md)
+superseded_by:
+  - contracts/docs/superpowers/specs/2026-05-04-pair-d-stage-2-v1.5-data-aggregation-design.md (v1.5-data; substrate-only)
+  - <pending> v1.5-methodology spec (DEFERRED until aggregate panel + N_INFORMATIVE table + AR(1) emission land)
+correction_block: contracts/.scratch/path-b-stage-2/phase-1/corrections_eta_decomposition.md
 ---
 
-# Pair D Stage-2 — v1.5 Empirical Model-Fitness Gate Design
+> **STATUS — SUPERSEDED-BY-DECOMPOSITION (2026-05-04 per CORRECTIONS-η).**
+>
+> This spec was authored as a single hierarchical 3-test gate (v1.5a Π convexity / v1.5b q_t empirical fit / v1.5c K equilibrium magnitude) on top of a substrate-aggregation expansion (CORRECTIONS-ζ). 2-wave doc verify returned REJECT (Model QA 6 BLOCKs) + ACCEPT_WITH_FLAGS (Reality Checker 2 BLOCKs). The dominant finding (MQ-BLOCK-1) was that the spec assumes n=135 weeks but the realized phase-1 substrate panel has n≈9-14 informative weeks for direct BiPool USDm/COPm — making every methodological pre-commit (AIC vs AICc, K-means k-selection, bootstrap method, R-thresholds) a-priori-fragile.
+>
+> User picked γ from the disposition memo at `corrections_eta_decomposition.md`: decompose into two child specs, with the methodology spec drafted AFTER the aggregate panel + N_INFORMATIVE empirically known. This preserves anti-fishing discipline (`feedback_pathological_halt_anti_fishing_checkpoint`) by deferring Class-M choices until empirical anchors land, then pinning them with motivation rooted in realized data shape.
+>
+> **Active child specs:**
+> - `2026-05-04-pair-d-stage-2-v1.5-data-aggregation-design.md` — substrate scope expansion + aggregate panel build + W1-W5 invariants + USD-equivalence pipeline + N_INFORMATIVE measurement protocol + audit_block freezing. Goes through fresh 2-wave verify.
+> - `<pending> v1.5-methodology spec` — 3-test gate (v1.5a/b/c) drafted after v1.5-data execution delivers aggregate panel + n_informative_table + ar1_diagnostic + σ-anchor reality + cohort-N empirical floor. Resolves the 8 BLOCKs with empirical anchors.
+>
+> **CORRECTIONS-η memo** at `contracts/.scratch/path-b-stage-2/phase-1/corrections_eta_decomposition.md` records the carry-forward / defer matrix and preserved-guarantees argument.
+>
+> **Do not execute against this spec.** All operative content has been migrated or deferred. This file is preserved as historical record and as the bibliographic anchor for both child specs.
+
+# Pair D Stage-2 — v1.5 Empirical Model-Fitness Gate Design (SUPERSEDED — preserved as historical record)
 
 ## §1. Overview and scope
 
