@@ -1,8 +1,8 @@
 ---
 spec_path: pair-d-stage-2-v1.5-data-aggregation-design
-spec_version: v1.1 (post-Wave-1+2 revision integrating RC + Model QA findings + HyperEVM/MegaETH discovery NULL)
+spec_version: v1.2 (CORRECTIONS-θ scope-clarification — substrate panel = LP/settlement-rail activity, NOT a_s observability)
 spec_author: orchestrator + user co-design 2026-05-04
-spec_sha256: 8deffe5c6ab4033454f45a1c837f686c8f3a7b6a16dadd5556283c2127c89a0f
+spec_sha256: afc8bd0f4994ee9c7b22225ba02320dabec90c9f313d97bd21ca0c87cec1de7a
 parent_spec_pin: 2026-04-30-pair-d-stage-2-B-on-chain-data-spec.md (v1.4, sha fcebc95f923e1b55fbf2eaa22239b00bbde4a9f35bb031e8f32d090a4fb80d95)
 parent_plan_pin: 2026-04-30-pair-d-stage-2-B-on-chain-data-implementation.md (v1.1, sha 7e2f43c211a314475c3fc2ef5890c268c7216efa55b0b7a9d2c8e5d8d95bca6b)
 predecessor_spec_pin: 2026-05-04-pair-d-stage-2-v1.5-model-fitness-design.md (v1.5-original; SUPERSEDED-BY-DECOMPOSITION; sha 8a8ce0571bf7e5786048b13753991468c8fb63596c9dfe1a4d2b409e479a6514)
@@ -19,7 +19,8 @@ verifier_v1_0_wave2: ACCEPT_WITH_FLAGS (Model QA Specialist; 0 BLOCKs / 5 FLAGs 
 revision_history:
   - v1.0 (2026-05-04 initial; sha 2d89007ff82eadd1983312bed845bbdf213e477694996086eec89e9ab53230c4): authored via CORRECTIONS-η decomposition from v1.5-original
   - v1.0+EVM (2026-05-04; sha 3fb9daac08b0c597fc4239c7cbc9fffea9a7cfc757c47041ddecd6e369f425e1): EVM-only scope + HyperEVM/MegaETH research-pending rows per user direction; submitted to Wave-1+2 verify
-  - v1.1 (2026-05-04 THIS REVISION): integrated 2 BLOCKs (sha-pin protocol + §12 row 11 50-week floor smuggle remediated to forward-reference v1.5-methodology) + 9 FLAGs (Stage-3 firewall §13 invariant 11; Gate B1 σ-anchor disclaimer §6 + §9; Wenia probe budget §3 row 7; settlement-venue routing sub-table §5.1; Broker §3 row 3 verdict consistency; AR(1) extended §8 with HAC bandwidth + Ljung-Box α + PACF lags 1-8 + line 292 formula DROPPED as Class M smuggle; cohort-N table §10 + §16 #8; SQD-only inclusion gate §3.bis; pre-condition 9 schedule + §16 timing preamble) + HyperEVM/MegaETH discovery NULL closed (§3 rows 11-12 EXPLICIT_NULL; §3.bis closed; §16 #9 trivially satisfied; §16 #10 EXIT-candidate path pre-acknowledged) + 4 NITs polish
+  - v1.1 (2026-05-04 sha 8deffe5c6ab4033454f45a1c837f686c8f3a7b6a16dadd5556283c2127c89a0f with sentinel-intact): integrated 2 BLOCKs (sha-pin protocol + §12 row 11 50-week floor smuggle remediated to forward-reference v1.5-methodology) + 9 FLAGs (Stage-3 firewall §13 invariant 11; Gate B1 σ-anchor disclaimer §6 + §9; Wenia probe budget §3 row 7; settlement-venue routing sub-table §5.1; Broker §3 row 3 verdict consistency; AR(1) extended §8 with HAC bandwidth + Ljung-Box α + PACF lags 1-8 + line 292 formula DROPPED as Class M smuggle; cohort-N table §10 + §16 #8; SQD-only inclusion gate §3.bis; pre-condition 9 schedule + §16 timing preamble) + HyperEVM/MegaETH discovery NULL closed + 4 NITs polish
+  - v1.2 (2026-05-04 THIS REVISION) — CORRECTIONS-θ scope-clarification (`contracts/.scratch/path-b-stage-2/phase-1/corrections_theta_substrate_scope_clarification.md`): user 2026-05-04 confirmed hypothesis that most LATAM developers pay AI APIs via fiat rails (Visa/Mastercard → COP debit card → bank-spread COP→USD), NOT crypto rails. v1.5-data substrate panel scope claim SHARPENED to **COP-corridor LP / settlement-rail activity** — explicitly NOT a_s developer-AI-spend observability. Changes: §1.bis NEW substrate-panel-scope-claim subsection with cross-iteration applicability table; §13 invariant 12 NEW (Substrate-panel scope claim spec-locked); typed-exception `Stage2PathBSpecScopeViolation` extended to fire on re-citation of substrate-aggregate as a_s observability for fiat-rail-dominated populations. **No methodological pre-commits added or removed; W1-W5 / per-venue thresholds / output deliverables / free-tier budget unchanged.**
 ---
 
 # Pair D Stage-2 — v1.5-data Aggregate COP-Corridor Substrate Design
@@ -53,6 +54,30 @@ This spec is the data-collection-first instantiation.
 **Chain scope rule (per user direction 2026-05-04, verbatim)**: *"Only EVM chains. Include new chains like HyperEVM and MegaETH."*
 
 EVM-only is now an explicit pre-commitment (§13.1.bis). Solana is EXCLUDED (row 10 of §3) under this rule. New / emerging EVM chains (HyperEVM, MegaETH) are added to v1.5-data substrate research scope as RESEARCH_PENDING_DISCOVERY rows; if COP-pegged tokens are confirmed on those chains via the research dispatch (§3.bis), they enter the aggregator under the standard §4 audit gate. **Stage-3 forward note**: HyperEVM is additionally flagged as a deployment-target candidate for Panoptic-style options venue (out of scope for v1.5-data substrate-side; recorded here as user's expressed interest 2026-05-04 to inform future M-side dispatch).
+
+### §1.bis Substrate-panel scope claim (per CORRECTIONS-θ 2026-05-04)
+
+The v1.5-data substrate panel measures **COP-corridor LP / settlement-rail activity**. Specifically:
+
+1. **LP-side capacity**: aggregate stablecoin liquidity deployable across COP-corridor venues at audit_block. The LP-side of any USD/COP CPO settles into this corridor regardless of which population the hedge serves.
+2. **Settlement-rail throughput**: per-venue weekly flow as a measure of available infrastructure capacity for hedge premium / payout cash-flow.
+3. **X-side reference**: COP/USD spot price discovery via Mento V2 BiPool (USD-anchor backup at §6).
+
+The panel does **NOT** measure:
+
+- **a_s developer-AI-spend observability** for the dev-AI-cost iteration framing (user 2026-05-04 hypothesis confirmed: most LATAM developers pay AI APIs via fiat rails — Visa/Mastercard → COP debit card → bank-spread COP→USD conversion — NOT crypto rails). On-chain COP-corridor flow is empirically uncorrelated with developer AI tooling cost as of 2026.
+- **a_s any-population observability** for any iteration where the population's structural exposure is denominated in fiat-rail spend rather than crypto-rail spend.
+- **General Colombian economic activity** — flows are issuer-concentrated (Mento protocol-side, Minteo neobank, Wenia institutional treasury, Num yield-bearing) and don't represent population-broad economic exposure.
+
+**Cross-iteration applicability**:
+
+| Iteration | Y source | X source | v1.5-data substrate panel role |
+|---|---|---|---|
+| Pair D (Y₁ = Colombian young-worker services share) | DANE GEIH (off-chain) | Banrep TRM (off-chain) | M-side / settlement-rail readiness; Stage-1 β PASS already complete (β=+0.137 p=1.46e-08, 2026-04-28) using off-chain Y + X |
+| Dev-AI-cost (Y₂ = TBD pending feasibility research dispatched 2026-05-04) | Off-chain LATAM ICT-sector data (DANE / INEGI / IBGE / INDEC / Stack Overflow / GitHub Octoverse) | Banrep TRM or local-FX central-bank reference (off-chain) | Future-iteration LP / settlement-rail readiness IF iteration progresses to Stage-2/3; **NOT a Stage-1 empirical input** |
+| Future iterations | TBD | TBD (likely off-chain central-bank FX) | M-side readiness only; Stage-1 β data sourcing is iteration-specific |
+
+CORRECTIONS-θ memo at `contracts/.scratch/path-b-stage-2/phase-1/corrections_theta_substrate_scope_clarification.md` records the scope-claim sharpening trigger + preserved-guarantees argument.
 
 ## §2. Architecture — v1.5-data flow
 
@@ -437,6 +462,8 @@ Total v1.5-data execution cost: well under 1% of any monthly budget.
 10. **Decomposition discipline**: methodology choices (3-test gate, AICc/AIC, K-means k-selection, bootstrap method, R-thresholds, thesis-fitness verdict layer) are EXPLICITLY out of scope for v1.5-data. Any in-scope creep into methodology fires `Stage2PathBSpecScopeViolation` typed exception.
 
 11. **Stage-3 forward-note firewall**: Stage-3 deployment-target interests (e.g., HyperEVM as Panoptic-style options venue per §1 + §3.bis) are NOT spec-side authority for substrate-side scope expansion. Substrate-side HyperEVM/MegaETH inclusion requires §3.bis discovery returning a confirmed COP-pegged token + CORRECTIONS-block + 2-wave verify per invariant 1. Stage-3 dispatch interest carries no substrate-side weight. Re-citation of "user expressed HyperEVM interest" or similar Stage-3 forward-notes as authority for substrate-side shortcut fires `Stage2PathBSpecScopeViolation` typed exception.
+
+12. **Substrate-panel scope claim** (per CORRECTIONS-θ 2026-05-04): the v1.5-data substrate panel measures **COP-corridor LP / settlement-rail activity** — NOT a_s observability for any iteration. Per §1.bis, the panel does NOT measure developer-AI-spend (fiat-rail-dominated), does NOT measure population-broad economic activity (issuer-concentrated), and is NOT a Stage-1 empirical input for any iteration's β regression (Stage-1 work uses off-chain Y data per iteration: Pair D used DANE GEIH; dev-AI-cost iteration uses LATAM ICT-sector data per off-chain feasibility memo). Re-citation of substrate-aggregate as a_s observability for the dev-AI-cost iteration or any fiat-rail-dominated population fires `Stage2PathBSpecScopeViolation` typed exception.
 
 ## §14. Spec / plan revision footprint
 
