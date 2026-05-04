@@ -1,0 +1,243 @@
+# Pair D Stage-2 Path B — Aggregate COP-corridor substrate addresses
+# Spec ref: contracts/docs/superpowers/specs/2026-04-30-pair-d-stage-2-B-on-chain-data-spec.md
+#   v1.4 sha256 fcebc95f923e1b55fbf2eaa22239b00bbde4a9f35bb031e8f32d090a4fb80d95
+# Plan ref: contracts/docs/superpowers/plans/2026-04-30-pair-d-stage-2-B-on-chain-data-implementation.md
+#   v1.1 sha256 7e2f43c211a314475c3fc2ef5890c268c7216efa55b0b7a9d2c8e5d8d95bca6b
+# Parent task: COP-corridor aggregate substrate research (post-Gate-B1 substrate-pivot)
+# Emit timestamp UTC: 2026-05-04
+#
+# Discipline pins:
+#   - Free-tier ONLY (WebSearch + WebFetch + block-explorer public; NO paid services)
+#   - All addresses captured exactly as published by issuer; case preserved
+#     for EVM (would require eth_utils.to_checksum_address downstream); Solana
+#     SPL address case-sensitive native to Solana
+#   - verification_status: "documented_via_explorer" for entries verified against
+#     a live block-explorer URL. Direct on-chain verification (eth_getCode) is the
+#     orchestrator's responsibility at Plan-Task 1.1 re-dispatch time.
+#   - Mento V2 COPm baseline `0x8A567e2a…` already in v0 allowlist; preserved here
+#     for completeness only (no new entry required).
+#   - Mento V3 router/pools, BiPoolManager, Reserve, Broker already in v0 allowlist;
+#     preserved here for completeness only.
+#
+# Substrate-scope expansion provenance:
+#   - User direction 2026-05-04: pivot from Mento-native ONLY (Rev-5.3.5
+#     β-corrigendum) to aggregate COP-corridor methodology
+#   - Trigger: Phase 1 Gate B1 RC FLAG-F1 + SD substrate-pivot HALT
+#   - This file is the input to spec v1.4 → v1.5 CORRECTIONS-ζ
+#     and plan v1.1 → v1.2 CORRECTIONS-β
+
+[meta]
+schema_version = "v1.0"
+emit_timestamp_utc = "2026-05-04"
+budget_pin = "free_tier_only"
+budget_pin_provenance = "spec v1.4 frontmatter (preserved through CORRECTIONS-ζ)"
+plan_task = "1.1-revised — aggregate-substrate allowlist expansion"
+spec_sha256 = "fcebc95f923e1b55fbf2eaa22239b00bbde4a9f35bb031e8f32d090a4fb80d95"
+plan_sha256 = "7e2f43c211a314475c3fc2ef5890c268c7216efa55b0b7a9d2c8e5d8d95bca6b"
+new_substrate_count = 6
+existing_substrate_baseline = "Mento V2 COPm 0x8A567e2a... (already pinned in v0 allowlist)"
+substrate_pivot_basis = "Phase 1 Gate B1 §3.2 (a)/(b)/(c) substrate-pivot adjudication; user-picked aggregate-corridor methodology"
+
+# ====================================================================
+# §1 — Mento V2 COPm Celo (BASELINE — already in v0 allowlist)
+# ====================================================================
+# This entry preserved for completeness. v0 allowlist is the source of truth.
+# Do NOT duplicate in CORRECTIONS-ζ frontmatter.
+
+[[contracts]]
+address = "0x8A567e2aE79CA692Bd748aB832081C45de4041eA"
+chain = "celo-mainnet"
+role = "stable_token"
+name = "Mento V2 Colombian Peso (COPM, formerly cCOP)"
+source = "https://celoscan.io/token/0x8A567e2aE79CA692Bd748aB832081C45de4041eA"
+discovery_timestamp_utc = "2026-05-04"
+verification_status = "previously_verified_in_v0_allowlist"
+total_supply_native = 181757965
+total_supply_usd_anchor = 49700  # USD-equivalent at COPM/USD spot 2026-05
+decimals = 18
+issuer = "Mento V2 protocol (decentralized; Celo Colombia DAO governance + Mento Reserve over-collateralization)"
+transfer_activity_summary = "51,802 Transfer events Aug 2023 → Feb 2026 (Phase 1 audit); 302 BiPool USDm/COPm direct-pair swaps; ~$75K cumulative non-LP-user notional + ~$305M aggregate broker-routed"
+notes = "BASELINE — already integrated. Issuer-mint observable as Mento V2 Broker.swapIn → BiPool TokenTraded events. Re-listed here only for cross-reference; not a new allowlist entry."
+
+# ====================================================================
+# §2 — Minteo COPM (Multi-Chain) — RE-INCLUSION + EXPANSION
+# ====================================================================
+
+[[contracts]]
+address = "0xc92e8fc2947E32F2B574CCa9F2F12097A71d5606"
+chain = "celo-mainnet"
+role = "stable_token"
+name = "Minteo Colombian Peso (COPM, Celo deployment)"
+source = "https://transparency.minteo.com/contract-directory"
+discovery_timestamp_utc = "2026-05-04"
+verification_status = "documented_via_minteo_transparency_portal"
+total_supply_native = 1000000000   # 1B per project memory; verify on-chain at audit_block re-dispatch
+total_supply_usd_anchor_estimate = 250000  # rough; depends on monthly mint+burn cycles
+decimals = 18
+issuer = "Minteo (Colombian fintech; YC + institutional backed; BDO monthly attestation)"
+transfer_activity_summary = "100-178 Transfer events / 64K-block sample at recent blocks (per prior project memory); 200K+ users via Littio neobank; reported $200M+ monthly transfer volume aggregated across all chains"
+notes = "RE-INCLUDED per substrate-scope expansion 2026-05-04. Previously OUT-OF-SCOPE under Rev-5.3.5 β-corrigendum (Mento-native ONLY); scope now relaxed for aggregate-substrate work. Distribution primarily via Littio app (off-chain conversion → on-chain transfer)."
+
+[[contracts]]
+address = "0x12050c705152931cFEe3DD56c52Fb09Dea816C23"
+chain = "polygon-mainnet"
+role = "stable_token"
+name = "Minteo Colombian Peso (COPM, Polygon deployment)"
+source = "https://transparency.minteo.com/contract-directory"
+discovery_timestamp_utc = "2026-05-04"
+verification_status = "documented_via_minteo_transparency_portal_AND_dexpaprika"
+total_supply_native = "PENDING_DIRECT_ETH_CALL_VERIFICATION_AT_AUDIT_BLOCK"
+total_supply_usd_anchor_estimate = "PENDING"
+decimals = 18  # standard ERC-20; verify at re-dispatch
+issuer = "Minteo (same issuer as Celo deployment; tokens are ledger-separate cross-chain)"
+transfer_activity_summary = "$200M+ monthly digital transfers publicly attested (2025); largest single-substrate flow in COP corridor; primary trading on Uniswap V3 Polygon COPM/USDC pair"
+priority_for_aggregator = "HIGHEST — confirmed largest by monthly volume"
+notes = "NEW — high-priority aggregate-substrate inclusion. Issuer-mint observable as Minteo treasury EOA mint events. DEX participation: Uniswap V3 Polygon COPM/USDC (pool address requires direct-query at audit_block)."
+
+[[contracts]]
+address = "Copm5KwCLXDTWYgXJYmo6ixmMZrxd1wabkujkcuaK47C"
+chain = "solana-mainnet"
+role = "stable_token"
+name = "Minteo Colombian Peso (COPM, Solana SPL)"
+source = "https://transparency.minteo.com/contract-directory"
+discovery_timestamp_utc = "2026-05-04"
+verification_status = "documented_via_minteo_transparency_portal"
+total_supply_native = "PENDING_RPC_QUERY_VIA_SOLANA_PUBLIC_NODE"
+decimals = 6  # typical SPL stable-coin decimals; verify at re-dispatch
+issuer = "Minteo (same issuer; Solana SPL token, NOT EVM ERC-20)"
+transfer_activity_summary = "Solana SPL deployment exists per Minteo transparency portal; volume not free-tier broken-out"
+priority_for_aggregator = "WEAK — chain-format mismatch (SPL vs EVM); defer to Phase 2 unless EVM substrates fall below N_MIN"
+notes = "NEW. Pin in spec but treat as deferred-substrate. Free-tier Solana RPC stack is independent from SQD Network (which currently does not index Solana for this project); inclusion would require a separate data-pipeline branch."
+
+# ====================================================================
+# §3 — Wenia COPW (Polygon) — INSTITUTIONAL ISSUER
+# ====================================================================
+
+[[contracts]]
+address = "PENDING_TOKEN_RESOLUTION"
+chain = "polygon-mainnet"
+role = "stable_token"
+name = "Wenia Colombian Peso (COPW, Bancolombia Group subsidiary)"
+source = "https://www.prnewswire.com/news-releases/wenia-part-of-bancolombia-group-taps-chainlink-to-increase-transparency-of-its-stablecoin-backed-11-by-the-colombian-peso-302205816.html"
+discovery_timestamp_utc = "2026-05-04"
+verification_status = "indirectly_confirmed_via_chainlink_por_feed_existence"
+total_supply_native = "PENDING_TOKEN_RESOLUTION"
+decimals = 18  # likely standard ERC-20
+issuer = "Wenia (Bancolombia Group subsidiary; Bermuda Class F licensed; AlphaPoint OMS backend)"
+transfer_activity_summary = "Launch 2024-05-03; 60K user target by end-2024; primarily Wenia-internal exchange settlement; Chainlink-PoR-gated minting (uniquely observable mint/burn linkage)"
+priority_for_aggregator = "HIGH (PENDING TOKEN ADDRESS) — institutional issuer with Chainlink-attested mint mechanism"
+notes = "NEW — token address resolution required. ACTION ITEM for orchestrator: dispatch a 1-eth_call eth_getStorageAt slot probe against Chainlink PoR feed `0x1d22c334621364F16f050076eE15Acd5eb8225Ce` to extract the bound token contract; OR query Wenia's public deployment manifest if/when published. HALT-and-surface if address cannot be free-tier resolved within Phase 2 Task 2.1."
+
+[[contracts]]
+address = "0x1d22c334621364F16f050076eE15Acd5eb8225Ce"
+chain = "polygon-mainnet"
+role = "oracle_proof_of_reserve"
+name = "Wenia COPW Reserves Proof-of-Reserve feed (Chainlink)"
+source = "https://data.chain.link/feeds/polygon/mainnet/copw-por"
+discovery_timestamp_utc = "2026-05-04"
+verification_status = "documented_via_chainlink_data_feed_directory"
+decimals = "PENDING"
+issuer = "Chainlink PoR feed; reserve attestor = Harris & Trotter (Wenia's third-party auditor)"
+transfer_activity_summary = "Oracle feed; deviation threshold 1%; integrated into COPW mint function preventing infinite-mint attacks"
+notes = "NEW — used to derive the bound COPW token contract via storage-slot probe. Not a substrate per se but a methodologically-critical companion contract."
+
+# ====================================================================
+# §4 — Num Finance nCOP (Polygon) — INDEPENDENT ISSUER
+# ====================================================================
+
+[[contracts]]
+address = "0x0856f80fF4dE8F2bF89872B27ba6e9Fb45d96Ae3"
+chain = "polygon-mainnet"
+role = "stable_token"
+name = "Num Finance Colombian Peso (nCOP)"
+source = "https://polygonscan.com/token/0x0856f80ff4de8f2bf89872b27ba6e9fb45d96ae3"
+discovery_timestamp_utc = "2026-05-04"
+verification_status = "documented_via_polygonscan_token_tracker"
+total_supply_native = 180000000  # 180M at 2023 launch; verify current at audit_block
+total_supply_usd_anchor_estimate = "PENDING"
+decimals = 18
+issuer = "Num Finance (Argentine fintech; multi-LATAM stablecoin issuer: nARS, nPEN, nCOP)"
+transfer_activity_summary = "Polygon-native; launched 2023-08-24; overcollateralized; 1:1 redemption to COP; offers nCOP yield via regulated financial products (yield-bearing structure → HODL pattern in user balances)"
+priority_for_aggregator = "GOOD — independent issuer (not Mento, not Bancolombia); Polygon-native; longest-running COP stablecoin in current generation"
+notes = "NEW. Companion deployment to nARS at 0x65517425ac3CE259a34400Bb67ceB39FF3DDC0BD (Argentine peso) and nPEN (Peruvian sol). Issuer-mint observable via Num Finance treasury EOA."
+
+# ====================================================================
+# §5 — Daily COP DLYCOP (Polygon + BSC) — TETHER EXPERIMENT (DORMANT)
+# ====================================================================
+
+[[contracts]]
+address = "0x1659fFb2d40DfB1671Ac226A0D9Dcc95A774521A"
+chain = "polygon-mainnet"
+role = "stable_token"
+name = "Daily COP (DLYCOP) — Tether-affiliated Colombian peso experiment"
+source = "https://polygonscan.com/token/0x1659fFb2d40DfB1671Ac226A0D9Dcc95A774521A"
+discovery_timestamp_utc = "2026-05-04"
+verification_status = "documented_via_polygonscan_AND_github_tethercoin_org"
+total_supply_native = "ANOMALOUS_REPORTING_NEEDS_VERIFICATION"  # 4.99T vs 1.448T divergent reads
+holders_count_estimate = "12511_to_113955_range"
+decimals = "PENDING_DIRECT_ETH_CALL"  # 6 vs 18 affects display
+issuer = "Tether-affiliated (per GitHub `tethercoin/columbianpesogaslesspeg`); appears largely dormant"
+transfer_activity_summary = "$75 24h volume (essentially dormant); large nominal holder base 12K-113K; designed for gasless transactions paying fees in same token"
+priority_for_aggregator = "WEAK — substrate-floor reference only; not primary aggregator weight"
+notes = "NEW. Include in aggregate-substrate map for completeness but DO NOT include in supply-share weighting (zero-out via velocity floor: substrates with <5% non-zero weeks excluded from aggregator)."
+
+[[contracts]]
+address = "0xE9C6824508c19bc98b162BbcD7c940bFA4287e27"
+chain = "bsc-mainnet"
+role = "stable_token"
+name = "Daily COP (DLYCOP) — BSC mirror"
+source = "https://bscscan.com/token/0xE9C6824508c19bc98b162BbcD7c940bFA4287e27"
+discovery_timestamp_utc = "2026-05-04"
+verification_status = "documented_via_bscscan"
+issuer = "Same as Polygon DLYCOP"
+priority_for_aggregator = "DEFER — duplicate substrate, BSC chain expansion adds pipeline complexity for no aggregator weight"
+notes = "BSC chain mirror of DLYCOP. Out-of-scope for v0 (would require BSC SQD Network indexer addition; cost-disproportionate vs. weight-floor exclusion)."
+
+# ====================================================================
+# §6 — Cross-corridor archetype validators (NOT primary substrate)
+# ====================================================================
+# Already documented in prior research: MXNB/Juno (Arbitrum, MXN), BRL1 (Polygon, BRL).
+# Preserved as cross-corridor sanity-check substrate per spec §3.5 substrate-relocation.
+# DO NOT add to aggregate-COP-corridor weights; these are separate Y/X validators.
+
+# ====================================================================
+# §7 — Mento V2 / V3 protocol infrastructure (BASELINE — preserved from v0)
+# ====================================================================
+# Mento V2 BiPool Manager `0x22d9db95…`, Broker `0x777A8255…`, Reserve `0x9380fA34…`,
+# BreakerBox `0x303ED1df…`, V3 Router `0x4861840C…`, V3 FPMM USDC/USDm `0x462fe04b…`,
+# V3 FPMM USDT/USDm `0x0FEBa760…`, ETC. all preserved in v0 allowlist.
+# Cross-references only — no new entries required at this scope.
+
+# ====================================================================
+# §8 — Distribution / wallet entities (off-chain)
+# ====================================================================
+# Littio (Colombian neobank, distributes Minteo COPM to 200K+ users) — NO public
+# settlement contract; operates as Circle USDC-backed neobank, with COPM transfer
+# happening at point-of-conversion, off-chain operator EOA.
+# DROPPED — no on-chain visibility surface for aggregate substrate.
+
+# ====================================================================
+# §9 — Cross-substrate aggregator weights (PRE-PINNED, ANTI-FISHING-LOCKED)
+# ====================================================================
+
+[aggregator_weights]
+methodology = "supply-share-weighted at audit_block, frozen for analysis window"
+audit_block_celo = 65915058   # inherited from v0 audit; may be updated per CORRECTIONS-ζ
+audit_block_polygon = "PENDING_PINNING_AT_REDISPATCH"
+audit_block_solana = "PENDING_PINNING_AT_REDISPATCH"
+weight_drift_threshold = 0.25  # if any substrate's supply-share drifts >25% during analysis window, CORRECTIONS-block fires
+sparse_week_floor = 0.40       # substrates with <40% non-zero weeks emit `aggregate_weight = 0, sparse_flag = TRUE`
+velocity_floor = 0.05          # substrates with <5% non-zero weeks excluded from aggregator entirely (DLYCOP-class)
+double_counting_treatment = "NONE — Polygon and Celo deployments of Minteo COPM are SEPARATE supply pools (cross-chain bridge inflows not yet attested between them); treat as independent substrates"
+weight_recomputation_policy = "PRE-PIN ONLY at audit_block. NO data-fitting weight tuning. Weight re-computation triggered ONLY by 25%-drift threshold OR substrate addition/deprecation per Section 10."
+
+# ====================================================================
+# §10 — Substrate addition/deprecation discipline
+# ====================================================================
+
+[substrate_lifecycle]
+addition_rule = "New substrates may be added to the aggregator only after: (1) on-chain code verification, (2) issuer-attestation review, (3) 12-week minimum activity history at the proposed audit_block, (4) explicit CORRECTIONS-block in spec."
+deprecation_rule = "Substrates with <5% non-zero weeks over the analysis window or with confirmed protocol shutdown are DEPRECATED at the next CORRECTIONS-block. Deprecation is one-way; re-promotion requires fresh 12-week history."
+re_promotion_rule = "Previously deprecated substrates may be re-included only via explicit user adjudication + CORRECTIONS-block. No silent re-promotion."
+
+# End of cop_substrate_addresses.toml.
