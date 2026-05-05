@@ -138,6 +138,13 @@ After user picks:
 
 Filled post-user-pick:
 
-User pick 2026-05-05: ___ (filled by orchestrator after user adjudication)
+**User pick 2026-05-05**: Option A — Proceed-with-FLAG-disclosure (orchestrator-recommended default per memo §3 rationale 1-5).
+
+**Post-pick action trail**:
+1. Spec v1.0.1 → v1.0.2 inline integration of CORRECTIONS-κ block + Phase-4 → Phase-3 phase-numbering typo fix at 5 occurrences (Model QA Specialist authoring agent `ac6c710e20abdf049`); on-disk file sha256 `d90f6302f9473aa938521ed0b7a9b58dc1c849cd74476cd90424f59f3bd3f37e`; sentinel-intact decision_hash `7c72292516f58f3cf2d16464d4f84c3e7d7270ad2c5d3d8ed8fef6b3b2751f5a`.
+2. Plan v1.1 → v1.1.1 frontmatter micro-edit recording user pick + spec sha pin (single-line `corrections_kappa_disposition_pin` field + `spec_sha256_v1_0_2` dual-pin + revision_history v1.1.1 entry).
+3. 2-wave verify on both diffs (4 agents in parallel per `feedback_two_wave_doc_verification`): Wave-1 RC ACCEPT (spec) + ACCEPT_WITH_FLAGS-2-NIT (plan); Wave-2 Model QA ACCEPT_WITH_FLAGS-1-MED-2-NIT (spec; FLAG-MED on 3-7× amplification numerical-precision deferred to Phase-3 memo §11.X disambiguation per agent's own recommendation) + SPM PASS-2-LOW (plan; NITs deferred to v1.2 polish).
+4. CORRECTIONS-κ binding for Phase 2 verdict-interpretation: spec §6 R1+R3 sign-AGREE-or-ESCALATE under tightened §3.3 Clause-A condition + spec §9.17 Phase-3 result-memo new §11.X disclosure section pre-pin (4 content blocks (a)/(b)/(c)/(d)).
+5. Task 1.3 (joint panel alignment Y ⋈ X on year_month) UNBLOCKED post-commit.
 
 End of Task 1.1 FLAG-A + FLAG-B disposition memo.
