@@ -444,3 +444,163 @@ If sha256 drifts: either (a) a downstream DANE catalog re-publication updated on
 - Co-emitted Task 1.2 artifact: `contracts/.scratch/dev-ai-stage-1/data/cop_usd_panel.parquet` (Banrep TRM monthly + lag panel; see §2 above of this DATA_PROVENANCE).
 - Next: Task 1.3 (joint panel alignment) inner-joins Y_p + Y_s2 + X lag panel to produce `panel_combined.parquet`; expected N = 134 post-lag-12 (Y has 134 rows; X panel was pre-extended into 2014-01 → 2014-12 to cover lag-12 regressors at 2015-01 Y onset).
 
+---
+
+## §3. Task 1.3 — Joint panel alignment (Y_p ⋈ Y_s2 ⋈ X)
+
+### §3.1. Scope
+
+Task 1.3 of dev-AI Stage-1 simple-β plan v1.1.1, Phase 1, Step 1-4. Inner-joins the three Phase-1-emitted parquets (Y_p Section J GEIH share + Y_s2 Section M GEIH share + COP/USD lag panel) on monthly cadence (`year_month`) to produce a single 134-row panel ready for Phase 2 OLS estimation.
+
+The join is a pure data-engineering deliverable: no smoothing, no transformation, no imputation. Inner-join discipline guarantees that every panel row has data for all three sources (Y_p, Y_s2, X at lags 6/9/12).
+
+### §3.2. Inputs (READ-ONLY; sha256-pinned from Tasks 1.1 + 1.2)
+
+| Input | Path | Rows | sha256 |
+|-------|------|------|--------|
+| Y_p (Section J GEIH share) | `contracts/.scratch/dev-ai-stage-1/data/geih_young_workers_section_j_share.parquet` | 134 | `1bd70f872b3cd70333638a3b9ac3becc07409602ab2774feff4e0909b55a70db` |
+| Y_s2 (Section M GEIH share) | `contracts/.scratch/dev-ai-stage-1/data/geih_young_workers_section_m_share.parquet` | 134 | `5782aefab3338b0847b54f438081be3f2fbb86c2398fc2b06454d0050adcb30e` |
+| X (COP/USD lag panel) | `contracts/.scratch/dev-ai-stage-1/data/cop_usd_panel.parquet` | 135 | `1151f711434101f7352c13320d709e397e8eb06183bf75f1f3184d61783cf97d` |
+
+Y panel sha pins above are verbatim from §1.1 Task 1.1 emit-block of this DATA_PROVENANCE.md. X panel sha pin is verbatim from §2 Task 1.2 emit-block of this DATA_PROVENANCE.md.
+
+### §3.3. Join semantics
+
+**Key normalization.** The three input parquets carry `year_month` in two distinct conventions:
+
+- Y panels (Section J + Section M): `timestamp[us, tz=UTC]`, end-of-month convention (e.g., `2015-01-31 00:00:00+00:00`).
+- X panel (COP/USD): `timestamp[us]` (naive), start-of-month convention (e.g., `2015-01-01`).
+
+Both express the same monthly cadence. To join cleanly, the three keys are normalized to a `pandas.Period[M]` (year-month bucket) by:
+- Y panels: `dt.tz_convert(None).dt.to_period('M')` — drops UTC tz, then drops day-precision.
+- X panel: `dt.to_period('M')` — drops day-precision (already naive).
+
+The resulting `Period[M]` keys agree by construction across all three panels for shared months.
+
+**Join type.** Inner-join via `pandas.DataFrame.merge(..., how='inner', validate='one_to_one')`. The `validate='one_to_one'` argument enforces that no panel has duplicate `year_month` keys (verified pre-join: each panel has 1 unique key per row).
+
+**Join order.** Y_p ⋈ Y_s2 first (yielding 134 rows: identical month sets), then ⋈ X (yielding 134 rows: drops only X's 2026-03 row, which has no Y counterpart due to publication-lag).
+
+**Column rename map per plan Task 1.3 Step 1 schema:**
+
+- Y_p: `logit_share` → `Y_p_logit`; `raw_share` → `Y_p_raw`; `cell_count` → `cell_count_section_j`.
+- Y_s2: `logit_share` → `Y_s2_logit`; `raw_share` → `Y_s2_raw`; `cell_count` → `cell_count_section_m`.
+- X: `log_cop_usd_lag6` → `X_lag6`; `log_cop_usd_lag9` → `X_lag9`; `log_cop_usd_lag12` → `X_lag12`; `log_cop_usd` retained verbatim (contemporaneous reference, NOT used in primary regression).
+
+**Final column order (panel_combined.parquet schema):**
+
+`year_month, Y_p_logit, Y_p_raw, Y_s2_logit, Y_s2_raw, log_cop_usd, X_lag6, X_lag9, X_lag12, cell_count_section_j, cell_count_section_m`
+
+The `year_month` column is re-materialized post-join as the canonical end-of-month UTC tz-aware timestamp (matches Y-panel input convention; the X-panel start-of-month form is replaced).
+
+### §3.4. Dropped rows
+
+The X panel covers 135 months (2015-01 → 2026-03); the Y panels cover 134 months (2015-01 → 2026-02). The inner-join drops **1 row from X**: `2026-03`. Reason: GEIH Section J + Section M micro-data for 2026-03 has not yet been published by DANE at the time of Task 1.1 ingest (publication-lag drop, per spec §4 line 139). This is a pre-pinned drop, not a data-quality artifact.
+
+**Rows dropped by source:**
+
+- Y_p (Section J): 0 rows dropped (all 134 retained).
+- Y_s2 (Section M): 0 rows dropped (all 134 retained).
+- X (COP/USD): 1 row dropped (2026-03; no Y counterpart).
+
+**Lag-12 X-back-extension validity check.** The X panel was pre-extended into 2014-01 → 2014-12 by Task 1.2 (per plan v1.1 X-back-extension instruction; spec §4) so that `X_lag12` at the 2015-01 Y onset references real 2014-01 TRM data. The `panel_combined.parquet` row for 2015-01-31 has `X_lag12 = 7.605023954501253`, which is `log(TRM_2014-01)`. This confirms the X-back-extension worked as designed — N_eff = 134 (full Y window) is preserved at lag-12, no left-edge truncation.
+
+### §3.5. N gate (sole numeric gate per spec §3.6)
+
+- Realized N = **134** (rows in panel_combined.parquet).
+- N_MIN_OBS = **75** (spec §3.6).
+- Verdict: **PASS** (N = 134 >> 75; well above N_MIN floor).
+- §9.5 HALT-N_MIN does NOT fire.
+- Realized N matches expected N (134) exactly; no per-month-shortfall investigation required.
+
+No typed exceptions raised. No HALT surfaced.
+
+### §3.6. Final integrity checks
+
+**Per-column null-rate report (zero nulls expected; zero nulls realized):**
+
+| Column | Nulls | Null rate |
+|---|---|---|
+| `year_month` | 0/134 | 0.00% |
+| `Y_p_logit` | 0/134 | 0.00% |
+| `Y_p_raw` | 0/134 | 0.00% |
+| `Y_s2_logit` | 0/134 | 0.00% |
+| `Y_s2_raw` | 0/134 | 0.00% |
+| `log_cop_usd` | 0/134 | 0.00% |
+| `X_lag6` | 0/134 | 0.00% |
+| `X_lag9` | 0/134 | 0.00% |
+| `X_lag12` | 0/134 | 0.00% |
+| `cell_count_section_j` | 0/134 | 0.00% |
+| `cell_count_section_m` | 0/134 | 0.00% |
+
+**Type-stability check (parquet schema):**
+
+```
+year_month: timestamp[us, tz=UTC]
+Y_p_logit: double
+Y_p_raw: double
+Y_s2_logit: double
+Y_s2_raw: double
+log_cop_usd: double
+X_lag6: double
+X_lag9: double
+X_lag12: double
+cell_count_section_j: int64
+cell_count_section_m: int64
+```
+
+No type drift across rows. All numeric columns are `double` (float64); `cell_count_*` columns are `int64`; `year_month` is `timestamp[us, tz=UTC]`.
+
+**Per-month presence audit:**
+
+- Expected month range: 2015-01 → 2026-02 (134 months, monthly cadence, contiguous).
+- Realized month range: 2015-01 → 2026-02 (134 months).
+- Missing months: **NONE**.
+- Extra months: **NONE**.
+- Contiguity gaps: **NONE** (134 contiguous months; every month-ordinal between 2015-01 and 2026-02 inclusive is present).
+
+### §3.7. Schema definition (column-by-column)
+
+| Column | Type | Description |
+|---|---|---|
+| `year_month` | `timestamp[us, tz=UTC]` | End-of-month UTC tz-aware timestamp. Range 2015-01-31 → 2026-02-28. Monthly cadence, contiguous. |
+| `Y_p_logit` | `double` | Logit-transformed Y_p (Section J GEIH young-worker employment share, ages 14-28, CIIU Rev. 4 Section J Información y Comunicaciones). Primary outcome variable. |
+| `Y_p_raw` | `double` | Raw Y_p share (Section J), pre-logit. Bounded [~0.017, ~0.038] empirically; for diagnostic + back-out only. |
+| `Y_s2_logit` | `double` | Logit-transformed Y_s2 (Section M GEIH young-worker employment share, ages 14-28, CIIU Rev. 4 Section M Actividades Profesionales). R2 sensitivity arm per spec §6. |
+| `Y_s2_raw` | `double` | Raw Y_s2 share (Section M), pre-logit. For diagnostic + back-out only. |
+| `log_cop_usd` | `double` | Contemporaneous log(COP/USD TRM monthly average). Reference column; NOT used in primary regression (which uses lagged X). |
+| `X_lag6` | `double` | log(COP/USD) lagged 6 months. Banrep TRM monthly average. |
+| `X_lag9` | `double` | log(COP/USD) lagged 9 months. Banrep TRM monthly average. |
+| `X_lag12` | `double` | log(COP/USD) lagged 12 months. Banrep TRM monthly average. Lag-12 references the X-back-extended 2014 series at the 2015-01 Y onset. |
+| `cell_count_section_j` | `int64` | GEIH unweighted micro-data cell count for Section J × ages 14-28 (numerator). Diagnostic column for FLAG-A monitoring per spec §6 R3 escalation hooks. |
+| `cell_count_section_m` | `int64` | GEIH unweighted micro-data cell count for Section M × ages 14-28 (numerator). Diagnostic column for FLAG-A monitoring (Section M sensitivity arm). |
+
+### §3.8. Output emit (panel_combined.parquet)
+
+- **Path:** `contracts/.scratch/dev-ai-stage-1/data/panel_combined.parquet`.
+- **Rows:** 134.
+- **Bytes:** 18975.
+- **sha256:** `451f4c615c89a481da4ca132c79a55b04e00eecb9199746f544b22561ba0740d`.
+- **First row** (sanity check): `year_month=2015-01-31+00:00`, `Y_p_logit=-3.4996048…`, `Y_p_raw=0.02932347…`, `Y_s2_logit=-3.8886559…`, `Y_s2_raw=0.02006212…`, `log_cop_usd=7.80020404…`, `X_lag6=7.53499233…`, `X_lag9=7.56793495…`, `X_lag12=7.60502395…`, `cell_count_section_j=249`, `cell_count_section_m=159`.
+- **Last row** (sanity check): `year_month=2026-02-28+00:00`, `Y_p_logit=-3.4962093…`, `Y_p_raw=0.02942028…`, `Y_s2_logit=-3.3043358…`, `Y_s2_raw=0.03542275…`, `log_cop_usd=8.23384837…`, `X_lag6=8.29864158…`, `X_lag9=8.33055513…`, `X_lag12=8.32363514…`, `cell_count_section_j=144`, `cell_count_section_m=206`.
+
+If sha256 drifts: either (a) one of the three input parquets was re-emitted by an upstream Task 1.1 / 1.2 re-run with different sha; or (b) the join logic in this section was modified. Investigate by re-pinning input shas (§3.2) and re-running the deterministic join. Record the new sha + investigation note in a new sub-section below; do NOT silently overwrite this section's pin.
+
+### §3.9. Phase 2 readiness
+
+panel_combined.parquet is the sole input for Phase 2 OLS estimation (plan Task 2.1 onwards). Phase 2 will:
+
+- Run primary OLS: `Y_p_logit = β_0 + β_6 * X_lag6 + β_9 * X_lag9 + β_12 * X_lag12 + ε` with HAC SEs (lag = 6 per spec §3.4).
+- Compute composite β_composite = (β_6 + β_9 + β_12) / 3 (spec §3.3).
+- Apply gate per spec §3.5 (one-sided p_one < 0.025 PASS threshold, β_composite > 0).
+- Run R1-R4 robustness arms (R1 Section M, R2 nominal X levels not log, R3 cell-count exclusion, R4 alt-lag-windows) per spec §6 — and any §6 R1+R3 escalation tightening per CORRECTIONS-κ pinned for Phase 3.
+
+No Y or X transformation is performed in Task 1.3. Logit transform is precomputed in Y panels (Task 1.1); log transform + lag construction is precomputed in X panel (Task 1.2). Phase 2 begins from this 134-row matrix as-is.
+
+### §3.A. Cross-references
+
+- Plan Task 1.3: `contracts/docs/superpowers/plans/2026-05-04-dev-ai-stage-1-simple-beta-implementation.md` (line 185, Steps 1-4 at 193-199).
+- Spec §3.6 (N_MIN_OBS gate), §4 (sample-selection + X-back-extension), §6 (R-arm spec), §9.5 (HALT-N_MIN protocol): `contracts/docs/superpowers/specs/2026-05-04-dev-ai-stage-1-simple-beta-design.md`.
+- Upstream Task 1.1 emit + flags: §1 of this DATA_PROVENANCE.md (Section J baseline + FLAG-A cell-count gap + FLAG-B raw-share gap).
+- Upstream Task 1.2 emit: §2 of this DATA_PROVENANCE.md (Banrep TRM + lag panel + X-back-extension).
+- Phase 2 dispatch (next): plan v1.1.1 Phase 2.
