@@ -80,6 +80,18 @@ After user picks:
 
 ## §7. Install-execution log (filled post-pick)
 
-(Pending user pick.)
+**User pick 2026-05-05**: Option (iii) — Skill-not-installed; orchestrator applies framework manually via synthesis memo §3 four-touchpoint framework verbatim.
+
+**Adjudication trail**:
+1. User initially picked (i) Docker MCP install.
+2. Orchestrator surfaced HALT-and-surface: docker MCP unavailable in this environment (no `mcp__docker__*` tools loaded; verified 2026-05-04).
+3. User picked (i.b) — invoke update-config skill to author docker MCP entry.
+4. Orchestrator surfaced category clarification: Economist Analyst is a Claude Code SKILL (not MCP server); Docker MCP Gateway fronts MCP servers, doesn't install skills. Three sub-options enumerated (α full Docker MCP setup ~30-60 min / β downgrade to (ii)-or-(iii) / γ defer both).
+5. User picked β-pivot 2026-05-05.
+6. Per memo §4 recommendation, β-pivot defaults to (iii) skill-not-installed-manual-framework-application unless user explicitly picks (ii).
+
+**Confirmed pick: (iii)**. Orchestrator pins `ea_install_path_pin: option_iii_manual_framework_application` in plan v1.1 frontmatter (v1.1 → v1.1.1 micro-edit; single-line frontmatter change). Phase 2.5 Tasks 2.5.1-2.5.4 invoke synthesis memo `contracts/.scratch/2026-05-04-economist-analyst-integration-synthesis.md` §3 four-touchpoint framework verbatim during execution. Doc-Verify trailer at Task 2.5.4 commit reads `orchestrator-applied-EA-framework`.
+
+**Docker MCP Gateway infrastructure**: deferred to a separate future task when an actual MCP server is needed (not for the Economist Analyst skill, which has its own install path). Environment is ready (Docker 29.2.1 + Go 1.25.7); install plan documented in this memo §6 + the Docker MCP Gateway README at `https://github.com/docker/mcp-gateway`.
 
 End of EA skill installation adjudication memo.
