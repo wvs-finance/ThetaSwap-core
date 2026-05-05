@@ -1,0 +1,64 @@
+{
+  "_skeleton_status": "SKELETON — populated by NB02 Trio 3 cell `nb02-trio3-code` at notebook-execution time. Do NOT consume this skeleton as the canonical verdict; wait until the notebook executes and overwrites with computed numerics. Verdict field is `TBD_AT_EXECUTION` until that time.",
+  "verdict": "TBD_AT_EXECUTION",
+  "verdict_raw": "TBD_AT_EXECUTION",
+  "branch_taken": "TBD_AT_EXECUTION",
+  "provisional_flag": true,
+  "primary_numerics": {
+    "beta_composite": null,
+    "se_composite_HAC": null,
+    "t_composite": null,
+    "p_one_HAC": null
+  },
+  "lag_decomposition": {
+    "beta_6": null,
+    "beta_9": null,
+    "beta_12": null,
+    "se_beta_6_HAC": null,
+    "se_beta_9_HAC": null,
+    "se_beta_12_HAC": null,
+    "share_lag6": null,
+    "share_lag9": null,
+    "share_lag12": null
+  },
+  "clause_b_numerics": {
+    "b_i_stat": null,
+    "b_i_fires": null,
+    "resid_skew": null,
+    "resid_excess_kurtosis": null,
+    "b_ii_skew_fires": null,
+    "b_ii_kurt_fires": null,
+    "b_ii_fires": null,
+    "clause_b_fires": null
+  },
+  "n_gate": {
+    "realized_n": 134,
+    "n_min": 75,
+    "pass": true
+  },
+  "r_consistency": {
+    "status": "PENDING_NB03",
+    "individual_R1_R2_R3_R4": null
+  },
+  "spec_sha256": "d90f6302f9473aa938521ed0b7a9b58dc1c849cd74476cd90424f59f3bd3f37e",
+  "spec_decision_hash": "7c72292516f58f3cf2d16464d4f84c3e7d7270ad2c5d3d8ed8fef6b3b2751f5a",
+  "spec_relpath": "contracts/docs/superpowers/specs/2026-05-04-dev-ai-stage-1-simple-beta-design.md",
+  "plan_sha256": "772b52e1f4b4e9e0ed964c3068b1948c24d5cfe27afc109e8e589a1ea790c036",
+  "plan_relpath": "contracts/docs/superpowers/plans/2026-05-04-dev-ai-stage-1-simple-beta-implementation.md",
+  "panel_sha256": "451f4c615c89a481da4ca132c79a55b04e00eecb9199746f544b22561ba0740d",
+  "sample_window": {
+    "start": "2015-01",
+    "end": "2026-03"
+  },
+  "pair_d_reference": {
+    "spec_sha256": "964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659",
+    "beta_composite": 0.13670985,
+    "hac_se": 0.02465,
+    "t_stat": 5.5456,
+    "p_one": 1.46e-08
+  },
+  "emit_timestamp_utc": "TBD_AT_EXECUTION",
+  "verdict_tree_trace": [
+    "SKELETON — populated by NB02 Trio 3 at execution time per spec §8.1 mapping rules"
+  ]
+}
