@@ -56,7 +56,7 @@
     "t_stat": 5.5456,
     "p_one": 1.46e-08
   },
-  "emit_timestamp_utc": "2026-05-06T09:22:53Z",
+  "emit_timestamp_utc": "2026-05-06T10:08:44Z",
   "verdict_tree_trace": [
     "Step 1: N gate PASS (N=134 >= N_MIN=75).",
     "Step 2: R-consistency = PENDING_NB03 (placeholder; NB03 finalizes per \u00a77.1).",

@@ -6,12 +6,16 @@ X = log(COP/USD) lagged 6/9/12 months (composite). Sample window 2015-01 →
 2026-03 (Pair D Option-α' inheritance), monthly cadence, N = 134 post-lag-12.
 
 This file lives at:
-  <worktree_root>/contracts/.scratch/dev-ai-stage-1/notebooks/env.py
-parents[0] = notebooks/
-parents[1] = dev-ai-stage-1/
-parents[2] = .scratch/
-parents[3] = contracts/
-parents[4] = worktree root
+  <worktree_root>/contracts/notebooks/dev_ai_cost/env.py
+parents[0] = dev_ai_cost/
+parents[1] = notebooks/
+parents[2] = contracts/
+parents[3] = worktree root
+
+Migrated from contracts/.scratch/dev-ai-stage-1/ on 2026-05-06 per
+user directive: "the miss-specifications serve for learning AND give
+insights AND the data is preserved for testing new things". Mirrors
+fx_vol_cpi_surprise/Colombia/ canonical pattern.
 
 All inter-task artifact paths flow through the constants defined here — no
 bare string paths in notebooks. Mirrors the abrigo_y3_x_d/env.py parents-fix
@@ -28,14 +32,13 @@ from typing import Final
 # ── Repo-rooted path resolution (parents-fix per 865402c2c precedent) ──────
 
 _NOTEBOOKS_DIR: Final[Path] = Path(__file__).resolve().parent
-_STAGE1_DIR: Final[Path] = Path(__file__).resolve().parents[1]
-_SCRATCH_DIR: Final[Path] = Path(__file__).resolve().parents[2]
-_CONTRACTS_DIR: Final[Path] = Path(__file__).resolve().parents[3]
-_WORKTREE_ROOT: Final[Path] = Path(__file__).resolve().parents[4]
+_NOTEBOOKS_PARENT_DIR: Final[Path] = Path(__file__).resolve().parents[1]
+_CONTRACTS_DIR: Final[Path] = Path(__file__).resolve().parents[2]
+_WORKTREE_ROOT: Final[Path] = Path(__file__).resolve().parents[3]
 
 # ── Data inputs (Phase 1 outputs from Task 1.1 + Task 1.2 + Task 1.3) ──────
 
-DATA_DIR: Final[Path] = _STAGE1_DIR / "data"
+DATA_DIR: Final[Path] = _NOTEBOOKS_DIR / "data"
 PANEL_COMBINED_PATH: Final[Path] = DATA_DIR / "panel_combined.parquet"
 GEIH_SECTION_J_PATH: Final[Path] = DATA_DIR / "geih_young_workers_section_j_share.parquet"
 GEIH_SECTION_M_PATH: Final[Path] = DATA_DIR / "geih_young_workers_section_m_share.parquet"
@@ -47,14 +50,21 @@ DATA_PROVENANCE_PATH: Final[Path] = DATA_DIR / "DATA_PROVENANCE.md"
 ESTIMATES_DIR: Final[Path] = _NOTEBOOKS_DIR / "estimates"
 FIGURES_DIR: Final[Path] = _NOTEBOOKS_DIR / "figures"
 PDF_DIR: Final[Path] = _NOTEBOOKS_DIR / "pdf"
-OUTPUT_DIR: Final[Path] = _STAGE1_DIR / "output"
+DISPOSITIONS_DIR: Final[Path] = _NOTEBOOKS_DIR / "dispositions"
 
-# ── Inter-notebook handoff files ───────────────────────────────────────────
+# OUTPUT_DIR alias to ESTIMATES_DIR (post-migration backward-compat for NB02 + NB03 cells
+# that referenced OUTPUT_DIR pre-migration; kept for re-execution stability)
+OUTPUT_DIR: Final[Path] = ESTIMATES_DIR
+
+# ── Inter-notebook handoff files (now in estimates/ per fx_vol convention) ──
 
 PANEL_FINGERPRINT_PATH: Final[Path] = ESTIMATES_DIR / "nb1_panel_fingerprint.json"
-PRIMARY_RESULTS_PATH: Final[Path] = OUTPUT_DIR / "PRIMARY_RESULTS.md"
-GATE_VERDICT_PATH: Final[Path] = OUTPUT_DIR / "gate_verdict.json"
-ROBUSTNESS_RESULTS_PATH: Final[Path] = OUTPUT_DIR / "ROBUSTNESS_RESULTS.md"
+PRIMARY_RESULTS_PATH: Final[Path] = ESTIMATES_DIR / "PRIMARY_RESULTS.md"
+GATE_VERDICT_PATH: Final[Path] = ESTIMATES_DIR / "gate_verdict.json"
+ROBUSTNESS_RESULTS_PATH: Final[Path] = ESTIMATES_DIR / "ROBUSTNESS_RESULTS.md"
+ESCALATION_RESULTS_PATH: Final[Path] = ESTIMATES_DIR / "ESCALATION_RESULTS.md"
+EA_FRAMEWORK_APPLICATION_PATH: Final[Path] = ESTIMATES_DIR / "EA_FRAMEWORK_APPLICATION.md"
+MEMO_PATH: Final[Path] = ESTIMATES_DIR / "MEMO.md"
 
 # ── Notebook paths ─────────────────────────────────────────────────────────
 

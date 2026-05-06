@@ -5,7 +5,7 @@ spec_relpath: "contracts/docs/superpowers/specs/2026-05-04-dev-ai-stage-1-simple
 plan_sha256_v1_1_1: "772b52e1f4b4e9e0ed964c3068b1948c24d5cfe27afc109e8e589a1ea790c036"
 plan_relpath: "contracts/docs/superpowers/plans/2026-05-04-dev-ai-stage-1-simple-beta-implementation.md"
 panel_combined_sha256: "451f4c615c89a481da4ca132c79a55b04e00eecb9199746f544b22561ba0740d"
-emit_timestamp_utc: "2026-05-06T09:22:53Z"
+emit_timestamp_utc: "2026-05-06T10:08:44Z"
 provisional_flag: true
 sample_window:
   start: "2015-01"

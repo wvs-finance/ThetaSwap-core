@@ -1,5 +1,5 @@
 ---
-emitted_at_utc: 2026-05-06T09:34:22+00:00
+emitted_at_utc: 2026-05-06T10:08:49+00:00
 emitted_from: notebooks/03_tests_and_sensitivity.ipynb (Trio 6 — §5.5 escalation suite)
 spec_decision_hash: 7c72292516f58f3cf2d16464d4f84c3e7d7270ad2c5d3d8ed8fef6b3b2751f5a
 plan_tag: v1.1.1
