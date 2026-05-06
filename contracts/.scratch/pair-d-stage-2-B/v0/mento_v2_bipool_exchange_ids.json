@@ -1,0 +1,190 @@
+{
+  "schema_version": "v1.0",
+  "discovery_method": "getExchanges() iteration via Forno eth_call",
+  "discovery_timestamp_utc": "2026-05-04T12:20:56Z",
+  "discovery_block": 65996436,
+  "bipool_manager_address": "0x22d9db95E6Ae61c104A7B6F6C78D7993B94ec901",
+  "broker_address": "0x777A8255cA72412f0d706dc03C9D1987306B4CaD",
+  "usdm_copm_exchange_id": "0x1c9378bd0973ff313a599d3effc654ba759f8ccca655ab6d6ce5bd39a212943b",
+  "usdm_paired_non_copm_exchange_ids": [
+    "0x3562f9d29eba092b857480a82b03375839c752346b9ebe93a57ab82410328187",
+    "0xc9664df358594c5eaf2f410ab371e2deb8b532ca26162d2bc36d99b8d174567b",
+    "0x4206e101b13bf29e40b2bfed4cf167271c41677720f2ee786ac1bf5efac101cb",
+    "0xd580d237231109e6a96d67d82450611c610a805a26660c90281bdc0cd04a95c7",
+    "0x3135b662c38265d0655177091f1b647b4fef511103d06c016efdf18b46930d2c",
+    "0x746455363e8f55d04e0a2cc040d1b348a6c031b336ba6af6ae91515c194929c8",
+    "0x67a5122dab72931be57196e0abba81690461f327bc60fb98ca7eef0ac58906cc",
+    "0x89de88b8eb790de26f4649f543cb6893d93635c728ac857f0926e842fb0d298b",
+    "0xacc988382b66ee5456086643dcfd9a5ca43dd8f428f6ef22503d8b8013bcffd7",
+    "0x0d739efbfc30f303e8d1976c213b4040850d1af40f174f4169b846f6fd3d2f20",
+    "0x773bcec109cee923b5e04706044fd9d6a5121b1a6a4c059c36fdbe5b845d4e9b",
+    "0x517ccc3bcab9f35e2e24143a0c1809068efc649f740846cfb6a1c5703735c1ee",
+    "0x7952984d7278ca3417febf52815c321984ac3147ced2c02bb6a02b0bcab08413",
+    "0xd11d52b973ddbb983cc2087aabcafd915fc3140cf9996aacc61db9710d1bde05"
+  ],
+  "all_exchanges": [
+    {
+      "idx": 0,
+      "exchangeId": "0x3562f9d29eba092b857480a82b03375839c752346b9ebe93a57ab82410328187",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0xfaea5f3404bba20d3cc2f8c4b0a888f55a3c7313"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 1,
+      "exchangeId": "0xc9664df358594c5eaf2f410ab371e2deb8b532ca26162d2bc36d99b8d174567b",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0x73f93dcc49cb8a239e2032663e9475dd5ef29a08"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 2,
+      "exchangeId": "0x4206e101b13bf29e40b2bfed4cf167271c41677720f2ee786ac1bf5efac101cb",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0x4c35853a3b4e647fd266f4de678dcc8fec410bf6"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 3,
+      "exchangeId": "0xd580d237231109e6a96d67d82450611c610a805a26660c90281bdc0cd04a95c7",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0x7175504c455076f15c04a2f90a8e352281f492f9"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 4,
+      "exchangeId": "0x3135b662c38265d0655177091f1b647b4fef511103d06c016efdf18b46930d2c",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0x471ece3750da237f93b8e339c536989b8978a438"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 5,
+      "exchangeId": "0xfca6d94b46122eb9a4b86cf9d3e1e856fea8a826d0fc26c5baf17c43fbaf0f48",
+      "assets": [
+        "0xd8763cba276a3738e6de85b4b3bf5fded6d6ca73",
+        "0x061cc5a2c863e0c1cb404006d559db18a34c762d"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": false
+    },
+    {
+      "idx": 6,
+      "exchangeId": "0x746455363e8f55d04e0a2cc040d1b348a6c031b336ba6af6ae91515c194929c8",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0xd8763cba276a3738e6de85b4b3bf5fded6d6ca73"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 7,
+      "exchangeId": "0x67a5122dab72931be57196e0abba81690461f327bc60fb98ca7eef0ac58906cc",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0xe2702bd97ee33c88c8f6f92da3b733608aa76f71"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 8,
+      "exchangeId": "0x89de88b8eb790de26f4649f543cb6893d93635c728ac857f0926e842fb0d298b",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0x456a3d042c0dbd3db53d5489e98dfb038553b0d0"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 9,
+      "exchangeId": "0xacc988382b66ee5456086643dcfd9a5ca43dd8f428f6ef22503d8b8013bcffd7",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0xceba9300f2b948710d2653dd7b07f33a8b32118c"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 10,
+      "exchangeId": "0x0d739efbfc30f303e8d1976c213b4040850d1af40f174f4169b846f6fd3d2f20",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0xeb466342c4d449bc9f53a865d5cb90586f405215"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 11,
+      "exchangeId": "0x773bcec109cee923b5e04706044fd9d6a5121b1a6a4c059c36fdbe5b845d4e9b",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0x48065fbbe25f71c9282ddf5e1cd6d6a887483d5e"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 12,
+      "exchangeId": "0x517ccc3bcab9f35e2e24143a0c1809068efc649f740846cfb6a1c5703735c1ee",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0xff4ab19391af240c311c54200a492233052b6325"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 13,
+      "exchangeId": "0x7952984d7278ca3417febf52815c321984ac3147ced2c02bb6a02b0bcab08413",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0x105d4a9306d2e55a71d2eb95b81553ae1dc20d7b"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 14,
+      "exchangeId": "0xd11d52b973ddbb983cc2087aabcafd915fc3140cf9996aacc61db9710d1bde05",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0xe8537a3d056da446677b9e9d6c5db704eaab4787"
+      ],
+      "is_usdm_copm": false,
+      "is_usdm_paired_non_copm": true
+    },
+    {
+      "idx": 15,
+      "exchangeId": "0x1c9378bd0973ff313a599d3effc654ba759f8ccca655ab6d6ce5bd39a212943b",
+      "assets": [
+        "0x765de816845861e75a25fca122bb6898b8b1282a",
+        "0x8a567e2ae79ca692bd748ab832081c45de4041ea"
+      ],
+      "is_usdm_copm": true,
+      "is_usdm_paired_non_copm": false
+    }
+  ],
+  "spec_sha256": "fcebc95f923e1b55fbf2eaa22239b00bbde4a9f35bb031e8f32d090a4fb80d95",
+  "plan_sha256": "7e2f43c211a314475c3fc2ef5890c268c7216efa55b0b7a9d2c8e5d8d95bca6b",
+  "plan_task": "1.3.b (BiPool exchange-id discovery sub-deliverable)"
+}

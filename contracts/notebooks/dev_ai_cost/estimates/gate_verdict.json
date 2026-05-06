@@ -1,0 +1,153 @@
+{
+  "verdict": "FAIL",
+  "verdict_raw": "FAIL",
+  "branch_taken": "step 4(d) FAIL (\u03b2 \u2264 0 AND p > 0.05 AND Clause-B does NOT fire)",
+  "provisional_flag": false,
+  "primary_numerics": {
+    "beta_composite": -0.146131873520888,
+    "se_composite_HAC": 0.08468266085785704,
+    "t_composite": -1.7256410230917958,
+    "p_one_HAC": 0.9577939928517828
+  },
+  "lag_decomposition": {
+    "beta_6": -0.01604213109752803,
+    "beta_9": -0.009319952188209385,
+    "beta_12": -0.12076979023515058,
+    "se_beta_6_HAC": 0.20800667905089318,
+    "se_beta_9_HAC": 0.19578415928703635,
+    "se_beta_12_HAC": 0.16123911057283358,
+    "share_lag6": 0.10977845360502393,
+    "share_lag9": 0.06377768219660304,
+    "share_lag12": 0.826443864198373
+  },
+  "clause_b_numerics": {
+    "b_i_stat": 1.7256410230917958,
+    "b_i_fires": false,
+    "resid_skew": -0.33931230294742853,
+    "resid_excess_kurtosis": 0.32229760680355257,
+    "b_ii_skew_fires": false,
+    "b_ii_kurt_fires": false,
+    "b_ii_fires": false,
+    "clause_b_fires": false
+  },
+  "n_gate": {
+    "realized_n": 134,
+    "n_min": 75,
+    "pass": true
+  },
+  "r_consistency": {
+    "status": "MIXED",
+    "n_agree": 3,
+    "n_disagree": 1,
+    "individual_R1_R2_R3_R4": {
+      "R1_2021_regime_dummy": {
+        "beta_composite": -0.51294441,
+        "sign": "-",
+        "sign_agrees_with_primary": true
+      },
+      "R2_section_M_Y_s2": {
+        "beta_composite": 0.45482801,
+        "sign": "+",
+        "sign_agrees_with_primary": false,
+        "p_one_HAC": 1.13e-06
+      },
+      "R3_raw_OLS_no_logit": {
+        "beta_composite": -0.00339875,
+        "sign": "-",
+        "sign_agrees_with_primary": true
+      },
+      "R4_HAC_SE_substitution": {
+        "beta_composite": -0.14613187,
+        "sign": "-",
+        "sign_agrees_with_primary": true,
+        "note": "trivially TRUE per spec \u00a77 R4 same-point-estimate"
+      }
+    },
+    "kappa_tightened_pair_R1_AND_R3": {
+      "R1_agree": true,
+      "R3_agree": true,
+      "pair_clears": true,
+      "note": "clears at NEGATIVE sign \u2014 consistent FAIL, not contradiction; per spec \u00a76 v1.0.2 \u03ba-tightening"
+    },
+    "substrate_too_noisy_check_per_3_5": {
+      "n_disagree": 1,
+      "threshold_at_least_3_of_4": false,
+      "fires": false
+    }
+  },
+  "spec_sha256": "d90f6302f9473aa938521ed0b7a9b58dc1c849cd74476cd90424f59f3bd3f37e",
+  "spec_decision_hash": "7c72292516f58f3cf2d16464d4f84c3e7d7270ad2c5d3d8ed8fef6b3b2751f5a",
+  "spec_relpath": "contracts/docs/superpowers/specs/2026-05-04-dev-ai-stage-1-simple-beta-design.md",
+  "plan_sha256": "772b52e1f4b4e9e0ed964c3068b1948c24d5cfe27afc109e8e589a1ea790c036",
+  "plan_relpath": "contracts/docs/superpowers/plans/2026-05-04-dev-ai-stage-1-simple-beta-implementation.md",
+  "panel_sha256": "451f4c615c89a481da4ca132c79a55b04e00eecb9199746f544b22561ba0740d",
+  "sample_window": {
+    "start": "2015-01",
+    "end": "2026-02",
+    "note": "realized end is 2026-02-28 per Task 1.1 publication-lag tolerance; spec target was 2026-03 (one-month tolerance consumed per spec \u00a74 line 139)"
+  },
+  "pair_d_reference": {
+    "spec_sha256": "964c62cca0be1b9070944b5398fe97886c6d07d37ba7121199de8ccc341ef659",
+    "beta_composite": 0.13670985,
+    "hac_se": 0.02465,
+    "t_stat": 5.5456,
+    "p_one": 1.46e-08
+  },
+  "emit_timestamp_utc": "2026-05-06T10:24:01.888794+00:00",
+  "verdict_tree_trace": [
+    "Step 1: N gate PASS (N=134 >= N_MIN=75).",
+    "Step 2: R-consistency = PENDING_NB03 (placeholder; NB03 finalizes per \u00a77.1).",
+    "Step 4(d): \u03b2\u0302_composite <= 0 AND p_one_HAC > 0.05 AND Clause B does NOT fire; routes to FAIL."
+  ],
+  "escalation_results": {
+    "spec_5_5_strict_reading": "escalation suite should NOT have been run per \u00a75.5 line 252 (\u00a73.3 ESCALATE-trigger never fired: Clause-A \u03b2 not > 0; Clause-B B-i+B-ii both False)",
+    "spec_9_6_pre_authorization_reading": "NB03 Trio 6 ran \u00a75.5 under \u00a79.6 framing; numerics preserved as Phase-3 finding per Option C disposition",
+    "option_c_disposition_pin": "contracts/notebooks/dev_ai_cost/dispositions/disposition-memo-3way-review-D-iii-spec-contradiction.md",
+    "spec_v1_0_3_reconciliation_flag": true,
+    "D_i_quantile_tau_0_90": {
+      "beta_qr_lag9": -0.12886752,
+      "p_one": 0.6446,
+      "sign": "-",
+      "literal_3_4_pass": false,
+      "reason": "\u03b2 not > 0"
+    },
+    "D_ii_garch_x_composite": {
+      "beta_composite": -0.15372468,
+      "p_one": 0.9934,
+      "sign": "-",
+      "literal_3_4_pass": false,
+      "reason": "\u03b2 not > 0"
+    },
+    "D_iii_evt_pot": {
+      "beta_pot": 0.11337993,
+      "p_one": 0.012305,
+      "sign": "+",
+      "literal_3_4_pass": true,
+      "note": "spec \u00a73.4 literal text satisfied (\u03b2 > 0 AND p \u2264 0.10); under strict \u00a75.5 reading inadmissible (escalation should not have run); under \u00a79.6 reading would route to ESCALATE-PASS via D-iii; Option C user pick = FAIL strict \u00a75.5"
+    },
+    "disjunction_under_strict_5_5": "inadmissible (suite should not have been run)",
+    "disjunction_under_9_6_pre_authorization": "ESCALATE-PASS via D-iii literal",
+    "disjunction_per_user_pick_option_c": "FAIL (strict \u00a75.5 governs; D-iii preserved as Phase-3 finding for future Section M iteration)"
+  },
+  "routing_per_8_1": {
+    "step_1_n_gate": {
+      "n_realized": 134,
+      "n_min": 75,
+      "pass": true
+    },
+    "step_2_r_consistency": "MIXED per \u00a77.1 (n_agree=3/4)",
+    "step_3_clause_a_kappa_tightened": {
+      "fires": false,
+      "reason": "R1 + R3 BOTH sign-AGREE with primary (at negative sign)"
+    },
+    "step_4_primary_evaluation": "4(d): \u03b2 \u2264 0 AND p > 0.05 AND Clause-B does NOT fire \u2192 FAIL (terminates)",
+    "final_verdict": "FAIL",
+    "next_stage_routing_per_8_3": "FAIL \u2192 dev-AI iteration TERMINATES at Stage-1; per-user a_s instrument cannot be designed against rejected transmission"
+  },
+  "phase_3_3way_review": {
+    "code_reviewer": "PASS_WITH_NITS",
+    "reality_checker": "ACCEPT_WITH_FLAGS",
+    "senior_developer": "ACCEPT_WITH_REMEDIATION",
+    "integration_disposition": "Option C user pick 2026-05-06 (FAIL strict \u00a75.5 + D-iii preservation + spec v1.0.3 reconciliation flag)"
+  }
+}
