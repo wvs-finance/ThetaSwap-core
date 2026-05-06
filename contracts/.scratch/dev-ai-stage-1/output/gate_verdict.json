@@ -1,35 +1,34 @@
 {
-  "_skeleton_status": "SKELETON — populated by NB02 Trio 3 cell `nb02-trio3-code` at notebook-execution time. Do NOT consume this skeleton as the canonical verdict; wait until the notebook executes and overwrites with computed numerics. Verdict field is `TBD_AT_EXECUTION` until that time.",
-  "verdict": "TBD_AT_EXECUTION",
-  "verdict_raw": "TBD_AT_EXECUTION",
-  "branch_taken": "TBD_AT_EXECUTION",
+  "verdict": "PROVISIONAL_FAIL",
+  "verdict_raw": "FAIL",
+  "branch_taken": "step 4(d) FAIL",
   "provisional_flag": true,
   "primary_numerics": {
-    "beta_composite": null,
-    "se_composite_HAC": null,
-    "t_composite": null,
-    "p_one_HAC": null
+    "beta_composite": -0.146131873520888,
+    "se_composite_HAC": 0.08468266085785704,
+    "t_composite": -1.7256410230917958,
+    "p_one_HAC": 0.9577939928517828
   },
   "lag_decomposition": {
-    "beta_6": null,
-    "beta_9": null,
-    "beta_12": null,
-    "se_beta_6_HAC": null,
-    "se_beta_9_HAC": null,
-    "se_beta_12_HAC": null,
-    "share_lag6": null,
-    "share_lag9": null,
-    "share_lag12": null
+    "beta_6": -0.01604213109752803,
+    "beta_9": -0.009319952188209385,
+    "beta_12": -0.12076979023515058,
+    "se_beta_6_HAC": 0.20800667905089318,
+    "se_beta_9_HAC": 0.19578415928703635,
+    "se_beta_12_HAC": 0.16123911057283358,
+    "share_lag6": 0.10977845360502393,
+    "share_lag9": 0.06377768219660304,
+    "share_lag12": 0.826443864198373
   },
   "clause_b_numerics": {
-    "b_i_stat": null,
-    "b_i_fires": null,
-    "resid_skew": null,
-    "resid_excess_kurtosis": null,
-    "b_ii_skew_fires": null,
-    "b_ii_kurt_fires": null,
-    "b_ii_fires": null,
-    "clause_b_fires": null
+    "b_i_stat": 1.7256410230917958,
+    "b_i_fires": false,
+    "resid_skew": -0.33931230294742853,
+    "resid_excess_kurtosis": 0.32229760680355257,
+    "b_ii_skew_fires": false,
+    "b_ii_kurt_fires": false,
+    "b_ii_fires": false,
+    "clause_b_fires": false
   },
   "n_gate": {
     "realized_n": 134,
@@ -57,8 +56,10 @@
     "t_stat": 5.5456,
     "p_one": 1.46e-08
   },
-  "emit_timestamp_utc": "TBD_AT_EXECUTION",
+  "emit_timestamp_utc": "2026-05-06T09:22:53Z",
   "verdict_tree_trace": [
-    "SKELETON — populated by NB02 Trio 3 at execution time per spec §8.1 mapping rules"
+    "Step 1: N gate PASS (N=134 >= N_MIN=75).",
+    "Step 2: R-consistency = PENDING_NB03 (placeholder; NB03 finalizes per \u00a77.1).",
+    "Step 4(d): \u03b2\u0302_composite <= 0 AND p_one_HAC > 0.05 AND Clause B does NOT fire; routes to FAIL."
   ]
 }
